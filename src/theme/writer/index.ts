@@ -45,6 +45,8 @@ export default {
       'mx-auto flex flex-col bg-white text-black shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:shadow-none',
     region:
       'group/region relative text-[9pt] text-black/70 outline-none hover:bg-black/[0.03] focus-within:bg-black/[0.03]',
+    regionTools:
+      'absolute -top-7 end-0 z-10 hidden items-center gap-0.5 rounded bg-panel p-0.5 shadow group-focus-within/region:flex',
     regionLabel:
       'pointer-events-none absolute -top-4 start-0 hidden text-[10px] text-black/50 group-focus-within/region:block',
     body: 'flex-1',
@@ -52,6 +54,10 @@ export default {
     side: 'flex w-72 shrink-0 flex-col border-s border-border bg-panel',
     sideHeader:
       'flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold',
+    form: 'flex flex-col gap-2 text-xs',
+    formRow: 'grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-2',
+    formGrid: 'grid grid-cols-2 gap-2',
+    formLabel: 'text-muted',
     sideBody: 'scrollbar-thin flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3 text-xs'
   }
 }

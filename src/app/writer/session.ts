@@ -25,6 +25,9 @@ export const writerDirty = ref(false)
 /** Bumped when a different document is loaded, so editors replace their content. */
 export const writerRevision = ref(0)
 
+/** Bumped when the header or footer is replaced from outside its editor, such as by a command. */
+export const writerRegionsRevision = ref(0)
+
 /** The name comments and tracked changes are signed with. */
 export const writerAuthor = useLocalStorage('lawha:writer-author', '')
 
@@ -61,4 +64,10 @@ export function markWriterSaved(source: WriterSource, name?: string): void {
   writerSource.value = source
   if (name !== undefined) writerName.value = name
   writerDirty.value = false
+}
+
+/** Replaces the header or footer from a command, refreshing its editor. */
+export function setWriterRegion(kind: 'header' | 'footer', node: WriterNode | null): void {
+  updateWriterDocument({ [kind]: node })
+  writerRegionsRevision.value += 1
 }

@@ -13,6 +13,7 @@ import {
   type WriterFileOutcome
 } from '@/app/writer/document'
 import { WRITER_FONTS_STYLESHEET } from '@/app/writer/fonts'
+import { printableHTML, printHTML } from '@/app/writer/print'
 import {
   newWriterDocument,
   writerDirty,
@@ -24,7 +25,9 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
+import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
+import WriterRegion from '@/components/writer/WriterRegion.vue'
 import WriterToolbar from '@/components/writer/WriterToolbar.vue'
 
 const t = useWriterMessages()
@@ -68,6 +71,18 @@ async function run(action: () => Promise<WriterFileOutcome>, failed: (detail: st
 
 const openFailed = (detail: string) => t.value.openFailed({ error: detail })
 const saveFailed = (detail: string) => t.value.saveFailed({ error: detail })
+
+/** Opens the print dialog on the document as it prints; its Save as PDF exports the PDF. */
+async function printDocument() {
+  const instance = editor.value
+  if (!instance) return
+  await printHTML(
+    printableHTML(
+      { ...writerDocument.value, title: writerTitle.value },
+      { bodyHTML: instance.getHTML(), fontsStylesheet: WRITER_FONTS_STYLESHEET }
+    )
+  )
+}
 
 function createDocument() {
   newWriterDocument(localeDirection(locale.value))
@@ -126,13 +141,20 @@ onBeforeUnmount(() => editor.value?.destroy())
         >
           <icon-lucide-download class="size-3.5" />
         </IconButton>
+        <IconButton :label="t.exportPDF" data-test-id="writer-print" @click="printDocument">
+          <icon-lucide-printer class="size-3.5" />
+        </IconButton>
+        <WriterPageSetup />
       </div>
     </div>
     <WriterToolbar v-if="editor" :editor="editor" />
     <AppAlert v-if="error" tone="error" :heading="error" class="m-2" />
     <div :class="ui.workspace()">
       <div :class="ui.scroller()">
-        <WriterPaper v-if="editor" :editor="editor" :page="page" />
+        <WriterPaper v-if="editor" :editor="editor" :page="page">
+          <template #header><WriterRegion kind="header" /></template>
+          <template #footer><WriterRegion kind="footer" /></template>
+        </WriterPaper>
       </div>
     </div>
   </div>
