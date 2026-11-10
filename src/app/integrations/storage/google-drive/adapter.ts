@@ -24,6 +24,9 @@ const DEFAULT_FOLDER = 'Lawha'
 const FILE_FIELDS = 'id,name,modifiedTime,version,size,appProperties,thumbnailLink'
 
 export const DRIVE_CLIENT_ID_FIELD = 'client-id'
+/** Lawha's own Google OAuth client (public by design); a self-hosted build can set its own. */
+export const DEFAULT_DRIVE_CLIENT_ID =
+  '1513535845-1u9552fr7236r6hrllnngv4p7jivnj4c.apps.googleusercontent.com'
 export const DRIVE_FOLDER_FIELD = 'folder'
 
 const driveFileSchema = v.object({
@@ -62,9 +65,7 @@ class DriveSession {
   ) {}
 
   private get clientId(): string {
-    const id = this.runtime.preferences[DRIVE_CLIENT_ID_FIELD]?.trim()
-    if (!id) throw new Error('Add the Google OAuth client ID in Settings → Storage')
-    return id
+    return this.runtime.preferences[DRIVE_CLIENT_ID_FIELD]?.trim() || DEFAULT_DRIVE_CLIENT_ID
   }
 
   private get folderName(): string {

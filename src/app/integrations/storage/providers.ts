@@ -31,10 +31,9 @@ export const GOOGLE_DRIVE_STORAGE_PROVIDER = defineStorageProvider({
   preferenceFields: [
     {
       id: DRIVE_CLIENT_ID_FIELD,
-      label: 'Google OAuth client ID',
+      label: 'Google OAuth client ID (optional)',
       kind: 'text',
-      required: true,
-      placeholder: '…apps.googleusercontent.com'
+      placeholder: 'Lawha’s own client'
     },
     { id: DRIVE_FOLDER_FIELD, label: 'Folder', kind: 'text', placeholder: 'Lawha' }
   ],
