@@ -49,13 +49,11 @@
       {
         "id": "save-version",
         "label": "Save to Version History…",
-        "accelerator": "Alt+CmdOrCtrl+S",
-        "feature": "cloud-document"
+        "accelerator": "Alt+CmdOrCtrl+S"
       },
       {
         "id": "version-history",
-        "label": "Show Version History",
-        "feature": "cloud-document"
+        "label": "Show Version History"
       },
       {
         "type": "separator"

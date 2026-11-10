@@ -40,7 +40,7 @@ export type AppMenuHandler = 'editor' | 'shell'
 
 /** A feature an item waits for: it shows only while the feature is available (`./features`). */
 /** Items shown only for a document backed by a file on disk. */
-export type AppMenuFeature = 'local-file' | 'cloud-document'
+export type AppMenuFeature = 'local-file'
 
 export interface AppMenuActionItem {
   type?: 'item'
@@ -102,10 +102,9 @@ export const APP_MENU_SCHEMA = [
       {
         id: 'save-version',
         label: 'Save to Version History…',
-        shortcut: 'ALT+MOD+S',
-        feature: 'cloud-document'
+        shortcut: 'ALT+MOD+S'
       },
-      { id: 'version-history', label: 'Show Version History', feature: 'cloud-document' },
+      { id: 'version-history', label: 'Show Version History' },
       { type: 'separator' },
       {
         id: 'export-selection',

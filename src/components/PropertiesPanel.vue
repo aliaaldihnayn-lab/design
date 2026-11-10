@@ -10,8 +10,10 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
+import { isLocalHistoryOpen } from '@/app/history/panel'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import { CloudVersionHistory } from '@/components/cloud/integration'
+import HistoryPanel from '@/components/history/HistoryPanel.vue'
 import propertiesTabsTheme from '@/theme/panel/properties-tabs'
 
 import CodePanel from './CodePanel.vue'
@@ -33,7 +35,9 @@ const tabStyles = propertiesTabs()
 /** The Comment tool turns the sidebar into the comments list, as in Figma; the tabs keep their state. */
 const commenting = computed(() => store.state.activeTool === 'COMMENT')
 /** Version history takes the sidebar while it is open, for the document and a version alike. */
-const history = computed(() => isVersionHistoryOpen(store))
+const cloudHistory = computed(() => isVersionHistoryOpen(store))
+const localHistory = computed(() => isLocalHistoryOpen(store))
+const history = computed(() => cloudHistory.value || localHistory.value)
 
 /** Whether the document has design lint: a board has none, as FigJam has none. */
 const lints = computed(() => resolveEditorProfile(store.state).lint)
@@ -57,7 +61,8 @@ const problemCount = computed(() => {
     class="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
     style="contain: paint layout style"
   >
-    <CloudVersionHistory v-if="history" />
+    <CloudVersionHistory v-if="cloudHistory" />
+    <HistoryPanel v-else-if="localHistory" />
     <CommentsPanel v-else-if="commenting" />
     <TabsRoot
       v-show="!commenting && !history"

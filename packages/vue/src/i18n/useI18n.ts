@@ -28,6 +28,7 @@ import {
   panelMessages,
   pathMessages,
   recoveryMessages,
+  historyMessages,
   photoMessages,
   printMessages,
   writerMessages,
@@ -68,6 +69,7 @@ export const useMenuMessages = () => useI18nNamespace(menuMessages)
 export const usePageMessages = () => useI18nNamespace(pageMessages)
 export const usePanelMessages = () => useI18nNamespace(panelMessages)
 export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
+export const useHistoryMessages = () => useI18nNamespace(historyMessages)
 export const useDesignSystemMessages = () => useI18nNamespace(designSystemMessages)
 export const usePathMessages = () => useI18nNamespace(pathMessages)
 export const useInspectMessages = () => useI18nNamespace(inspectMessages)
@@ -107,6 +109,7 @@ export function useI18n() {
     pages: usePageMessages(),
     panels: usePanelMessages(),
     recovery: useRecoveryMessages(),
+    history: useHistoryMessages(),
     print: usePrintMessages(),
     paths: usePathMessages(),
     writer: useWriterMessages(),

@@ -18,6 +18,7 @@ import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor
 import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
 import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
 import { fontsMessageDefaults, fontsMessages } from '#vue/i18n/messages/fonts'
+import { historyMessageDefaults, historyMessages } from '#vue/i18n/messages/history'
 import { inspectMessageDefaults, inspectMessages } from '#vue/i18n/messages/inspect'
 import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
 import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
@@ -70,6 +71,7 @@ export {
   printMessages,
   prototypeMessages,
   recoveryMessages,
+  historyMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
@@ -111,6 +113,7 @@ export const messageDefaults = {
   print: printMessageDefaults,
   prototype: prototypeMessageDefaults,
   recovery: recoveryMessageDefaults,
+  history: historyMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
   shapes: shapeMessageDefaults,
