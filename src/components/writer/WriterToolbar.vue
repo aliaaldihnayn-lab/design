@@ -10,6 +10,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { writer } from './ui'
+import WriterInsertTools from './WriterInsertTools.vue'
 
 const { editor } = defineProps<{ editor: Editor }>()
 const t = useWriterMessages()
@@ -292,6 +293,7 @@ const direction = computed(() => {
         <icon-lucide-indent-increase class="size-3.5 rtl:-scale-x-100" />
       </IconButton>
     </div>
+    <WriterInsertTools :editor="editor" />
     <slot />
   </div>
 </template>

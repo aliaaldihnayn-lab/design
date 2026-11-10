@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { getSchema } from '@tiptap/core'
 
-import type { WriterNode } from '@lawha/core/writer'
+import { createWriterDocument, readDocx, writeDocx, type WriterNode } from '@lawha/core/writer'
 
 import { writerExtensions } from '@/app/writer/editor/extensions'
 
@@ -51,5 +51,12 @@ describe('writer editor schema', () => {
     const node = schema.nodeFromJSON(body)
     node.check()
     expect(node.toJSON().content[1].attrs.dir).toBe('rtl')
+  })
+
+  test('accepts a document read back from Word', () => {
+    const roundTripped = readDocx(writeDocx(createWriterDocument({ body }))).body
+    const node = schema.nodeFromJSON(roundTripped)
+    node.check()
+    expect(node.textContent).toContain('عنوان')
   })
 })
