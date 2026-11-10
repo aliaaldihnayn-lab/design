@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
+import { setWriterHost } from '@lawha/core/tools'
 import {
   createWriterDocument,
   emptyBody,
@@ -71,3 +72,13 @@ export function setWriterRegion(kind: 'header' | 'footer', node: WriterNode | nu
   updateWriterDocument({ [kind]: node })
   writerRegionsRevision.value += 1
 }
+
+/** The AI tools read and edit the document editor's document through this host. */
+setWriterHost({
+  read: () => writerDocument.value,
+  write: (document) => {
+    updateWriterDocument(document)
+    writerRevision.value += 1
+    writerRegionsRevision.value += 1
+  }
+})

@@ -67,3 +67,4 @@ export {
 } from './stock-photo/providers'
 export { PRINT_PRODUCT_IDS, PRINT_PRODUCTS, type PrintProductId } from './print/products'
 export { SCREEN_SIZES, SCREEN_SIZE_IDS, type ScreenSizeId } from './mockup/screens'
+export { setWriterHost, type WriterHost } from './writer/host'
