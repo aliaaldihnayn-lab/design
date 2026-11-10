@@ -18,5 +18,8 @@
   "brush": "Кисть",
   "eraser": "Ластик",
   "fillBucket": "Заливка",
-  "colorPicker": "Пипетка"
+  "colorPicker": "Пипетка",
+  "marqueeRect": "Прямоугольное выделение",
+  "marqueeEllipse": "Овальное выделение",
+  "magicWand": "Волшебная палочка"
 }

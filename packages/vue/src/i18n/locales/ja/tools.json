@@ -18,5 +18,8 @@
   "brush": "ブラシ",
   "eraser": "消しゴム",
   "fillBucket": "塗りつぶし",
-  "colorPicker": "スポイト"
+  "colorPicker": "スポイト",
+  "marqueeRect": "長方形選択",
+  "marqueeEllipse": "楕円形選択",
+  "magicWand": "自動選択"
 }

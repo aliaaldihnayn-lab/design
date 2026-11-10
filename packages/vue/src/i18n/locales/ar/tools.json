@@ -18,5 +18,8 @@
   "brush": "فرشاة الرسم",
   "eraser": "الممحاة",
   "fillBucket": "دلو التعبئة",
-  "colorPicker": "منتقي الألوان"
+  "colorPicker": "منتقي الألوان",
+  "marqueeRect": "تحديد مستطيل",
+  "marqueeEllipse": "تحديد بيضاوي",
+  "magicWand": "العصا السحرية"
 }

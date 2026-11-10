@@ -18,5 +18,8 @@
   "brush": "画笔",
   "eraser": "橡皮擦",
   "fillBucket": "油漆桶",
-  "colorPicker": "取色器"
+  "colorPicker": "取色器",
+  "marqueeRect": "矩形选框",
+  "marqueeEllipse": "椭圆选框",
+  "magicWand": "魔棒"
 }

@@ -55,6 +55,9 @@ export type Tool =
   | 'ERASER'
   | 'FILL_BUCKET'
   | 'COLOR_PICKER'
+  | 'MARQUEE_RECT'
+  | 'MARQUEE_ELLIPSE'
+  | 'MAGIC_WAND'
   | 'HAND'
   | 'COMMENT'
 

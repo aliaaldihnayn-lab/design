@@ -35,7 +35,13 @@ export const photoMessageDefaults = {
   brushHardness: 'Hardness',
   brushOpacity: 'Opacity',
   tolerance: 'Tolerance',
-  contiguous: 'Contiguous'
+  contiguous: 'Contiguous',
+  selectAll: 'Select all',
+  deselect: 'Deselect',
+  invertSelection: 'Invert selection',
+  maskFromSelection: 'Mask from selection',
+  invertMask: 'Invert mask',
+  feather: 'Feather'
 } as const
 
 export const photoMessages = i18n('photo', photoMessageDefaults)

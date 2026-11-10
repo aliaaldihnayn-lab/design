@@ -18,5 +18,8 @@
   "brush": "Pędzel",
   "eraser": "Gumka",
   "fillBucket": "Wiadro z farbą",
-  "colorPicker": "Pipeta"
+  "colorPicker": "Pipeta",
+  "marqueeRect": "Zaznaczenie prostokątne",
+  "marqueeEllipse": "Zaznaczenie eliptyczne",
+  "magicWand": "Różdżka"
 }

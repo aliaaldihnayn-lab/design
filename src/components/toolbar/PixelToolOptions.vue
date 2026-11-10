@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { formatHex, parse } from 'culori'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { PixelToolSettings, Tool } from '@lawha/core'
 import { usePhotoMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const store = useEditorStore()
@@ -16,14 +17,27 @@ const tool = computed<Tool>(() => store.state.activeTool)
 const settings = computed(() => store.state.pixelTools)
 
 const BRUSHES: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'ERASER'])
-const FILLS: ReadonlySet<Tool> = new Set<Tool>(['FILL_BUCKET'])
+const FILLS: ReadonlySet<Tool> = new Set<Tool>(['FILL_BUCKET', 'MAGIC_WAND'])
+const SELECTIONS: ReadonlySet<Tool> = new Set<Tool>([
+  'MARQUEE_RECT',
+  'MARQUEE_ELLIPSE',
+  'MAGIC_WAND'
+])
 const COLORED: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'FILL_BUCKET', 'COLOR_PICKER'])
 
 const shown = computed(
-  () => BRUSHES.has(tool.value) || FILLS.has(tool.value) || COLORED.has(tool.value)
+  () =>
+    BRUSHES.has(tool.value) ||
+    FILLS.has(tool.value) ||
+    COLORED.has(tool.value) ||
+    SELECTIONS.has(tool.value)
 )
+/** Whether pixels are selected, which the selection's outline on the canvas shows. */
+const hasSelection = computed(() => !!store.state.pixelOverlay?.outline)
+/** Whether a mask made from the selection hides the selection rather than the rest. */
+const invertMask = ref(false)
 
-type SliderKey = 'size' | 'hardness' | 'opacity' | 'tolerance'
+type SliderKey = 'size' | 'hardness' | 'opacity' | 'tolerance' | 'feather'
 
 interface Slider {
   key: SliderKey
@@ -54,10 +68,20 @@ const sliders = computed<Slider[]>(() => {
     )
   }
   if (FILLS.has(tool.value)) {
-    list.push(
-      { key: 'tolerance', label: t.value.tolerance, min: 0, max: 100, ...percent },
-      { key: 'opacity', label: t.value.brushOpacity, min: 1, max: 100, ...percent }
-    )
+    list.push({ key: 'tolerance', label: t.value.tolerance, min: 0, max: 100, ...percent })
+  }
+  if (tool.value === 'FILL_BUCKET') {
+    list.push({ key: 'opacity', label: t.value.brushOpacity, min: 1, max: 100, ...percent })
+  }
+  if (SELECTIONS.has(tool.value)) {
+    list.push({
+      key: 'feather',
+      label: t.value.feather,
+      min: 0,
+      max: 200,
+      toView: Math.round,
+      fromView: (v) => v
+    })
   }
   return list
 })
@@ -84,6 +108,14 @@ function setSlider(slider: Slider, value: number[] | undefined) {
 
 function setContiguous(value: boolean) {
   store.setPixelTools({ contiguous: value })
+}
+
+function setInvertMask(value: boolean) {
+  invertMask.value = value
+}
+
+function maskFromSelection() {
+  store.pixelMaskFromSelection({ invert: invertMask.value })
 }
 </script>
 
@@ -135,5 +167,43 @@ function setContiguous(value: boolean) {
       />
       {{ t.contiguous }}
     </label>
+    <template v-if="SELECTIONS.has(tool)">
+      <AppButton size="xs" data-test-id="pixel-select-all" @click="store.pixelSelectAll()">
+        {{ t.selectAll }}
+      </AppButton>
+      <AppButton
+        size="xs"
+        :disabled="!hasSelection"
+        data-test-id="pixel-deselect"
+        @click="store.pixelDeselect()"
+      >
+        {{ t.deselect }}
+      </AppButton>
+      <AppButton
+        size="xs"
+        :disabled="!hasSelection"
+        data-test-id="pixel-invert-selection"
+        @click="store.pixelInvertSelection()"
+      >
+        {{ t.invertSelection }}
+      </AppButton>
+      <label class="flex items-center gap-1.5 text-muted">
+        <AppCheckbox
+          :model-value="invertMask"
+          :ariaLabel="t.invertMask"
+          @update:model-value="setInvertMask"
+        />
+        {{ t.invertMask }}
+      </label>
+      <AppButton
+        size="xs"
+        variant="soft"
+        :disabled="!hasSelection"
+        data-test-id="pixel-mask-from-selection"
+        @click="maskFromSelection"
+      >
+        {{ t.maskFromSelection }}
+      </AppButton>
+    </template>
   </div>
 </template>

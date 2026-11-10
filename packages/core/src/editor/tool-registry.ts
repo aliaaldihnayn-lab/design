@@ -25,6 +25,13 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
     shortcut: 'B',
     flyout: ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER']
   },
+  // Selections of a layer's pixels, on Photoshop's M and W.
+  {
+    key: 'MARQUEE_RECT',
+    label: 'Rectangular marquee',
+    shortcut: 'M',
+    flyout: ['MARQUEE_RECT', 'MARQUEE_ELLIPSE', 'MAGIC_WAND']
+  },
   // Figma's S is Slice, and FigJam's sticky tool has no key in Figma Design.
   { key: 'STICKY', label: 'Sticky note', shortcut: '' },
   // FigJam's R; here R is the rectangle, as in Figma Design.
@@ -50,6 +57,9 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyE: 'ERASER',
   KeyG: 'FILL_BUCKET',
   KeyI: 'COLOR_PICKER',
+  KeyM: 'MARQUEE_RECT',
+  'Shift+KeyM': 'MARQUEE_ELLIPSE',
+  KeyW: 'MAGIC_WAND',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }

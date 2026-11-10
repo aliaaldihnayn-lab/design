@@ -71,3 +71,30 @@ describe('pixel tools for agents', () => {
     )
   })
 })
+
+describe('mask_layer_from_selection', () => {
+  test('masks a layer with an ellipse, inverted', async () => {
+    const { figma, graph, id } = await setup()
+    const result = tool('mask_layer_from_selection')(figma, {
+      id,
+      shape: 'ellipse',
+      rect: { x: 0, y: 0, width: 40, height: 20 },
+      invert: true
+    })
+    expect(result).toMatchObject({ layer_id: id })
+    const group = graph.getNode(String((result as { group_id: string }).group_id))
+    expect(group?.childIds).toHaveLength(2)
+    expect(graph.getNode(group?.childIds[0] ?? '')?.isMask).toBe(true)
+  })
+
+  test('refuses an empty selection', async () => {
+    const { figma, id } = await setup()
+    expect(
+      tool('mask_layer_from_selection')(figma, {
+        id,
+        shape: 'rect',
+        rect: { x: 0, y: 0, width: 0, height: 0 }
+      })
+    ).toHaveProperty('error')
+  })
+})

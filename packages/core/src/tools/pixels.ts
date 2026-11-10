@@ -6,6 +6,7 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 import { loadPixelSurface, paintedLayerChanges, type PixelSurface } from '#core/editor/pixels/layer'
+import { maskImage, maskLayerWith } from '#core/editor/pixels/select'
 import type { FigmaAPI } from '#core/figma-api'
 import { storeImage } from '#core/figma-api/images'
 import type { RasterCodec } from '#core/io/formats/raster'
@@ -19,6 +20,14 @@ import {
 } from '#core/pixels/brush'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
+import {
+  ellipseMask,
+  featherMask,
+  invertMask,
+  maskBounds,
+  rectMask,
+  type PixelMask
+} from '#core/pixels/mask'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
 const pointSchema = v.strictObject({ x: v.number(), y: v.number() })
@@ -146,5 +155,61 @@ export const samplePixelColor = defineTool({
     const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
     if (!color) return { error: 'That point is outside the layer' }
     return { hex: colorToHex(color), alpha: color.a }
+  }
+})
+
+const rectSchema = v.strictObject({
+  x: v.number(),
+  y: v.number(),
+  width: v.pipe(v.number(), v.minValue(0)),
+  height: v.pipe(v.number(), v.minValue(0))
+})
+
+export const maskFromSelection = defineTool({
+  name: 'mask_layer_from_selection',
+  description:
+    "Mask a shape or frame (such as a photo) with a pixel selection, as Affinity's New Mask Layer does: a mask layer of the selection's shape goes under it and both go in a group, hiding what lies outside. Select a rectangle or ellipse (rect, in the layer's own coordinates) or, with similar, the pixels like the one at point within tolerance 0–1 (magic wand). invert masks out the selection instead; feather softens the edge over that many of the layer's pixels. Returns the group.",
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: nodeIdInputSchema,
+    shape: v.picklist(['rect', 'ellipse', 'similar']),
+    rect: v.optional(rectSchema),
+    point: v.optional(pointSchema),
+    tolerance: unitSchema,
+    contiguous: v.optional(v.boolean(), true),
+    invert: v.optional(v.boolean(), false),
+    feather: v.optional(toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(500))), 0)
+  }),
+  execute: (figma, args) => {
+    const loaded = loadForTool(figma, args.id)
+    if ('error' in loaded) return loaded
+    const { node, surface, codec } = loaded
+    let mask: PixelMask
+    if (args.shape === 'similar') {
+      if (!args.point) return { error: 'similar needs a point' }
+      const at = toGrid(node, surface, args.point)
+      const shown = compositeOver(surface.base, surface.paint)
+      mask = selectSimilar(shown, at.x, at.y, args.tolerance ?? 0.15, args.contiguous)
+    } else {
+      if (!args.rect) return { error: `${args.shape} needs a rect` }
+      const from = toGrid(node, surface, args.rect)
+      const to = toGrid(node, surface, {
+        x: args.rect.x + args.rect.width,
+        y: args.rect.y + args.rect.height
+      })
+      const rect = { x: from.x, y: from.y, width: to.x - from.x, height: to.y - from.y }
+      mask =
+        args.shape === 'ellipse'
+          ? ellipseMask(surface.width, surface.height, rect)
+          : rectMask(surface.width, surface.height, rect)
+    }
+    if (!maskBounds(mask)) return { error: 'The selection is empty' }
+    if (args.invert) mask = invertMask(mask)
+    if (args.feather > 0) mask = featherMask(mask, args.feather)
+    const png = codec.encodePNG(maskImage(mask))
+    if (!png) return { error: 'Could not encode the mask' }
+    if (!node.parentId) return { error: 'The layer is on no page' }
+    const groupId = maskLayerWith(figma.graph, node, storeImage(figma.graph, png))
+    return { group_id: groupId, layer_id: node.id }
   }
 })

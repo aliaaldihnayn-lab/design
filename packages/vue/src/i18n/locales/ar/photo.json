@@ -30,5 +30,11 @@
   "brushHardness": "الصلابة",
   "brushOpacity": "العتامة",
   "tolerance": "التفاوت",
-  "contiguous": "متجاور فقط"
+  "contiguous": "متجاور فقط",
+  "selectAll": "تحديد الكل",
+  "deselect": "إلغاء التحديد",
+  "invertSelection": "عكس التحديد",
+  "maskFromSelection": "قناع من التحديد",
+  "invertMask": "عكس القناع",
+  "feather": "تنعيم الحواف"
 }

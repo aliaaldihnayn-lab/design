@@ -18,5 +18,8 @@
   "brush": "Pinsel",
   "eraser": "Radiergummi",
   "fillBucket": "Füllwerkzeug",
-  "colorPicker": "Pipette"
+  "colorPicker": "Pipette",
+  "marqueeRect": "Auswahlrechteck",
+  "marqueeEllipse": "Auswahlellipse",
+  "magicWand": "Zauberstab"
 }

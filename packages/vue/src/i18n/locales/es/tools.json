@@ -18,5 +18,8 @@
   "brush": "Pincel",
   "eraser": "Borrador",
   "fillBucket": "Bote de pintura",
-  "colorPicker": "Cuentagotas"
+  "colorPicker": "Cuentagotas",
+  "marqueeRect": "Marco rectangular",
+  "marqueeEllipse": "Marco elíptico",
+  "magicWand": "Varita mágica"
 }

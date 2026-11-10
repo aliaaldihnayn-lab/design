@@ -18,5 +18,8 @@
   "brush": "Pennello",
   "eraser": "Gomma",
   "fillBucket": "Secchiello",
-  "colorPicker": "Contagocce"
+  "colorPicker": "Contagocce",
+  "marqueeRect": "Selezione rettangolare",
+  "marqueeEllipse": "Selezione ellittica",
+  "magicWand": "Bacchetta magica"
 }

@@ -18,5 +18,8 @@
   "brush": "Pinceau",
   "eraser": "Gomme",
   "fillBucket": "Pot de peinture",
-  "colorPicker": "Pipette"
+  "colorPicker": "Pipette",
+  "marqueeRect": "Rectangle de sélection",
+  "marqueeEllipse": "Ellipse de sélection",
+  "magicWand": "Baguette magique"
 }

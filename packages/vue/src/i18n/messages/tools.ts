@@ -20,7 +20,10 @@ export const toolMessageDefaults = {
   brush: 'Paint brush',
   eraser: 'Eraser',
   fillBucket: 'Fill bucket',
-  colorPicker: 'Color picker'
+  colorPicker: 'Color picker',
+  marqueeRect: 'Rectangular marquee',
+  marqueeEllipse: 'Elliptical marquee',
+  magicWand: 'Magic wand'
 } as const
 
 export const toolMessages = i18n('tools', toolMessageDefaults)

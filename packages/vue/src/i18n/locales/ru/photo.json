@@ -30,5 +30,11 @@
   "brushHardness": "Жёсткость",
   "brushOpacity": "Непрозрачность",
   "tolerance": "Допуск",
-  "contiguous": "Смежные"
+  "contiguous": "Смежные",
+  "selectAll": "Выделить всё",
+  "deselect": "Снять выделение",
+  "invertSelection": "Инвертировать выделение",
+  "maskFromSelection": "Маска из выделения",
+  "invertMask": "Инвертировать маску",
+  "feather": "Растушёвка"
 }

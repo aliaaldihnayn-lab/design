@@ -8,7 +8,10 @@ import {
   BRUSH_TOOL,
   COLOR_PICKER_TOOL,
   ERASER_TOOL,
-  FILL_BUCKET_TOOL
+  FILL_BUCKET_TOOL,
+  MAGIC_WAND_TOOL,
+  MARQUEE_ELLIPSE_TOOL,
+  MARQUEE_RECT_TOOL
 } from '#vue/canvas/pixels/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
@@ -94,6 +97,9 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
   ERASER: ERASER_TOOL,
   FILL_BUCKET: FILL_BUCKET_TOOL,
   COLOR_PICKER: COLOR_PICKER_TOOL,
+  MARQUEE_RECT: MARQUEE_RECT_TOOL,
+  MARQUEE_ELLIPSE: MARQUEE_ELLIPSE_TOOL,
+  MAGIC_WAND: MAGIC_WAND_TOOL,
   TEXT: { press: ({ cx, cy }, { editor, setDrag }) => startTextDraw(cx, cy, editor, setDrag) },
   CONNECTOR: {
     press: ({ event, cx, cy, sx, sy }, { editor, setDrag }) =>

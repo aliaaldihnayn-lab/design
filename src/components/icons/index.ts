@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import IconCircle from '~icons/lucide/circle'
+import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconColumns from '~icons/lucide/columns-3'
 import IconComponentSet from '~icons/lucide/component'
 import IconComponent from '~icons/lucide/diamond'
@@ -24,11 +25,13 @@ import IconSmile from '~icons/lucide/smile'
 import IconSpline from '~icons/lucide/spline'
 import IconSquare from '~icons/lucide/square'
 import IconSlot from '~icons/lucide/square-dashed'
+import IconSquareDashed from '~icons/lucide/square-dashed-mouse-pointer'
 import IconMask from '~icons/lucide/squares-intersect'
 import IconStar from '~icons/lucide/star'
 import IconStickyNote from '~icons/lucide/sticky-note'
 import IconTriangle from '~icons/lucide/triangle'
 import IconType from '~icons/lucide/type'
+import IconWandSparkles from '~icons/lucide/wand-sparkles'
 
 import type { Tool } from '@lawha/core'
 import type { SceneNode } from '@lawha/scene-graph'
@@ -55,6 +58,9 @@ export const toolIcons: Record<Tool, Component> = {
   ERASER: IconEraser,
   FILL_BUCKET: IconPaintBucket,
   COLOR_PICKER: IconPipette,
+  MARQUEE_RECT: IconSquareDashed,
+  MARQUEE_ELLIPSE: IconCircleDashed,
+  MAGIC_WAND: IconWandSparkles,
   TEXT: IconType,
   STICKY: IconStickyNote,
   SHAPE_WITH_TEXT: IconShapes,

@@ -41,6 +41,9 @@ const TOOL_CURSORS: Record<Tool, string> = {
   ERASER: 'crosshair',
   FILL_BUCKET: 'cell',
   COLOR_PICKER: 'crosshair',
+  MARQUEE_RECT: 'crosshair',
+  MARQUEE_ELLIPSE: 'crosshair',
+  MAGIC_WAND: 'crosshair',
   HAND: HAND_CURSOR,
   COMMENT: COMMENT_CURSOR
 }

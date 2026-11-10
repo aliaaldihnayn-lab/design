@@ -27,6 +27,7 @@ import {
   paintedLayerChanges,
   type PixelSurface
 } from './layer'
+import { createPixelSelectionActions, type PixelSession } from './select'
 import { DEFAULT_PIXEL_TOOL_SETTINGS, type PixelOverlay, type PixelToolSettings } from './types'
 
 /** The tools that paint along a drag. */
@@ -34,12 +35,6 @@ export type PixelStrokeTool = Extract<Tool, 'BRUSH' | 'ERASER'>
 
 /** The tools the brush cursor follows on the canvas. */
 const BRUSH_CURSOR_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'ERASER'])
-
-/** What the pixel tools share across actions. */
-export interface PixelSession {
-  /** The pixel selection the tools keep to, on one layer's grid. */
-  selection: { nodeId: string; mask: PixelMask } | null
-}
 
 interface StrokeSession {
   tool: PixelStrokeTool
@@ -311,7 +306,15 @@ export function createPixelActions(
     pixelHoverEnd()
   })
 
+  const selectionActions = createPixelSelectionActions(ctx, {
+    session,
+    codec,
+    targetAt: pixelTargetAt,
+    overlay
+  })
+
   return {
+    ...selectionActions,
     setPixelTools,
     pixelStrokeBegin,
     pixelStrokeMove,
