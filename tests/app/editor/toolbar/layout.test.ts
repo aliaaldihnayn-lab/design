@@ -77,6 +77,7 @@ describe('normalizeToolbarLayout', () => {
       ['FRAME', 'SECTION'],
       SHAPES,
       ['PEN', 'PENCIL'],
+      ['SHAPE_BUILDER'],
       ['HAND'],
       ['COMMENT'],
       ['insert-icon']
@@ -141,8 +142,8 @@ describe('editing', () => {
   })
 
   test('a button swaps with the button or flyout next to it', () => {
-    const moved = moveToolbarEntry(base, 'TEXT', -1)
-    expect(moved.groups.slice(3, 5)).toEqual([['TEXT'], ['PEN', 'PENCIL']])
+    const moved = moveToolbarEntry(base, 'SHAPE_BUILDER', -1)
+    expect(moved.groups.slice(3, 5)).toEqual([['SHAPE_BUILDER'], ['PEN', 'PENCIL']])
     expect(moveToolbarEntry(base, 'SELECT', -1)).toBe(base)
   })
 
@@ -156,8 +157,8 @@ describe('editing', () => {
   })
 
   test('joining merges a group into the one above', () => {
-    const joined = joinToolbarEntry(base, 'TEXT')
-    expect(joined.groups[3]).toEqual(['PEN', 'PENCIL', 'TEXT'])
+    const joined = joinToolbarEntry(base, 'SHAPE_BUILDER')
+    expect(joined.groups[3]).toEqual(['PEN', 'PENCIL', 'SHAPE_BUILDER'])
     expect(joinToolbarEntry(base, 'insert-icon')).toBe(base)
     expect(joinToolbarEntry(base, 'SELECT')).toBe(base)
     expect(joinToolbarEntry(base, 'LINE')).toBe(base)

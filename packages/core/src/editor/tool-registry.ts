@@ -17,6 +17,8 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
     flyout: ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
   },
   { key: 'PEN', label: 'Pen', shortcut: 'P', flyout: ['PEN', 'PENCIL'] },
+  // Illustrator's Shape Builder and its key.
+  { key: 'SHAPE_BUILDER', label: 'Shape builder', shortcut: 'Shift+M' },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
   // Figma's S is Slice, and FigJam's sticky tool has no key in Figma Design.
   { key: 'STICKY', label: 'Sticky note', shortcut: '' },
@@ -39,6 +41,7 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyT: 'TEXT',
   KeyP: 'PEN',
   'Shift+KeyP': 'PENCIL',
+  'Shift+KeyM': 'SHAPE_BUILDER',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }

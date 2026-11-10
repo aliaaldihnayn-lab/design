@@ -50,6 +50,7 @@ export type {
   MeasurementMode,
   PresenceCursor,
   RenderOverlays,
+  ShapeBuilderHover,
   RulerTheme,
   SelectionTheme
 } from './renderer/types'

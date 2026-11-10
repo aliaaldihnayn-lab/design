@@ -30,6 +30,7 @@ import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
+import { drawShapeBuilderHover } from '#core/canvas/overlays/shape-builder'
 import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
@@ -179,6 +180,7 @@ export function drawOverlayPass(
   drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
   drawPenOverlay(r, canvas, overlays.penState)
   drawPencilOverlay(r, canvas, overlays.pencilState)
+  drawShapeBuilderHover(r, canvas, overlays.shapeBuilderHover)
   drawSnapMarks(r, canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays, sceneVersion)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)

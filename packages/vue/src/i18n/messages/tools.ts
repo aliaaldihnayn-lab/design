@@ -11,6 +11,7 @@ export const toolMessageDefaults = {
   star: 'Star',
   pen: 'Pen',
   pencil: 'Pencil',
+  shapeBuilder: 'Shape builder',
   text: 'Text',
   sticky: 'Sticky note',
   shape: 'Shape',

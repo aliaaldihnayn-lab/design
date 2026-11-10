@@ -14,5 +14,6 @@
   "shape": "シェイプ",
   "connector": "コネクタ",
   "hand": "手のひらツール",
-  "comment": "コメント"
+  "comment": "コメント",
+  "shapeBuilder": "シェイプ形成"
 }

@@ -14,5 +14,6 @@
   "shape": "Kształt",
   "connector": "Łącznik",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "shapeBuilder": "Kreator kształtów"
 }

@@ -138,6 +138,7 @@ export function renderFromEditorState(
           }
         : null,
       pencilState: state.pencilState,
+      shapeBuilderHover: state.shapeBuilderHover,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,

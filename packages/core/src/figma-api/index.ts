@@ -27,6 +27,7 @@ import { loadFigmaFont } from './fonts/load'
 import type { FigmaFontNameInput } from './fonts/names'
 import { variationAxisTags } from './fonts/variations'
 import * as images from './images'
+import { setMeasuringRenderer } from './measure'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -137,6 +138,7 @@ export class FigmaAPI implements NodeProxyHost {
     this._unbindRendererEvents?.()
     this._unbindRendererEvents = null
     this._renderer = renderer
+    setMeasuringRenderer(this, renderer)
     if (!renderer) return
     const graph = this.graph
     const invalidate = (id: string | null | undefined) =>

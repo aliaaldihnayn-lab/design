@@ -20,6 +20,7 @@ export function useToolLabels() {
     STAR: tools.value.star,
     PEN: tools.value.pen,
     PENCIL: tools.value.pencil,
+    SHAPE_BUILDER: tools.value.shapeBuilder,
     TEXT: tools.value.text,
     STICKY: tools.value.sticky,
     SHAPE_WITH_TEXT: tools.value.shape,
