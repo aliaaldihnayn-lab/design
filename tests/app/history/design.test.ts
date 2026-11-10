@@ -24,7 +24,9 @@ describe('design tab history', () => {
     const history = session.controller.history.value
     expect(history.listVersions()).toHaveLength(1)
     expect(history.listChanges()[0]?.summary).toMatchObject({ action: 'move', names: ['Card'] })
-    expect(persistence.keys()).toEqual([designHistoryKey(store)])
+    const key = designHistoryKey(store)
+    if (!key) throw new Error('expected a key')
+    expect(persistence.keys()).toEqual([key])
     await session.dispose()
   })
 

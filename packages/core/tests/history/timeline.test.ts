@@ -147,7 +147,8 @@ describe('DocumentHistory', () => {
     history.prune({ maxAutoVersions: 2, maxAutoAgeMs: Number.POSITIVE_INFINITY, maxChanges: 3 })
     const versions = history.listVersions()
     expect(versions.map((version) => version.kind)).toEqual(['named', 'auto', 'auto'])
-    expect(versions[0]?.id).toBe(named?.id)
+    if (!named) throw new Error('expected a named version')
+    expect(versions[0]?.id).toBe(named.id)
     expect(history.listChanges()).toHaveLength(3)
     // Records only dropped versions used are gone.
     const state = history.toState()

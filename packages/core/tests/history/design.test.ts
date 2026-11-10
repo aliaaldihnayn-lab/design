@@ -107,11 +107,7 @@ describe('design history', () => {
     expect(editor.graph.getNode(card.id)?.x).toBe(0)
     expect(editor.graph.getNode(title.id)?.name).toBe('Heading')
     expect(editor.graph.getNode(page.id)).toBeUndefined()
-    expect(restored).toMatchObject({
-      kind: 'restore',
-      restoredFromId: saved.id,
-      title: 'Before edits'
-    })
+    expect(restored).toMatchObject({ kind: 'restore', restoredFromId: saved.id, title: null })
     expect(history.latestChange?.summary.action).toBe('restore')
     // The document as it was before the restore is a version of its own.
     const kinds = history.listVersions().map((version) => version.kind)

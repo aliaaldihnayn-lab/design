@@ -127,8 +127,10 @@ test('saves, previews, compares, restores, and duplicates versions of a design',
     .click()
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
 
+  // The document's history is still open where it was left.
+  await expect(panel).toBeVisible()
+
   // Restoring brings the version back as an edit of its own, which undo takes back.
-  await runCommand(page, /Show version history/i)
   await openVersionMenu(draft)
   await page.getByRole('menuitem', { name: 'Restore this version' }).click()
   await expect(panel).not.toBeVisible()

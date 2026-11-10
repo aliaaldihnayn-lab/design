@@ -128,7 +128,6 @@ export function restoreDesignVersion(input: RestoreDesignVersionInput): HistoryV
     author,
     records: designRecords(host.graph),
     kind: 'restore',
-    title: version.title,
     restoredFromId: version.id
   })
   if (!restored) throw new Error('The restored version could not be kept')

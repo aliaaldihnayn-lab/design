@@ -34,6 +34,14 @@ export default {
     comparisonRow: 'flex min-w-0 items-center gap-2',
     badge:
       'shrink-0 rounded px-1 text-[10px] font-semibold data-[change=added]:text-success data-[change=changed]:bg-warning-bg data-[change=changed]:text-warning data-[change=removed]:bg-error-bg data-[change=removed]:text-error',
+    side: 'flex w-72 shrink-0 flex-col border-s border-border bg-panel',
+    writerPreview:
+      'mx-auto min-h-full w-full max-w-3xl rounded-sm bg-white px-12 py-10 text-black shadow-md',
+    writerDiff: 'flex flex-col gap-2 text-sm leading-relaxed',
+    writerBlock:
+      'min-h-5 whitespace-pre-wrap rounded px-1 data-[change=added]:bg-warning-bg data-[change=removed]:bg-error-bg data-[change=removed]:text-error data-[change=removed]:line-through data-[change=same]:opacity-60',
+    writerInsert: 'bg-warning-bg text-warning no-underline',
+    writerDelete: 'bg-error-bg text-error',
     form: 'flex flex-col gap-3',
     label: 'sr-only'
   }

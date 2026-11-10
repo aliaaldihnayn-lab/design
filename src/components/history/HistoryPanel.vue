@@ -38,8 +38,11 @@ const dates = useDateFormat()
 const state = computed(() => localHistoryOf(shown))
 const session = computed(() => localHistorySession(shown))
 const history = computed(() => session.value?.controller.history.value ?? null)
-// The history object stays the same as it changes; a new token lists it again.
-const revision = computed(() => (history.value ? {} : null))
+// The history object stays the same as it changes; reading the ref itself gives a new token.
+const revision = computed(() => {
+  void session.value?.controller.history.value
+  return {}
+})
 const selectedId = computed(() => state.value?.preview?.versionId ?? null)
 const comparison = computed(() => state.value?.comparison ?? null)
 
