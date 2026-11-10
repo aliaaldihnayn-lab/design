@@ -7,5 +7,11 @@
   "goToPage": "转到页面…",
   "recentPage": "最近",
   "currentPage": "当前页面",
-  "pageNameLabel": "页面名称"
+  "pageNameLabel": "页面名称",
+  "newMasterPage": "新建主页",
+  "applyMasterPage": "应用 {name}",
+  "removeMasterPage": "移除主页",
+  "insertPageNumber": "插入页码",
+  "linkTextFrames": "串接文本框",
+  "unlinkTextFrame": "取消串接文本框"
 }

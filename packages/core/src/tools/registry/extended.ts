@@ -70,6 +70,12 @@ import {
   setInteractions
 } from '#core/tools/prototype'
 import {
+  applyMasterPageTool,
+  createMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool
+} from '#core/tools/publisher'
+import {
   getComponents,
   getCurrentPage,
   getFontStatus,
@@ -157,6 +163,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   samplePixelColor,
   maskFromSelection,
   clonePixels,
+  // Publisher
+  createMasterPageTool,
+  applyMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool,
   // Prototype
   getPrototype,
   setInteractions,

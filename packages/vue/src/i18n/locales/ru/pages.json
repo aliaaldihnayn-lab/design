@@ -7,5 +7,11 @@
   "goToPage": "Перейти к странице…",
   "recentPage": "Недавняя",
   "currentPage": "Текущая страница",
-  "pageNameLabel": "Название страницы"
+  "pageNameLabel": "Название страницы",
+  "newMasterPage": "Новый мастер-шаблон",
+  "applyMasterPage": "Применить {name}",
+  "removeMasterPage": "Убрать мастер-шаблон",
+  "insertPageNumber": "Вставить номер страницы",
+  "linkTextFrames": "Связать текстовые фреймы",
+  "unlinkTextFrame": "Отвязать текстовый фрейм"
 }

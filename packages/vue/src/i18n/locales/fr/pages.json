@@ -7,5 +7,11 @@
   "goToPage": "Aller à la page…",
   "recentPage": "Récente",
   "currentPage": "Page actuelle",
-  "pageNameLabel": "Nom de la page"
+  "pageNameLabel": "Nom de la page",
+  "newMasterPage": "Nouveau gabarit",
+  "applyMasterPage": "Appliquer {name}",
+  "removeMasterPage": "Retirer le gabarit",
+  "insertPageNumber": "Insérer le numéro de page",
+  "linkTextFrames": "Lier les blocs de texte",
+  "unlinkTextFrame": "Délier le bloc de texte"
 }

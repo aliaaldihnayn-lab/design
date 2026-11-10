@@ -7,5 +7,11 @@
   "goToPage": "ページへ移動…",
   "recentPage": "最近",
   "currentPage": "現在のページ",
-  "pageNameLabel": "ページ名"
+  "pageNameLabel": "ページ名",
+  "newMasterPage": "新規マスターページ",
+  "applyMasterPage": "{name} を適用",
+  "removeMasterPage": "マスターページを解除",
+  "insertPageNumber": "ページ番号を挿入",
+  "linkTextFrames": "テキストフレームを連結",
+  "unlinkTextFrame": "テキストフレームの連結を解除"
 }

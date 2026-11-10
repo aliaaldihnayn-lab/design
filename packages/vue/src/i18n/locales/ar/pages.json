@@ -7,5 +7,11 @@
   "goToPage": "الانتقال إلى صفحة…",
   "recentPage": "الأخيرة",
   "currentPage": "الصفحة الحالية",
-  "pageNameLabel": "اسم الصفحة"
+  "pageNameLabel": "اسم الصفحة",
+  "newMasterPage": "صفحة رئيسية جديدة",
+  "applyMasterPage": "تطبيق {name}",
+  "removeMasterPage": "إزالة الصفحة الرئيسية",
+  "insertPageNumber": "إدراج رقم الصفحة",
+  "linkTextFrames": "ربط إطارات النص",
+  "unlinkTextFrame": "فك ربط إطار النص"
 }

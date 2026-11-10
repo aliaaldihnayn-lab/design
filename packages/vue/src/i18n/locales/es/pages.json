@@ -7,5 +7,11 @@
   "goToPage": "Ir a la página…",
   "recentPage": "Reciente",
   "currentPage": "Página actual",
-  "pageNameLabel": "Nombre de la página"
+  "pageNameLabel": "Nombre de la página",
+  "newMasterPage": "Nueva página maestra",
+  "applyMasterPage": "Aplicar {name}",
+  "removeMasterPage": "Quitar página maestra",
+  "insertPageNumber": "Insertar número de página",
+  "linkTextFrames": "Enlazar marcos de texto",
+  "unlinkTextFrame": "Desenlazar marco de texto"
 }
