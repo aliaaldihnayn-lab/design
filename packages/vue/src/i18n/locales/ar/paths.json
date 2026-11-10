@@ -16,6 +16,10 @@
   "presetRise": "صعود",
   "presetSqueeze": "ضغط",
   "presetTwist": "لفّ",
+  "imageTrace": "تتبّع الصورة على هذا الجهاز",
+  "tracingImage": "جارٍ تتبّع الصورة…",
+  "imageTraced": "تم تتبّع الصورة وتحويلها إلى متجهات.",
+  "traceFailed": "تعذّر تتبّع هذه الصورة: {error}",
   "done": "تم تحديث {count}",
   "failed": "تعذّر تغيير المسارات: {error}"
 }

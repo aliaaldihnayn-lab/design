@@ -1,4 +1,4 @@
-import type { SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { copyEffects, copyStrokes } from '@lawha/scene-graph/copy'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
@@ -57,6 +57,37 @@ function replacementFrameProps(node: SceneNode) {
   }
 }
 
+/**
+ * Builds the frame of vectors that replaces an image layer, at the layer's place in its parent,
+ * keeping its look and constraints; the layer itself stays. Shared by the editor's command and
+ * the trace tools. Null when nothing could be built.
+ */
+export function buildVectorFrame(
+  graph: SceneGraph,
+  node: SceneNode,
+  vectorized: SVGVectorizeResult
+): string | null {
+  const parentId = node.parentId
+  const parent = parentId ? graph.getNode(parentId) : null
+  if (!parentId || !parent) return null
+  const insertIndex = parent.childIds.indexOf(node.id)
+  if (insertIndex === -1) return null
+  const placement = resolveVectorFramePlacement(node, vectorized.contentBounds)
+  const frame = graph.createNode('FRAME', parentId, {
+    ...replacementFrameProps(node),
+    x: placement.x,
+    y: placement.y,
+    width: placement.width,
+    height: placement.height,
+    fills: []
+  })
+  graph.insertChildAt(frame.id, parentId, insertIndex)
+  createVectorFrameChildren(graph, frame.id, vectorized, placement)
+  if (frame.childIds.length > 0) return frame.id
+  graph.deleteNode(frame.id)
+  return null
+}
+
 export function createVectorizeActions(ctx: EditorContext) {
   function replaceNodeWithVectorFrame(
     nodeId: string,
@@ -69,24 +100,12 @@ export function createVectorizeActions(ctx: EditorContext) {
 
     const insertIndex = parent.childIds.indexOf(node.id)
     if (insertIndex === -1) return null
-    const placement = resolveVectorFramePlacement(node, vectorized.contentBounds)
     const originalSubtree = snapshotSubtree(ctx.graph, node.id)
     const previousSelection = new Set(ctx.state.selectedIds)
 
-    const frame = ctx.graph.createNode('FRAME', parentId, {
-      ...replacementFrameProps(node),
-      x: placement.x,
-      y: placement.y,
-      width: placement.width,
-      height: placement.height,
-      fills: []
-    })
-    ctx.graph.insertChildAt(frame.id, parentId, insertIndex)
-    createVectorFrameChildren(ctx.graph, frame.id, vectorized, placement)
-    if (frame.childIds.length === 0) {
-      ctx.graph.deleteNode(frame.id)
-      return null
-    }
+    const frameId = buildVectorFrame(ctx.graph, node, vectorized)
+    const frame = frameId ? ctx.graph.getNode(frameId) : undefined
+    if (!frame) return null
 
     const frameSubtree = snapshotSubtree(ctx.graph, frame.id)
     ctx.graph.deleteNode(node.id)

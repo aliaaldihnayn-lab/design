@@ -16,6 +16,10 @@
   "presetRise": "Wznoszenie",
   "presetSqueeze": "Ściśnięcie",
   "presetTwist": "Skręt",
+  "imageTrace": "Obrysowanie obrazu na tym urządzeniu",
+  "tracingImage": "Obrysowywanie obrazu…",
+  "imageTraced": "Obraz obrysowano jako wektory.",
+  "traceFailed": "Nie udało się obrysować tego obrazu: {error}",
   "done": "Zaktualizowano: {count}",
   "failed": "Nie udało się zmienić ścieżek: {error}"
 }

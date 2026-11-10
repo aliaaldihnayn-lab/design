@@ -1,4 +1,5 @@
-export { canVectorizeImageNode, vectorizeImageNode } from './action'
+export { canVectorizeImageNode, traceImageNodeOnDevice, vectorizeImageNode } from './action'
+export { DEFAULT_LOCAL_TRACE_OPTIONS, LOCAL_TRACE_PROVIDER, type LocalTraceOptions } from './local'
 export {
   setVectorizeCredential,
   vectorizeCredentialRef,

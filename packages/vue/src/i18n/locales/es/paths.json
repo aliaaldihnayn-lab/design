@@ -16,6 +16,10 @@
   "presetRise": "Ascendente",
   "presetSqueeze": "Comprimir",
   "presetTwist": "Giro",
+  "imageTrace": "Calco de imagen en este dispositivo",
+  "tracingImage": "Calcando la imagen…",
+  "imageTraced": "Imagen calcada en vectores.",
+  "traceFailed": "No se pudo calcar esta imagen: {error}",
   "done": "{count} actualizados",
   "failed": "No se pudieron cambiar los trazados: {error}"
 }

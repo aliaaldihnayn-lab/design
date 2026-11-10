@@ -16,6 +16,10 @@
   "presetRise": "上升",
   "presetSqueeze": "挤压",
   "presetTwist": "扭转",
+  "imageTrace": "在此设备上图像描摹",
+  "tracingImage": "正在描摹图像…",
+  "imageTraced": "图像已描摹为矢量。",
+  "traceFailed": "无法描摹此图像：{error}",
   "done": "已更新 {count} 个",
   "failed": "无法更改路径：{error}"
 }

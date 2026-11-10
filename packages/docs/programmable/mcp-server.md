@@ -297,6 +297,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `shape_builder` | Merge or delete regions of overlapping shapes, as Illustrator's Shape Builder |
 | `warp_shape` | Bend layers with a Warp preset (arc, arch, bulge, flag, wave, fish, rise, squeeze, twist) |
 | `envelope_mesh` | Distort a layer with an envelope mesh by moving grid points |
+| `image_trace` | Trace an image layer into vector shapes on this device (colour quantisation, contour tracing, curve fitting) |
 
 ### Vector Path
 

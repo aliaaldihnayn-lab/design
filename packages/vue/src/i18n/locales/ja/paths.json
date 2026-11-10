@@ -16,6 +16,10 @@
   "presetRise": "上昇",
   "presetSqueeze": "絞り込み",
   "presetTwist": "旋回",
+  "imageTrace": "このデバイスで画像トレース",
+  "tracingImage": "画像をトレースしています…",
+  "imageTraced": "画像をベクターにトレースしました。",
+  "traceFailed": "この画像をトレースできませんでした: {error}",
   "done": "{count} 件を更新しました",
   "failed": "パスを変更できませんでした: {error}"
 }

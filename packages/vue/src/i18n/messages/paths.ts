@@ -21,6 +21,10 @@ export const pathMessageDefaults = {
   presetRise: 'Rise',
   presetSqueeze: 'Squeeze',
   presetTwist: 'Twist',
+  imageTrace: 'Image Trace on this device',
+  tracingImage: 'Tracing image…',
+  imageTraced: 'Image traced into vectors.',
+  traceFailed: params('Could not trace this image: {error}'),
   done: params('Updated {count}'),
   failed: params('Could not change the paths: {error}')
 } as const

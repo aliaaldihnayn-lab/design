@@ -16,6 +16,10 @@
   "presetRise": "Ansteigend",
   "presetSqueeze": "Stauchen",
   "presetTwist": "Wirbel",
+  "imageTrace": "Bildnachzeichner auf diesem Gerät",
+  "tracingImage": "Bild wird nachgezeichnet…",
+  "imageTraced": "Bild in Vektoren nachgezeichnet.",
+  "traceFailed": "Dieses Bild konnte nicht nachgezeichnet werden: {error}",
   "done": "{count} aktualisiert",
   "failed": "Die Pfade konnten nicht geändert werden: {error}"
 }

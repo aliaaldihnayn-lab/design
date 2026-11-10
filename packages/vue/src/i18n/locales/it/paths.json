@@ -16,6 +16,10 @@
   "presetRise": "Ascendente",
   "presetSqueeze": "Comprimi",
   "presetTwist": "Torsione",
+  "imageTrace": "Ricalco immagine su questo dispositivo",
+  "tracingImage": "Ricalco dell’immagine…",
+  "imageTraced": "Immagine ricalcata in vettori.",
+  "traceFailed": "Impossibile ricalcare questa immagine: {error}",
   "done": "{count} aggiornati",
   "failed": "Impossibile modificare i tracciati: {error}"
 }

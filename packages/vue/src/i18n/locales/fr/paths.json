@@ -16,6 +16,10 @@
   "presetRise": "Montée",
   "presetSqueeze": "Compression",
   "presetTwist": "Torsion",
+  "imageTrace": "Vectorisation de l’image sur cet appareil",
+  "tracingImage": "Vectorisation de l’image…",
+  "imageTraced": "Image vectorisée.",
+  "traceFailed": "Impossible de vectoriser cette image : {error}",
   "done": "{count} mis à jour",
   "failed": "Impossible de modifier les tracés : {error}"
 }

@@ -7,7 +7,7 @@ export type {
   ComponentCatalogLibraryAsset
 } from './component-catalog'
 export { ALL_TOOLS, CORE_TOOLS, EXTENDED_TOOLS } from './registry'
-export { exportImage } from './vector'
+export { exportImage, TRACE_DETAIL, traceSettings, type TraceDetail } from './vector'
 export {
   defineTool,
   nodeToResult,

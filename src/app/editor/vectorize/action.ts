@@ -1,5 +1,6 @@
 import { preprocessForVectorize, svgToVectorPaths } from '@lawha/core/vector'
 import type { Fill, SceneNode } from '@lawha/scene-graph'
+import { pathMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -7,6 +8,7 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
 
 import { resolveVectorizeCredential } from './credentials'
+import { LOCAL_TRACE_PROVIDER, type LocalTraceOptions } from './local'
 import { vectorizeProviderID } from './preferences'
 import { getVectorizeProvider } from './providers'
 import { VectorizeAuthError } from './types'
@@ -89,6 +91,47 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
           .vectorizeFailed({ provider: provider.name, error: vectorizeErrorMessage(error) })
       )
     }
+  } finally {
+    activeStores.delete(store)
+  }
+}
+
+/**
+ * Traces an image layer into vector layers on this device with the offline provider, in one
+ * undo step, as Convert to vector does with a cloud service.
+ */
+export async function traceImageNodeOnDevice(
+  store: EditorStore,
+  nodeId: string,
+  options?: LocalTraceOptions
+): Promise<void> {
+  if (activeStores.has(store)) return
+  const node = store.graph.getNode(nodeId)
+  const fill = node ? imageFill(node) : null
+  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return
+  const messages = pathMessages.get()
+  activeStores.add(store)
+  try {
+    const imageBytes = store.graph.images.get(fill.imageHash)
+    if (!imageBytes) {
+      toast.error(notificationMessages.get().vectorizeImageMissing)
+      return
+    }
+    const ck = store.renderer?.ck
+    if (!ck) throw new Error('The canvas is not ready yet')
+    toast.info(messages.tracingImage)
+    // Let the toast paint before the trace takes the main thread.
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    const svg = LOCAL_TRACE_PROVIDER.vectorize(imageBytes, ck, options)
+    const vectorized = svgToVectorPaths(svg, { width: node.width, height: node.height })
+    if (!vectorized?.paths.length) throw new Error('The trace found no shapes')
+    const frameId = store.replaceNodeWithVectorFrame(node.id, vectorized)
+    if (!frameId) throw new Error('Could not replace this image with vector layers')
+    toast.info(messages.imageTraced)
+  } catch (error) {
+    toast.error(messages.traceFailed({ error: vectorizeErrorMessage(error) }))
   } finally {
     activeStores.delete(store)
   }
