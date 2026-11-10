@@ -120,6 +120,30 @@ Workspace administrators invite people by email with a role. Workspace invitatio
 invitation first and fall back to a document one, so email, the desktop handoff, and the editor's
 invitation dialog serve both. A workspace with members always keeps an administrator.
 
+### Rooms
+
+A room is a place inside a workspace that holds files (Cloud documents of any kind) and sub-rooms
+nested to any depth. Each room has its own list of people with a role: one owner, editors, and
+viewers. A sub-room either inherits who may enter from its parent or keeps to its own list; a
+top-level room always keeps to its own, and whoever owns a room runs every room under it, so the
+owner decides who enters each sub-room. The rule lives in `effectiveRoomRole`
+(`src/server/rooms/access.ts`), and every room route checks it on the server; someone kept out of a
+room is told it does not exist.
+
+While a document is in a room, the room and not the workspace decides who reaches it: workspace
+membership stops counting, room viewers may view and editors and the owner may edit, and the
+workspace's document list leaves the file out for people who cannot enter the room. The person
+who made a document and holders of a direct grant keep their access. Moving a file, changing who
+may enter, removing someone, or moving a room advances the collaboration epoch of the affected
+documents, so their open sessions start again under the new rule.
+
+Room invitations go by transactional email (`room-invitation`) and use the same `/invitations/:id`
+link as the others; preview and accept try workspace, then room, then document invitations. Every
+change to who may enter (invitations, roles, removals, leaving, ownership, access mode, moves,
+archiving) is appended to `room_audit_event`, which the owner can read. Who is in a room now comes
+from heartbeats the client posts every 15 seconds and that count for 45; Cloud has no realtime
+channel outside a document's relay room.
+
 Database rows use UUIDs. Capability secrets and invitation tokens are random hex; only their SHA-256
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`
 headers. Invitation continuations through OAuth are single-use compact JWE.

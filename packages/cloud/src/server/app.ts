@@ -57,6 +57,7 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createRoomMemberService, createRoomService } from '#cloud/server/rooms'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createSignatureService } from '#cloud/server/signatures'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
@@ -148,6 +149,11 @@ export function createCloudApp(services: CloudServices) {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
   })
+  const rooms = createRoomService(services.database)
+  const roomMembers = createRoomMemberService(services.database, {
+    email: services.transactionalEmail,
+    publicURL: services.config.publicURL
+  })
   const enrollment =
     services.enrollment ??
     createEnrollmentService(services.database, {
@@ -208,7 +214,8 @@ export function createCloudApp(services: CloudServices) {
     publicURL: services.config.publicURL,
     policy,
     deploymentMode: services.config.deployment,
-    workspaceInvitations: workspaceMembers
+    workspaceInvitations: workspaceMembers,
+    roomInvitations: roomMembers
   })
   const collaboration = createCollaborationTicketService({
     database: services.database,
@@ -295,6 +302,8 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
+    rooms,
+    roomMembers,
     resolveSession,
     signatures,
     signing
@@ -307,6 +316,8 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
+    rooms,
+    roomMembers,
     resolveSession,
     signatures,
     signing

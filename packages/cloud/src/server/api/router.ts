@@ -14,6 +14,7 @@ import {
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
+import { createRoomRoutes, type RoomMemberService, type RoomService } from '#cloud/server/rooms'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
   createDocumentSharingRoutes,
@@ -44,6 +45,8 @@ export type CloudAPIServices = {
   aiTokens?: AITokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
+  rooms: RoomService
+  roomMembers: RoomMemberService
   /** Documents sent for signature, and how to read a signer's address for the audit trail. */
   signatures: SignatureService
   signing: SigningRouteOptions
@@ -107,6 +110,16 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       '/',
       createDocumentSharingRoutes(
         services.sharing,
+        services.database && services.rateLimitSecret
+          ? { database: services.database, secret: services.rateLimitSecret }
+          : undefined
+      )
+    )
+    .route(
+      '/rooms',
+      createRoomRoutes(
+        services.rooms,
+        services.roomMembers,
         services.database && services.rateLimitSecret
           ? { database: services.database, secret: services.rateLimitSecret }
           : undefined

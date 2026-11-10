@@ -1,4 +1,8 @@
-import { documentPermissionSchema, workspaceRoleSchema } from '#cloud/contract'
+import {
+  documentPermissionSchema,
+  roomMemberRoleSchema,
+  workspaceRoleSchema
+} from '#cloud/contract'
 import * as v from 'valibot'
 
 export type TransactionalEmailKind =
@@ -17,6 +21,7 @@ export type TransactionalEmailKind =
   | 'two-step-changed'
   | 'signature-request'
   | 'signature-completed'
+  | 'room-invitation'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -30,6 +35,14 @@ const workspaceInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
   workspaceName: v.string(),
   role: workspaceRoleSchema,
+  expiresAt: v.string(),
+  acceptanceURL: v.string()
+})
+
+const roomInvitationEmailPayloadSchema = v.object({
+  inviterName: v.string(),
+  roomName: v.string(),
+  role: roomMemberRoleSchema,
   expiresAt: v.string(),
   acceptanceURL: v.string()
 })
@@ -118,7 +131,8 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('new-sign-in', newSignInPayloadSchema),
   content('two-step-changed', twoStepChangedPayloadSchema),
   content('signature-request', signatureRequestPayloadSchema),
-  content('signature-completed', signatureCompletedPayloadSchema)
+  content('signature-completed', signatureCompletedPayloadSchema),
+  content('room-invitation', roomInvitationEmailPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -130,6 +144,7 @@ export type DocumentInvitationEmailPayload = v.InferOutput<
 export type WorkspaceInvitationEmailPayload = v.InferOutput<
   typeof workspaceInvitationEmailPayloadSchema
 >
+export type RoomInvitationEmailPayload = v.InferOutput<typeof roomInvitationEmailPayloadSchema>
 export type EnrollmentEmailPayload = v.InferOutput<typeof enrollmentEmailPayloadSchema>
 export type AdminEnrollmentNotificationPayload = v.InferOutput<
   typeof adminEnrollmentNotificationPayloadSchema

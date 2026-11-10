@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { collaborationPrincipalSchema } from './collaboration'
 import { documentPermissionSchema, requestImageLinksSchema } from './documents'
+import { roomMemberRoleSchema, roomRoleSchema } from './rooms'
 import { workspaceRoleSchema } from './workspaces'
 
 export const documentShareSchema = v.object({
@@ -85,6 +86,11 @@ export const acceptedInvitationSchema = v.variant('kind', [
     kind: v.literal('workspace'),
     workspaceId: v.pipe(v.string(), v.uuid()),
     role: workspaceRoleSchema
+  }),
+  v.object({
+    kind: v.literal('room'),
+    roomId: v.pipe(v.string(), v.uuid()),
+    role: roomRoleSchema
   })
 ])
 export type AcceptedInvitation = v.InferOutput<typeof acceptedInvitationSchema>
@@ -127,7 +133,7 @@ const invitationPreviewFields = {
   recipientHint: v.string()
 }
 
-/** What an invitation link opens: one document, or a whole workspace. */
+/** What an invitation link opens: one document, a whole workspace, or a room. */
 export const invitationPreviewSchema = v.variant('kind', [
   v.object({
     kind: v.literal('document'),
@@ -139,6 +145,12 @@ export const invitationPreviewSchema = v.variant('kind', [
     kind: v.literal('workspace'),
     workspaceName: v.string(),
     role: workspaceRoleSchema,
+    ...invitationPreviewFields
+  }),
+  v.object({
+    kind: v.literal('room'),
+    roomName: v.string(),
+    role: roomMemberRoleSchema,
     ...invitationPreviewFields
   })
 ])
