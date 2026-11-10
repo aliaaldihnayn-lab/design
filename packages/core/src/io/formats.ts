@@ -472,8 +472,16 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   category: 'vector',
   extensions: ['pdf'],
   mimeTypes: ['application/pdf'],
-  support: EXPORT_EVERY_TARGET,
+  support: { ...EXPORT_EVERY_TARGET, readDocument: true },
   exportOptions: FIXED_SIZE_EXPORT,
+  async readDocument(input, context) {
+    const { readPDFDocument } = await import('./formats/pdf/import')
+    const graph = await readPDFDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.pdf$/i, '')
+    })
+    return { graph, sourceFormat: 'pdf' }
+  },
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -617,6 +625,38 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   }
 }
 
+/**
+ * Illustrator documents. Since Illustrator 9 an `.ai` file is a PDF with Illustrator's private
+ * data alongside, which every PDF reader draws, so it opens through the PDF reader. Files saved
+ * without "Create PDF Compatible File" hold no PDF and are refused with that advice.
+ */
+export const aiFormat: IOFormatAdapter<'ai'> = {
+  id: 'ai',
+  label: 'Illustrator',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['ai'],
+  mimeTypes: ['application/illustrator', 'application/postscript'],
+  support: { readDocument: true },
+  matchesFile(fileName) {
+    return lowerExt(fileName) === 'ai'
+  },
+  async readDocument(input, context) {
+    const head = new TextDecoder().decode(input.data.subarray(0, 8))
+    if (!head.startsWith('%PDF')) {
+      throw new Error(
+        'This Illustrator file has no PDF inside. In Illustrator, save it again with “Create PDF Compatible File” on.'
+      )
+    }
+    const { readPDFDocument } = await import('./formats/pdf/import')
+    const graph = await readPDFDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.ai$/i, '')
+    })
+    return { graph, sourceFormat: 'ai' }
+  }
+}
+
 /** Photoshop and Affinity documents: layers in, layers out. */
 export const psdFormat: IOFormatAdapter<'psd'> = {
   id: 'psd',
@@ -708,7 +748,8 @@ export const BUILTIN_IO_FORMATS = [
   tailwindJSXFormat,
   htmlFormat,
   handoffFormat,
-  psdFormat
+  psdFormat,
+  aiFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']
