@@ -8,6 +8,7 @@ import { documentStatistics } from '@lawha/core/writer'
 import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import {
+  openGoogleDocument,
   openWordDocument,
   saveWriterDocument,
   saveWriterDocumentAs,
@@ -27,6 +28,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
 import WriterFindBar from '@/components/writer/WriterFindBar.vue'
+import WriterGoogleDocs from '@/components/writer/WriterGoogleDocs.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
 import WriterRegion from '@/components/writer/WriterRegion.vue'
@@ -67,6 +69,9 @@ function report(outcome: WriterFileOutcome, failed: (detail: string) => string) 
   }
   if (outcome.reason === 'not-docx') error.value = t.value.notDocx
   else if (outcome.reason === 'encrypted') error.value = t.value.encrypted
+  else if (outcome.reason === 'invalid-google-doc') error.value = t.value.invalidGoogleDoc
+  else if (outcome.reason === 'google')
+    error.value = t.value.googleFailed({ error: outcome.detail })
   else error.value = failed(outcome.detail)
 }
 
@@ -161,6 +166,9 @@ onBeforeUnmount(() => editor.value?.destroy())
         <IconButton :label="t.exportPDF" data-test-id="writer-print" @click="printDocument">
           <icon-lucide-printer class="size-3.5" />
         </IconButton>
+        <WriterGoogleDocs
+          @open="(link: string) => run(() => openGoogleDocument(link), openFailed)"
+        />
         <WriterPageSetup />
         <IconButton
           :label="t.findAndReplace"

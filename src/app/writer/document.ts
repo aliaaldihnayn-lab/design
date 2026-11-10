@@ -1,4 +1,10 @@
-import { DocxReadError, readDocx, writeDocx } from '@lawha/core/writer'
+import { DocxReadError, readDocx, readGoogleDocument, writeDocx } from '@lawha/core/writer'
+
+import {
+  createGoogleDocsClient,
+  parseGoogleDocId,
+  type GoogleDocsClient
+} from '@/app/integrations/storage/google-drive/docs'
 
 import { DOCX, pickFile, saveFileAs, saveInPlace } from './files'
 import {
@@ -13,7 +19,14 @@ import {
 export type WriterFileOutcome =
   | { status: 'done' }
   | { status: 'cancelled' }
-  | { status: 'failed'; reason: 'not-docx' | 'encrypted' | 'error'; detail: string }
+  | {
+      status: 'failed'
+      reason: 'not-docx' | 'encrypted' | 'invalid-google-doc' | 'google' | 'error'
+      detail: string
+    }
+
+let googleDocs: GoogleDocsClient | null = null
+const docsClient = () => (googleDocs ??= createGoogleDocsClient())
 
 const stem = (name: string) => name.replace(/\.docx$/i, '')
 
@@ -78,8 +91,11 @@ export async function saveWriterDocumentAs(): Promise<WriterFileOutcome> {
 }
 
 /** Writes back to the file the document came from, or asks where when there is none. */
-export async function saveWriterDocument(): Promise<WriterFileOutcome> {
+export async function saveWriterDocument(
+  client: GoogleDocsClient = docsClient()
+): Promise<WriterFileOutcome> {
   const source = writerSource.value
+  if (source?.kind === 'google') return saveGoogleDocument(source, client)
   if (source?.kind !== 'file' || (!source.handle && !source.path)) return saveWriterDocumentAs()
   try {
     const written = await saveInPlace(source, currentBytes())
@@ -88,5 +104,52 @@ export async function saveWriterDocument(): Promise<WriterFileOutcome> {
     return { status: 'done' }
   } catch (error) {
     return failure(error)
+  }
+}
+
+/** Opens a Google Doc by link or id; Save then writes back to the same Doc. */
+export async function openGoogleDocument(
+  input: string,
+  client: GoogleDocsClient = docsClient()
+): Promise<WriterFileOutcome> {
+  const documentId = parseGoogleDocId(input)
+  if (!documentId) return { status: 'failed', reason: 'invalid-google-doc', detail: input }
+  try {
+    const google = await client.get(documentId, true)
+    loadWriterDocument(readGoogleDocument(google), google.title ?? '', {
+      kind: 'google',
+      documentId,
+      revisionId: google.revisionId ?? null
+    })
+    return { status: 'done' }
+  } catch (error) {
+    return {
+      status: 'failed',
+      reason: 'google',
+      detail: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+async function saveGoogleDocument(
+  source: { documentId: string; revisionId: string | null },
+  client: GoogleDocsClient
+): Promise<WriterFileOutcome> {
+  try {
+    const revisionId = await client.save(
+      source.documentId,
+      writerDocument.value,
+      source.revisionId,
+      true
+    )
+    // The next save requires the revision this one made, so edits made in Docs since are caught.
+    markWriterSaved({ kind: 'google', documentId: source.documentId, revisionId })
+    return { status: 'done' }
+  } catch (error) {
+    return {
+      status: 'failed',
+      reason: 'google',
+      detail: error instanceof Error ? error.message : String(error)
+    }
   }
 }

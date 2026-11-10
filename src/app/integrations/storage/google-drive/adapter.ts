@@ -54,7 +54,10 @@ export interface DriveAuth {
   forget(): void
 }
 
-const googleSignIn: DriveAuth = { token: driveAccessToken, forget: forgetDriveToken }
+const googleSignIn: DriveAuth = {
+  token: (clientId, interactive) => driveAccessToken(clientId, interactive),
+  forget: () => forgetDriveToken()
+}
 
 class DriveSession {
   private folderId: string | null = null
