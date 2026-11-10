@@ -24,6 +24,7 @@ export const menuMessageDefaults = {
   exportSelectionAsWebP: 'Export selection as WebP',
   exportSelectionAsSVG: 'Export selection as SVG',
   exportSelectionAsPPTX: 'Export selection as PPTX',
+  exportSelectionAsPrintPDF: 'Export selection as print PDF (CMYK, PDF/X)',
   exportSelectionAsDrawIO: 'Export selection as draw.io',
   exportSelectionAsFig: 'Export selection as .fig',
   autosave: 'Auto-save to local file',

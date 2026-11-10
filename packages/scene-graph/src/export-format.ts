@@ -9,6 +9,7 @@ export const EXPORT_FORMAT_IDS = [
   'webp',
   'svg',
   'pdf',
+  'pdf-print',
   'pptx',
   'drawio',
   'psd',

@@ -21,6 +21,7 @@
   "exportSelectionAsWebP": "تصدير التحديد بتنسيق WebP",
   "exportSelectionAsSVG": "تصدير التحديد بتنسيق SVG",
   "exportSelectionAsPPTX": "تصدير التحديد بتنسيق PPTX",
+  "exportSelectionAsPrintPDF": "تصدير التحديد كملف PDF للطباعة (CMYK، PDF/X)",
   "exportSelectionAsDrawIO": "تصدير التحديد بتنسيق draw.io",
   "exportSelectionAsFig": "تصدير التحديد بتنسيق .fig",
   "autosave": "حفظ تلقائي في ملف محلي",

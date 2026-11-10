@@ -105,6 +105,8 @@ export interface ExportResult {
   encoding?: IOTextEncoding
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
+  /** What the file could not keep as asked, such as why a print PDF is not PDF/X. */
+  warnings?: string[]
 }
 
 export interface HTMLExportOptions {

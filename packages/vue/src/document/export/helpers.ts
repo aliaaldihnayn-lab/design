@@ -34,6 +34,8 @@ const io = new IORegistry(BUILTIN_IO_FORMATS)
 /** Formats known by a product name rather than their extension. */
 const PRODUCT_LABELS: Partial<Record<ExportFormatId, string>> = {
   drawio: 'draw.io',
+  // A press-ready PDF in CMYK, apart from the screen PDF.
+  'pdf-print': 'PDF/X',
   handoff: 'Claude Code'
 }
 

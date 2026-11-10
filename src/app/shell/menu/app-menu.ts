@@ -194,6 +194,7 @@ export function useAppMenu() {
     'export-webp': () => exportSelection('webp'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
+    'export-pdf-print': () => exportSelection('pdf-print'),
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
     ...createSharedEditorMenuActions(setTheme)

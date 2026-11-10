@@ -380,7 +380,7 @@ function addEditableShape(ctx: ExportCtx, node: SceneNode, opacity: number): voi
     h: box.h,
     rotate: box.rotate,
     flipH: box.flipH,
-    shadow: solidShadow ? undefined : mapShadow(node, opacity),
+    shadow: solidShadow ? undefined : mapShadow(node, opacity, (px) => pt(ctx, px)),
     fill:
       fill?.type === 'SOLID'
         ? {
@@ -451,7 +451,8 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
     // breakage; otherwise this has no effect.
     fit: 'shrink',
     lineSpacing: lineHeightPx != null ? pt(ctx, lineHeightPx) : undefined,
-    shadow: mapShadow(node, opacity)
+    rtlMode: node.textDirection === 'RTL',
+    shadow: mapShadow(node, opacity, (px) => pt(ctx, px))
   })
   ctx.stats.editable += 1
 }
@@ -498,6 +499,8 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
           ctx,
           textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)
         ),
+        // pptxgenjs reads a paragraph's direction from its first run.
+        rtlMode: node.textDirection === 'RTL' ? true : undefined,
         underline: deco === 'UNDERLINE' ? { style: 'sng' as const } : undefined,
         strike: deco === 'STRIKETHROUGH' ? ('sngStrike' as const) : undefined
       }

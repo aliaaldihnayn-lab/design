@@ -1,4 +1,5 @@
 import type { SceneGraph } from '@lawha/scene-graph'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { computeContentBounds } from '#core/io/formats/raster'
 import {
@@ -12,6 +13,7 @@ import { withPDFDOM, type SVGPageParser } from './dom'
 import {
   cutFontInstances,
   embeddedFontAlias,
+  nameEmbeddedFonts,
   planFontEmbedding,
   registerEmbeddedFonts,
   type PDFFallbackFontFile,
@@ -30,7 +32,25 @@ export interface PDFExportOptions {
   fallbackFile?: PDFFallbackFontFile
   /** Bakes image adjustments into embedded images, so the PDF matches the canvas. */
   imageAdjust?: SVGImageAdjust
+  /** Leaves page content uncompressed, for a pass that rewrites it, such as print export. */
+  compress?: boolean
+  /** Lays a page's drawing out on its sheet, such as with bleed and crop marks around it. */
+  composePage?: PDFPageComposer
 }
+
+/** A page's drawing, sized to its content, and where that content sits on the canvas. */
+export interface PDFPageDrawing {
+  spec: PDFPageSpec
+  svg: string
+  width: number
+  height: number
+  /** The canvas position of the drawing's top left corner. */
+  origin: Vector
+}
+
+export type PDFPageComposer = (
+  page: PDFPageDrawing
+) => { svg: string; width: number; height: number } | null
 
 export interface PDFExportResult {
   data: Uint8Array
@@ -53,7 +73,8 @@ function preparePage(
   graph: SceneGraph,
   spec: PDFPageSpec,
   svgOptions: PageSVGOptions,
-  parse: SVGPageParser
+  parse: SVGPageParser,
+  compose?: PDFPageComposer
 ): PreparedPage | null {
   const svg = renderNodesToSVG(graph, spec.pageId, spec.nodeIds, {
     xmlDeclaration: false,
@@ -68,8 +89,12 @@ function preparePage(
   const height = bounds.maxY - bounds.minY
   if (width <= 0 || height <= 0) return null
 
-  const svgElement = parse(svg)
-  return svgElement ? { spec, svgElement, width, height } : null
+  const sheet = compose
+    ? compose({ spec, svg, width, height, origin: { x: bounds.minX, y: bounds.minY } })
+    : { svg, width, height }
+  if (!sheet) return null
+  const svgElement = parse(sheet.svg)
+  return svgElement ? { spec, svgElement, width: sheet.width, height: sheet.height } : null
 }
 
 const orientationOf = (page: PreparedPage) => (page.width > page.height ? 'landscape' : 'portrait')
@@ -99,7 +124,7 @@ async function renderPages(
   }
   const preparePages = () =>
     specs
-      .map((spec) => preparePage(graph, spec, svgOptions, parse))
+      .map((spec) => preparePage(graph, spec, svgOptions, parse, options.composePage))
       .filter((page): page is PreparedPage => page !== null)
   let prepared = preparePages()
   if (prepared.length === 0) return null
@@ -111,7 +136,7 @@ async function renderPages(
     orientation: orientationOf(first),
     unit: 'pt',
     format: [first.width, first.height],
-    compress: true
+    compress: options.compress ?? true
   })
 
   if (options.title) {
@@ -130,6 +155,8 @@ async function renderPages(
     if (index > 0) doc.addPage([page.width, page.height], orientationOf(page))
     await svg2pdf(page.svgElement, doc, { x: 0, y: 0, width: page.width, height: page.height })
   }
+
+  if (embedding) nameEmbeddedFonts(doc, embedding)
 
   return {
     data: new Uint8Array(doc.output('arraybuffer')),

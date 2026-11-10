@@ -1,4 +1,6 @@
-import type { PDFPageProxy } from 'pdfjs-dist/types/src/display/api'
+import type { PDFPageProxy, TextItem } from 'pdfjs-dist/types/src/display/api'
+
+import { parsePDFFontName, type PDFFontFace } from './font-name'
 
 /**
  * One PDF page as SVG markup, which the SVG importer then turns into editable vector layers,
@@ -127,6 +129,31 @@ export interface PageToSVGOptions {
   image(name: string): Promise<PDFImage | null>
 }
 
+/** What a text-showing operator painted with: its font, and the colour and alpha of its paint. */
+interface TextShow {
+  font: string
+  text: string
+  fill: string
+  fillAlpha: number
+  stroke: string
+  strokeAlpha: number
+  /** PDF text rendering mode: 0 fill, 1 stroke, 2 both, 3 invisible, 4–7 the same and clip. */
+  mode: number
+}
+
+/** The characters of a pdf.js glyph run: glyphs with their `unicode`, and numbers for spacing. */
+function glyphText(args: unknown[]): string {
+  const run = args.find((arg): arg is unknown[] => Array.isArray(arg)) ?? []
+  let text = ''
+  for (const glyph of run) {
+    if (typeof glyph === 'object' && glyph !== null && 'unicode' in glyph) {
+      const unicode: unknown = glyph.unicode
+      if (typeof unicode === 'string') text += unicode
+    }
+  }
+  return text
+}
+
 const initialState = (transform: Matrix): GraphicsState => ({
   transform,
   fill: '#000000',
@@ -148,6 +175,10 @@ class PageWalker {
   readonly stack: GraphicsState[] = []
   readonly out: string[] = []
   readonly defs: string[] = []
+  /** Every text-showing operator, in content order, to colour and face the text content. */
+  readonly shows: TextShow[] = []
+  private font = ''
+  private textMode = 0
   private clipCount = 0
   private pendingPath: string | null = null
   private pendingClip: 'nonzero' | 'evenodd' | null = null
@@ -162,6 +193,7 @@ class PageWalker {
     this.registerColours()
     this.registerPaths()
     this.registerImages()
+    this.registerText()
   }
 
   async run(fnArray: number[], argsArray: unknown[]): Promise<void> {
@@ -271,6 +303,35 @@ class PageWalker {
     this.on(ops.paintInlineImageXObject, draw)
   }
 
+  private registerText() {
+    const { ops } = this.options
+    this.on(ops.setFont, (a) => {
+      if (typeof a[0] === 'string') this.font = a[0]
+    })
+    this.on(ops.setTextRenderingMode, (a) => {
+      if (typeof a[0] === 'number') this.textMode = a[0]
+    })
+    const show = (a: unknown[]) => {
+      const s = this.state
+      this.shows.push({
+        font: this.font,
+        text: glyphText(a),
+        fill: s.fill,
+        fillAlpha: s.fillAlpha,
+        stroke: s.stroke,
+        strokeAlpha: s.strokeAlpha,
+        mode: this.textMode
+      })
+    }
+    for (const op of [
+      ops.showText,
+      ops.showSpacedText,
+      ops.nextLineShowText,
+      ops.nextLineSetSpacingShowText
+    ])
+      this.on(op, show)
+  }
+
   private clipAttr(): string {
     return this.state.clip ? ` clip-path="url(#${this.state.clip})"` : ''
   }
@@ -330,7 +391,7 @@ export async function pdfPageToSVG(page: PDFPageProxy, options: PageToSVGOptions
   const list = await page.getOperatorList()
   const walker = new PageWalker(options, pageTransform)
   await walker.run(list.fnArray, list.argsArray)
-  walker.out.push(...(await textElements(page, pageTransform)))
+  walker.out.push(...(await textElements(page, pageTransform, walker.shows)))
   const defs = walker.defs.length > 0 ? `<defs>${walker.defs.join('')}</defs>` : ''
   const width = n(viewport.width)
   const height = n(viewport.height)
@@ -340,21 +401,94 @@ export async function pdfPageToSVG(page: PDFPageProxy, options: PageToSVGOptions
   )
 }
 
-/** Live text: each run of the page's text content, at its place, size and direction. */
-async function textElements(page: PDFPageProxy, pageTransform: Matrix): Promise<string[]> {
+/** The face pdf.js loaded a font as: its PostScript name and style flags, when it has one. */
+function loadedFace(page: PDFPageProxy, loadedName: string): PDFFontFace | null {
+  if (!loadedName || !page.commonObjs.has(loadedName)) return null
+  const font: unknown = page.commonObjs.get(loadedName)
+  if (typeof font !== 'object' || font === null || !('name' in font)) return null
+  const name: unknown = font.name
+  if (typeof name !== 'string' || !name) return null
+  const flag = (key: 'bold' | 'black' | 'italic') => key in font && Reflect.get(font, key) === true
+  return parsePDFFontName(name, {
+    bold: flag('bold'),
+    black: flag('black'),
+    italic: flag('italic')
+  })
+}
+
+/**
+ * The show that drew each text item: the next one in content order in the item's font, and
+ * among those the first whose characters start the item, as pdf.js joins and splits runs.
+ */
+function matchShows(items: { fontName: string; str: string }[], shows: TextShow[]) {
+  let next = 0
+  return items.map((item) => {
+    const candidates = shows
+      .slice(next)
+      .map((show, offset) => ({ show, index: next + offset }))
+      .filter(({ show }) => show.font === item.fontName)
+    const head = item.str.trim().slice(0, 1)
+    const found =
+      candidates.find(({ show }) => head !== '' && show.text.trim().startsWith(head)) ??
+      candidates.at(0)
+    if (!found) return null
+    next = found.index + 1
+    return found.show
+  })
+}
+
+/** Paint attributes of text: its fill, or its outline for stroked text, with their alpha. */
+function textPaint(show: TextShow | null): string {
+  if (!show) return ' fill="#000000"'
+  const mode = show.mode % 4
+  if (mode === 3) return ' fill="none"'
+  const parts: string[] = []
+  if (mode === 1) parts.push('fill="none"')
+  else {
+    parts.push(`fill="${show.fill}"`)
+    if (show.fillAlpha < 1) parts.push(`fill-opacity="${n(show.fillAlpha)}"`)
+  }
+  if (mode === 1 || mode === 2) {
+    parts.push(`stroke="${show.stroke}"`)
+    if (show.strokeAlpha < 1) parts.push(`stroke-opacity="${n(show.strokeAlpha)}"`)
+  }
+  return ` ${parts.join(' ')}`
+}
+
+function faceAttrs(face: PDFFontFace | null, fallback: string): string {
+  const family = face ? `${face.family}, ${fallback}` : fallback
+  const weight = face && face.weight !== 400 ? ` font-weight="${face.weight}"` : ''
+  const italic = face?.italic ? ' font-style="italic"' : ''
+  return ` font-family="${escapeXML(family.replace(/"/g, ''))}"${weight}${italic}`
+}
+
+/**
+ * Live text: each run of the page's text content, at its place, size and direction, in the face
+ * its font names and the colour the operator that showed it painted with.
+ */
+async function textElements(
+  page: PDFPageProxy,
+  pageTransform: Matrix,
+  shows: TextShow[]
+): Promise<string[]> {
   const content = await page.getTextContent()
+  const items = content.items.filter(
+    (item): item is TextItem => 'str' in item && item.str.trim() !== ''
+  )
+  const matched = matchShows(items, shows)
+  const faces = new Map<string, PDFFontFace | null>()
   const out: string[] = []
-  for (const item of content.items) {
-    if (!('str' in item) || item.str.trim() === '') continue
+  for (const [index, item] of items.entries()) {
     const style = content.styles[item.fontName] as { fontFamily?: string } | undefined
     const t = multiply(pageTransform, item.transform as Matrix)
     const size = Math.hypot(t[2], t[3]) || 1
     // Unit-size glyph axes, so the text keeps its rotation without being stretched.
     const m: Matrix = [t[0] / size, t[1] / size, -t[2] / size, -t[3] / size, t[4], t[5]]
-    const family = (style?.fontFamily ?? 'sans-serif').replace(/"/g, '')
+    if (!faces.has(item.fontName)) faces.set(item.fontName, loadedFace(page, item.fontName))
+    const face = faces.get(item.fontName) ?? null
     const rtl = item.dir === 'rtl'
     out.push(
-      `<text transform="${matrixAttr(m)}" font-size="${n(size)}" font-family="${escapeXML(family)}"${rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ''} fill="#000000">${escapeXML(item.str)}</text>`
+      `<text transform="${matrixAttr(m)}" font-size="${n(size)}"${faceAttrs(face, style?.fontFamily ?? 'sans-serif')}${rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ''}${textPaint(matched[index] ?? null)}>${escapeXML(item.str)}</text>`
     )
   }
   return out

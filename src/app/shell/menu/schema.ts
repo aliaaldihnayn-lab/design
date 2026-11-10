@@ -24,6 +24,7 @@ export type AppMenuPaletteLabel =
   | 'exportSelectionAsWebP'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
+  | 'exportSelectionAsPrintPDF'
   | 'exportSelectionAsDrawIO'
   | 'exportSelectionAsFig'
 
@@ -135,6 +136,11 @@ export const APP_MENU_SCHEMA = [
             id: 'export-pptx',
             label: 'PPTX',
             palette: { icon: 'download', label: 'exportSelectionAsPPTX' }
+          },
+          {
+            id: 'export-pdf-print',
+            label: 'PDF/X (CMYK)',
+            palette: { icon: 'download', label: 'exportSelectionAsPrintPDF' }
           },
           {
             id: 'export-drawio',

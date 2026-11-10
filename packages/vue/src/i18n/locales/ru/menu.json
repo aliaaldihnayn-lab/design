@@ -84,6 +84,7 @@
   "exportSelectionAsWebP": "Экспортировать выделение как WebP",
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
+  "exportSelectionAsPrintPDF": "Экспортировать выделение как PDF для печати (CMYK, PDF/X)",
   "exportSelectionAsDrawIO": "Экспортировать выделение как draw.io",
   "exportSelectionAsFig": "Экспортировать выделение как .fig",
   "togglePreview": "Просмотр",

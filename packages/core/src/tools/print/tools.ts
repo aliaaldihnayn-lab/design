@@ -1,10 +1,11 @@
 import * as v from 'valibot'
 
-import type { Vector } from '@lawha/scene-graph/primitives'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import type { Vector } from '@lawha/scene-graph/primitives'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
+import { DIELINE_SPOTS } from '#core/io/formats/pdf/print/color'
 import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'
 import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -20,10 +21,10 @@ import {
 } from './products'
 import { printProductInputSchema, printSizeInputSchema } from './schema'
 
-/** Print-shop conventions: cut in 100% magenta named CutContour, folds in dashed cyan. */
+/** Print-shop conventions: the cut and fold spot inks, folds dashed; print PDFs keep the inks. */
 export const DIELINE_STYLE = {
-  cut: { name: 'CutContour', color: { r: 0.925, g: 0, b: 0.549 }, dash: [] },
-  crease: { name: 'Crease', color: { r: 0, g: 0.682, b: 0.937 }, dash: [6, 4] },
+  cut: { ...DIELINE_SPOTS.cut, dash: [] },
+  crease: { ...DIELINE_SPOTS.crease, dash: [6, 4] },
   bleed: { name: 'Bleed', color: { r: 0.9, g: 0.1, b: 0.1 }, dash: [3, 3] },
   safe: { name: 'Safe area', color: { r: 0.1, g: 0.65, b: 0.25 }, dash: [3, 3] }
 } as const
