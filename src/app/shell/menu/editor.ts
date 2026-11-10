@@ -65,6 +65,9 @@ export function useEditorMenu() {
     'export-pptx': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'pptx')
     },
+    'export-pdf-print': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'pdf-print')
+    },
     'export-drawio': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'drawio')
     },

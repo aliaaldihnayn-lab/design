@@ -18,6 +18,7 @@ import { layoutAuthoredNodes } from '#core/layout'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import type { PDFPrintOptions } from './formats/pdf/print'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
 import { extractExportGraph, findPageId } from './subgraph'
@@ -499,6 +500,45 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
 }
 
 /**
+ * A press-ready PDF: each top-level layer a page with bleed and crop marks, colours in CMYK and
+ * die-line or named spot inks as Separations, trim and bleed boxes, and an output intent; it
+ * declares PDF/X-1a (PDF/X-4 with a profile) when nothing in it rules that out.
+ */
+export const pdfPrintFormat: IOFormatAdapter<'pdf-print'> = {
+  id: 'pdf-print',
+  label: 'PDF for print (CMYK, PDF/X)',
+  role: 'derived-export',
+  category: 'print',
+  extensions: ['pdf'],
+  mimeTypes: ['application/pdf'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request, options?: PDFPrintOptions, context?: IOContext) {
+    const target = resolvePPTXExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const specs = target.nodeIds.map((nodeId) => ({
+      pageId: findPageId(request.graph, nodeId) ?? target.pageId,
+      nodeIds: [nodeId],
+      label: request.graph.getNode(nodeId)?.name
+    }))
+    const { exportPrintPDF } = await import('./formats/pdf/print')
+    const result = await exportPrintPDF(request.graph, specs, {
+      canvasKit: context?.canvasKit,
+      title: request.fileName ? filename(request.fileName) : undefined,
+      ...options
+    })
+    if (!result) throw new Error('Nothing to export')
+    return {
+      format: 'pdf-print',
+      mimeType: 'application/pdf',
+      extension: 'pdf',
+      data: result.data,
+      ...(result.issues.length > 0 ? { warnings: result.issues } : {})
+    }
+  }
+}
+
+/**
  * Every top-level frame becomes a slide, so a PPTX document export spans all
  * pages — the shared resolver only reaches the first one.
  */
@@ -747,6 +787,7 @@ export const BUILTIN_IO_FORMATS = [
   webpFormat,
   svgFormat,
   pdfFormat,
+  pdfPrintFormat,
   pptxFormat,
   jsxFormat,
   tailwindJSXFormat,

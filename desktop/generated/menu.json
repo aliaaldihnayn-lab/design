@@ -86,6 +86,10 @@
             "label": "PPTX"
           },
           {
+            "id": "export-pdf-print",
+            "label": "PDF/X (CMYK)"
+          },
+          {
             "id": "export-drawio",
             "label": "draw.io"
           },

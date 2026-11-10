@@ -84,6 +84,7 @@
   "exportSelectionAsWebP": "Exportar selección como WebP",
   "exportSelectionAsSVG": "Exportar selección como SVG",
   "exportSelectionAsPPTX": "Exportar selección como PPTX",
+  "exportSelectionAsPrintPDF": "Exportar selección como PDF para imprenta (CMYK, PDF/X)",
   "exportSelectionAsDrawIO": "Exportar selección como draw.io",
   "exportSelectionAsFig": "Exportar selección como .fig",
   "togglePreview": "Vista previa",

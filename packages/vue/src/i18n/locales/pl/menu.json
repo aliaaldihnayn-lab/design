@@ -84,6 +84,7 @@
   "exportSelectionAsWebP": "Eksportuj zaznaczenie jako WebP",
   "exportSelectionAsSVG": "Eksportuj zaznaczenie jako SVG",
   "exportSelectionAsPPTX": "Eksportuj zaznaczenie jako PPTX",
+  "exportSelectionAsPrintPDF": "Eksportuj zaznaczenie jako PDF do druku (CMYK, PDF/X)",
   "exportSelectionAsDrawIO": "Eksportuj zaznaczenie jako draw.io",
   "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
   "togglePreview": "Podgląd",

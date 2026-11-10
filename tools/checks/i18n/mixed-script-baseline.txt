@@ -189,6 +189,7 @@ ja:menu.exportSelectionAsFig
 ja:menu.exportSelectionAsPNG
 ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
+ja:menu.exportSelectionAsPrintPDF
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
@@ -411,6 +412,7 @@ zh-cn:menu.exportSelectionAsFig
 zh-cn:menu.exportSelectionAsPNG
 zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
+zh-cn:menu.exportSelectionAsPrintPDF
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb

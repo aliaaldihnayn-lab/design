@@ -84,6 +84,7 @@
   "exportSelectionAsWebP": "将所选内容导出为 WebP",
   "exportSelectionAsSVG": "将所选内容导出为 SVG",
   "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
+  "exportSelectionAsPrintPDF": "将所选内容导出为印刷 PDF（CMYK、PDF/X）",
   "exportSelectionAsDrawIO": "将所选内容导出为 draw.io",
   "exportSelectionAsFig": "将所选内容导出为 .fig",
   "togglePreview": "预览",
