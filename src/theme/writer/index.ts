@@ -21,6 +21,7 @@ const content = [
   '[&_.writer-comment]:bg-warning/30 [&_.writer-comment]:border-b-2 [&_.writer-comment]:border-warning',
   '[&_.writer-insertion]:text-chart-1 [&_.writer-insertion]:underline [&_.writer-deletion]:text-error-fill [&_.writer-deletion]:line-through',
   '[&_.writer-form-field]:rounded-sm [&_.writer-form-field]:border [&_.writer-form-field]:border-dashed [&_.writer-form-field]:border-chart-1 [&_.writer-form-field]:bg-chart-1/10 [&_.writer-form-field]:px-1',
+  '[&_.writer-form-input]:bg-transparent [&_.writer-form-input]:outline-none [&_.writer-form-input]:text-black',
   '[counter-reset:footnote] [&_.writer-footnote]:[counter-increment:footnote] [&_.writer-footnote]:after:content-[counter(footnote)] [&_.writer-footnote]:text-chart-1',
   '[&_.writer-toc]:my-[8pt] [&_.writer-toc]:border-y [&_.writer-toc]:border-black/20 [&_.writer-toc]:py-[6pt] [&_.writer-toc_[data-level="2"]]:ps-[16pt] [&_.writer-toc_[data-level="3"]]:ps-[32pt]',
   '[&_.find-match]:bg-warning/40 [&_.find-current]:bg-warning',
@@ -42,7 +43,7 @@ export default {
     workspace: 'flex min-h-0 flex-1',
     scroller: 'min-w-0 flex-1 overflow-auto py-6',
     paper:
-      'mx-auto flex flex-col bg-white text-black shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:shadow-none',
+      'relative mx-auto flex flex-col bg-white text-black shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:shadow-none',
     region:
       'group/region relative text-[9pt] text-black/70 outline-none hover:bg-black/[0.03] focus-within:bg-black/[0.03]',
     regionTools:
@@ -50,6 +51,9 @@ export default {
     regionLabel:
       'pointer-events-none absolute -top-4 start-0 hidden text-[10px] text-black/50 group-focus-within/region:block',
     body: 'flex-1',
+    watermark:
+      'pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none',
+    watermarkText: '-rotate-45 text-[72pt] font-bold whitespace-nowrap text-black/10',
     content,
     side: 'flex w-72 shrink-0 flex-col border-s border-border bg-panel',
     sideHeader:

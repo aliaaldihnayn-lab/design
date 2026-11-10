@@ -7,7 +7,15 @@ import { twipsToPx, type PageSetup } from '@lawha/core/writer'
 import { writer } from './ui'
 
 /** The page as it prints: its size and margins, with the header and footer in the margins. */
-const { editor, page } = defineProps<{ editor: Editor; page: PageSetup }>()
+const {
+  editor,
+  page,
+  watermark = null
+} = defineProps<{
+  editor: Editor
+  page: PageSetup
+  watermark?: string | null
+}>()
 const ui = writer()
 
 const paperStyle = computed(() => ({
@@ -27,6 +35,9 @@ const bottomStyle = computed(() => ({
 
 <template>
   <div :class="ui.paper()" :style="paperStyle" dir="ltr" data-test-id="writer-paper">
+    <div v-if="watermark" :class="ui.watermark()" aria-hidden="true">
+      <span :class="ui.watermarkText()">{{ watermark }}</span>
+    </div>
     <div :style="topStyle"><slot name="header" /></div>
     <EditorContent :editor="editor" :class="[ui.body(), ui.content()]" />
     <div :style="bottomStyle" class="flex flex-col justify-end"><slot name="footer" /></div>

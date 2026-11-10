@@ -1,6 +1,7 @@
 import type { Element } from '@xmldom/xmldom'
 import { unzipSync } from 'fflate'
 
+import { buildLists } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
@@ -150,44 +151,6 @@ function readTable(tbl: Element, state: InlineState): WriterNode {
   return { type: 'table', attrs: { dir }, content: rows }
 }
 
-/** Groups numbered paragraphs into nested lists. */
-function buildLists(items: readonly BlockItem[]): WriterNode[] {
-  const out: WriterNode[] = []
-  const stack: Array<{ list: WriterNode; level: number; numId: string }> = []
-  for (const item of items) {
-    const info = item.list
-    if (!info) {
-      stack.length = 0
-      out.push(item.node)
-      continue
-    }
-    while (stack.length && (stack.at(-1)?.level ?? 0) > info.level) stack.pop()
-    let top = stack.at(-1)
-    if (
-      top &&
-      top.level === info.level &&
-      (top.numId !== info.numId || isOrdered(top.list) !== info.ordered)
-    ) {
-      stack.pop()
-      top = stack.at(-1)
-    }
-    if (!top || top.level < info.level) {
-      const list: WriterNode = info.ordered
-        ? { type: 'orderedList', attrs: { start: info.start }, content: [] }
-        : { type: 'bulletList', content: [] }
-      const parentItem = top?.list.content?.at(-1)
-      if (parentItem) parentItem.content = [...(parentItem.content ?? []), list]
-      else out.push(list)
-      stack.push({ list, level: info.level, numId: info.numId })
-      top = stack.at(-1)
-    }
-    top?.list.content?.push({ type: 'listItem', content: [item.node] })
-  }
-  return out
-}
-
-const isOrdered = (list: WriterNode) => list.type === 'orderedList'
-
 function readBlocks(parent: Element, state: InlineState): WriterNode[] {
   const items: BlockItem[] = []
   const visit = (container: Element) => {
@@ -209,7 +172,13 @@ function readBlocks(parent: Element, state: InlineState): WriterNode[] {
     }
   }
   visit(parent)
-  return buildLists(items)
+  return buildLists(
+    items.map((item) =>
+      item.list
+        ? { node: item.node, list: { ...item.list, id: item.list.numId } }
+        : { node: item.node }
+    )
+  )
 }
 
 function readSection(sectPr: Element | null): PageSetup {

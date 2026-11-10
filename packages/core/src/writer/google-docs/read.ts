@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
+import { buildLists } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
@@ -224,38 +225,6 @@ function readTable(element: GoogleStructuralElement, state: ReadState): WriterNo
   return { type: 'table', content: rows }
 }
 
-/** Groups list paragraphs into nested lists, as the Word reader does. */
-function buildLists(blocks: readonly Block[]): WriterNode[] {
-  const out: WriterNode[] = []
-  const stack: Array<{ list: WriterNode; level: number; id: string }> = []
-  for (const block of blocks) {
-    const info = block.list
-    if (!info) {
-      stack.length = 0
-      out.push(block.node)
-      continue
-    }
-    while (stack.length && (stack.at(-1)?.level ?? 0) > info.level) stack.pop()
-    let top = stack.at(-1)
-    if (top?.level === info.level && top.id !== info.listId) {
-      stack.pop()
-      top = stack.at(-1)
-    }
-    if (!top || top.level < info.level) {
-      const list: WriterNode = info.ordered
-        ? { type: 'orderedList', attrs: { start: info.start }, content: [] }
-        : { type: 'bulletList', content: [] }
-      const parent = top?.list.content?.at(-1)
-      if (parent) parent.content = [...(parent.content ?? []), list]
-      else out.push(list)
-      stack.push({ list, level: info.level, id: info.listId })
-      top = stack.at(-1)
-    }
-    top?.list.content?.push({ type: 'listItem', content: [block.node] })
-  }
-  return out
-}
-
 function readElements(
   elements: readonly GoogleStructuralElement[],
   state: ReadState
@@ -266,7 +235,13 @@ function readElements(
     else if (element.table) blocks.push({ node: readTable(element, state) })
     else if (element.tableOfContents) blocks.push({ node: { type: 'tableOfContents' } })
   }
-  return buildLists(blocks)
+  return buildLists(
+    blocks.map((block) =>
+      block.list
+        ? { node: block.node, list: { ...block.list, id: block.list.listId } }
+        : { node: block.node }
+    )
+  )
 }
 
 function readPage(source: GoogleDocument): PageSetup {

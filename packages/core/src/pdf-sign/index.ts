@@ -16,3 +16,4 @@ export {
   type SignatureAppearance,
   type SignPDFOptions
 } from './sign'
+export { encryptPDF } from './protect'

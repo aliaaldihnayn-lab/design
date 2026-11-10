@@ -7,6 +7,7 @@ export {
   writerMarkSchema,
   writerNodeSchema
 } from './schema'
+export { decryptDocx, DocxPasswordError, encryptDocx } from './docx'
 export {
   DocxReadError,
   isEncryptedOffice,
@@ -28,3 +29,4 @@ export {
   type BlockSpec,
   type BlockSummary
 } from './edit'
+export { WRITER_TEMPLATE_IDS, writerTemplate, type WriterTemplateId } from './templates'

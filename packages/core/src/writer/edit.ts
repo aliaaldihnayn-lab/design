@@ -77,10 +77,13 @@ export function blocksFromSpecs(specs: readonly BlockSpec[]): WriterNode[] {
   for (const spec of specs) {
     if (spec.type === 'bullet' || spec.type === 'numbered') {
       const listType = spec.type === 'bullet' ? 'bulletList' : 'orderedList'
-      const item: WriterNode = { type: 'listItem', content: [paragraphOf(spec)] }
+      const paragraph = paragraphOf(spec)
+      // The list takes its first item's direction, so markers sit on the side the text starts.
+      const dir = paragraph.attrs?.dir ?? 'auto'
+      const item: WriterNode = { type: 'listItem', attrs: { dir }, content: [paragraph] }
       const last = blocks.at(-1)
       if (last?.type === listType) last.content = [...(last.content ?? []), item]
-      else blocks.push({ type: listType, content: [item] })
+      else blocks.push({ type: listType, attrs: { dir }, content: [item] })
     } else if (spec.type === 'heading') blocks.push(paragraphOf(spec, 'heading'))
     else if (spec.type === 'pageBreak') blocks.push({ type: 'pageBreak' })
     else if (spec.type === 'table') blocks.push(tableOf(spec))

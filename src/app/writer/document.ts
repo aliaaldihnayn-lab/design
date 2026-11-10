@@ -1,4 +1,11 @@
-import { DocxReadError, readDocx, readGoogleDocument, writeDocx } from '@lawha/core/writer'
+import {
+  decryptDocx,
+  DocxPasswordError,
+  DocxReadError,
+  readDocx,
+  readGoogleDocument,
+  writeDocx
+} from '@lawha/core/writer'
 
 import {
   createGoogleDocsClient,
@@ -6,7 +13,7 @@ import {
   type GoogleDocsClient
 } from '@/app/integrations/storage/google-drive/docs'
 
-import { DOCX, pickFile, saveFileAs, saveInPlace } from './files'
+import { DOCX, pickFile, saveFileAs, saveInPlace, type PickedFile } from './files'
 import {
   loadWriterDocument,
   markWriterSaved,
@@ -21,7 +28,13 @@ export type WriterFileOutcome =
   | { status: 'cancelled' }
   | {
       status: 'failed'
-      reason: 'not-docx' | 'encrypted' | 'invalid-google-doc' | 'google' | 'error'
+      reason:
+        | 'not-docx'
+        | 'encrypted'
+        | 'wrong-password'
+        | 'invalid-google-doc'
+        | 'google'
+        | 'error'
       detail: string
     }
 
@@ -31,6 +44,13 @@ const docsClient = () => (googleDocs ??= createGoogleDocsClient())
 const stem = (name: string) => name.replace(/\.docx$/i, '')
 
 function failure(error: unknown): WriterFileOutcome {
+  if (error instanceof DocxPasswordError) {
+    return {
+      status: 'failed',
+      reason: error.reason === 'wrong-password' ? 'wrong-password' : 'error',
+      detail: error.reason
+    }
+  }
   if (
     error instanceof DocxReadError &&
     (error.message === 'encrypted' || error.message === 'not-docx')
@@ -59,11 +79,29 @@ export function openWordBytes(
   }
 }
 
+/** A password-protected file waiting for its password, after an open said `encrypted`. */
+let lockedFile: PickedFile | null = null
+
+/** Opens the password-protected file the last open stopped at. Saving it writes it unprotected. */
+export function unlockWordDocument(password: string): WriterFileOutcome {
+  if (!lockedFile) return { status: 'cancelled' }
+  try {
+    const { bytes, name, ...target } = lockedFile
+    const outcome = openWordBytes(decryptDocx(bytes, password), name, target)
+    if (outcome.status === 'done') lockedFile = null
+    return outcome
+  } catch (error) {
+    return failure(error)
+  }
+}
+
 export async function openWordDocument(): Promise<WriterFileOutcome> {
   try {
     const picked = await pickFile(DOCX)
     if (!picked) return { status: 'cancelled' }
-    return openWordBytes(picked.bytes, picked.name, picked)
+    const outcome = openWordBytes(picked.bytes, picked.name, picked)
+    lockedFile = outcome.status === 'failed' && outcome.reason === 'encrypted' ? picked : null
+    return outcome
   } catch (error) {
     return failure(error)
   }

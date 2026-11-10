@@ -10,6 +10,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { writer } from './ui'
+import WriterExtrasTools from './WriterExtrasTools.vue'
 import WriterInsertTools from './WriterInsertTools.vue'
 
 const { editor } = defineProps<{ editor: Editor }>()
@@ -294,6 +295,7 @@ const direction = computed(() => {
       </IconButton>
     </div>
     <WriterInsertTools :editor="editor" />
+    <WriterExtrasTools :editor="editor" />
     <slot />
   </div>
 </template>

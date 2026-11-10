@@ -54,19 +54,24 @@ describe('docx round trip', () => {
   test('keeps nested bulleted and numbered lists', () => {
     const item = (label: string, ...nested: WriterNode[]): WriterNode => ({
       type: 'listItem',
+      attrs: { dir: 'ltr' },
       content: [paragraph({ dir: 'ltr' }, text(label)), ...nested]
     })
     const body: WriterNode[] = [
       {
         type: 'orderedList',
-        attrs: { start: 3 },
+        attrs: { start: 3, dir: 'ltr' },
         content: [
-          item('three', { type: 'bulletList', content: [item('a'), item('b')] }),
+          item('three', {
+            type: 'bulletList',
+            attrs: { dir: 'ltr' },
+            content: [item('a'), item('b')]
+          }),
           item('four')
         ]
       },
       paragraph({ dir: 'ltr' }, text('between')),
-      { type: 'bulletList', content: [item('dot')] }
+      { type: 'bulletList', attrs: { dir: 'ltr' }, content: [item('dot')] }
     ]
     expect(roundTrip(body).document.body.content).toEqual(body)
   })

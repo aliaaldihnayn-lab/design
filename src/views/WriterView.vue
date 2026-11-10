@@ -4,7 +4,12 @@ import { useEventListener } from '@vueuse/core'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { documentStatistics } from '@lawha/core/writer'
+import {
+  documentStatistics,
+  nodeText,
+  writerTemplate,
+  type WriterTemplateId
+} from '@lawha/core/writer'
 import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import {
@@ -12,6 +17,7 @@ import {
   openWordDocument,
   saveWriterDocument,
   saveWriterDocumentAs,
+  unlockWordDocument,
   type WriterFileOutcome
 } from '@/app/writer/document'
 import { WRITER_FONTS_STYLESHEET } from '@/app/writer/fonts'
@@ -23,14 +29,18 @@ import {
   writerName,
   writerTitle
 } from '@/app/writer/session'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
 import WriterFindBar from '@/components/writer/WriterFindBar.vue'
 import WriterGoogleDocs from '@/components/writer/WriterGoogleDocs.vue'
+import WriterNewMenu from '@/components/writer/WriterNewMenu.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
+import WriterProtectDialog from '@/components/writer/WriterProtectDialog.vue'
 import WriterRegion from '@/components/writer/WriterRegion.vue'
 import WriterSendDialog from '@/components/writer/WriterSendDialog.vue'
 import WriterSidePanel from '@/components/writer/WriterSidePanel.vue'
@@ -54,6 +64,9 @@ const busy = ref(false)
 const findOpen = ref(false)
 const signPDFOpen = ref(false)
 const sendOpen = ref(false)
+const protectOpen = ref(false)
+const locked = ref(false)
+const unlockPassword = ref('')
 const sideTab = ref<'comments' | 'changes' | null>(null)
 const statistics = computed(() => documentStatistics(writerDocument.value.body))
 
@@ -67,12 +80,14 @@ const statusLabel = computed(() => {
 })
 
 function report(outcome: WriterFileOutcome, failed: (detail: string) => string) {
+  locked.value = outcome.status === 'failed' && outcome.reason === 'encrypted'
   if (outcome.status !== 'failed') {
     error.value = null
     return
   }
   if (outcome.reason === 'not-docx') error.value = t.value.notDocx
   else if (outcome.reason === 'encrypted') error.value = t.value.encrypted
+  else if (outcome.reason === 'wrong-password') error.value = t.value.wrongPassword
   else if (outcome.reason === 'invalid-google-doc') error.value = t.value.invalidGoogleDoc
   else if (outcome.reason === 'google')
     error.value = t.value.googleFailed({ error: outcome.detail })
@@ -99,13 +114,26 @@ async function printDocument() {
   await printHTML(
     printableHTML(
       { ...writerDocument.value, title: writerTitle.value },
-      { bodyHTML: instance.getHTML(), fontsStylesheet: WRITER_FONTS_STYLESHEET }
+      {
+        bodyHTML: instance.getHTML(),
+        fontsStylesheet: WRITER_FONTS_STYLESHEET,
+        footnotes: writerDocument.value.footnotes.map((note) =>
+          note.content.map(nodeText).join(' ')
+        )
+      }
     )
   )
 }
 
-function createDocument() {
-  newWriterDocument(localeDirection(locale.value))
+function createDocument(template: WriterTemplateId | null) {
+  newWriterDocument(localeDirection(locale.value), template ? writerTemplate(template) : undefined)
+}
+
+function unlock() {
+  const outcome = unlockWordDocument(unlockPassword.value)
+  report(outcome, openFailed)
+  if (outcome.status === 'failed' && outcome.reason === 'wrong-password') locked.value = true
+  unlockPassword.value = ''
 }
 
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
@@ -143,9 +171,7 @@ onBeforeUnmount(() => editor.value?.destroy())
         {{ statusLabel }}
       </span>
       <div :class="ui.group()">
-        <IconButton :label="t.newDocument" data-test-id="writer-new" @click="createDocument">
-          <icon-lucide-file-plus class="size-3.5" />
-        </IconButton>
+        <WriterNewMenu @create="createDocument" />
         <IconButton
           :label="t.openWord"
           data-test-id="writer-open"
@@ -185,6 +211,13 @@ onBeforeUnmount(() => editor.value?.destroy())
         />
         <WriterPageSetup />
         <IconButton
+          :label="t.passwordProtection"
+          data-test-id="writer-protect"
+          @click="protectOpen = true"
+        >
+          <icon-lucide-lock-keyhole class="size-3.5" />
+        </IconButton>
+        <IconButton
           :label="t.findAndReplace"
           toggle
           :active="findOpen"
@@ -217,11 +250,30 @@ onBeforeUnmount(() => editor.value?.destroy())
     <WriterToolbar v-if="editor" :editor="editor" />
     <WriterSignPDFDialog v-model:open="signPDFOpen" />
     <WriterSendDialog v-model:open="sendOpen" />
+    <WriterProtectDialog v-model:open="protectOpen" />
     <WriterFindBar v-if="editor && findOpen" :editor="editor" @close="findOpen = false" />
-    <AppAlert v-if="error" tone="error" :heading="error" class="m-2" />
+    <AppAlert v-if="error" tone="error" :heading="error" class="m-2">
+      <form v-if="locked" class="mt-2 flex gap-1.5" @submit.prevent="unlock">
+        <AppInput
+          v-model="unlockPassword"
+          type="password"
+          :aria-label="t.password"
+          :placeholder="t.password"
+          data-test-id="writer-unlock-password"
+        />
+        <AppButton size="sm" type="submit" :disabled="!unlockPassword">{{
+          t.openEncrypted
+        }}</AppButton>
+      </form>
+    </AppAlert>
     <div :class="ui.workspace()">
       <div :class="ui.scroller()">
-        <WriterPaper v-if="editor" :editor="editor" :page="page">
+        <WriterPaper
+          v-if="editor"
+          :editor="editor"
+          :page="page"
+          :watermark="writerDocument.watermark?.text"
+        >
           <template #header><WriterRegion kind="header" /></template>
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>

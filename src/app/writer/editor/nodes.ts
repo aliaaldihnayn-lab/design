@@ -210,6 +210,39 @@ export const FormField = Node.create({
       label
     ]
   },
+  // Filled in place: typing, a date picker, or a click on the box, as a form is filled.
+  addNodeView() {
+    return ({ node, getPos, editor }) => {
+      const kind = String(node.attrs.kind)
+      const dom = document.createElement('span')
+      dom.className = 'writer-form-field'
+      dom.dataset.formField = kind
+      const input = document.createElement('input')
+      input.setAttribute('aria-label', String(node.attrs.name))
+      if (kind === 'checkbox') {
+        input.type = 'checkbox'
+        input.checked = node.attrs.checked === true
+      } else {
+        input.type = kind === 'date' ? 'date' : 'text'
+        input.value = String(node.attrs.value ?? '')
+        input.placeholder = String(node.attrs.name)
+        input.size = Math.max(8, String(node.attrs.name).length)
+      }
+      input.className = 'writer-form-input'
+      const update = () => {
+        const pos = getPos()
+        if (typeof pos !== 'number' || !editor.isEditable) return
+        const attrs =
+          kind === 'checkbox'
+            ? { ...node.attrs, checked: input.checked }
+            : { ...node.attrs, value: input.value }
+        editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, attrs))
+      }
+      input.addEventListener('change', update)
+      dom.append(input)
+      return { dom, stopEvent: () => true, ignoreMutation: () => true }
+    }
+  },
   addCommands() {
     return {
       insertFormField:
