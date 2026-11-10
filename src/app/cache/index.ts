@@ -2,17 +2,13 @@ import { BaseDirectory, readFile, mkdir, writeFile, remove } from '@tauri-apps/p
 import { dirname } from 'pathe'
 import * as v from 'valibot'
 
-import { IS_TAURI } from '@lawha/core/constants'
+import { isTauri } from '@/app/tauri/env'
 
 const APP_CACHE_DIR = 'cache/v1'
 const STORAGE_PREFIX = 'lawha:cache:v1:'
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
-
-function isTauriRuntime() {
-  return IS_TAURI
-}
 
 function isStorageAvailable() {
   return 'window' in globalThis && !!window.localStorage
@@ -39,7 +35,7 @@ function removeStorageEntriesWithPrefix(prefix: string): void {
 }
 
 export async function readCacheText(key: string): Promise<string | null> {
-  if (isTauriRuntime()) {
+  if (isTauri()) {
     try {
       return textDecoder.decode(
         await readFile(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
@@ -54,7 +50,7 @@ export async function readCacheText(key: string): Promise<string | null> {
 }
 
 export async function writeCacheText(key: string, value: string): Promise<void> {
-  if (isTauriRuntime()) {
+  if (isTauri()) {
     await mkdir(cacheDirectoryPath(key), { baseDir: BaseDirectory.AppLocalData, recursive: true })
     await writeFile(cachePath(key), textEncoder.encode(value), {
       baseDir: BaseDirectory.AppLocalData
@@ -67,7 +63,7 @@ export async function writeCacheText(key: string, value: string): Promise<void> 
 }
 
 export async function removeCacheEntry(key: string): Promise<void> {
-  if (isTauriRuntime()) {
+  if (isTauri()) {
     try {
       await remove(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
     } catch (error) {
@@ -81,7 +77,7 @@ export async function removeCacheEntry(key: string): Promise<void> {
 }
 
 export async function readCacheBytes(key: string): Promise<ArrayBuffer | null> {
-  if (!isTauriRuntime()) return null
+  if (!isTauri()) return null
 
   try {
     const data = await readFile(cachePath(key), { baseDir: BaseDirectory.AppLocalData })
@@ -92,14 +88,14 @@ export async function readCacheBytes(key: string): Promise<ArrayBuffer | null> {
 }
 
 export async function writeCacheBytes(key: string, value: ArrayBuffer): Promise<void> {
-  if (!isTauriRuntime()) return
+  if (!isTauri()) return
 
   await mkdir(cacheDirectoryPath(key), { baseDir: BaseDirectory.AppLocalData, recursive: true })
   await writeFile(cachePath(key), new Uint8Array(value), { baseDir: BaseDirectory.AppLocalData })
 }
 
 export async function removeCachePrefix(prefix: string): Promise<void> {
-  if (isTauriRuntime()) {
+  if (isTauri()) {
     try {
       await remove(cachePath(prefix), { baseDir: BaseDirectory.AppLocalData, recursive: true })
     } catch (error) {

@@ -151,6 +151,7 @@
     "src/**/*.ts",
     "src/**/*.vue",
     "packages/core/src/global.d.ts",
+    "packages/core/src/pdfjs-worker.d.ts",
     "packages/vue/src/global.d.ts",
     "packages/dom-css/src/cssom.d.ts",
     "packages/dom-css/src/postcss-value-parser.d.ts",

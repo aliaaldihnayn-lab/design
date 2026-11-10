@@ -25,7 +25,7 @@ afterEach(async () => {
 })
 
 describe('checkForAppUpdate', () => {
-  // These cover the checks once updates are switched on; the default is off (see below).
+  // These cover the checks with updates switched on, as they are by default.
   beforeEach(() => {
     updaterSettings.enabled = true
   })
@@ -107,8 +107,8 @@ describe('checkForAppUpdate', () => {
 })
 
 describe('checkForAppUpdate while updates are off', () => {
-  test('is off by default and never reaches the updater', async () => {
-    expect(updaterSettings.enabled).toBe(false)
+  test('never reaches the updater', async () => {
+    updaterSettings.enabled = false
     let invoked = 0
     await mockTauriIPC(() => {
       invoked++

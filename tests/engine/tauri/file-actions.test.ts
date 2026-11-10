@@ -28,6 +28,10 @@ describe('Tauri file actions', () => {
                 'dio',
                 'mmd',
                 'mermaid',
+                'pdf',
+                'psd',
+                'psb',
+                'ai',
                 'html',
                 'htm',
                 'xhtml'

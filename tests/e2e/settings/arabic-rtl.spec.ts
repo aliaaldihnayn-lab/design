@@ -2,9 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-/** Opens the editor already in Arabic, as a returning Arabic user would. */
+/** Opens the editor; the tests in Arabic below start with Arabic saved, as a returning user would. */
 async function openInArabic(page: Page, query = '/?test') {
-  await page.addInitScript(() => localStorage.setItem('lawha-locale', 'ar'))
   await page.goto(query)
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
@@ -50,36 +49,50 @@ test('choosing العربية mirrors the interface, persists, and English resto
   await expect(page.getByTestId('app-settings-dialog')).toContainText('Settings')
 })
 
-test('in Arabic the layers panel sits right of the canvas and properties on the left', async ({
-  page
-}) => {
-  await openInArabic(page)
-  const layers = await page.getByTestId('layers-panel').boundingBox()
-  const properties = await page.getByTestId('properties-panel').boundingBox()
-  const canvas = await page.locator('canvas').first().boundingBox()
-  expect(layers && properties && canvas).toBeTruthy()
-  if (!layers || !properties || !canvas) return
-  expect(layers.x).toBeGreaterThan(properties.x)
-  expect(layers.x).toBeGreaterThanOrEqual(canvas.x + canvas.width - 1)
-  expect(properties.x + properties.width).toBeLessThanOrEqual(canvas.x + 1)
-})
+test.describe('with Arabic saved', () => {
+  test.use({
+    storageState: async ({ baseURL }, use) => {
+      if (!baseURL) throw new Error('Browser test baseURL is required')
+      await use({
+        cookies: [],
+        origins: [
+          { origin: new URL(baseURL).origin, localStorage: [{ name: 'lawha-locale', value: 'ar' }] }
+        ]
+      })
+    }
+  })
 
-test('in Arabic the canvas keeps its own coordinates: drawing is not mirrored', async ({
-  page
-}) => {
-  const canvas = await openInArabic(page, '/?test&no-chrome&no-rulers')
-  await canvas.clearCanvas()
-  await canvas.drawRect(100, 100, 200, 150)
-  expect(await pageNodes(page)).toEqual([
-    { type: 'RECTANGLE', x: 100, y: 100, width: 200, height: 150 }
-  ])
-})
+  test('in Arabic the layers panel sits right of the canvas and properties on the left', async ({
+    page
+  }) => {
+    await openInArabic(page)
+    const layers = await page.getByTestId('layers-panel').boundingBox()
+    const properties = await page.getByTestId('properties-panel').boundingBox()
+    const canvas = await page.locator('canvas').first().boundingBox()
+    expect(layers && properties && canvas).toBeTruthy()
+    if (!layers || !properties || !canvas) return
+    expect(layers.x).toBeGreaterThan(properties.x)
+    expect(layers.x).toBeGreaterThanOrEqual(canvas.x + canvas.width - 1)
+    expect(properties.x + properties.width).toBeLessThanOrEqual(canvas.x + 1)
+  })
 
-test('in Arabic the menus and panels show Arabic labels, not English', async ({ page }) => {
-  await openInArabic(page)
-  const layers = page.getByTestId('layers-panel')
-  await expect(layers).toBeVisible()
-  // Every visible panel heading is Arabic (layer names are document content and may be Latin).
-  await expect(page.getByTestId('pages-panel')).toContainText('الصفحات')
-  await expect(layers).toContainText('الطبقات')
+  test('in Arabic the canvas keeps its own coordinates: drawing is not mirrored', async ({
+    page
+  }) => {
+    const canvas = await openInArabic(page, '/?test&no-chrome&no-rulers')
+    await canvas.clearCanvas()
+    await canvas.drawRect(100, 100, 200, 150)
+    expect(await pageNodes(page)).toEqual([
+      { type: 'RECTANGLE', x: 100, y: 100, width: 200, height: 150 }
+    ])
+  })
+
+  test('in Arabic the menus and panels show Arabic labels, not English', async ({ page }) => {
+    await openInArabic(page)
+    const layers = page.getByTestId('layers-panel')
+    await expect(layers).toBeVisible()
+    // Every visible panel heading is Arabic (layer names are document content and may be Latin).
+    await expect(page.getByTestId('pages-panel')).toContainText('الصفحات')
+    await expect(layers).toContainText('الطبقات')
+  })
 })
