@@ -2,6 +2,8 @@ import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { colorToHex } from '@lawha/scene-graph/color'
 import type { Color } from '@lawha/scene-graph/primitives'
 
+import type { FigmaAPI } from '#core/figma-api'
+
 import type { BuildResult } from './build'
 import type { Plan } from './plan'
 
@@ -24,8 +26,9 @@ export function writeDocsPage(
 ): SceneNode {
   const page =
     graph.getPages().find((p) => p.name === DOCS_PAGE_NAME) ?? graph.addPage(DOCS_PAGE_NAME)
-  // A copy: deleting a child edits the list being walked.
-  for (const id of page.childIds.slice()) graph.deleteNode(id)
+  // A copy: deleting a child edits the list being walked. Shared styles kept on the page stay,
+  // so the layers using them keep their style.
+  for (const id of page.childIds.slice()) if (!graph.getNode(id)?.internalOnly) graph.deleteNode(id)
   const variableId = new Map(built.tokens.map((t) => [t.name, t.id]))
 
   const label = (
@@ -149,4 +152,54 @@ export function writeDocsPage(
     if (id && isRadius) graph.updateNode(shape.id, { boundVariables: { cornerRadius: id } })
   })
   return page
+}
+
+/**
+ * Shows the colours in Dark mode beside the Light ones: a copy of the Colors section set to the
+ * collection's Dark mode, without the hex labels, which name the light values.
+ */
+export function writeDarkPreview(
+  figma: FigmaAPI,
+  page: SceneNode,
+  collectionId: string,
+  darkModeId: string
+): string | null {
+  const colors = page.childIds
+    .map((id) => figma.graph.getNode(id))
+    .find((node) => node?.name === 'Colors')
+  const source = colors ? figma.getNodeById(colors.id) : null
+  if (!colors || !source) return null
+  const copy = source.clone()
+  copy.name = 'Colors · Dark'
+  copy.x = colors.x + colors.width + 80
+  copy.y = colors.y
+  const collection = figma.variables.getVariableCollectionById(collectionId)
+  if (collection) copy.setExplicitVariableModeForCollection(collection, darkModeId)
+  for (const child of copy.children) if (child.name.startsWith('#')) child.remove()
+  const title = copy.children.find((child) => child.name === 'Colors')
+  if (title?.type === 'TEXT') {
+    figma.graph.updateNode(title.id, { name: 'Colors · Dark', text: 'Colors · Dark' })
+  }
+  // The section's own surface and text follow the theme too, where the system has them.
+  const variable = (name: string) =>
+    figma.variables
+      .getLocalVariables()
+      .find((v) => v.variableCollectionId === collectionId && v.name === name)
+  const background = variable('color/background')
+  const text = variable('color/text/primary')
+  if (background) figma.graph.bindVariable(copy.id, 'fills/0/color', background.id)
+  if (text)
+    for (const child of copy.children)
+      if (child.type === 'TEXT') figma.graph.bindVariable(child.id, 'fills/0/color', text.id)
+  return copy.id
+}
+
+/** Where the next block on the docs page goes: under everything already on it. */
+export function docsPageBottom(graph: SceneGraph, page: SceneNode): number {
+  let bottom = 0
+  for (const id of page.childIds) {
+    const node = graph.getNode(id)
+    if (node && !node.internalOnly) bottom = Math.max(bottom, node.y + node.height)
+  }
+  return bottom
 }

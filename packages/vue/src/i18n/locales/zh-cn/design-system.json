@@ -3,8 +3,9 @@
   "build": "构建设计系统",
   "buildPage": "基于此页面",
   "buildSelection": "基于所选内容",
-  "buildHint": "将正在使用的颜色、字体、间距和圆角转换为变量，关联到图层，并在设计系统页面中记录",
+  "buildHint": "将正在使用的颜色、文字、间距和圆角转为带浅色和深色模式的变量及文本样式，关联到图层，并在设计系统页面中连同基础组件一起记录",
   "done": "已创建 {tokens} 个令牌，关联 {bound} 个图层",
   "duplicates": "发现 {count} 个近似重复的颜色：其图层保留各自的颜色",
-  "failed": "无法构建设计系统：{error}"
+  "failed": "无法构建设计系统：{error}",
+  "extras": "已添加深色模式、{styles} 个文本样式和 {components} 个组件集"
 }

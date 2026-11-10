@@ -52,5 +52,12 @@
   "easingEaseInOut": "Accélération et décélération",
   "easingSpring": "Ressort",
   "screenOf": "Écran {current} sur {total}",
-  "hintClick": "Cliquez sur une zone en surbrillance pour continuer"
+  "hintClick": "Cliquez sur une zone en surbrillance pour continuer",
+  "showConnections": "Afficher les connexions",
+  "connectHandle": "Faites glisser vers un écran pour le relier",
+  "scroll": "Défilement",
+  "scrollNone": "Pas de défilement",
+  "scrollVertical": "Vertical",
+  "scrollHorizontal": "Horizontal",
+  "scrollBoth": "Les deux directions"
 }

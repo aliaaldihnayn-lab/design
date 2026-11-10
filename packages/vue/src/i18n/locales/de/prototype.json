@@ -52,5 +52,12 @@
   "easingEaseInOut": "Langsamer Start und langsames Ende",
   "easingSpring": "Feder",
   "screenOf": "Screen {current} von {total}",
-  "hintClick": "Klicke auf einen hervorgehobenen Bereich, um fortzufahren"
+  "hintClick": "Klicke auf einen hervorgehobenen Bereich, um fortzufahren",
+  "showConnections": "Verbindungen anzeigen",
+  "connectHandle": "Auf einen Bildschirm ziehen, um ihn zu verknüpfen",
+  "scroll": "Scrollen",
+  "scrollNone": "Kein Scrollen",
+  "scrollVertical": "Vertikal",
+  "scrollHorizontal": "Horizontal",
+  "scrollBoth": "Beide Richtungen"
 }

@@ -52,5 +52,12 @@
   "easingEaseInOut": "Accelera e rallenta",
   "easingSpring": "Molla",
   "screenOf": "Schermata {current} di {total}",
-  "hintClick": "Fai clic su un’area evidenziata per continuare"
+  "hintClick": "Fai clic su un’area evidenziata per continuare",
+  "showConnections": "Mostra collegamenti",
+  "connectHandle": "Trascina su una schermata per collegarla",
+  "scroll": "Scorrimento",
+  "scrollNone": "Nessuno scorrimento",
+  "scrollVertical": "Verticale",
+  "scrollHorizontal": "Orizzontale",
+  "scrollBoth": "Entrambe le direzioni"
 }

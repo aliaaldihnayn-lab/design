@@ -21,6 +21,8 @@ export {
   useRecoveryMessages,
   useDesignSystemMessages,
   usePathMessages,
+  useInspectMessages,
+  usePluginMessages,
   usePhotoMessages,
   usePrintMessages,
   usePrototypeMessages,

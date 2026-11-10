@@ -18,12 +18,14 @@ import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor
 import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
 import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
 import { fontsMessageDefaults, fontsMessages } from '#vue/i18n/messages/fonts'
+import { inspectMessageDefaults, inspectMessages } from '#vue/i18n/messages/inspect'
 import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
 import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 import { pathMessageDefaults, pathMessages } from '#vue/i18n/messages/paths'
 import { photoMessageDefaults, photoMessages } from '#vue/i18n/messages/photo'
+import { pluginsMessageDefaults, pluginsMessages } from '#vue/i18n/messages/plugins'
 import { printMessageDefaults, printMessages } from '#vue/i18n/messages/print'
 import { prototypeMessageDefaults, prototypeMessages } from '#vue/i18n/messages/prototype'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
@@ -51,6 +53,8 @@ export {
   credentialsMessages,
   designCheckMessages,
   designSystemMessages,
+  inspectMessages,
+  pluginsMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -89,6 +93,8 @@ export const messageDefaults = {
   credentials: credentialsMessageDefaults,
   designCheck: designCheckMessageDefaults,
   designSystem: designSystemMessageDefaults,
+  inspect: inspectMessageDefaults,
+  plugins: pluginsMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   figjam: figJamMessageDefaults,

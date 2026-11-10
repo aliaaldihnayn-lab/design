@@ -3,8 +3,9 @@
   "build": "Crear sistema de diseño",
   "buildPage": "Desde esta página",
   "buildSelection": "Desde la selección",
-  "buildHint": "Convierte los colores, la tipografía, los espaciados y los radios en uso en variables, vincúlalos a las capas y documéntalos en una página de sistema de diseño",
+  "buildHint": "Convierte los colores, tipos, espaciados y radios en uso en variables con modos claro y oscuro y estilos de texto, los vincula a las capas y los documenta con componentes iniciales en una página de sistema de diseño",
   "done": "{tokens} tokens creados, {bound} capas vinculadas",
   "duplicates": "Se encontraron {count} colores casi duplicados: sus capas conservan su propio color",
-  "failed": "No se pudo crear el sistema de diseño: {error}"
+  "failed": "No se pudo crear el sistema de diseño: {error}",
+  "extras": "Se añadieron un modo oscuro, {styles} estilos de texto y {components} conjuntos de componentes"
 }

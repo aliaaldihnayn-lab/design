@@ -52,5 +52,12 @@
   "easingEaseInOut": "تسارع ثم تباطؤ",
   "easingSpring": "نابض",
   "screenOf": "الشاشة {current} من {total}",
-  "hintClick": "انقر على منطقة مميزة للمتابعة"
+  "hintClick": "انقر على منطقة مميزة للمتابعة",
+  "showConnections": "إظهار الروابط",
+  "connectHandle": "اسحب إلى شاشة لربطها",
+  "scroll": "التمرير",
+  "scrollNone": "بلا تمرير",
+  "scrollVertical": "عمودي",
+  "scrollHorizontal": "أفقي",
+  "scrollBoth": "في الاتجاهين"
 }

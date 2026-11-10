@@ -6,6 +6,7 @@ import IconFile from '~icons/lucide/file'
 import IconFolderOpen from '~icons/lucide/folder-open'
 import IconLayers from '~icons/lucide/layers-2'
 import IconPencil from '~icons/lucide/pencil'
+import IconPlug from '~icons/lucide/plug'
 import IconRedo from '~icons/lucide/redo-2'
 import IconSave from '~icons/lucide/save'
 import IconSettings from '~icons/lucide/settings'
@@ -23,6 +24,7 @@ import type { CommandPaletteGroup, CommandPaletteItem } from '@lawha/vue/primiti
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
+import { showPrototypeConnections } from '@/app/prototype/connections'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -33,6 +35,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -60,6 +63,7 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   'folder-open': IconFolderOpen,
   layers: IconLayers,
   pencil: IconPencil,
+  plug: IconPlug,
   redo: IconRedo,
   save: IconSave,
   settings: IconSettings,
@@ -99,6 +103,7 @@ export function useAppMenu() {
   } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
+  const plugins = usePluginMenu(store)
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
@@ -128,10 +133,13 @@ export function useAppMenu() {
     settings: 'settings',
     variables: 'variables',
     'insert-icon': 'insertIcon',
+    'plugins-import': 'importPlugin',
+    'plugins-remove': 'removePlugin',
     'view-rulers': 'rulers',
     'view-pixel-grid': 'pixelGrid',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
+    'view-prototype-connections': 'prototypeConnections',
     'view-comments': 'comments',
     'snap-geometry': 'snapToGeometry',
     'snap-objects': 'snapToObjects',
@@ -197,6 +205,10 @@ export function useAppMenu() {
     'export-pdf-print': () => exportSelection('pdf-print'),
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
+    'plugins-import': plugins.importPlugin,
+    'view-prototype-connections': () => {
+      showPrototypeConnections.value = !showPrototypeConnections.value
+    },
     ...createSharedEditorMenuActions(setTheme)
   }
 
@@ -218,6 +230,8 @@ export function useAppMenu() {
         return store.state.showRemoteCursors
       case 'view-design-issues':
         return appPreferences.value.designCheck.showOnCanvas
+      case 'view-prototype-connections':
+        return showPrototypeConnections.value
       case 'view-comments':
         return appPreferences.value.comments.showOnCanvas
       case 'snap-geometry':
@@ -259,6 +273,10 @@ export function useAppMenu() {
         }
       case 'view-design-issues':
         return (value: boolean) => setDesignIssuesOnCanvas(value)
+      case 'view-prototype-connections':
+        return (value: boolean) => {
+          showPrototypeConnections.value = value
+        }
       case 'view-comments':
         return (value: boolean) => setCommentsOnCanvas(value)
       case 'snap-geometry':
@@ -311,6 +329,11 @@ export function useAppMenu() {
       return { label: menuLabel(entry), sub: languageMenu.value }
     }
 
+    if (entry.id === 'plugins-remove') {
+      if (plugins.removeEntries.value.length === 0) return null
+      return { label: menuLabel(entry), sub: plugins.removeEntries.value }
+    }
+
     if (entry.id === 'selection.moveToPage') {
       if (otherPages.value.length === 0) return null
       const disabled = !commands['selection.moveToPage'].enabled.value
@@ -358,7 +381,13 @@ export function useAppMenu() {
     return {
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: group.items
+        .flatMap((entry) =>
+          'id' in entry && entry.id === 'plugins-installed'
+            ? plugins.installedEntries.value
+            : [buildEntry(entry)]
+        )
+        .filter((item): item is MenuEntry => item !== null)
     }
   }
 

@@ -52,5 +52,12 @@
   "easingEaseInOut": "缓入缓出",
   "easingSpring": "弹簧",
   "screenOf": "第 {current} 屏，共 {total} 屏",
-  "hintClick": "点击高亮区域以继续"
+  "hintClick": "点击高亮区域以继续",
+  "showConnections": "显示连接",
+  "connectHandle": "拖到某个屏幕以建立链接",
+  "scroll": "滚动",
+  "scrollNone": "不滚动",
+  "scrollVertical": "垂直",
+  "scrollHorizontal": "水平",
+  "scrollBoth": "双向"
 }

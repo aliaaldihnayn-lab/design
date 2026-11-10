@@ -90,5 +90,9 @@
   "togglePreview": "Podgląd",
   "saveTo": "Zapisz w…",
   "showVersionHistory": "Pokaż historię wersji",
-  "saveToVersionHistory": "Zapisz w historii wersji…"
+  "saveToVersionHistory": "Zapisz w historii wersji…",
+  "plugins": "Wtyczki",
+  "importPlugin": "Importuj wtyczkę z folderu…",
+  "removePlugin": "Usuń wtyczkę",
+  "prototypeConnections": "Połączenia prototypu"
 }

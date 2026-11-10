@@ -9,6 +9,7 @@ export type AppMenuIcon =
   | 'folder-open'
   | 'layers'
   | 'pencil'
+  | 'plug'
   | 'redo'
   | 'save'
   | 'settings'
@@ -261,6 +262,12 @@ export const APP_MENU_SCHEMA = [
         shortcut: 'ALT+MOD+\\'
       },
       { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
+      {
+        id: 'view-prototype-connections',
+        label: 'Prototype Connections',
+        checkbox: true,
+        target: 'browser'
+      },
       { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
       { type: 'separator' },
       {
@@ -558,6 +565,17 @@ export const APP_MENU_SCHEMA = [
           { id: 'selection.arrangeNetwork', label: 'Network', command: 'selection.arrangeNetwork' }
         ]
       }
+    ]
+  },
+  {
+    label: 'Plugins',
+    paletteIcon: 'plug',
+    items: [
+      { id: 'plugins-import', label: 'Import Plugin from Folder…' },
+      { type: 'separator', target: 'browser' },
+      // Each installed plugin, with its manifest's menu; filled in by `useAppMenu`.
+      { id: 'plugins-installed', label: 'Installed Plugins', target: 'browser' },
+      { id: 'plugins-remove', label: 'Remove Plugin', target: 'browser' }
     ]
   }
 ] satisfies AppMenuGroupSchema[]

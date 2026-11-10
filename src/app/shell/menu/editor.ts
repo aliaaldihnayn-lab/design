@@ -8,6 +8,7 @@ import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { watchNativeMenuFeatures } from '@/app/shell/menu/features'
 import { openFileDialog, openFileFromPath } from '@/app/shell/menu/files'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
+import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { OPEN_RECENT_EVENT_PREFIX, watchRecentFilesMenu } from '@/app/shell/menu/recent-files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
@@ -36,6 +37,7 @@ export function useEditorMenu() {
 
   const { setTheme } = useAppTheme()
   const { runCommand } = useEditorCommands()
+  const plugins = usePluginMenu(store)
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
@@ -46,6 +48,7 @@ export function useEditorMenu() {
     },
     'previous-tab': () => switchAdjacentTab(-1),
     'next-tab': () => switchAdjacentTab(1),
+    'plugins-import': plugins.importPlugin,
     ...createSaveMenuActions(store),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')

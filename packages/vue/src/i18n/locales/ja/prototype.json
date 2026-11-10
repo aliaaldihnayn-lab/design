@@ -52,5 +52,12 @@
   "easingEaseInOut": "イーズインアウト",
   "easingSpring": "スプリング",
   "screenOf": "画面 {current} / {total}",
-  "hintClick": "ハイライトされた領域をクリックして続行"
+  "hintClick": "ハイライトされた領域をクリックして続行",
+  "showConnections": "接続を表示",
+  "connectHandle": "画面までドラッグしてリンク",
+  "scroll": "スクロール",
+  "scrollNone": "スクロールなし",
+  "scrollVertical": "縦",
+  "scrollHorizontal": "横",
+  "scrollBoth": "縦横"
 }

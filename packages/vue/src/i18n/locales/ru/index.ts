@@ -17,11 +17,13 @@ import editor from './editor.json'
 import figjam from './figjam.json'
 import files from './files.json'
 import fonts from './fonts.json'
+import inspect from './inspect.json'
 import media from './media.json'
 import menu from './menu.json'
 import pages from './pages.json'
 import panels from './panels.json'
 import photo from './photo.json'
+import plugins from './plugins.json'
 import print from './print.json'
 import prototype from './prototype.json'
 import recovery from './recovery.json'
@@ -48,6 +50,8 @@ export default {
   credentials,
   designCheck,
   designSystem,
+  inspect,
+  plugins,
   diagnostics,
   editor,
   figjam,

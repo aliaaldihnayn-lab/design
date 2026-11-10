@@ -52,5 +52,12 @@
   "easingEaseInOut": "Entrada y salida suaves",
   "easingSpring": "Resorte",
   "screenOf": "Pantalla {current} de {total}",
-  "hintClick": "Haz clic en una zona resaltada para continuar"
+  "hintClick": "Haz clic en una zona resaltada para continuar",
+  "showConnections": "Mostrar conexiones",
+  "connectHandle": "Arrastra a una pantalla para enlazarla",
+  "scroll": "Desplazamiento",
+  "scrollNone": "Sin desplazamiento",
+  "scrollVertical": "Vertical",
+  "scrollHorizontal": "Horizontal",
+  "scrollBoth": "Ambas direcciones"
 }

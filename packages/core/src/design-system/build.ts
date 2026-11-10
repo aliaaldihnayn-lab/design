@@ -7,6 +7,7 @@ import { LawhaAPI } from '#core/lawha-api'
 
 import type { Use } from './extract'
 import type { Plan } from './plan'
+import { darkColor, ensureThemeModes } from './themes'
 
 type VariableType = 'COLOR' | 'FLOAT' | 'STRING'
 type Value = Color | number | string
@@ -17,6 +18,8 @@ export interface BuildOptions {
   apply: boolean
   /** Also bind near-duplicate colours, snapping them to their token. */
   normalize: boolean
+  /** Give the collection Light and Dark modes, with a dark value for every colour. */
+  darkMode?: boolean
 }
 
 export interface BuiltToken {
@@ -37,6 +40,8 @@ export interface BuildResult {
   skipped: number
   tokens: BuiltToken[]
   inconsistencies: { token: string; variants: string[] }[]
+  /** The Light and Dark mode ids, when the build added themes. */
+  modes: { light: string; dark: string } | null
 }
 
 /** The named collection, created on first use; building again reuses it. */
@@ -64,7 +69,8 @@ export function buildDesignSystem(figma: FigmaAPI, plan: Plan, options: BuildOpt
     normalized: 0,
     skipped: 0,
     tokens: [],
-    inconsistencies: []
+    inconsistencies: [],
+    modes: options.darkMode ? ensureThemeModes(figma, collection.id) : null
   }
 
   const define = (name: string, type: VariableType, value: Value) => {
@@ -96,6 +102,7 @@ export function buildDesignSystem(figma: FigmaAPI, plan: Plan, options: BuildOpt
 
   for (const token of plan.colors) {
     const v = define(token.name, 'COLOR', token.color)
+    if (result.modes) v.setValueForMode(result.modes.dark, darkColor(token.name, token.color))
     bind(token.uses, v.id)
     if (options.normalize) bind(token.nearUses, v.id, 'normalized')
     if (token.variants.length > 0)

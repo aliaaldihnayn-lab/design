@@ -3,8 +3,9 @@
   "build": "Zbuduj system projektowy",
   "buildPage": "Z tej strony",
   "buildSelection": "Z zaznaczenia",
-  "buildHint": "Zamień używane kolory, typografię, odstępy i promienie na zmienne, połącz je z warstwami i opisz na stronie systemu projektowego",
+  "buildHint": "Zamienia używane kolory, typografię, odstępy i promienie w zmienne z trybem jasnym i ciemnym oraz style tekstu, łączy je z warstwami i dokumentuje z komponentami startowymi na stronie Design System",
   "done": "Utworzono tokeny: {tokens}, połączono warstwy: {bound}",
   "duplicates": "Znaleziono niemal identyczne kolory: {count}; ich warstwy zachowują własny kolor",
-  "failed": "Nie udało się zbudować systemu projektowego: {error}"
+  "failed": "Nie udało się zbudować systemu projektowego: {error}",
+  "extras": "Dodano tryb ciemny, {styles} stylów tekstu i {components} zestawów komponentów"
 }

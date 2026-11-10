@@ -31,6 +31,7 @@ import {
   setBehaviour
 } from '#core/tools/create'
 import { buildDesignSystemTool } from '#core/tools/design-system'
+import { inspectLayerTool } from '#core/tools/inspect'
 import {
   createDeviceMockup,
   createSocialPost,
@@ -54,13 +55,15 @@ import {
   setVisible
 } from '#core/tools/modify'
 import { setImageAdjustments } from '#core/tools/photo'
+import { runFigmaPlugin } from '#core/tools/plugins'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
   autoPrototype,
   getPrototype,
   setFlow,
-  setInteractions
+  setInteractions,
+  setScrollBehavior
 } from '#core/tools/prototype'
 import {
   getComponents,
@@ -153,14 +156,19 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   convertToDieline,
   // Design system
   buildDesignSystemTool,
+  // Dev Mode
+  inspectLayerTool,
   // Photo
   setImageAdjustments,
+  // Plugins
+  runFigmaPlugin,
   // Prototype
   getPrototype,
   setInteractions,
   addInteraction,
   setFlow,
   autoPrototype,
+  setScrollBehavior,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

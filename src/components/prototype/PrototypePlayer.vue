@@ -11,6 +11,8 @@ import {
   reachable,
   readingOrder,
   screensOf,
+  scrollRegions,
+  scrollTarget,
   start,
   timers,
   trigger,
@@ -23,6 +25,14 @@ import {
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import {
+  cssMatrix,
+  renderScreen,
+  renderSmartAnimate,
+  revokeSmartFrames,
+  type ScreenImages,
+  type SmartFrames
+} from '@/app/prototype/frames'
 import {
   closePlayer,
   outgoingOnTop,
@@ -40,7 +50,11 @@ const state = ref<PlayerState | null>(null)
 const leaving = ref<string | null>(null)
 /** The transition now running, which decides whether the leaving screen draws on top. */
 const running = ref<Transition | null>(null)
-const images = shallowRef(new Map<string, string>())
+const images = shallowRef(new Map<string, ScreenImages>())
+/** Smart Animate's frame images while it runs, drawn over the stage. */
+const smart = shallowRef<SmartFrames | null>(null)
+const smartEl = ref<HTMLElement | null>(null)
+const regionEls = ref<HTMLElement[]>([])
 const flashHotspots = ref(false)
 const currentEl = ref<HTMLElement | null>(null)
 const leavingEl = ref<HTMLElement | null>(null)
@@ -65,19 +79,97 @@ const flows = computed(() => {
   return page ? readFlows(page) : []
 })
 
-async function imageFor(id: string): Promise<string> {
-  const cached = images.value.get(id)
-  if (cached) return cached
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  const bytes = await store.renderExportImage([id], dpr, 'PNG', playerSession.value?.pageId)
-  if (!bytes) return ''
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }))
-  images.value = new Map(images.value).set(id, url)
-  return url
+const pixelScale = () => Math.min(window.devicePixelRatio || 1, 2)
+
+function revokeScreen(entry: ScreenImages) {
+  for (const url of [entry.screen, ...entry.regions.map((r) => r.image)])
+    if (url) URL.revokeObjectURL(url)
 }
 
+async function imageFor(id: string): Promise<string> {
+  const cached = images.value.get(id)
+  if (cached) return cached.screen
+  const entry = renderScreen(store, id, pixelScale())
+  images.value = new Map(images.value).set(id, entry)
+  return entry.screen
+}
+
+function screenImage(id: string): string {
+  return images.value.get(id)?.screen ?? ''
+}
+
+function regionsFor(id: string) {
+  return images.value.get(id)?.regions ?? []
+}
+
+/** The screen's hotspots, less those inside a scrolling frame, which scroll with its content. */
 function spotsFor(id: string): Hotspot[] {
-  return hotspots(graph(), id)
+  const regions = scrollRegions(graph(), id)
+  return hotspots(graph(), id).filter((spot) => !scrollTarget(graph(), regions, spot.node))
+}
+
+/** Hotspots inside a scrolling frame, placed in its content. */
+function regionSpots(screenId: string, regionNode: string): Hotspot[] {
+  const regions = scrollRegions(graph(), screenId)
+  return hotspots(graph(), screenId).flatMap((spot) => {
+    const target = scrollTarget(graph(), regions, spot.node)
+    return target?.region.node === regionNode ? [{ ...spot, x: target.x, y: target.y }] : []
+  })
+}
+
+function scrollTo(nodeId: string) {
+  const current = state.value
+  if (!current) return
+  const target = scrollTarget(graph(), scrollRegions(graph(), current.screen), nodeId)
+  const el = target && regionEls.value.find((e) => e.dataset.scroll === target.region.node)
+  if (!target || !el) return
+  el.scrollTo({ left: target.x * scale.value, top: target.y * scale.value, behavior: 'smooth' })
+}
+
+/**
+ * Smart Animate: every layer that shares a name and parent names with one on the next screen
+ * moves and resizes from where it is to where it goes, while everything else cross-fades.
+ */
+async function smartAnimate(from: string, to: string, transition: Transition) {
+  const frames = renderSmartAnimate(store, from, to, pixelScale())
+  smart.value = frames
+  await nextTick()
+  const root = smartEl.value
+  if (!root) return
+  const timing = transitionTiming(transition)
+  const animations: Animation[] = []
+  const back = root.querySelector<HTMLElement>('[data-smart="from"]')
+  if (back) animations.push(back.animate([{ opacity: 1 }, { opacity: 0 }], timing))
+  frames.layers.forEach((layer, index) => {
+    const out = root.querySelector<HTMLElement>(`[data-smart-out="${index}"]`)
+    const into = root.querySelector<HTMLElement>(`[data-smart-in="${index}"]`)
+    const forward = cssMatrix(layer.forward, scale.value)
+    const backward = cssMatrix(layer.backward, scale.value)
+    // Each image fades over half the tween, so the layer never dims while both cross.
+    if (out)
+      animations.push(
+        out.animate(
+          [
+            { transform: 'none', opacity: 1 },
+            { opacity: 1, offset: 0.5 },
+            { transform: forward, opacity: 0 }
+          ],
+          timing
+        )
+      )
+    if (into)
+      animations.push(
+        into.animate(
+          [
+            { transform: backward, opacity: 0 },
+            { opacity: 1, offset: 0.5 },
+            { transform: 'none', opacity: 1 }
+          ],
+          timing
+        )
+      )
+  })
+  await Promise.all(animations.map((a) => a.finished.catch(() => undefined)))
 }
 
 function clearTimers() {
@@ -98,10 +190,47 @@ function scheduleTimers(current: PlayerState) {
   }
 }
 
+/** Runs the transition between the two states; resolves when it has finished. */
+async function animate(before: PlayerState, next: PlayerState, transition: Transition) {
+  const screenChanged = next.screen !== before.screen
+  const smartMove =
+    transition.type === 'smart-animate' &&
+    screenChanged &&
+    next.overlays.length === 0 &&
+    before.overlays.length === 0
+  if (smartMove) {
+    try {
+      await smartAnimate(before.screen, next.screen, transition)
+    } finally {
+      revokeSmartFrames(smart.value)
+      smart.value = null
+    }
+    return
+  }
+  if (transition.type === 'instant') return
+  const frames = transitionFrames(transition)
+  const timing = transitionTiming(transition)
+  const openedOverlay = next.overlays.length > before.overlays.length
+  let incoming: HTMLElement | null | undefined = null
+  if (openedOverlay) incoming = overlayEls.value.at(-1)
+  else if (screenChanged) incoming = currentEl.value
+  const animations = [
+    incoming && frames.incoming.length > 0 ? incoming.animate(frames.incoming, timing) : null,
+    screenChanged && leavingEl.value && frames.outgoing.length > 0
+      ? leavingEl.value.animate(frames.outgoing, timing)
+      : null
+  ].filter((a): a is Animation => a !== null)
+  await Promise.all(animations.map((a) => a.finished.catch(() => undefined)))
+}
+
 async function apply(step: Step | null) {
   if (!step || !state.value) return
   if (step.effect?.type === 'open-url') {
     window.open(step.effect.url, '_blank', 'noopener,noreferrer')
+    return
+  }
+  if (step.effect?.type === 'scroll-to') {
+    scrollTo(step.effect.node)
     return
   }
   if (step.effect) return
@@ -114,22 +243,7 @@ async function apply(step: Step | null) {
   running.value = step.transition
   state.value = next
   await nextTick()
-  const transition = step.transition
-  if (transition && transition.type !== 'instant') {
-    const frames = transitionFrames(transition)
-    const timing = transitionTiming(transition)
-    const openedOverlay = next.overlays.length > before.overlays.length
-    let incoming: HTMLElement | null | undefined = null
-    if (openedOverlay) incoming = overlayEls.value.at(-1)
-    else if (screenChanged) incoming = currentEl.value
-    const animations = [
-      incoming && frames.incoming.length > 0 ? incoming.animate(frames.incoming, timing) : null,
-      screenChanged && leavingEl.value && frames.outgoing.length > 0
-        ? leavingEl.value.animate(frames.outgoing, timing)
-        : null
-    ].filter((a): a is Animation => a !== null)
-    await Promise.all(animations.map((a) => a.finished.catch(() => undefined)))
-  }
+  if (step.transition) await animate(before, next, step.transition)
   leaving.value = null
   running.value = null
   scheduleTimers(next)
@@ -183,7 +297,7 @@ watch(
   () => playerSession.value,
   (session) => {
     clearTimers()
-    for (const url of images.value.values()) URL.revokeObjectURL(url)
+    for (const entry of images.value.values()) revokeScreen(entry)
     images.value = new Map()
     state.value = null
     if (session) void restart(session.start)
@@ -193,7 +307,8 @@ watch(
 
 onBeforeUnmount(() => {
   clearTimers()
-  for (const url of images.value.values()) URL.revokeObjectURL(url)
+  for (const entry of images.value.values()) revokeScreen(entry)
+  revokeSmartFrames(smart.value)
 })
 
 function overlayStyle(id: string, position: string) {
@@ -275,15 +390,71 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
           class="absolute inset-0"
           :style="{ zIndex: outgoingOnTop(running) ? 2 : 0 }"
         >
-          <img :src="images.get(leaving)" alt="" class="size-full select-none" draggable="false" />
+          <img :src="screenImage(leaving)" alt="" class="size-full select-none" draggable="false" />
         </div>
         <div ref="currentEl" class="absolute inset-0 z-[1]" @click.self="onMiss">
           <img
-            :src="images.get(state.screen)"
+            :src="screenImage(state.screen)"
             :alt="screen.name"
             class="pointer-events-none size-full select-none"
             draggable="false"
           />
+          <div
+            v-for="{ region, image } in regionsFor(state.screen)"
+            :key="region.node"
+            ref="regionEls"
+            class="absolute"
+            :class="{
+              'overflow-y-auto overflow-x-hidden': region.direction === 'vertical',
+              'overflow-x-auto overflow-y-hidden': region.direction === 'horizontal',
+              'overflow-auto': region.direction === 'both'
+            }"
+            :data-scroll="region.node"
+            :style="{
+              left: `${region.x * scale}px`,
+              top: `${region.y * scale}px`,
+              width: `${region.width * scale}px`,
+              height: `${region.height * scale}px`
+            }"
+            @click.self="onMiss"
+          >
+            <div
+              class="relative"
+              :style="{
+                width: `${region.contentWidth * scale}px`,
+                height: `${region.contentHeight * scale}px`
+              }"
+              @click.self="onMiss"
+            >
+              <img
+                :src="image"
+                alt=""
+                class="pointer-events-none size-full select-none"
+                draggable="false"
+              />
+              <button
+                v-for="spot in regionSpots(state.screen, region.node)"
+                :key="spot.node"
+                type="button"
+                class="absolute rounded-sm transition-colors"
+                :class="
+                  flashHotspots
+                    ? 'bg-[rgb(56_189_248/0.3)] ring-2 ring-[#38bdf8]'
+                    : 'bg-transparent'
+                "
+                :data-hotspot="spot.node"
+                :style="{
+                  left: `${spot.x * scale}px`,
+                  top: `${spot.y * scale}px`,
+                  width: `${spot.width * scale}px`,
+                  height: `${spot.height * scale}px`
+                }"
+                @click.stop="onHotspot(spot, 'click')"
+                @mouseenter="onHotspot(spot, 'hover')"
+                @pointerdown="onHotspot(spot, 'press')"
+              />
+            </div>
+          </div>
           <button
             v-for="spot in spotsFor(state.screen)"
             :key="spot.node"
@@ -314,7 +485,7 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
             :data-overlay="overlay.screen"
           >
             <img
-              :src="images.get(overlay.screen)"
+              :src="screenImage(overlay.screen)"
               alt=""
               class="pointer-events-none size-full"
               draggable="false"
@@ -336,6 +507,38 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
             />
           </div>
         </template>
+
+        <div
+          v-if="smart"
+          ref="smartEl"
+          class="pointer-events-none absolute inset-0 z-[6]"
+          data-test-id="prototype-smart-animate"
+        >
+          <img :src="smart.to" alt="" class="absolute inset-0 size-full" draggable="false" />
+          <img
+            :src="smart.from"
+            alt=""
+            class="absolute inset-0 size-full"
+            data-smart="from"
+            draggable="false"
+          />
+          <template v-for="(layer, index) in smart.layers" :key="index">
+            <img
+              :src="layer.from"
+              alt=""
+              class="absolute inset-0 size-full origin-top-left"
+              :data-smart-out="index"
+              draggable="false"
+            />
+            <img
+              :src="layer.to"
+              alt=""
+              class="absolute inset-0 size-full origin-top-left opacity-0"
+              :data-smart-in="index"
+              draggable="false"
+            />
+          </template>
+        </div>
       </div>
     </main>
     <footer class="h-8 shrink-0 text-center text-[11px] text-white/40">{{ t.hintClick }}</footer>

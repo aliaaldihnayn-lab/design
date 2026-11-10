@@ -52,5 +52,12 @@
   "easingEaseInOut": "Łagodny start i zakończenie",
   "easingSpring": "Sprężyna",
   "screenOf": "Ekran {current} z {total}",
-  "hintClick": "Kliknij wyróżniony obszar, aby kontynuować"
+  "hintClick": "Kliknij wyróżniony obszar, aby kontynuować",
+  "showConnections": "Pokaż połączenia",
+  "connectHandle": "Przeciągnij na ekran, aby go połączyć",
+  "scroll": "Przewijanie",
+  "scrollNone": "Bez przewijania",
+  "scrollVertical": "Pionowe",
+  "scrollHorizontal": "Poziome",
+  "scrollBoth": "Oba kierunki"
 }

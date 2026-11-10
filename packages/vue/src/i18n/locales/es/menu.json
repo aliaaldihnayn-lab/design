@@ -90,5 +90,9 @@
   "togglePreview": "Vista previa",
   "saveTo": "Guardar en…",
   "showVersionHistory": "Mostrar historial de versiones",
-  "saveToVersionHistory": "Guardar en el historial de versiones…"
+  "saveToVersionHistory": "Guardar en el historial de versiones…",
+  "plugins": "Complementos",
+  "importPlugin": "Importar complemento desde carpeta…",
+  "removePlugin": "Quitar complemento",
+  "prototypeConnections": "Conexiones del prototipo"
 }

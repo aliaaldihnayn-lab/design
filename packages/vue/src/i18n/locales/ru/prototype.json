@@ -52,5 +52,12 @@
   "easingEaseInOut": "Плавный старт и завершение",
   "easingSpring": "Пружина",
   "screenOf": "Экран {current} из {total}",
-  "hintClick": "Нажмите на выделенную область, чтобы продолжить"
+  "hintClick": "Нажмите на выделенную область, чтобы продолжить",
+  "showConnections": "Показать связи",
+  "connectHandle": "Перетащите на экран, чтобы связать",
+  "scroll": "Прокрутка",
+  "scrollNone": "Без прокрутки",
+  "scrollVertical": "Вертикальная",
+  "scrollHorizontal": "Горизонтальная",
+  "scrollBoth": "В обе стороны"
 }

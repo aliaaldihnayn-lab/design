@@ -14,10 +14,12 @@ import {
 import {
   actionSchema,
   flowSchema,
+  scrollDirectionSchema,
   interactionSchema,
   transitionSchema,
   triggerSchema
 } from '#core/prototype/schema'
+import { readScroll, SCROLL_KEY } from '#core/prototype/scroll'
 import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
@@ -49,24 +51,28 @@ function checkDestinations(figma: FigmaAPI, list: readonly Interaction[]): strin
 export const getPrototype = defineTool({
   name: 'get_prototype',
   description:
-    'Read the prototype on the current page: its flows (name and starting screen), its screens, and every layer’s interactions (trigger, action, transition).',
+    'Read the prototype on the current page: its flows (name and starting screen), its screens, every layer’s interactions (trigger, action, transition), and the frames that scroll.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({}),
   execute: (figma) => {
     const page = pageNode(figma)
     const interactions: { id: string; name: string; interactions: Interaction[] }[] = []
+    const scrolling: { id: string; name: string; direction: string }[] = []
     const walk = (id: string) => {
       const node = figma.graph.getNode(id)
       if (!node) return
       const list = readInteractions(node)
       if (list.length > 0) interactions.push({ id: node.id, name: node.name, interactions: list })
+      const direction = readScroll(node)
+      if (direction !== 'none') scrolling.push({ id: node.id, name: node.name, direction })
       node.childIds.forEach(walk)
     }
     page.childIds.forEach(walk)
     return {
       flows: readFlows(page),
       screens: screensOf(figma.graph, page.id).map((s) => ({ id: s.id, name: s.name })),
-      interactions
+      interactions,
+      scrolling
     }
   }
 })
@@ -190,5 +196,28 @@ export const autoPrototype = defineTool({
       flow: { name: args.flow_name, start: plan.screens[0] },
       dryRun: args.dry_run
     }
+  }
+})
+
+export const setScrollBehavior = defineTool({
+  name: 'set_scroll_behavior',
+  description:
+    'Make a frame scroll in the prototype, as Figma’s overflow behaviour: its content beyond the frame scrolls vertically, horizontally or both when presented. Turns on Clip content, which scrolling needs. Pass none to stop it scrolling. Smart Animate between screens (transition type smart-animate) moves layers that share a name and parent names.',
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: v.pipe(v.string(), v.description('Frame whose content scrolls')),
+    direction: scrollDirectionSchema
+  }),
+  execute: (figma, args) => {
+    const raw = figma.graph.getNode(args.id)
+    if (!raw) return { error: `Node ${args.id} not found` }
+    if (raw.type !== 'FRAME' && raw.type !== 'COMPONENT' && raw.type !== 'INSTANCE')
+      return { error: 'Only frames, components and instances scroll' }
+    const node = requireNode(figma, args.id)
+    if (!node) return { error: `Node ${args.id} not found` }
+    node.setPluginData(SCROLL_KEY, args.direction === 'none' ? '' : args.direction)
+    if (args.direction !== 'none' && !raw.clipsContent)
+      figma.graph.updateNode(args.id, { clipsContent: true })
+    return { id: args.id, direction: args.direction }
   }
 })
