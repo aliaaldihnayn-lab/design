@@ -640,5 +640,13 @@
   "variableModesFromLibraries": "Des bibliothèques",
   "variableModeAuto": "Auto ({mode})",
   "variableModeAutoMixed": "Auto",
-  "variableModeHeading": "Mode"
+  "variableModeHeading": "Mode",
+  "radiusTopLeftShort": "HG",
+  "radiusTopRightShort": "HD",
+  "radiusBottomLeftShort": "BG",
+  "radiusBottomRightShort": "BD",
+  "radiusTopLeft": "Rayon en haut à gauche",
+  "radiusTopRight": "Rayon en haut à droite",
+  "radiusBottomLeft": "Rayon en bas à gauche",
+  "radiusBottomRight": "Rayon en bas à droite"
 }

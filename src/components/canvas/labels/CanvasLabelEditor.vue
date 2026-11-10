@@ -11,6 +11,7 @@ import {
 } from '@lawha/core/constants'
 import { colorToCSS } from '@lawha/scene-graph/color'
 import type { CanvasLabelEdit } from '@lawha/vue/canvas/labels'
+import { useRenameMessages } from '@lawha/vue/i18n'
 
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'
 import InlineLabelEditor from '@/components/ui/input/InlineLabelEditor.vue'
@@ -20,6 +21,8 @@ const { edit, presentation, reference } = defineProps<{
   presentation: CanvasLabelPresentation
   reference: ReferenceElement | null
 }>()
+
+const rename = useRenameMessages()
 
 // Figma renames a frame or component name in a field the size of the name itself.
 const compact = computed(() => !!edit && edit.kind !== 'section-title')
@@ -71,7 +74,7 @@ const emit = defineEmits<{
       >
         <InlineLabelEditor
           :model-value="edit.value"
-          label="Layer name"
+          :label="rename.layerName"
           :variant="compact ? 'name' : 'section'"
           @update:model-value="emit('update', $event)"
           @commit="emit('commit')"

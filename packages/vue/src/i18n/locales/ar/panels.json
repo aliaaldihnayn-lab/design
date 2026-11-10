@@ -668,5 +668,13 @@
   "brightness": "السطوع",
   "lightness": "الإضاءة",
   "chroma": "الصفاء اللوني",
-  "alpha": "ألفا"
+  "alpha": "ألفا",
+  "radiusTopLeftShort": "أعلى يس",
+  "radiusTopRightShort": "أعلى يم",
+  "radiusBottomLeftShort": "أسفل يس",
+  "radiusBottomRightShort": "أسفل يم",
+  "radiusTopLeft": "نصف قطر الزاوية العلوية اليسرى",
+  "radiusTopRight": "نصف قطر الزاوية العلوية اليمنى",
+  "radiusBottomLeft": "نصف قطر الزاوية السفلية اليسرى",
+  "radiusBottomRight": "نصف قطر الزاوية السفلية اليمنى"
 }

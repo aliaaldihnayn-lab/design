@@ -647,5 +647,13 @@
   "variableModesFromLibraries": "Z bibliotek",
   "variableModeAuto": "Automatycznie ({mode})",
   "variableModeAutoMixed": "Automatycznie",
-  "variableModeHeading": "Tryb"
+  "variableModeHeading": "Tryb",
+  "radiusTopLeftShort": "GL",
+  "radiusTopRightShort": "GP",
+  "radiusBottomLeftShort": "DL",
+  "radiusBottomRightShort": "DP",
+  "radiusTopLeft": "Promień w lewym górnym rogu",
+  "radiusTopRight": "Promień w prawym górnym rogu",
+  "radiusBottomLeft": "Promień w lewym dolnym rogu",
+  "radiusBottomRight": "Promień w prawym dolnym rogu"
 }

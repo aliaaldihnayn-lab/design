@@ -43,5 +43,9 @@
   "fallbackDownloadFailed": "تعذّر تنزيل الخطوط البديلة.",
   "downloadedFontCacheCleared": "تم مسح ذاكرة الخطوط المنزّلة المؤقتة.",
   "downloadedFontCacheClearFailed": "تعذّر مسح ذاكرة الخطوط المنزّلة المؤقتة.",
-  "clearCache": "مسح ذاكرة التخزين المؤقت"
+  "clearCache": "مسح ذاكرة التخزين المؤقت",
+  "localFontAccessPrompt": "اسمح بالوصول إلى الخطوط المحلية لتصفّح الخطوط المثبّتة.",
+  "localFontAccessBlocked": "الوصول إلى الخطوط المحلية محظور لهذا الموقع.",
+  "localFontsUnsupported": "الخطوط المحلية غير متاحة في هذا المتصفح.",
+  "allowLocalFonts": "السماح بالخطوط المحلية"
 }

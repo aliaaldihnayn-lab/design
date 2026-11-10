@@ -40,5 +40,17 @@
   "deleteDocumentDescription": "Документ будет удалён для всех, кто может его открыть. Это действие нельзя отменить.",
   "deleteDocumentFailed": "Не удалось удалить «{name}». Попробуйте ещё раз.",
   "saveAsPrompt": "Сохранить как:",
-  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться."
+  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться.",
+  "preparingDocument": "Подготовка документа",
+  "preparationReading": "Чтение документа",
+  "preparationDecoding": "Декодирование документа Figma",
+  "preparationMaterializing": "Подготовка слоёв",
+  "preparationPopulatingPage": "Подготовка страницы",
+  "preparationResolvingFonts": "Подбор шрифтов",
+  "preparationResolvingFallbacks": "Доводка типографики",
+  "preparationLayout": "Расчёт макета",
+  "preparationDrawingShaders": "Отрисовка шейдеров",
+  "preparationPreparingRender": "Подготовка холста",
+  "preparationLoading": "Загрузка…",
+  "preparationProgress": "{completed} из {total}"
 }

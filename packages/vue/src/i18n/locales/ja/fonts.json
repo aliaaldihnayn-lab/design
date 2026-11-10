@@ -38,5 +38,9 @@
   "providerDisabled": "{provider} を無効にしました。",
   "fallbackDownloaded": "フォールバックフォントをダウンロードしました。",
   "fallbackDownloadFailed": "フォールバックフォントをダウンロードできませんでした。",
-  "clearCache": "キャッシュをクリア"
+  "clearCache": "キャッシュをクリア",
+  "localFontAccessPrompt": "インストール済みフォントを参照するには、ローカルフォントへのアクセスを許可してください。",
+  "localFontAccessBlocked": "このサイトではローカルフォントへのアクセスがブロックされています。",
+  "localFontsUnsupported": "このブラウザではローカルフォントを利用できません。",
+  "allowLocalFonts": "ローカルフォントを許可"
 }

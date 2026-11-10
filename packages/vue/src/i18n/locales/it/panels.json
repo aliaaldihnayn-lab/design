@@ -640,5 +640,13 @@
   "variableModesFromLibraries": "Dalle librerie",
   "variableModeAuto": "Auto ({mode})",
   "variableModeAutoMixed": "Auto",
-  "variableModeHeading": "Modalità"
+  "variableModeHeading": "Modalità",
+  "radiusTopLeftShort": "AS",
+  "radiusTopRightShort": "AD",
+  "radiusBottomLeftShort": "BS",
+  "radiusBottomRightShort": "BD",
+  "radiusTopLeft": "Raggio in alto a sinistra",
+  "radiusTopRight": "Raggio in alto a destra",
+  "radiusBottomLeft": "Raggio in basso a sinistra",
+  "radiusBottomRight": "Raggio in basso a destra"
 }

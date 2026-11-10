@@ -40,5 +40,9 @@
   "providerDisabled": "Wyłączono {provider}.",
   "fallbackDownloaded": "Pobrano czcionki zapasowe.",
   "fallbackDownloadFailed": "Nie udało się pobrać czcionek zapasowych.",
-  "clearCache": "Wyczyść pamięć podręczną"
+  "clearCache": "Wyczyść pamięć podręczną",
+  "localFontAccessPrompt": "Zezwól na dostęp do lokalnych czcionek, aby przeglądać zainstalowane czcionki.",
+  "localFontAccessBlocked": "Dostęp do lokalnych czcionek jest zablokowany dla tej witryny.",
+  "localFontsUnsupported": "Lokalne czcionki nie są dostępne w tej przeglądarce.",
+  "allowLocalFonts": "Zezwól na lokalne czcionki"
 }

@@ -647,5 +647,13 @@
   "variableModesFromLibraries": "Из библиотек",
   "variableModeAuto": "Авто ({mode})",
   "variableModeAutoMixed": "Авто",
-  "variableModeHeading": "Режим"
+  "variableModeHeading": "Режим",
+  "radiusTopLeftShort": "ВЛ",
+  "radiusTopRightShort": "ВП",
+  "radiusBottomLeftShort": "НЛ",
+  "radiusBottomRightShort": "НП",
+  "radiusTopLeft": "Радиус верхнего левого угла",
+  "radiusTopRight": "Радиус верхнего правого угла",
+  "radiusBottomLeft": "Радиус нижнего левого угла",
+  "radiusBottomRight": "Радиус нижнего правого угла"
 }

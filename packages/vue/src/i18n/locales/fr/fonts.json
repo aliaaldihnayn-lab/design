@@ -39,5 +39,9 @@
   "providerDisabled": "{provider} désactivé.",
   "fallbackDownloaded": "Polices de secours téléchargées.",
   "fallbackDownloadFailed": "Impossible de télécharger les polices de secours.",
-  "clearCache": "Vider le cache"
+  "clearCache": "Vider le cache",
+  "localFontAccessPrompt": "Autorisez l’accès aux polices locales pour parcourir les polices installées.",
+  "localFontAccessBlocked": "L’accès aux polices locales est bloqué pour ce site.",
+  "localFontsUnsupported": "Les polices locales ne sont pas disponibles dans ce navigateur.",
+  "allowLocalFonts": "Autoriser les polices locales"
 }

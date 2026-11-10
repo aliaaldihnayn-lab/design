@@ -21,15 +21,39 @@ import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
 import { useFontPicker, type FontAccessController } from '#vue/primitives/FontPicker/useFontPicker'
 
-const { listFamilies, localFontAccess, ui, emptySearchText, emptyFontsText, emptyFontsHint } =
-  defineProps<{
-    listFamilies: () => Promise<string[] | FontFamilyOption[]>
-    localFontAccess?: FontAccessController
-    ui?: FontPickerUI
-    emptySearchText?: string
-    emptyFontsText?: string
-    emptyFontsHint?: string
-  }>()
+const {
+  listFamilies,
+  localFontAccess,
+  ui,
+  searchPlaceholder = 'Search fonts…',
+  emptySearchText,
+  emptyFontsText,
+  emptyFontsHint,
+  accessPromptText = 'Allow local font access to browse installed fonts.',
+  accessDeniedText = 'Local font access is blocked for this site.',
+  accessUnsupportedText = 'Local fonts are not available in this browser.',
+  allowAccessText = 'Allow local fonts',
+  loadingText = 'Loading…'
+} = defineProps<{
+  listFamilies: () => Promise<string[] | FontFamilyOption[]>
+  localFontAccess?: FontAccessController
+  ui?: FontPickerUI
+  /** The search field's placeholder. */
+  searchPlaceholder?: string
+  emptySearchText?: string
+  emptyFontsText?: string
+  emptyFontsHint?: string
+  /** Shown while the browser has not been asked for local font access yet. */
+  accessPromptText?: string
+  /** Shown when the site may not read local fonts. */
+  accessDeniedText?: string
+  /** Shown when the browser cannot read local fonts at all. */
+  accessUnsupportedText?: string
+  /** The button that asks the browser for local font access. */
+  allowAccessText?: string
+  /** The same button while access is being requested. */
+  loadingText?: string
+}>()
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -114,7 +138,7 @@ function familyOf(value: unknown): unknown {
             v-model="searchTerm"
             :display-value="() => ''"
             :class="ui?.search"
-            placeholder="Search fonts…"
+            :placeholder="searchPlaceholder"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="off"
@@ -153,15 +177,9 @@ function familyOf(value: unknown): unknown {
           </div>
           <div v-else-if="filtered.length === 0" :class="ui?.empty">
             <div>
-              <p v-if="accessState === 'prompt'">
-                Allow local font access to browse installed fonts.
-              </p>
-              <p v-else-if="accessState === 'denied'">
-                Local font access is blocked for this site.
-              </p>
-              <p v-else-if="accessState === 'unsupported'">
-                Local fonts are not available in this browser.
-              </p>
+              <p v-if="accessState === 'prompt'">{{ accessPromptText }}</p>
+              <p v-else-if="accessState === 'denied'">{{ accessDeniedText }}</p>
+              <p v-else-if="accessState === 'unsupported'">{{ accessUnsupportedText }}</p>
               <p v-else>{{ emptyFontsText ?? 'No local fonts available.' }}</p>
               <p v-if="emptyFontsHint" class="mt-1">{{ emptyFontsHint }}</p>
               <button
@@ -171,7 +189,7 @@ function familyOf(value: unknown): unknown {
                 :disabled="loading"
                 @click="requestAccess"
               >
-                {{ loading ? 'Loading…' : 'Allow local fonts' }}
+                {{ loading ? loadingText : allowAccessText }}
               </button>
             </div>
           </div>

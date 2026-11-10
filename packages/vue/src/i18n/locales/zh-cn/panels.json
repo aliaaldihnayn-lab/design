@@ -633,5 +633,13 @@
   "variableModesFromLibraries": "来自库",
   "variableModeAuto": "自动（{mode}）",
   "variableModeAutoMixed": "自动",
-  "variableModeHeading": "模式"
+  "variableModeHeading": "模式",
+  "radiusTopLeftShort": "左上",
+  "radiusTopRightShort": "右上",
+  "radiusBottomLeftShort": "左下",
+  "radiusBottomRightShort": "右下",
+  "radiusTopLeft": "左上圆角",
+  "radiusTopRight": "右上圆角",
+  "radiusBottomLeft": "左下圆角",
+  "radiusBottomRight": "右下圆角"
 }

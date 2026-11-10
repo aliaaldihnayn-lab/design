@@ -1,10 +1,10 @@
 {
-  "section": "Design system",
-  "build": "Build design system",
-  "buildPage": "From this page",
-  "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
-  "done": "{tokens} tokens created, {bound} layers linked",
-  "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "section": "デザインシステム",
+  "build": "デザインシステムを作成",
+  "buildPage": "このページから",
+  "buildSelection": "選択範囲から",
+  "buildHint": "使用中の色・文字・間隔・角丸を変数に変換し、レイヤーにリンクして、デザインシステムページにまとめます",
+  "done": "{tokens} 個のトークンを作成し、{bound} 個のレイヤーをリンクしました",
+  "duplicates": "ほぼ同じ色が {count} 個見つかりました。それらのレイヤーは元の色のままです",
+  "failed": "デザインシステムを作成できませんでした: {error}"
 }

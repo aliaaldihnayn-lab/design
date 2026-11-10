@@ -1,10 +1,10 @@
 {
-  "section": "Design system",
-  "build": "Build design system",
-  "buildPage": "From this page",
-  "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
-  "done": "{tokens} tokens created, {bound} layers linked",
-  "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "section": "设计系统",
+  "build": "构建设计系统",
+  "buildPage": "基于此页面",
+  "buildSelection": "基于所选内容",
+  "buildHint": "将正在使用的颜色、字体、间距和圆角转换为变量，关联到图层，并在设计系统页面中记录",
+  "done": "已创建 {tokens} 个令牌，关联 {bound} 个图层",
+  "duplicates": "发现 {count} 个近似重复的颜色：其图层保留各自的颜色",
+  "failed": "无法构建设计系统：{error}"
 }

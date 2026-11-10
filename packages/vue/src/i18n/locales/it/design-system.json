@@ -1,10 +1,10 @@
 {
   "section": "Design system",
-  "build": "Build design system",
-  "buildPage": "From this page",
-  "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
-  "done": "{tokens} tokens created, {bound} layers linked",
-  "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "build": "Crea design system",
+  "buildPage": "Da questa pagina",
+  "buildSelection": "Dalla selezione",
+  "buildHint": "Trasforma colori, tipografia, spaziature e raggi in uso in variabili, collegale ai livelli e documentale in una pagina Design system",
+  "done": "{tokens} token creati, {bound} livelli collegati",
+  "duplicates": "Trovati {count} colori quasi duplicati: i loro livelli mantengono il proprio colore",
+  "failed": "Impossibile creare il design system: {error}"
 }

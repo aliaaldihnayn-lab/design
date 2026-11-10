@@ -640,5 +640,13 @@
   "variableModesFromLibraries": "De bibliotecas",
   "variableModeAuto": "Automático ({mode})",
   "variableModeAutoMixed": "Automático",
-  "variableModeHeading": "Modo"
+  "variableModeHeading": "Modo",
+  "radiusTopLeftShort": "SI",
+  "radiusTopRightShort": "SD",
+  "radiusBottomLeftShort": "II",
+  "radiusBottomRightShort": "ID",
+  "radiusTopLeft": "Radio superior izquierdo",
+  "radiusTopRight": "Radio superior derecho",
+  "radiusBottomLeft": "Radio inferior izquierdo",
+  "radiusBottomRight": "Radio inferior derecho"
 }

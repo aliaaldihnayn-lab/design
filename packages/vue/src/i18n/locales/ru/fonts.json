@@ -40,5 +40,9 @@
   "providerDisabled": "{provider} отключён.",
   "fallbackDownloaded": "Резервные шрифты загружены.",
   "fallbackDownloadFailed": "Не удалось загрузить резервные шрифты.",
-  "clearCache": "Очистить кэш"
+  "clearCache": "Очистить кэш",
+  "localFontAccessPrompt": "Разрешите доступ к локальным шрифтам, чтобы просматривать установленные шрифты.",
+  "localFontAccessBlocked": "Доступ к локальным шрифтам для этого сайта заблокирован.",
+  "localFontsUnsupported": "Локальные шрифты недоступны в этом браузере.",
+  "allowLocalFonts": "Разрешить локальные шрифты"
 }

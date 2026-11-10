@@ -633,5 +633,13 @@
   "variableModesFromLibraries": "ライブラリから",
   "variableModeAuto": "自動（{mode}）",
   "variableModeAutoMixed": "自動",
-  "variableModeHeading": "モード"
+  "variableModeHeading": "モード",
+  "radiusTopLeftShort": "左上",
+  "radiusTopRightShort": "右上",
+  "radiusBottomLeftShort": "左下",
+  "radiusBottomRightShort": "右下",
+  "radiusTopLeft": "左上の角丸",
+  "radiusTopRight": "右上の角丸",
+  "radiusBottomLeft": "左下の角丸",
+  "radiusBottomRight": "右下の角丸"
 }

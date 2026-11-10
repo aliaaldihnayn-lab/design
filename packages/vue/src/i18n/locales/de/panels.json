@@ -640,5 +640,13 @@
   "variableModesFromLibraries": "Aus Bibliotheken",
   "variableModeAuto": "Automatisch ({mode})",
   "variableModeAutoMixed": "Automatisch",
-  "variableModeHeading": "Modus"
+  "variableModeHeading": "Modus",
+  "radiusTopLeftShort": "OL",
+  "radiusTopRightShort": "OR",
+  "radiusBottomLeftShort": "UL",
+  "radiusBottomRightShort": "UR",
+  "radiusTopLeft": "Radius oben links",
+  "radiusTopRight": "Radius oben rechts",
+  "radiusBottomLeft": "Radius unten links",
+  "radiusBottomRight": "Radius unten rechts"
 }

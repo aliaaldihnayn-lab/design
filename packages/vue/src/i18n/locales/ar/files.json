@@ -40,5 +40,17 @@
   "deleteDocumentDescription": "يُحذف المستند لدى كل من يمكنه فتحه. لا يمكن التراجع عن ذلك.",
   "deleteDocumentFailed": "تعذّر حذف «{name}». حاول مرة أخرى.",
   "saveAsPrompt": "حفظ باسم:",
-  "browserFileAPINotSupported": "لا يدعم متصفحك واجهة API للملفات المحلية. سيتم تنزيل الملفات بدلًا من حفظها في مكانها."
+  "browserFileAPINotSupported": "لا يدعم متصفحك واجهة API للملفات المحلية. سيتم تنزيل الملفات بدلًا من حفظها في مكانها.",
+  "preparingDocument": "جارٍ تجهيز المستند",
+  "preparationReading": "جارٍ قراءة المستند",
+  "preparationDecoding": "جارٍ فك ترميز مستند Figma",
+  "preparationMaterializing": "جارٍ تجهيز الطبقات",
+  "preparationPopulatingPage": "جارٍ تجهيز الصفحة",
+  "preparationResolvingFonts": "جارٍ تحميل الخطوط",
+  "preparationResolvingFallbacks": "جارٍ ضبط الطباعة",
+  "preparationLayout": "جارٍ حساب التخطيط",
+  "preparationDrawingShaders": "جارٍ رسم المظللات",
+  "preparationPreparingRender": "جارٍ تجهيز اللوحة",
+  "preparationLoading": "جارٍ التحميل…",
+  "preparationProgress": "{completed} من {total}"
 }

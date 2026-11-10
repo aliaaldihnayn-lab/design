@@ -177,7 +177,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
         data-corner-grid
       >
         <VariableNumberField
-          label="TL"
+          :label="panels.radiusTopLeftShort"
+          :aria-label="panels.radiusTopLeft"
           :model-value="node.topLeftRadius"
           :min="0"
           :node-id="node.id"
@@ -186,7 +187,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('topLeftRadius', v, p)"
         />
         <VariableNumberField
-          label="TR"
+          :label="panels.radiusTopRightShort"
+          :aria-label="panels.radiusTopRight"
           :model-value="node.topRightRadius"
           :min="0"
           :node-id="node.id"
@@ -195,7 +197,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('topRightRadius', v, p)"
         />
         <VariableNumberField
-          label="BL"
+          :label="panels.radiusBottomLeftShort"
+          :aria-label="panels.radiusBottomLeft"
           :model-value="node.bottomLeftRadius"
           :min="0"
           :node-id="node.id"
@@ -204,7 +207,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('bottomLeftRadius', v, p)"
         />
         <VariableNumberField
-          label="BR"
+          :label="panels.radiusBottomRightShort"
+          :aria-label="panels.radiusBottomRight"
           :model-value="node.bottomRightRadius"
           :min="0"
           :node-id="node.id"

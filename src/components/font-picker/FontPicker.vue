@@ -14,7 +14,7 @@ import {
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import { useSelectUI } from '@/components/ui/select/select'
 
-const { panels } = useI18n()
+const { panels, fonts } = useI18n()
 /** The placeholder shows while no family is set, such as Mixed for texts in different fonts. */
 const { label: labelProp, placeholder } = defineProps<{ label?: string; placeholder?: string }>()
 const label = computed(() => labelProp ?? panels.value.fontFamily)
@@ -66,6 +66,11 @@ function loadPreviewFont(family: string, source: string) {
     :empty-search-text="panels.noFontsFound"
     :empty-fonts-text="panels.noLocalFontsAvailable"
     :empty-fonts-hint="panels.localFontsAccessHint"
+    :access-prompt-text="fonts.localFontAccessPrompt"
+    :access-denied-text="fonts.localFontAccessBlocked"
+    :access-unsupported-text="fonts.localFontsUnsupported"
+    :allow-access-text="fonts.allowLocalFonts"
+    :loading-text="panels.loading"
     @select="emit('select', $event)"
   >
     <template #trigger>

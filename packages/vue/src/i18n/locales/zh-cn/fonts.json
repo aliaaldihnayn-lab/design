@@ -38,5 +38,9 @@
   "providerDisabled": "已停用 {provider}。",
   "fallbackDownloaded": "后备字体已下载。",
   "fallbackDownloadFailed": "无法下载后备字体。",
-  "clearCache": "清除缓存"
+  "clearCache": "清除缓存",
+  "localFontAccessPrompt": "允许访问本地字体以浏览已安装的字体。",
+  "localFontAccessBlocked": "此网站的本地字体访问已被阻止。",
+  "localFontsUnsupported": "此浏览器不支持本地字体。",
+  "allowLocalFonts": "允许本地字体"
 }

@@ -39,5 +39,9 @@
   "providerDisabled": "{provider} deaktiviert.",
   "fallbackDownloaded": "Fallback-Schriften heruntergeladen.",
   "fallbackDownloadFailed": "Fallback-Schriften konnten nicht heruntergeladen werden.",
-  "clearCache": "Cache leeren"
+  "clearCache": "Cache leeren",
+  "localFontAccessPrompt": "Erlaube den Zugriff auf lokale Schriften, um installierte Schriften zu durchsuchen.",
+  "localFontAccessBlocked": "Der Zugriff auf lokale Schriften ist für diese Website gesperrt.",
+  "localFontsUnsupported": "Lokale Schriften sind in diesem Browser nicht verfügbar.",
+  "allowLocalFonts": "Lokale Schriften erlauben"
 }

@@ -39,5 +39,9 @@
   "providerDisabled": "{provider} desactivado.",
   "fallbackDownloaded": "Fuentes de respaldo descargadas.",
   "fallbackDownloadFailed": "No se pudieron descargar las fuentes de respaldo.",
-  "clearCache": "Borrar caché"
+  "clearCache": "Borrar caché",
+  "localFontAccessPrompt": "Permite el acceso a las fuentes locales para explorar las fuentes instaladas.",
+  "localFontAccessBlocked": "El acceso a las fuentes locales está bloqueado para este sitio.",
+  "localFontsUnsupported": "Las fuentes locales no están disponibles en este navegador.",
+  "allowLocalFonts": "Permitir fuentes locales"
 }

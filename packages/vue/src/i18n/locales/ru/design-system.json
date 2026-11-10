@@ -1,10 +1,10 @@
 {
-  "section": "Design system",
-  "build": "Build design system",
-  "buildPage": "From this page",
-  "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
-  "done": "{tokens} tokens created, {bound} layers linked",
-  "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "section": "Дизайн-система",
+  "build": "Создать дизайн-систему",
+  "buildPage": "С этой страницы",
+  "buildSelection": "Из выделения",
+  "buildHint": "Превратить используемые цвета, шрифты, отступы и радиусы в переменные, привязать их к слоям и описать на странице дизайн-системы",
+  "done": "Создано токенов: {tokens}, привязано слоёв: {bound}",
+  "duplicates": "Найдено почти одинаковых цветов: {count}; их слои сохраняют свой цвет",
+  "failed": "Не удалось создать дизайн-систему: {error}"
 }
