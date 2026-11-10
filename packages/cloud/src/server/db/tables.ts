@@ -1,5 +1,12 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type {
+  CloudSignInMethod,
+  DocumentPermission,
+  SignatureEnvelopeStatus,
+  SignatureEventKind,
+  SignatureSignerStatus,
+  WorkspaceRole
+} from '#cloud/contract'
 import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
@@ -338,6 +345,48 @@ export interface AuthSchemaVersionTable {
   updatedAt: TimestampColumn
 }
 
+export interface SignatureEnvelopeTable {
+  id: string
+  ownerId: string
+  senderName: string
+  senderEmail: string
+  title: string
+  message: Generated<string>
+  status: SignatureEnvelopeStatus
+  originalPdf: Uint8Array
+  originalSha256: string
+  finalPdf: Uint8Array | null
+  finalSha256: string | null
+  createdAt: TimestampColumn
+  completedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+export interface SignatureSignerTable {
+  id: string
+  envelopeId: string
+  position: number
+  name: string
+  email: string
+  /** SHA-256 of the secret in the signer's link, hex; the secret itself is never stored. */
+  secretDigest: string
+  status: SignatureSignerStatus
+  signaturePng: Uint8Array | null
+  declineReason: string | null
+  viewedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+  signedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+  declinedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+export interface SignatureEventTable {
+  id: string
+  envelopeId: string
+  signerId: string | null
+  kind: SignatureEventKind
+  ipAddress: string | null
+  userAgent: string | null
+  createdAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -370,6 +419,9 @@ export interface CloudDatabase {
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
+  signatureEnvelope: SignatureEnvelopeTable
+  signatureSigner: SignatureSignerTable
+  signatureEvent: SignatureEventTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

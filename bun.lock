@@ -241,6 +241,7 @@
         "@better-auth/core": "1.7.7",
         "@better-auth/passkey": "1.7.7",
         "@better-auth/utils": "0.4.2",
+        "@cantoo/pdf-lib": "^2.11.1",
         "@hono/node-server": "^1.19.17",
         "@internationalized/date": "^3.12.3",
         "@lawha/scene-graph": "workspace:*",

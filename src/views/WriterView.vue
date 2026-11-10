@@ -32,6 +32,7 @@ import WriterGoogleDocs from '@/components/writer/WriterGoogleDocs.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
 import WriterRegion from '@/components/writer/WriterRegion.vue'
+import WriterSendDialog from '@/components/writer/WriterSendDialog.vue'
 import WriterSidePanel from '@/components/writer/WriterSidePanel.vue'
 import WriterSignPDFDialog from '@/components/writer/WriterSignPDFDialog.vue'
 import WriterToolbar from '@/components/writer/WriterToolbar.vue'
@@ -52,6 +53,7 @@ const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
 const findOpen = ref(false)
 const signPDFOpen = ref(false)
+const sendOpen = ref(false)
 const sideTab = ref<'comments' | 'changes' | null>(null)
 const statistics = computed(() => documentStatistics(writerDocument.value.body))
 
@@ -171,6 +173,13 @@ onBeforeUnmount(() => editor.value?.destroy())
         <IconButton :label="t.signPDF" data-test-id="writer-sign-pdf" @click="signPDFOpen = true">
           <icon-lucide-file-badge class="size-3.5" />
         </IconButton>
+        <IconButton
+          :label="t.sendForSignature"
+          data-test-id="writer-send-toggle"
+          @click="sendOpen = true"
+        >
+          <icon-lucide-send class="size-3.5 rtl:-scale-x-100" />
+        </IconButton>
         <WriterGoogleDocs
           @open="(link: string) => run(() => openGoogleDocument(link), openFailed)"
         />
@@ -207,6 +216,7 @@ onBeforeUnmount(() => editor.value?.destroy())
     </div>
     <WriterToolbar v-if="editor" :editor="editor" />
     <WriterSignPDFDialog v-model:open="signPDFOpen" />
+    <WriterSendDialog v-model:open="sendOpen" />
     <WriterFindBar v-if="editor && findOpen" :editor="editor" @close="findOpen = false" />
     <AppAlert v-if="error" tone="error" :heading="error" class="m-2" />
     <div :class="ui.workspace()">

@@ -129,7 +129,18 @@ function services() {
       delete: notUsed,
       preview: async () => null,
       accept: async () => null
-    }
+    },
+    signatures: {
+      create: notUsed,
+      list: async () => [],
+      get: async () => null,
+      pdf: async () => null,
+      void: async () => false,
+      view: async () => null,
+      sign: async () => 'not_found' as const,
+      decline: async () => 'not_found' as const
+    },
+    signing: { trustedHeaders: [] }
   }
 }
 
