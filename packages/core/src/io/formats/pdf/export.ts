@@ -13,6 +13,7 @@ import { withPDFDOM, type SVGPageParser } from './dom'
 import {
   cutFontInstances,
   embeddedFontAlias,
+  nameEmbeddedFonts,
   planFontEmbedding,
   registerEmbeddedFonts,
   type PDFFallbackFontFile,
@@ -154,6 +155,8 @@ async function renderPages(
     if (index > 0) doc.addPage([page.width, page.height], orientationOf(page))
     await svg2pdf(page.svgElement, doc, { x: 0, y: 0, width: page.width, height: page.height })
   }
+
+  if (embedding) nameEmbeddedFonts(doc, embedding)
 
   return {
     data: new Uint8Array(doc.output('arraybuffer')),
