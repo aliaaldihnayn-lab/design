@@ -245,7 +245,7 @@ function applyWarp() {
           :disabled="busy"
           @click="makePattern"
         >
-          <icon-lucide-grid-3x3 class="size-3.5" aria-hidden="true" />
+          <icon-lucide-grid-3-x-3 class="size-3.5" aria-hidden="true" />
           <span class="truncate">{{ paths.makePattern }}</span>
         </AppButton>
       </template>
