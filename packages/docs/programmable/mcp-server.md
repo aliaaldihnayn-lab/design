@@ -380,6 +380,16 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `get_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
 | `set_status` | Give a layer one of the document's statuses by name, or clear it |
 
+### User stories and Jira
+
+| Tool | Description |
+|------|-------------|
+| `add_epic` | Add an epic that groups user stories, or return the one with that title |
+| `add_user_story` | Attach a user story to a frame or element: narrative, Given/When/Then criteria, behaviour, states, priority, epic |
+| `list_user_stories` | List the epics and stories of a frame, page, or document, with Jira links, status, and what each story still lacks |
+| `link_jira_issue` | Link a story or an epic to an existing Jira issue by key |
+| `sync_jira` | Create and update Jira Epics and Stories (linked through `parent`) and read their status back, through the site connected in Settings → Jira |
+
 ### Navigation
 
 | Tool | Description |

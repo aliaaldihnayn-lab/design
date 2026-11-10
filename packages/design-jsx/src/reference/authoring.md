@@ -70,6 +70,12 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 </Switch.Root>
 ```
 
+## User stories and epics
+
+- Every screen you design arrives with its product spec. Give the screen's frame `epics={[{ title, description }]}` for the features it belongs to and a story of its own, and give **every interactive element** (button, input, dropdown, select, tab, toggle, checkbox, radio, slider, link, card that opens something, and every layer with a prototype interaction) `stories={[…]}` describing what it is and what it does. Never leave an interactive element without a story.
+- A story is `{ title, epic, asA, iWant, soThat, criteria, behaviour, states, priority, status }`. `epic` is an epic's title, found in the document or created; `criteria` are Given/When/Then, as `{ given, when, then }` or one sentence "Given …, when …, then …", covering the happy path, validation, errors, and empty and loading states; `behaviour` says what the element does and its rules; `states` lists the states it covers (default, hover, pressed, focus, disabled, loading, error, empty, selected); `priority` is `highest`, `high`, `medium`, `low`, or `lowest`.
+- Write stories in the language of the design; Arabic stories for an Arabic screen are fine. After the design, call `list_user_stories` for the frame and fill whatever it reports `missing`. When a Jira site is connected, call `sync_jira` with `direction: 'both'` (and `projectKey` the first time) so every epic and story gets its Jira issue; when none is, say that the stories are ready to sync once one is connected.
+
 ## Verification
 
 Inspect structure and actual rendered output. Node counts and `describe` diagnostics do not establish visual fidelity. Check wrapping with longer content, narrower containers, component edits, and relevant modes. Resolve overflow and contrast problems at their source. Reuse IDs returned by creation tools rather than repeatedly searching for the same nodes.

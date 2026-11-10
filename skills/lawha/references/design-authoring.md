@@ -72,11 +72,31 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 </Switch.Root>
 ```
 
+## User stories and epics
+
+- Every screen you design arrives with its product spec. Give the screen's frame `epics={[{ title, description }]}` for the features it belongs to and a story of its own, and give **every interactive element** (button, input, dropdown, select, tab, toggle, checkbox, radio, slider, link, card that opens something, and every layer with a prototype interaction) `stories={[…]}` describing what it is and what it does. Never leave an interactive element without a story.
+- A story is `{ title, epic, asA, iWant, soThat, criteria, behaviour, states, priority, status }`. `epic` is an epic's title, found in the document or created; `criteria` are Given/When/Then, as `{ given, when, then }` or one sentence "Given …, when …, then …", covering the happy path, validation, errors, and empty and loading states; `behaviour` says what the element does and its rules; `states` lists the states it covers (default, hover, pressed, focus, disabled, loading, error, empty, selected); `priority` is `highest`, `high`, `medium`, `low`, or `lowest`.
+- Write stories in the language of the design; Arabic stories for an Arabic screen are fine. After the design, call `list_user_stories` for the frame and fill whatever it reports `missing`. When a Jira site is connected, call `sync_jira` with `direction: 'both'` (and `projectKey` the first time) so every epic and story gets its Jira issue; when none is, say that the stories are ready to sync once one is connected.
+
 ## Verification
 
 Inspect structure and actual rendered output. Node counts and `describe` diagnostics do not establish visual fidelity. Check wrapping with longer content, narrower containers, component edits, and relevant modes. Resolve overflow and contrast problems at their source. Reuse IDs returned by creation tools rather than repeatedly searching for the same nodes.
 
 The examples below are executed by the authoring-reference tests. Create the named variables before running a variable-bound example.
+
+## A card with its epics and user stories
+
+```jsx
+<Frame name="Newsletter card" w={280} h="hug" flex="col" gap={8} p={16} bg="#FFFFFF"
+epics={[{ title: 'Newsletter', description: 'Signing up for and managing the weekly deals email' }]}
+stories={[{ title: 'Discover the newsletter', epic: 'Newsletter', asA: 'shopper', iWant: 'to learn about the weekly deals', soThat: 'I can decide to sign up', priority: 'medium' }]}>
+<Text name="Title" w="fill" size={14} weight="semibold" color="#252A31">Weekly deals in your inbox</Text>
+<Text name="Subscribe link" size={12} weight="medium" color="#3B6CF6"
+  stories={[{ title: 'Subscribe from the card', epic: 'Newsletter', asA: 'shopper', iWant: 'to subscribe in one tap', soThat: 'I never miss a deal',
+    criteria: [{ given: 'I am signed in', when: 'I tap Subscribe', then: 'I am subscribed and the link reads Subscribed' }, 'Given I am signed out, when I tap Subscribe, then sign in opens first'],
+    behaviour: 'A link; disabled while the request is pending.', states: ['default', 'hover', 'pressed', 'disabled', 'loading'], priority: 'high' }]}>Subscribe</Text>
+</Frame>
+```
 
 ## Content-sized review note
 
@@ -135,4 +155,4 @@ Generated from the renderer metadata. This inventory lists accepted names, not a
 
 **Helpers:** `solid`, `gradient`, `linearGradient`, `radialGradient`, `angularGradient`, `diamondGradient`, `shader`, `dropShadow`, `innerShadow`, `layerBlur`, `backgroundBlur`, `foregroundBlur`, `defineVars`, `defineMode`, `designVar`, `designMode`, `property`, `ref`.
 
-**Properties:** `name`, `key`, `ref`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `constraints`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `strokeCap`, `strokeJoin`, `dashPattern`, `strokes`, `strokeWeights`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `flipX`, `flipY`, `overflow`, `mask`, `visible`, `locked`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `italic`, `color`, `text`, `characters`, `content`, `value`, `title`, `markdown`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textDecorationStyle`, `textDecorationColor`, `textDecorationThickness`, `textUnderlineOffset`, `textDecorationSkipInk`, `fontFeatures`, `fontVariations`, `lang`, `fontOpticalSizing`, `textCase`, `paragraphSpacing`, `paragraphIndent`, `hangingList`, `list`, `level`, `spacing`, `listSpacing`, `indent`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `startAngle`, `endAngle`, `d`, `fillRule`, `paths`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `of`, `exposed`, `overrides`, `mode`, `modelValue`, `open`, `disabled`, `filled`, `states`, `min`, `max`, `step`, `defaultValue`.
+**Properties:** `name`, `key`, `ref`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `constraints`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `strokeCap`, `strokeJoin`, `dashPattern`, `strokes`, `strokeWeights`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `flipX`, `flipY`, `overflow`, `mask`, `visible`, `locked`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `italic`, `color`, `text`, `characters`, `content`, `value`, `title`, `markdown`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textDecorationStyle`, `textDecorationColor`, `textDecorationThickness`, `textUnderlineOffset`, `textDecorationSkipInk`, `fontFeatures`, `fontVariations`, `lang`, `fontOpticalSizing`, `textCase`, `paragraphSpacing`, `paragraphIndent`, `hangingList`, `list`, `level`, `spacing`, `listSpacing`, `indent`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `startAngle`, `endAngle`, `d`, `fillRule`, `paths`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `of`, `exposed`, `overrides`, `mode`, `modelValue`, `open`, `disabled`, `filled`, `states`, `min`, `max`, `step`, `defaultValue`, `stories`, `epics`.

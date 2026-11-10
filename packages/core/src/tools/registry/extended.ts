@@ -96,6 +96,13 @@ import {
 import type { ToolDef } from '#core/tools/schema'
 import { getStatuses, setStatus } from '#core/tools/statuses'
 import {
+  addEpic,
+  addUserStory,
+  linkJiraIssue,
+  listUserStories,
+  syncJira
+} from '#core/tools/stories'
+import {
   arrangeNodes,
   cloneNode,
   flattenNodes,
@@ -214,6 +221,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   resolveComment,
   getStatuses,
   setStatus,
+  addEpic,
+  addUserStory,
+  listUserStories,
+  linkJiraIssue,
+  syncJira,
   getFontStatus,
   listFonts,
   listAvailableFonts,
