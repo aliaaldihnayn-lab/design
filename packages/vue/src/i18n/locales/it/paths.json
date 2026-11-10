@@ -1,0 +1,21 @@
+{
+  "section": "Distorsione e tracciati",
+  "warp": "Altera",
+  "warpStyle": "Stile alterazione",
+  "bend": "Piega",
+  "horizontalDistortion": "Distorsione orizzontale",
+  "verticalDistortion": "Distorsione verticale",
+  "applyWarp": "Applica alterazione",
+  "applyWarpHint": "Piega il contorno e converte il livello in vettore",
+  "presetArc": "Arco",
+  "presetArch": "Arco superiore",
+  "presetBulge": "Rigonfiamento",
+  "presetFlag": "Bandiera",
+  "presetWave": "Onda",
+  "presetFish": "Pesce",
+  "presetRise": "Ascendente",
+  "presetSqueeze": "Comprimi",
+  "presetTwist": "Torsione",
+  "done": "{count} aggiornati",
+  "failed": "Impossibile modificare i tracciati: {error}"
+}

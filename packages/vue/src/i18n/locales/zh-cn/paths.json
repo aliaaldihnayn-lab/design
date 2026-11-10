@@ -1,0 +1,21 @@
+{
+  "section": "扭曲与路径",
+  "warp": "变形",
+  "warpStyle": "变形样式",
+  "bend": "弯曲",
+  "horizontalDistortion": "水平扭曲",
+  "verticalDistortion": "垂直扭曲",
+  "applyWarp": "应用变形",
+  "applyWarpHint": "弯曲轮廓并将图层转换为矢量",
+  "presetArc": "弧形",
+  "presetArch": "拱形",
+  "presetBulge": "凸出",
+  "presetFlag": "旗形",
+  "presetWave": "波形",
+  "presetFish": "鱼形",
+  "presetRise": "上升",
+  "presetSqueeze": "挤压",
+  "presetTwist": "扭转",
+  "done": "已更新 {count} 个",
+  "failed": "无法更改路径：{error}"
+}

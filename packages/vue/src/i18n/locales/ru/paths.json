@@ -1,0 +1,21 @@
+{
+  "section": "Искажение и контуры",
+  "warp": "Деформация",
+  "warpStyle": "Стиль деформации",
+  "bend": "Изгиб",
+  "horizontalDistortion": "Горизонтальное искажение",
+  "verticalDistortion": "Вертикальное искажение",
+  "applyWarp": "Применить деформацию",
+  "applyWarpHint": "Изгибает контур и превращает слой в вектор",
+  "presetArc": "Дуга",
+  "presetArch": "Арка",
+  "presetBulge": "Выпуклость",
+  "presetFlag": "Флаг",
+  "presetWave": "Волна",
+  "presetFish": "Рыба",
+  "presetRise": "Подъём",
+  "presetSqueeze": "Сжатие",
+  "presetTwist": "Скручивание",
+  "done": "Обновлено: {count}",
+  "failed": "Не удалось изменить контуры: {error}"
+}

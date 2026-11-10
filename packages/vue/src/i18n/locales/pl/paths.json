@@ -1,0 +1,21 @@
+{
+  "section": "Zniekształcenia i ścieżki",
+  "warp": "Wypaczenie",
+  "warpStyle": "Styl wypaczenia",
+  "bend": "Wygięcie",
+  "horizontalDistortion": "Zniekształcenie poziome",
+  "verticalDistortion": "Zniekształcenie pionowe",
+  "applyWarp": "Zastosuj wypaczenie",
+  "applyWarpHint": "Wygina kontur i zamienia warstwę w wektor",
+  "presetArc": "Łuk",
+  "presetArch": "Łuk górny",
+  "presetBulge": "Wybrzuszenie",
+  "presetFlag": "Flaga",
+  "presetWave": "Fala",
+  "presetFish": "Ryba",
+  "presetRise": "Wznoszenie",
+  "presetSqueeze": "Ściśnięcie",
+  "presetTwist": "Skręt",
+  "done": "Zaktualizowano: {count}",
+  "failed": "Nie udało się zmienić ścieżek: {error}"
+}

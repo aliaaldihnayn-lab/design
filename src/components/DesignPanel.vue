@@ -46,6 +46,7 @@ import LayoutSection from './properties/layout/LayoutSection.vue'
 import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
+import PathEffectsSection from './properties/paths/PathEffectsSection.vue'
 import PositionSection from './properties/PositionSection.vue'
 import PrototypeSection from './properties/PrototypeSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
@@ -91,6 +92,24 @@ function openSelectedInstanceReview() {
     initialInstanceId: instance.id
   })
 }
+/** Layers with an outline Illustrator's path effects reshape. */
+const PATH_EFFECT_TYPES = new Set([
+  'RECTANGLE',
+  'ROUNDED_RECTANGLE',
+  'ELLIPSE',
+  'POLYGON',
+  'STAR',
+  'LINE',
+  'VECTOR',
+  'TEXT',
+  'BOOLEAN_OPERATION'
+])
+const pathEffectIds = useSceneComputed(() => {
+  const nodes = store.getSelectedNodes()
+  return nodes.length > 0 && nodes.every((selected) => PATH_EFFECT_TYPES.has(selected.type))
+    ? nodes.map((selected) => selected.id)
+    : []
+})
 const LAYOUT_GUIDE_TYPES = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
 // Figma offers layout guides while every selected layer is a frame.
 const supportsLayoutGuides = useSceneComputed(() => {
@@ -145,6 +164,7 @@ const { panels } = useI18n()
       <SelectionColorsSection />
     </template>
     <LayoutGridSection v-if="supportsLayoutGuides" />
+    <PathEffectsSection v-if="freeStyle && pathEffectIds.length > 0" :node-ids="pathEffectIds" />
     <ExportSection />
   </div>
 
@@ -252,6 +272,7 @@ const { panels } = useI18n()
         <SelectionColorsSection />
       </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
+      <PathEffectsSection v-if="freeStyle && pathEffectIds.length > 0" :node-ids="pathEffectIds" />
 
       <AdaptSection
         v-if="node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'"

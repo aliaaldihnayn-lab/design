@@ -25,6 +25,18 @@ export { regenerateFillGeometry } from './fill-geometry'
 export { regionAtPoint, regionHatchPeriod, regionVertexIndices } from './region-hit'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
+export {
+  flatMesh,
+  mapContours,
+  meshFunction,
+  subdivideContour,
+  warpFunction,
+  WARP_PRESETS,
+  type CubicContour,
+  type EnvelopeMesh,
+  type WarpOptions,
+  type WarpPreset
+} from './warp'
 
 /**
  * Fill types go on the detached `Path`: CanvasKit 0.41's `PathBuilder.setFillType` returns an

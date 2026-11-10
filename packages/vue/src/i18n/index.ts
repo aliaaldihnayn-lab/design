@@ -20,6 +20,7 @@ export {
   usePanelMessages,
   useRecoveryMessages,
   useDesignSystemMessages,
+  usePathMessages,
   usePhotoMessages,
   usePrintMessages,
   usePrototypeMessages,

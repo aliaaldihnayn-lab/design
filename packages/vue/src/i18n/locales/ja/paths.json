@@ -1,0 +1,21 @@
+{
+  "section": "変形とパス",
+  "warp": "ワープ",
+  "warpStyle": "ワープのスタイル",
+  "bend": "カーブ",
+  "horizontalDistortion": "水平方向の変形",
+  "verticalDistortion": "垂直方向の変形",
+  "applyWarp": "ワープを適用",
+  "applyWarpHint": "輪郭を曲げてレイヤーをベクターに変換します",
+  "presetArc": "円弧",
+  "presetArch": "アーチ",
+  "presetBulge": "でこぼこ",
+  "presetFlag": "旗",
+  "presetWave": "波形",
+  "presetFish": "魚形",
+  "presetRise": "上昇",
+  "presetSqueeze": "絞り込み",
+  "presetTwist": "旋回",
+  "done": "{count} 件を更新しました",
+  "failed": "パスを変更できませんでした: {error}"
+}

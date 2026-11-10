@@ -1,0 +1,21 @@
+{
+  "section": "التشويه والمسارات",
+  "warp": "الالتواء",
+  "warpStyle": "نمط الالتواء",
+  "bend": "الانحناء",
+  "horizontalDistortion": "التشويه الأفقي",
+  "verticalDistortion": "التشويه الرأسي",
+  "applyWarp": "تطبيق الالتواء",
+  "applyWarpHint": "يحني المخطط ويحوّل الطبقة إلى متجه",
+  "presetArc": "قوس",
+  "presetArch": "عقد",
+  "presetBulge": "انتفاخ",
+  "presetFlag": "علم",
+  "presetWave": "موجة",
+  "presetFish": "سمكة",
+  "presetRise": "صعود",
+  "presetSqueeze": "ضغط",
+  "presetTwist": "لفّ",
+  "done": "تم تحديث {count}",
+  "failed": "تعذّر تغيير المسارات: {error}"
+}

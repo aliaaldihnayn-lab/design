@@ -1,4 +1,4 @@
-import type { SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
@@ -70,4 +70,22 @@ export function recordLayerSwap(
     })
     fitEnclosingGroupsWithUndo(ctx, parentIds)
   })
+}
+
+/**
+ * Replaces `node` with a vector made from `props`, at its place in its parent, and returns the
+ * vector's id; null for a layer without a parent.
+ */
+export function replaceWithVector(
+  graph: SceneGraph,
+  node: SceneNode,
+  props: Partial<SceneNode>
+): string | null {
+  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  if (!parent) return null
+  const index = parent.childIds.indexOf(node.id)
+  const vector = graph.createNode('VECTOR', parent.id, props)
+  graph.insertChildAt(vector.id, parent.id, index)
+  graph.deleteNode(node.id)
+  return vector.id
 }

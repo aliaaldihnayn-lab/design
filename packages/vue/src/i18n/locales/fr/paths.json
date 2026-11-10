@@ -1,0 +1,21 @@
+{
+  "section": "Déformation et tracés",
+  "warp": "Déformation",
+  "warpStyle": "Style de déformation",
+  "bend": "Courbure",
+  "horizontalDistortion": "Distorsion horizontale",
+  "verticalDistortion": "Distorsion verticale",
+  "applyWarp": "Appliquer la déformation",
+  "applyWarpHint": "Courbe le contour et convertit le calque en vecteur",
+  "presetArc": "Arc de cercle",
+  "presetArch": "Arche",
+  "presetBulge": "Renflement",
+  "presetFlag": "Drapeau",
+  "presetWave": "Onde",
+  "presetFish": "Poisson",
+  "presetRise": "Montée",
+  "presetSqueeze": "Compression",
+  "presetTwist": "Torsion",
+  "done": "{count} mis à jour",
+  "failed": "Impossible de modifier les tracés : {error}"
+}

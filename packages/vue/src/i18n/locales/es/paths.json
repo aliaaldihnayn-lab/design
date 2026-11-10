@@ -1,0 +1,21 @@
+{
+  "section": "Deformar y trazados",
+  "warp": "Deformación",
+  "warpStyle": "Estilo de deformación",
+  "bend": "Curvatura",
+  "horizontalDistortion": "Distorsión horizontal",
+  "verticalDistortion": "Distorsión vertical",
+  "applyWarp": "Aplicar deformación",
+  "applyWarpHint": "Curva el contorno y convierte la capa en un vector",
+  "presetArc": "Arco",
+  "presetArch": "Arco superior",
+  "presetBulge": "Abombar",
+  "presetFlag": "Bandera",
+  "presetWave": "Onda",
+  "presetFish": "Pez",
+  "presetRise": "Ascendente",
+  "presetSqueeze": "Comprimir",
+  "presetTwist": "Giro",
+  "done": "{count} actualizados",
+  "failed": "No se pudieron cambiar los trazados: {error}"
+}
