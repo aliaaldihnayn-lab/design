@@ -298,6 +298,11 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `warp_shape` | Bend layers with a Warp preset (arc, arch, bulge, flag, wave, fish, rise, squeeze, twist) |
 | `envelope_mesh` | Distort a layer with an envelope mesh by moving grid points |
 | `image_trace` | Trace an image layer into vector shapes on this device (colour quantisation, contour tracing, curve fitting) |
+| `offset_path` | Add each layer's outline grown or shrunk by a distance, with miter, round, or bevel joins |
+| `width_profile` | Turn strokes into shapes whose width varies along the path (profiles or width points) |
+| `blend_shapes` | Make steps that blend one shape, colour, and opacity into another |
+| `outline_stroke` | Replace stroked layers with their fill and stroke as shapes |
+| `set_pattern_fill` | Fill layers with a pattern tiled from another layer |
 
 ### Vector Path
 

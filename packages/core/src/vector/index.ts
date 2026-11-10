@@ -37,6 +37,13 @@ export {
   type WarpOptions,
   type WarpPreset
 } from './warp'
+export {
+  profileWidthPoints,
+  widthAt,
+  WIDTH_PROFILES,
+  type WidthPoint,
+  type WidthProfile
+} from './width'
 
 /**
  * Fill types go on the detached `Path`: CanvasKit 0.41's `PathBuilder.setFillType` returns an
