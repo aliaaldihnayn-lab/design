@@ -22,6 +22,7 @@ import menu from './menu.json'
 import pages from './pages.json'
 import panels from './panels.json'
 import photo from './photo.json'
+import plugins from './plugins.json'
 import print from './print.json'
 import prototype from './prototype.json'
 import recovery from './recovery.json'
@@ -48,6 +49,7 @@ export default {
   credentials,
   designCheck,
   designSystem,
+  plugins,
   diagnostics,
   editor,
   figjam,

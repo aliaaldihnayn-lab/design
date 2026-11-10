@@ -89,5 +89,8 @@
   "togglePreview": "プレビュー",
   "saveTo": "保存先を選んで保存…",
   "showVersionHistory": "バージョン履歴を表示",
-  "saveToVersionHistory": "バージョン履歴に保存…"
+  "saveToVersionHistory": "バージョン履歴に保存…",
+  "plugins": "プラグイン",
+  "importPlugin": "フォルダーからプラグインを読み込む…",
+  "removePlugin": "プラグインを削除"
 }

@@ -8,6 +8,7 @@ export const APP_DATABASE_NAMES = {
   recovery: 'lawha-recovery',
   diagnostics: 'lawha-diagnostics',
   skills: 'lawha-skills',
+  plugins: 'lawha-plugins',
   /** Written and deleted once per page, to learn whether the engine stores Blobs. */
   blobProbe: 'lawha-blob-probe'
 } as const

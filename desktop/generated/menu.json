@@ -658,5 +658,14 @@
         ]
       }
     ]
+  },
+  {
+    "label": "Plugins",
+    "items": [
+      {
+        "id": "plugins-import",
+        "label": "Import Plugin from Folder…"
+      }
+    ]
   }
 ]

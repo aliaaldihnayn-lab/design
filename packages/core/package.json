@@ -58,6 +58,11 @@
       "import": "./dist/figma-api/index.js",
       "default": "./dist/figma-api/index.js"
     },
+    "./figma-api/plugins": {
+      "types": "./dist/figma-api/plugins/index.d.ts",
+      "import": "./dist/figma-api/plugins/index.js",
+      "default": "./dist/figma-api/plugins/index.js"
+    },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js",

@@ -1,0 +1,7 @@
+{
+  "imported": "{name} をインストールしました",
+  "importFailed": "プラグインを読み込めませんでした: {error}",
+  "failed": "{name} が停止しました: {error}",
+  "removed": "{name} を削除しました",
+  "close": "プラグインを閉じる"
+}

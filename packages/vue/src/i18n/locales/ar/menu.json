@@ -89,5 +89,8 @@
   "splitRight": "تقسيم إلى اليمين",
   "splitDown": "تقسيم إلى الأسفل",
   "closeView": "إغلاق العرض",
-  "removeGuide": "إزالة الدليل"
+  "removeGuide": "إزالة الدليل",
+  "plugins": "الإضافات",
+  "importPlugin": "استيراد إضافة من مجلد…",
+  "removePlugin": "إزالة إضافة"
 }

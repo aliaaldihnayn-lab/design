@@ -89,5 +89,8 @@
   "togglePreview": "Просмотр",
   "saveTo": "Сохранить в…",
   "showVersionHistory": "Показать историю версий",
-  "saveToVersionHistory": "Сохранить в историю версий…"
+  "saveToVersionHistory": "Сохранить в историю версий…",
+  "plugins": "Плагины",
+  "importPlugin": "Импортировать плагин из папки…",
+  "removePlugin": "Удалить плагин"
 }

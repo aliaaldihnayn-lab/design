@@ -23,6 +23,7 @@ import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 import { photoMessageDefaults, photoMessages } from '#vue/i18n/messages/photo'
+import { pluginsMessageDefaults, pluginsMessages } from '#vue/i18n/messages/plugins'
 import { printMessageDefaults, printMessages } from '#vue/i18n/messages/print'
 import { prototypeMessageDefaults, prototypeMessages } from '#vue/i18n/messages/prototype'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
@@ -50,6 +51,7 @@ export {
   credentialsMessages,
   designCheckMessages,
   designSystemMessages,
+  pluginsMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -87,6 +89,7 @@ export const messageDefaults = {
   credentials: credentialsMessageDefaults,
   designCheck: designCheckMessageDefaults,
   designSystem: designSystemMessageDefaults,
+  plugins: pluginsMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   figjam: figJamMessageDefaults,

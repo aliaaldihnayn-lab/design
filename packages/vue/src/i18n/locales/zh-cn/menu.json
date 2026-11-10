@@ -89,5 +89,8 @@
   "togglePreview": "预览",
   "saveTo": "保存到…",
   "showVersionHistory": "显示版本历史",
-  "saveToVersionHistory": "保存到版本历史…"
+  "saveToVersionHistory": "保存到版本历史…",
+  "plugins": "插件",
+  "importPlugin": "从文件夹导入插件…",
+  "removePlugin": "移除插件"
 }
