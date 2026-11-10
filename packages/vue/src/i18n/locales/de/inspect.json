@@ -1,0 +1,15 @@
+{
+  "tab": "Prüfen",
+  "noSelection": "Wähle eine Ebene, um ihre Eigenschaften und ihren Code zu sehen",
+  "size": "Größe",
+  "limits": "Min. / max.",
+  "layout": "Auto-Layout",
+  "radius": "Eckenradius",
+  "colors": "Farben",
+  "typography": "Typografie",
+  "code": "Code",
+  "copy": "Code kopieren",
+  "sizingFixed": "Fest",
+  "sizingHug": "Inhalt umschließen",
+  "sizingFill": "Füllen"
+}

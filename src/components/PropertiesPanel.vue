@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed, watchEffect } from 'vue'
 
 import { resolveEditorProfile } from '@lawha/core'
-import { useDesignCheckMessages, useI18n } from '@lawha/vue/i18n'
+import { useDesignCheckMessages, useI18n, useInspectMessages } from '@lawha/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
@@ -19,12 +19,14 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+import InspectPanel from './inspect/InspectPanel.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
 const { activeTab } = useAIChat()
 const { panels } = useI18n()
 const checkMessages = useDesignCheckMessages()
+const inspectMessages = useInspectMessages()
 const store = useEditorStore()
 
 const tabStyles = propertiesTabs()
@@ -70,6 +72,14 @@ const problemCount = computed(() => {
         >
           {{ panels.design }}
         </TabsTrigger>
+        <TabsTrigger
+          value="inspect"
+          data-test-id="properties-tab-inspect"
+          :class="tabStyles.trigger()"
+        >
+          <icon-lucide-ruler :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">{{ inspectMessages.tab }}</span>
+        </TabsTrigger>
         <TabsTrigger value="code" data-test-id="properties-tab-code" :class="tabStyles.trigger()">
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
@@ -107,6 +117,14 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'design'"
       >
         <DesignPanel />
+      </TabsContent>
+
+      <TabsContent
+        value="inspect"
+        class="flex min-h-0 flex-1 flex-col"
+        :hidden="activeTab !== 'inspect'"
+      >
+        <InspectPanel :active="activeTab === 'inspect'" />
       </TabsContent>
 
       <TabsContent

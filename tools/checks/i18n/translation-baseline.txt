@@ -1272,3 +1272,7 @@ es:prototype.scrollVertical
 es:prototype.scrollHorizontal
 fr:prototype.scrollVertical
 fr:prototype.scrollHorizontal
+de:inspect.code
+fr:inspect.code
+it:inspect.limits
+pl:inspect.layout

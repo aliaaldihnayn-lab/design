@@ -1,0 +1,15 @@
+{
+  "tab": "检查",
+  "noSelection": "选择一个图层以查看其属性和代码",
+  "size": "尺寸",
+  "limits": "最小 / 最大",
+  "layout": "自动布局",
+  "radius": "圆角半径",
+  "colors": "颜色",
+  "typography": "排版",
+  "code": "代码",
+  "copy": "复制代码",
+  "sizingFixed": "固定",
+  "sizingHug": "包裹内容",
+  "sizingFill": "填充"
+}

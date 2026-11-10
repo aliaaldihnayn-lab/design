@@ -31,6 +31,7 @@ import {
   setBehaviour
 } from '#core/tools/create'
 import { buildDesignSystemTool } from '#core/tools/design-system'
+import { inspectLayerTool } from '#core/tools/inspect'
 import {
   createDeviceMockup,
   createSocialPost,
@@ -145,6 +146,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   convertToDieline,
   // Design system
   buildDesignSystemTool,
+  // Dev Mode
+  inspectLayerTool,
   // Photo
   setImageAdjustments,
   // Plugins

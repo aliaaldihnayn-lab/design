@@ -63,6 +63,11 @@
       "import": "./dist/figma-api/plugins/index.js",
       "default": "./dist/figma-api/plugins/index.js"
     },
+    "./inspect": {
+      "types": "./dist/inspect/index.d.ts",
+      "import": "./dist/inspect/index.js",
+      "default": "./dist/inspect/index.js"
+    },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js",
