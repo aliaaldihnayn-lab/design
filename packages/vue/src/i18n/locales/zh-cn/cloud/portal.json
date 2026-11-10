@@ -374,6 +374,7 @@
   "emailSuppressed": "未发送",
   "emailKindInvitation": "文档邀请",
   "emailKindWorkspaceInvitation": "工作区邀请",
+  "emailKindRoomInvitation": "房间邀请",
   "emailKindEmailChangeRequested": "邮箱更改申请",
   "emailKindNewSignIn": "新的登录",
   "emailKindTwoStepChanged": "两步验证已更改",

@@ -388,6 +388,7 @@
   "emailSuppressed": "Nie wysłano",
   "emailKindInvitation": "Zaproszenie do dokumentu",
   "emailKindWorkspaceInvitation": "Zaproszenie do obszaru roboczego",
+  "emailKindRoomInvitation": "Zaproszenie do pokoju",
   "emailKindEmailChangeRequested": "Prośba o zmianę adresu e-mail",
   "emailKindNewSignIn": "Nowe logowanie",
   "emailKindTwoStepChanged": "Zmiana logowania dwuetapowego",

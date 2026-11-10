@@ -83,6 +83,20 @@ export function createCloudStorageAdapter(
     return documents.find((document) => document.id === id) ?? null
   }
 
+  /**
+   * Whether the server already has the document, asked of the document itself: one made in a
+   * room is reachable through the room by people who are not in its workspace's list.
+   */
+  async function exists(id: string): Promise<boolean> {
+    try {
+      await (await client()).getDocumentAccess(id)
+      return true
+    } catch (error) {
+      if (error instanceof CloudAPIError && error.status === 404) return false
+      throw error
+    }
+  }
+
   return {
     async testConnection() {
       try {
@@ -125,7 +139,7 @@ export function createCloudStorageAdapter(
       // The file says whether it is a board, as its header does for Figma.
       const kind = figArchiveKind(bytes) ?? 'design'
       // Without a revision this is the first save; the document may not exist on the server yet.
-      if (!baseRevision && !(await listed(id))) {
+      if (!baseRevision && !(await exists(id))) {
         await cloud.createDocument(workspaceId(), { id, name, kind })
       }
       // The workspace keeps images once; the stored file names them and uploads only those it lacks.

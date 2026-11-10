@@ -374,6 +374,7 @@
   "emailSuppressed": "未送信",
   "emailKindInvitation": "ドキュメントへの招待",
   "emailKindWorkspaceInvitation": "ワークスペースへの招待",
+  "emailKindRoomInvitation": "ルームへの招待",
   "emailKindEmailChangeRequested": "メールアドレス変更のリクエスト",
   "emailKindNewSignIn": "新しいサインイン",
   "emailKindTwoStepChanged": "2段階認証の変更",

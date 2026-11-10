@@ -168,6 +168,16 @@ const workspaceLocations = computed(() =>
             <span :class="ui.label()">{{ t.homeSharedWithYou }}</span>
             <span v-if="sharedCount" :class="ui.trailing()">{{ sharedCount }}</span>
           </button>
+          <button
+            type="button"
+            :class="ui.item()"
+            :data-active="isActive({ kind: 'rooms', id: 'rooms' })"
+            data-test-id="home-rooms"
+            @click="emit('select', { kind: 'rooms', id: 'rooms' })"
+          >
+            <icon-lucide-door-open :class="ui.icon()" />
+            <span :class="ui.label()">{{ t.roomsTitle }}</span>
+          </button>
         </template>
         <button v-else type="button" :class="ui.item()" @click="emit('connect')">
           <icon-lucide-log-in :class="ui.icon()" />

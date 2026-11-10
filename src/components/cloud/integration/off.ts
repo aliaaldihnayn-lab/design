@@ -5,6 +5,7 @@ function absent(name: string) {
   return defineComponent({ name, inheritAttrs: false, render: () => null })
 }
 
+export const CloudRoomsSection = absent('CloudRoomsSection')
 export const CloudSharedSection = absent('CloudSharedSection')
 export const CloudWorkspaceSection = absent('CloudWorkspaceSection')
 export const CloudSettingsSection = absent('CloudSettingsSection')

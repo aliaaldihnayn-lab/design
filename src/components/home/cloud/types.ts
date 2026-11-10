@@ -5,6 +5,7 @@ export type HomeLocation =
   | { kind: 'recent'; id: 'recent' }
   | { kind: 'workspace'; id: string }
   | { kind: 'shared'; id: 'shared' }
+  | { kind: 'rooms'; id: 'rooms' }
   | { kind: 'storage'; id: 'storage' }
 
 export type HomeCloudAccount = {
