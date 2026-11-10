@@ -387,6 +387,16 @@ export interface SignatureEventTable {
   createdAt: TimestampColumn
 }
 
+/** A person's connected Jira Cloud site; the API token is stored encrypted. */
+export interface JiraConnectionTable {
+  userId: string
+  site: string
+  email: string
+  apiTokenEncrypted: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -422,6 +432,7 @@ export interface CloudDatabase {
   signatureEnvelope: SignatureEnvelopeTable
   signatureSigner: SignatureSignerTable
   signatureEvent: SignatureEventTable
+  jiraConnection: JiraConnectionTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

@@ -15,6 +15,7 @@ export {
   type CloudAIWorkspace
 } from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'
+export { cloudJiraAvailable, cloudJiraClient } from '../jira/access'
 export { isCloudBinding } from '../documents/status'
 export { openCloudShare } from '../sharing/dialog'
 export { cloudSaveDestinations, cloudUploadFailure, signInToSaveTo } from '../documents/save'

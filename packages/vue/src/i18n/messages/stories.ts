@@ -57,7 +57,42 @@ export const storiesMessageDefaults = {
   statusInProgress: 'In progress',
   statusInReview: 'In review',
   statusDone: 'Done',
-  missing: 'Incomplete'
+  missing: 'Incomplete',
+  jira: 'Jira',
+  jiraNotConnected: 'Connect a Jira Cloud site to create these stories as Jira issues.',
+  connectJira: 'Connect Jira…',
+  jiraProject: 'Jira project',
+  jiraProjectPlaceholder: 'Project key, e.g. SHOP',
+  pushToJira: 'Create and update in Jira',
+  pushStory: 'Send to Jira',
+  pullFromJira: 'Refresh status',
+  syncing: 'Syncing with Jira…',
+  syncSummary: params('{created} created, {updated} updated, {pulled} refreshed, {failed} failed'),
+  syncFailed: 'Jira could not be reached.',
+  openInJira: params('Open {key} in Jira'),
+  assignee: params('Assigned to {name}'),
+  unassigned: 'Unassigned',
+  jiraSettingsDescription:
+    'Create epics and user stories as Jira issues and read their status back, with an API token for your Jira Cloud site.',
+  jiraSite: 'Site address',
+  jiraSitePlaceholder: 'your-team.atlassian.net',
+  jiraEmail: 'Atlassian account email',
+  jiraToken: 'API token',
+  jiraGetToken: 'Create an API token',
+  jiraDefaultProject: 'Default project key',
+  jiraConnect: 'Connect',
+  jiraDisconnect: 'Disconnect',
+  jiraConnectedAs: params('Connected to {site} as {email}'),
+  jiraInvalidSite: 'Enter a Jira Cloud address such as your-team.atlassian.net.',
+  jiraRejected: 'Jira did not accept this email and API token.',
+  jiraUnreachable: 'Jira could not be reached. Check the address and your connection.',
+  jiraUnavailable:
+    'In the browser, Jira is reached through Lawha Cloud: sign in to a Cloud server first, or use the desktop app.',
+  jiraCredentialFailed: 'The API token could not be saved in the system credential store.',
+  jiraEmailInvalid: 'Enter the email of your Atlassian account.',
+  jiraTokenRequired: 'Enter an API token.',
+  jiraCloudHolds: 'Your Lawha Cloud server keeps the API token; documents never contain it.',
+  jiraDesktopHolds: 'The system credential store keeps the API token; documents never contain it.'
 } as const
 
 export const storiesMessages = i18n('stories', storiesMessageDefaults)

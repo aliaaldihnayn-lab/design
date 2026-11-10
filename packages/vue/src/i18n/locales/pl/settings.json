@@ -85,5 +85,6 @@
   "modelNameHint": "Nazwa, którą rozpoznasz na liście modeli.",
   "modelIDHint": "Użyj dokładnego identyfikatora modelu podanego przez dostawcę.",
   "baseURLHint": "Wpisz adres API wraz z wymaganą ścieżką.",
-  "designToolsRequired": "Model projektowy musi obsługiwać narzędzia. Wybierz zgodny model lub włącz obsługę narzędzi w ustawieniach zaawansowanych."
+  "designToolsRequired": "Model projektowy musi obsługiwać narzędzia. Wybierz zgodny model lub włącz obsługę narzędzi w ustawieniach zaawansowanych.",
+  "jira": "Jira"
 }

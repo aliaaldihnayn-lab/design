@@ -91,6 +91,12 @@ export function useHomeCloud() {
   }
 }
 
+export const cloudJiraAvailable = computed(() => false)
+
+export function cloudJiraClient(): CloudAPIClient | null {
+  return null
+}
+
 export const cloudSignaturesAvailable = computed(() => false)
 
 export function cloudSignatureClient(): CloudAPIClient | null {

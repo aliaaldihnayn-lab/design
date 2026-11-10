@@ -59,6 +59,7 @@ import { hc } from 'hono/client'
 import * as v from 'valibot'
 
 import { createImageRequests } from './images'
+import { createJiraRequests } from './jira'
 import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
 import { createSignatureRequests } from './signatures'
 import { createWorkspaceRequests } from './workspaces'
@@ -173,6 +174,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     ...createWorkspaceRequests(client, options.onDiagnostic),
     ...createImageRequests(client, publicClient, options.onDiagnostic),
     ...createSignatureRequests(client, publicClient, options.onDiagnostic),
+    ...createJiraRequests(client, options.onDiagnostic),
     /** Documents shared with the person directly, outside their workspaces. */
     async listSharedDocuments(): Promise<SharedDocument[]> {
       const response = await parseResponse(

@@ -12,6 +12,9 @@ import {
 import { useStoriesMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { openExternalLink } from '@/app/shell/ui'
+import { useJiraSync } from '@/app/stories/jira'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
@@ -37,6 +40,7 @@ const {
 }>()
 
 const store = useEditorStore()
+const sync = useJiraSync()
 const t = useStoriesMessages()
 const ui = storiesTheme()
 const open = ref(focused)
@@ -269,6 +273,36 @@ const incomplete = computed(() => storyGaps(story).length > 0)
       <div :class="ui.field()">
         <span :class="ui.label()">{{ t.epic }}</span>
         <AppSelect v-model="epicId" :label="t.epic" :options="epicOptions" />
+      </div>
+
+      <div v-if="story.jiraKey || sync.ready.value" class="flex flex-wrap items-center gap-1.5">
+        <AppButton
+          v-if="story.jiraKey && story.jiraUrl"
+          variant="link"
+          size="xs"
+          dir="ltr"
+          :aria-label="t.openInJira({ key: story.jiraKey })"
+          data-action="open-jira"
+          @click="story.jiraUrl && openExternalLink(story.jiraUrl)"
+        >
+          <icon-lucide-external-link class="size-3" aria-hidden="true" />
+          {{ story.jiraKey }}
+        </AppButton>
+        <span v-if="story.jira" :class="ui.label()" dir="auto">
+          {{ story.jira.assignee ? t.assignee({ name: story.jira.assignee }) : t.unassigned }}
+        </span>
+        <AppButton
+          v-if="sync.ready.value"
+          variant="outline"
+          size="xs"
+          class="ms-auto"
+          :disabled="sync.busy.value"
+          data-action="push-story"
+          @click="sync.push({ rootIds: [nodeId], storyIds: [story.id] })"
+        >
+          <icon-lucide-send class="size-3" aria-hidden="true" />
+          {{ t.pushStory }}
+        </AppButton>
       </div>
 
       <div class="flex justify-end">

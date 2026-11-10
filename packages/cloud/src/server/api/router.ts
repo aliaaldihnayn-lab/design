@@ -13,6 +13,7 @@ import {
   createDocumentVersionRoutes,
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
+import { createJiraRoutes, type JiraConnectionService } from '#cloud/server/jira'
 import type { EntitlementService } from '#cloud/server/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
@@ -47,6 +48,8 @@ export type CloudAPIServices = {
   /** Documents sent for signature, and how to read a signer's address for the audit trail. */
   signatures: SignatureService
   signing: SigningRouteOptions
+  /** The person's Jira Cloud site for their user stories; without it the routes answer 404. */
+  jira?: JiraConnectionService
 }
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
@@ -103,6 +106,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
     )
     .route('/', createDocumentVersionRoutes(services.versions))
     .route('/signatures', createSignatureRoutes(services.signatures, services.signing))
+    .route('/integrations/jira', createJiraRoutes(services.jira))
     .route(
       '/',
       createDocumentSharingRoutes(

@@ -19,6 +19,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 
 import StoriesPanelEpics from './StoriesPanelEpics.vue'
+import StoriesPanelJira from './StoriesPanelJira.vue'
 import StoriesPanelStory from './StoriesPanelStory.vue'
 import { stories as storiesTheme } from './ui'
 
@@ -143,6 +144,7 @@ async function exportAs(formatId: 'stories-markdown' | 'stories-csv') {
       :description="selectionCount > 1 ? t.multipleSelected : t.noSelection"
     />
 
+    <StoriesPanelJira :node-ids="[...store.state.selectedIds]" />
     <StoriesPanelEpics :groups="stories.pageGroups.value" />
 
     <div v-if="exportFailed" class="px-3 py-2">

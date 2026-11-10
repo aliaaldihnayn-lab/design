@@ -66,6 +66,7 @@ export const settingsMessageDefaults = {
   fonts: 'Fonts',
   media: 'Media',
   mcp: 'MCP',
+  jira: 'Jira',
   toolAccess: 'Tool access',
   capabilityShow: 'Show',
   capabilityShowAll: 'All',
