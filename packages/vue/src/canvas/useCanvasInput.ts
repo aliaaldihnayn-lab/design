@@ -384,7 +384,7 @@ export function useCanvasInput(
       return
     }
 
-    if (d.type === 'sticky-draw') {
+    if (d.type === 'sticky-draw' || d.type === 'shape-builder') {
       d.move(cx, cy)
       return
     }

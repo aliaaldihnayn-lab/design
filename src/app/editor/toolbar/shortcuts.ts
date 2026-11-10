@@ -23,6 +23,7 @@ const UNKEYED: Readonly<Record<Tool, string>> = {
   STAR: '',
   PEN: '',
   PENCIL: '',
+  SHAPE_BUILDER: '',
   TEXT: '',
   STICKY: '',
   SHAPE_WITH_TEXT: '',

@@ -4,6 +4,7 @@ import type { Editor, Tool } from '@lawha/core'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
+import { hoverShapeBuilder, startShapeBuilderDrag } from '#vue/canvas/shape-builder/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
@@ -56,22 +57,36 @@ const shape: CanvasTool = {
  * Every tool's canvas behaviour, by id. A tool added to `Tool` needs an entry here, and the
  * editor's profile decides which tools are on offer.
  */
+const select: CanvasTool = {
+  press: ({ event, cx, cy, sx, sy }, context) =>
+    handleSelectDown(
+      event,
+      cx,
+      cy,
+      sx,
+      sy,
+      context.editor,
+      context.hitFns,
+      context.tryStartRotation,
+      context.handleTextEditClick,
+      context.setDrag
+    ),
+  hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+}
+
 export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
-  SELECT: {
-    press: ({ event, cx, cy, sx, sy }, context) =>
-      handleSelectDown(
-        event,
-        cx,
-        cy,
-        sx,
-        sy,
-        context.editor,
-        context.hitFns,
-        context.tryStartRotation,
-        context.handleTextEditClick,
-        context.setDrag
-      ),
-    hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+  SELECT: select,
+  // Off the selected shapes' regions it selects, so shapes can be picked without switching tools.
+  SHAPE_BUILDER: {
+    press: (pointer, context) => {
+      const { event, cx, cy } = pointer
+      if (!startShapeBuilderDrag(event, cx, cy, context.editor, context.setDrag))
+        select.press(pointer, context)
+    },
+    hover: (pointer, context) => {
+      hoverShapeBuilder(pointer.event, pointer.cx, pointer.cy, context.editor)
+      if (!context.editor.state.shapeBuilderHover) context.hoverLayers(pointer)
+    }
   },
   HAND: pan,
   // Comments are placed by the app's comments layer above the canvas.

@@ -14,5 +14,6 @@
   "shape": "Forme",
   "connector": "Connecteur",
   "hand": "Main",
-  "comment": "Commentaire"
+  "comment": "Commentaire",
+  "shapeBuilder": "Concepteur de formes"
 }

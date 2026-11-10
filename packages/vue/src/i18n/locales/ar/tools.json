@@ -14,5 +14,6 @@
   "shape": "شكل",
   "connector": "موصل",
   "hand": "اليد",
-  "comment": "تعليق"
+  "comment": "تعليق",
+  "shapeBuilder": "منشئ الأشكال"
 }

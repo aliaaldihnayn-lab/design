@@ -201,6 +201,15 @@ export interface DragPen {
   knotStartY: number
 }
 
+/** A Shape Builder drag: the regions it crosses merge, or are deleted, on release. */
+export interface DragShapeBuilder {
+  type: 'shape-builder'
+  /** Adds the pointer, in canvas coordinates, to the path the drag has taken. */
+  move: (cx: number, cy: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 export interface DragPencil {
   type: 'pencil-drag'
 }
@@ -306,6 +315,7 @@ export type DragState =
   | DragRotate
   | DragPen
   | DragPencil
+  | DragShapeBuilder
   | DragTextSelect
   | DragEditNode
   | DragEditHandle

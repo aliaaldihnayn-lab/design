@@ -18,7 +18,7 @@ import type { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { RulerTheme, ShapeBuilderHover, SkiaRenderer } from '#core/canvas/renderer'
 import type {
   MeasurementMode,
   PresenceCursor,
@@ -50,6 +50,7 @@ export type Tool =
   | 'CONNECTOR'
   | 'PEN'
   | 'PENCIL'
+  | 'SHAPE_BUILDER'
   | 'HAND'
   | 'COMMENT'
 
@@ -170,6 +171,8 @@ export interface EditorViewState {
   penCursorY: number | null
   /** The freehand stroke being drawn with the pencil, in canvas coordinates. */
   pencilState: PencilState | null
+  /** The regions the Shape Builder tool would merge or delete. */
+  shapeBuilderHover: ShapeBuilderHover | null
   autoLayoutHover: {
     nodeId: string
     kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'

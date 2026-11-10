@@ -1,5 +1,7 @@
 export { booleanExclude, booleanIntersect, booleanSubtract, booleanUnion } from './vector/boolean'
 
+export { shapeBuilder, shapeBuilderRegionsTool } from './vector/shape-builder'
+
 export { pathFlip, pathGet, pathMove, pathScale, pathSet } from './vector/path'
 
 export { viewportGet, viewportSet, viewportZoomToFit } from './vector/viewport'

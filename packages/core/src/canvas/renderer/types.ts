@@ -38,6 +38,12 @@ export interface PresenceCursor {
   outline?: Rect[]
 }
 
+/** Regions the Shape Builder tool would merge or delete, as SVG path data in canvas coordinates. */
+export interface ShapeBuilderHover {
+  paths: string[]
+  mode: 'merge' | 'delete'
+}
+
 export interface RenderOverlays {
   /** Whether the canvas previews: it draws the design without labels or editing outlines. */
   playing?: boolean
@@ -93,6 +99,8 @@ export interface RenderOverlays {
     cursorY?: number
   } | null
   pencilState?: PencilState | null
+  /** The Shape Builder regions under the pointer or the drag. */
+  shapeBuilderHover?: ShapeBuilderHover | null
   nodeEditState?: {
     nodeId: string
     vertices: VectorVertex[]

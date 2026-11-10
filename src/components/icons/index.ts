@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import IconShapeBuilder from '~icons/lucide/blend'
 import IconCircle from '~icons/lucide/circle'
 import IconColumns from '~icons/lucide/columns-3'
 import IconComponentSet from '~icons/lucide/component'
@@ -47,6 +48,7 @@ export const toolIcons: Record<Tool, Component> = {
   STAR: IconStar,
   PEN: IconPenTool,
   PENCIL: IconPencil,
+  SHAPE_BUILDER: IconShapeBuilder,
   TEXT: IconType,
   STICKY: IconStickyNote,
   SHAPE_WITH_TEXT: IconShapes,

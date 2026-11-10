@@ -14,5 +14,6 @@
   "shape": "形状",
   "connector": "连接线",
   "hand": "抓手",
-  "comment": "评论"
+  "comment": "评论",
+  "shapeBuilder": "形状生成器"
 }

@@ -220,6 +220,7 @@ export function createEditor(options?: EditorOptions) {
     if (previous === tool) return
     // Guides the pen showed for its next point do not belong to the next tool.
     if (previous === 'PEN') state.snapGuides = []
+    if (previous === 'SHAPE_BUILDER') state.shapeBuilderHover = null
     emitEditorEvent('tool:changed', tool, previous)
   }
 

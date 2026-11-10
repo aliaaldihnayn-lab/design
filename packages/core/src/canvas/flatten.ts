@@ -147,7 +147,8 @@ function boundsOf(paths: Path[]): Rect | null {
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 
-function networkIn(renderer: SkiaRenderer, path: Path, box: Vector): VectorNetwork {
+/** `path`'s vector network with `box`'s corner as its origin. */
+export function networkIn(renderer: SkiaRenderer, path: Path, box: Vector): VectorNetwork {
   const moved = placedPath(renderer, path, renderer.ck.Matrix.translated(-box.x, -box.y))
   const network = parseSVGPath(moved.toSVGString(), windingRuleOf(renderer, moved))
   moved.delete()
