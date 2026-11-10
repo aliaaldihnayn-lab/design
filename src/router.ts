@@ -17,6 +17,8 @@ const router = createRouter({
       }
     },
     { path: '/demo', component: WorkspaceView, meta: { demo: true } },
+    // The document editor for Word and Google Docs documents, loaded only when opened.
+    { path: '/writer', component: () => import('./views/WriterView.vue') },
     // A peer-to-peer room, joined by its ID.
     { path: '/rooms/:roomId', component: WorkspaceView },
     // Cloud invitations and links; the app takes their secret out of the address on start.

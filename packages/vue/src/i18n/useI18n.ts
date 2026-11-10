@@ -27,6 +27,7 @@ import {
   recoveryMessages,
   photoMessages,
   printMessages,
+  writerMessages,
   prototypeMessages,
   renameMessages,
   settingsMessages,
@@ -67,6 +68,7 @@ export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
 export const useDesignSystemMessages = () => useI18nNamespace(designSystemMessages)
 export const usePhotoMessages = () => useI18nNamespace(photoMessages)
 export const usePrintMessages = () => useI18nNamespace(printMessages)
+export const useWriterMessages = () => useI18nNamespace(writerMessages)
 export const usePrototypeMessages = () => useI18nNamespace(prototypeMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
@@ -100,6 +102,7 @@ export function useI18n() {
     panels: usePanelMessages(),
     recovery: useRecoveryMessages(),
     print: usePrintMessages(),
+    writer: useWriterMessages(),
     prototype: usePrototypeMessages(),
     rename: useRenameMessages(),
     settings: useSettingsMessages(),

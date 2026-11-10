@@ -23,6 +23,7 @@ import pages from './pages.json'
 import panels from './panels.json'
 import photo from './photo.json'
 import print from './print.json'
+import writer from './writer.json'
 import prototype from './prototype.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
@@ -59,6 +60,7 @@ export default {
   panels,
   photo,
   print,
+  writer,
   prototype,
   recovery,
   rename,

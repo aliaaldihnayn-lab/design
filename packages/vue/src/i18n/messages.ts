@@ -38,6 +38,7 @@ import {
   variableTypeMessageDefaults,
   variableTypeMessages
 } from '#vue/i18n/messages/variables/types'
+import { writerMessageDefaults, writerMessages } from '#vue/i18n/messages/writer'
 
 export {
   aiMessages,
@@ -73,7 +74,8 @@ export {
   cloudMessages,
   cloudPortalMessages,
   variablesMessages,
-  variableTypeMessages
+  variableTypeMessages,
+  writerMessages
 }
 
 export const messageDefaults = {
@@ -110,5 +112,6 @@ export const messageDefaults = {
   cloud: cloudMessageDefaults,
   cloudPortal: cloudPortalMessageDefaults,
   variables: variablesMessageDefaults,
-  variableTypes: variableTypeMessageDefaults
+  variableTypes: variableTypeMessageDefaults,
+  writer: writerMessageDefaults
 } as const
