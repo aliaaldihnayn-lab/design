@@ -12,6 +12,7 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 import { writer } from './ui'
+import WriterSignatureDialog from './WriterSignatureDialog.vue'
 
 /** Links, images, tables and page breaks, plus row and column edits while in a table. */
 const { editor } = defineProps<{ editor: Editor }>()
@@ -78,6 +79,15 @@ function naturalSize(src: string): Promise<{ width: number; height: number }> {
 }
 
 const inTable = computed(() => editor.isActive('table'))
+const signatureOpen = ref(false)
+
+function insertSignature(image: { src: string; width: number; height: number }) {
+  editor
+    .chain()
+    .focus()
+    .setImage({ ...image, alt: t.value.signature })
+    .run()
+}
 
 /** A table takes the direction of the paragraph it is inserted at, so Arabic tables start right. */
 function insertTable() {
@@ -135,6 +145,14 @@ function insertTable() {
       tabindex="-1"
       @change="insertImage"
     />
+    <IconButton
+      :label="t.addSignature"
+      data-test-id="writer-signature"
+      @click="signatureOpen = true"
+    >
+      <icon-lucide-signature class="size-3.5" />
+    </IconButton>
+    <WriterSignatureDialog v-model:open="signatureOpen" @insert="insertSignature" />
     <IconButton :label="t.table" data-test-id="writer-table" @click="insertTable">
       <icon-lucide-table class="size-3.5" />
     </IconButton>
