@@ -59,5 +59,21 @@
   "scrollNone": "スクロールなし",
   "scrollVertical": "縦",
   "scrollHorizontal": "横",
-  "scrollBoth": "縦横"
+  "scrollBoth": "縦横",
+  "triggerMouseEnter": "マウスエンター",
+  "triggerMouseLeave": "マウスリーブ",
+  "triggerMouseDown": "マウスダウン",
+  "triggerMouseUp": "マウスアップ",
+  "triggerFocus": "フォーカス時",
+  "triggerBlur": "フォーカス解除時",
+  "triggerDrag": "ドラッグ時",
+  "actionChangeTo": "変更先",
+  "transitionMoveOut": "ムーブアウト",
+  "easingEaseInBack": "イーズイン（バック）",
+  "easingEaseOutBack": "イーズアウト（バック）",
+  "easingEaseInOutBack": "イーズインアウト（バック）",
+  "easingCustomSpring": "カスタムスプリング",
+  "stiffness": "剛性",
+  "damping": "減衰",
+  "mass": "質量"
 }

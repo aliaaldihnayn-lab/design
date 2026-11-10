@@ -59,5 +59,21 @@
   "scrollNone": "Kein Scrollen",
   "scrollVertical": "Vertikal",
   "scrollHorizontal": "Horizontal",
-  "scrollBoth": "Beide Richtungen"
+  "scrollBoth": "Beide Richtungen",
+  "triggerMouseEnter": "Maus hinein",
+  "triggerMouseLeave": "Maus hinaus",
+  "triggerMouseDown": "Maustaste gedrückt",
+  "triggerMouseUp": "Maustaste losgelassen",
+  "triggerFocus": "Bei Fokus",
+  "triggerBlur": "Bei Fokusverlust",
+  "triggerDrag": "Beim Ziehen",
+  "actionChangeTo": "Ändern zu",
+  "transitionMoveOut": "Herausbewegen",
+  "easingEaseInBack": "Ease-in mit Rückzug",
+  "easingEaseOutBack": "Ease-out mit Überschwingen",
+  "easingEaseInOutBack": "Ease-in-out mit Rückzug",
+  "easingCustomSpring": "Eigene Feder",
+  "stiffness": "Steifigkeit",
+  "damping": "Dämpfung",
+  "mass": "Masse"
 }

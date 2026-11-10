@@ -59,5 +59,21 @@
   "scrollNone": "بلا تمرير",
   "scrollVertical": "عمودي",
   "scrollHorizontal": "أفقي",
-  "scrollBoth": "في الاتجاهين"
+  "scrollBoth": "في الاتجاهين",
+  "triggerMouseEnter": "عند دخول المؤشر",
+  "triggerMouseLeave": "عند خروج المؤشر",
+  "triggerMouseDown": "عند الضغط",
+  "triggerMouseUp": "عند رفع الضغط",
+  "triggerFocus": "عند التركيز",
+  "triggerBlur": "عند فقدان التركيز",
+  "triggerDrag": "عند السحب",
+  "actionChangeTo": "التغيير إلى",
+  "transitionMoveOut": "تحريك للخارج",
+  "easingEaseInBack": "تسارع مع ارتداد",
+  "easingEaseOutBack": "تباطؤ مع ارتداد",
+  "easingEaseInOutBack": "تسارع ثم تباطؤ مع ارتداد",
+  "easingCustomSpring": "نابض مخصص",
+  "stiffness": "الصلابة",
+  "damping": "التخميد",
+  "mass": "الكتلة"
 }

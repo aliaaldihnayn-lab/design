@@ -59,5 +59,21 @@
   "scrollNone": "Bez przewijania",
   "scrollVertical": "Pionowe",
   "scrollHorizontal": "Poziome",
-  "scrollBoth": "Oba kierunki"
+  "scrollBoth": "Oba kierunki",
+  "triggerMouseEnter": "Najechanie myszą",
+  "triggerMouseLeave": "Zjechanie myszą",
+  "triggerMouseDown": "Wciśnięcie myszy",
+  "triggerMouseUp": "Puszczenie myszy",
+  "triggerFocus": "Po fokusie",
+  "triggerBlur": "Po utracie fokusu",
+  "triggerDrag": "Po przeciągnięciu",
+  "actionChangeTo": "Zmień na",
+  "transitionMoveOut": "Wysunięcie",
+  "easingEaseInBack": "Przyspieszenie z cofnięciem",
+  "easingEaseOutBack": "Spowolnienie z przestrzeleniem",
+  "easingEaseInOutBack": "Przyspieszenie i spowolnienie z odbiciem",
+  "easingCustomSpring": "Własna sprężyna",
+  "stiffness": "Sztywność",
+  "damping": "Tłumienie",
+  "mass": "Masa"
 }

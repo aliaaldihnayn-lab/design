@@ -59,5 +59,21 @@
   "scrollNone": "不滚动",
   "scrollVertical": "垂直",
   "scrollHorizontal": "水平",
-  "scrollBoth": "双向"
+  "scrollBoth": "双向",
+  "triggerMouseEnter": "鼠标移入",
+  "triggerMouseLeave": "鼠标移出",
+  "triggerMouseDown": "鼠标按下",
+  "triggerMouseUp": "鼠标松开",
+  "triggerFocus": "获得焦点时",
+  "triggerBlur": "失去焦点时",
+  "triggerDrag": "拖动时",
+  "actionChangeTo": "更改为",
+  "transitionMoveOut": "移出",
+  "easingEaseInBack": "回弹缓入",
+  "easingEaseOutBack": "回弹缓出",
+  "easingEaseInOutBack": "回弹缓入缓出",
+  "easingCustomSpring": "自定义弹簧",
+  "stiffness": "刚度",
+  "damping": "阻尼",
+  "mass": "质量"
 }

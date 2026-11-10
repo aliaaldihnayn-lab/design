@@ -1,6 +1,38 @@
 import * as v from 'valibot'
 
-export const TRIGGERS = ['click', 'hover', 'press', 'after-delay', 'key'] as const
+/**
+ * What starts an interaction. `hover` and `press` last while the pointer is over or down: a
+ * Change to they start is undone when it leaves or lifts, as Figma's While hovering and While
+ * pressing. The others fire once.
+ */
+export const TRIGGERS = [
+  'click',
+  'hover',
+  'press',
+  'after-delay',
+  'key',
+  'mouse-enter',
+  'mouse-leave',
+  'mouse-down',
+  'mouse-up',
+  'focus',
+  'blur',
+  'drag'
+] as const
+
+/** Triggers a pointer or focus event on the layer itself starts, without a key or timer. */
+export const POINTER_TRIGGERS = [
+  'click',
+  'hover',
+  'press',
+  'mouse-enter',
+  'mouse-leave',
+  'mouse-down',
+  'mouse-up',
+  'focus',
+  'blur',
+  'drag'
+] as const
 export const TRANSITION_TYPES = [
   'instant',
   'dissolve',
@@ -8,11 +40,28 @@ export const TRANSITION_TYPES = [
   'slide-out',
   'push',
   'move-in',
+  'move-out',
   'smart-animate'
 ] as const
 export const DIRECTIONS = ['left', 'right', 'up', 'down'] as const
-export const EASINGS = ['linear', 'ease-in', 'ease-out', 'ease-in-out', 'spring'] as const
+export const EASINGS = [
+  'linear',
+  'ease-in',
+  'ease-out',
+  'ease-in-out',
+  'ease-in-back',
+  'ease-out-back',
+  'ease-in-out-back',
+  'spring',
+  'custom-spring'
+] as const
 export const OVERLAY_POSITIONS = ['center', 'top', 'bottom', 'left', 'right'] as const
+
+export const springSchema = v.object({
+  stiffness: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(1000)), 300),
+  damping: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(100)), 20),
+  mass: v.optional(v.pipe(v.number(), v.minValue(0.1), v.maxValue(10)), 1)
+})
 
 export const transitionSchema = v.object({
   type: v.picklist(TRANSITION_TYPES),
@@ -20,11 +69,28 @@ export const transitionSchema = v.object({
   direction: v.optional(v.picklist(DIRECTIONS), 'left'),
   /** Milliseconds, 0–5000. */
   duration: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5000)), 300),
-  easing: v.optional(v.picklist(EASINGS), 'ease-out')
+  easing: v.optional(v.picklist(EASINGS), 'ease-out'),
+  /** A custom spring's physics, read when the easing is `custom-spring`. */
+  spring: v.optional(springSchema)
 })
 
 export const triggerSchema = v.variant('type', [
-  v.object({ type: v.picklist(['click', 'hover', 'press']) }),
+  v.object({
+    type: v.picklist([
+      'click',
+      'hover',
+      'press',
+      'mouse-enter',
+      'mouse-leave',
+      'mouse-down',
+      'mouse-up',
+      'focus',
+      'blur',
+      'drag'
+    ]),
+    /** Mouse enter, leave, down, and up: ms to wait first, as Figma's delay. */
+    delay: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(60000)))
+  }),
   v.object({
     type: v.literal('after-delay'),
     delay: v.pipe(v.number(), v.minValue(0), v.maxValue(60000))
@@ -45,14 +111,31 @@ export const actionSchema = v.variant('type', [
     position: v.optional(v.picklist(OVERLAY_POSITIONS), 'center'),
     /** Clicking outside the overlay closes it. */
     closeOnOutside: v.optional(v.boolean(), true),
+    /** A colour drawn behind the overlay over the screen, such as `#00000066`; none when unset. */
+    background: v.optional(v.pipe(v.string(), v.hexColor())),
     transition: transitionSchema
   }),
   v.object({ type: v.literal('close-overlay') }),
   v.object({ type: v.literal('scroll-to'), destination: v.pipe(v.string(), v.minLength(1)) }),
-  v.object({ type: v.literal('open-url'), url: v.pipe(v.string(), v.url()) })
+  v.object({ type: v.literal('open-url'), url: v.pipe(v.string(), v.url()) }),
+  /**
+   * Interactive components: the instance holding the layer shows another variant of its set in
+   * place, without leaving the screen, as Figma's Change to.
+   */
+  v.object({
+    type: v.literal('change-to'),
+    /** A variant (component) of the same component set. */
+    destination: v.pipe(v.string(), v.minLength(1)),
+    transition: transitionSchema
+  })
 ])
 
-export const interactionSchema = v.object({ trigger: triggerSchema, action: actionSchema })
+export const interactionSchema = v.object({
+  trigger: triggerSchema,
+  action: actionSchema,
+  /** Further actions the trigger runs after `action`, in order, as Figma's action lists. */
+  andThen: v.optional(v.pipe(v.array(actionSchema), v.maxLength(20)))
+})
 export const interactionListSchema = v.array(interactionSchema)
 
 export const flowSchema = v.object({

@@ -32,6 +32,7 @@ export {
   DIRECTIONS,
   EASINGS,
   OVERLAY_POSITIONS,
+  POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
   TRANSITION_TYPES,
   TRIGGERS
@@ -56,7 +57,31 @@ export {
   type ScrollRegion
 } from './scroll'
 export {
+  actionsOf,
+  applyStateChanges,
+  changeDestinations,
+  changeTarget,
+  dispatchStateEvent,
+  dispatchStateKey,
+  interactionsOf,
+  interactiveLayers,
+  isInteractiveComponent,
+  runInteraction,
+  stateTimers,
+  variantValues,
+  type ComponentStates,
+  type StateChange,
+  type StateDispatch,
+  type StateHold,
+  type StateTimer
+} from './states'
+export {
   ease,
+  easedKeyframes,
+  springDuration,
+  springEasing,
+  transitionDuration,
+  type SpringPhysics,
   pairChanges,
   rectMapping,
   smartAnimateGraph,

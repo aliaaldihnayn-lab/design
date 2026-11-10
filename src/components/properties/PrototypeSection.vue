@@ -6,6 +6,8 @@ import {
   EASINGS,
   SCROLL_DIRECTIONS,
   TRANSITION_TYPES,
+  TRIGGERS,
+  changeDestinations,
   readFlows,
   readInteractions,
   readScroll,
@@ -49,7 +51,7 @@ const screens = computed(() => {
 const interactions = computed<Interaction[]>(() => {
   void version.value
   const node = nodeId ? store.graph.getNode(nodeId) : null
-  return node ? readInteractions(node) : []
+  return node ? readInteractions(node, store.graph) : []
 })
 
 /** Where Present starts: the selected screen, else the first flow, else the first screen. */
@@ -68,13 +70,22 @@ const label = (prefix: string, value: string) =>
   String(t.value[`${prefix}${camel(value)}` as keyof typeof t.value] ?? value)
 
 const triggerOptions = computed(() =>
-  (['click', 'hover', 'press', 'after-delay', 'key'] as const).map((v) => ({
+  TRIGGERS.map((v) => ({
     value: v,
     label: label('trigger', v)
   }))
 )
 const actionOptions = computed(() =>
-  (['navigate', 'back', 'overlay', 'close-overlay', 'open-url'] as const).map((v) => ({
+  (
+    [
+      'navigate',
+      'back',
+      'overlay',
+      'close-overlay',
+      'open-url',
+      ...(variantOptions.value.length > 1 ? (['change-to'] as const) : [])
+    ] as const
+  ).map((v) => ({
     value: v,
     label: label('action', v)
   }))
@@ -87,6 +98,15 @@ const directionOptions = computed(() =>
 )
 const easingOptions = computed(() => EASINGS.map((v) => ({ value: v, label: label('easing', v) })))
 const screenOptions = computed(() => screens.value.map((s) => ({ value: s.id, label: s.name })))
+/** The variants a Change to on the layer can show, when it sits in an interactive component. */
+const variantOptions = computed(() => {
+  void version.value
+  return nodeId
+    ? changeDestinations(store.graph, nodeId).map((s) => ({ value: s.id, label: s.name }))
+    : []
+})
+const destinationOptions = (action: Action) =>
+  action.type === 'change-to' ? variantOptions.value : screenOptions.value
 const scrollOptions = computed(() =>
   SCROLL_DIRECTIONS.map((v) => ({ value: v, label: label('scroll', v) }))
 )
@@ -188,6 +208,13 @@ function defaultAction(type: Action['type'], destination: string, transition: Tr
       return { type, url: 'https://example.com' }
     case 'scroll-to':
       return { type, destination }
+    case 'change-to': {
+      // Another variant than the one the layer sits in.
+      const other = variantOptions.value.find(
+        (option) => !nodeId || !store.graph.closest(nodeId, (node) => node.id === option.value)
+      )
+      return { type, destination: other?.value ?? destination, transition }
+    }
     default:
       return { type: 'close-overlay' }
   }
@@ -244,7 +271,17 @@ function present() {
 const transitionOf = (i: Interaction) =>
   'transition' in i.action ? i.action.transition : undefined
 const showsDirection = (tr: Transition | undefined) =>
-  !!tr && ['slide-in', 'slide-out', 'push', 'move-in'].includes(tr.type)
+  !!tr && ['slide-in', 'slide-out', 'push', 'move-in', 'move-out'].includes(tr.type)
+
+const SPRING_FIELDS = ['stiffness', 'damping', 'mass'] as const
+const DEFAULT_SPRING = { stiffness: 300, damping: 20, mass: 1 }
+
+function setSpring(index: number, field: (typeof SPRING_FIELDS)[number], value: string) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return
+  const current = transitionOf(interactions.value[index])?.spring ?? DEFAULT_SPRING
+  setTransition(index, { spring: { ...DEFAULT_SPRING, ...current, [field]: number } })
+}
 </script>
 
 <template>
@@ -350,7 +387,7 @@ const showsDirection = (tr: Transition | undefined) =>
           <AppSelect
             v-if="'destination' in item.action"
             :model-value="item.action.destination"
-            :options="screenOptions"
+            :options="destinationOptions(item.action)"
             :label="t.destination"
             data-test-id="prototype-destination"
             @update:model-value="setDestination(index, String($event))"
@@ -408,6 +445,18 @@ const showsDirection = (tr: Transition | undefined) =>
                     )
                   })
                 "
+              />
+            </div>
+            <div v-if="transitionOf(item)?.easing === 'custom-spring'" class="flex gap-1">
+              <input
+                v-for="field in SPRING_FIELDS"
+                :key="field"
+                type="number"
+                step="any"
+                class="h-6 w-0 flex-1 rounded bg-input px-1.5 text-[11px]"
+                :aria-label="t[field]"
+                :value="transitionOf(item)?.spring?.[field] ?? DEFAULT_SPRING[field]"
+                @change="setSpring(index, field, ($event.target as HTMLInputElement).value)"
               />
             </div>
           </template>

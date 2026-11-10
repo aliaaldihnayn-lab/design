@@ -18,7 +18,7 @@ export function prototypeConnections(graph: SceneGraph, pageId: string): Prototy
   const walk = (id: string) => {
     const node = graph.getNode(id)
     if (!node || !node.visible) return
-    for (const { trigger, action } of readInteractions(node)) {
+    for (const { trigger, action } of readInteractions(node, graph)) {
       if (action.type !== 'navigate' && action.type !== 'overlay' && action.type !== 'scroll-to')
         continue
       if (!graph.getNode(action.destination)) continue

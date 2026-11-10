@@ -64,7 +64,23 @@ export const prototypeMessageDefaults = {
   easingEaseInOut: 'Ease in and out',
   easingSpring: 'Spring',
   screenOf: params('Screen {current} of {total}'),
-  hintClick: 'Click a highlighted area to continue'
+  hintClick: 'Click a highlighted area to continue',
+  triggerMouseEnter: 'Mouse enter',
+  triggerMouseLeave: 'Mouse leave',
+  triggerMouseDown: 'Mouse down',
+  triggerMouseUp: 'Mouse up',
+  triggerFocus: 'On focus',
+  triggerBlur: 'On blur',
+  triggerDrag: 'On drag',
+  actionChangeTo: 'Change to',
+  transitionMoveOut: 'Move out',
+  easingEaseInBack: 'Ease in back',
+  easingEaseOutBack: 'Ease out back',
+  easingEaseInOutBack: 'Ease in and out back',
+  easingCustomSpring: 'Custom spring',
+  stiffness: 'Stiffness',
+  damping: 'Damping',
+  mass: 'Mass'
 } as const
 
 export const prototypeMessages = i18n('prototype', prototypeMessageDefaults)
