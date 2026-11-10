@@ -34,6 +34,7 @@ import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/se
 import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
 import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/storage'
+import { storiesMessageDefaults, storiesMessages } from '#vue/i18n/messages/stories'
 import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/updates'
 import { variablesMessageDefaults, variablesMessages } from '#vue/i18n/messages/variables/panel'
@@ -74,6 +75,7 @@ export {
   settingsMessages,
   shapeMessages,
   statusMessages,
+  storiesMessages,
   storageMessages,
   toolMessages,
   updatesMessages,
@@ -115,6 +117,7 @@ export const messageDefaults = {
   settings: settingsMessageDefaults,
   shapes: shapeMessageDefaults,
   statuses: statusMessageDefaults,
+  stories: storiesMessageDefaults,
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,

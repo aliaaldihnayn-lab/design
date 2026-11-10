@@ -30,6 +30,7 @@ export {
   useRenameMessages,
   useSettingsMessages,
   useStatusMessages,
+  useStoriesMessages,
   useStorageMessages,
   useFigJamMessages,
   useShapeMessages,

@@ -36,6 +36,7 @@ import {
   settingsMessages,
   shapeMessages,
   statusMessages,
+  storiesMessages,
   storageMessages,
   toolMessages,
   updatesMessages,
@@ -80,6 +81,7 @@ export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
 export const useShapeMessages = () => useI18nNamespace(shapeMessages)
 export const useStatusMessages = () => useI18nNamespace(statusMessages)
+export const useStoriesMessages = () => useI18nNamespace(storiesMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)
 export const useUpdateMessages = () => useI18nNamespace(updatesMessages)

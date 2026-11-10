@@ -108,6 +108,11 @@
       "import": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
     },
+    "./stories": {
+      "types": "./dist/stories/index.d.ts",
+      "import": "./dist/stories/index.js",
+      "default": "./dist/stories/index.js"
+    },
     "./library": {
       "bun": "./src/library/index.ts",
       "types": "./dist/library/index.d.ts",

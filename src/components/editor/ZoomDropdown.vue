@@ -20,6 +20,7 @@ import {
 } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { showStoryPins } from '@/app/stories/use'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -229,6 +230,10 @@ watch(open, (v) => {
             />
             <span class="flex-1">{{ menuText.comments }}</span>
             <AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="itemCls" @select.prevent="showStoryPins = !showStoryPins">
+            <icon-lucide-check v-if="showStoryPins" class="absolute start-2 size-3.5" />
+            <span class="flex-1">{{ menuText.userStories }}</span>
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>

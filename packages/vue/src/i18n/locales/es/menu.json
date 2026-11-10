@@ -94,5 +94,6 @@
   "plugins": "Complementos",
   "importPlugin": "Importar complemento desde carpeta…",
   "removePlugin": "Quitar complemento",
-  "prototypeConnections": "Conexiones del prototipo"
+  "prototypeConnections": "Conexiones del prototipo",
+  "userStories": "Historias de usuario"
 }

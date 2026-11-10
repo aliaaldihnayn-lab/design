@@ -94,5 +94,6 @@
   "plugins": "Plugin",
   "importPlugin": "Importa plugin da cartella…",
   "removePlugin": "Rimuovi plugin",
-  "prototypeConnections": "Collegamenti del prototipo"
+  "prototypeConnections": "Collegamenti del prototipo",
+  "userStories": "User story"
 }

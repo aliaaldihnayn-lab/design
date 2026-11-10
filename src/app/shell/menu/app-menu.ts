@@ -48,6 +48,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
+import { showStoryPins } from '@/app/stories/use'
 import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
@@ -141,6 +142,7 @@ export function useAppMenu() {
     'view-design-issues': 'designIssues',
     'view-prototype-connections': 'prototypeConnections',
     'view-comments': 'comments',
+    'view-user-stories': 'userStories',
     'snap-geometry': 'snapToGeometry',
     'snap-objects': 'snapToObjects',
     'snap-pixel-grid': 'snapToPixelGrid',
@@ -209,6 +211,9 @@ export function useAppMenu() {
     'view-prototype-connections': () => {
       showPrototypeConnections.value = !showPrototypeConnections.value
     },
+    'view-user-stories': () => {
+      showStoryPins.value = !showStoryPins.value
+    },
     ...createSharedEditorMenuActions(setTheme)
   }
 
@@ -234,6 +239,8 @@ export function useAppMenu() {
         return showPrototypeConnections.value
       case 'view-comments':
         return appPreferences.value.comments.showOnCanvas
+      case 'view-user-stories':
+        return showStoryPins.value
       case 'snap-geometry':
         return store.state.snappingPreferences.geometry
       case 'snap-objects':
@@ -279,6 +286,10 @@ export function useAppMenu() {
         }
       case 'view-comments':
         return (value: boolean) => setCommentsOnCanvas(value)
+      case 'view-user-stories':
+        return (value: boolean) => {
+          showStoryPins.value = value
+        }
       case 'snap-geometry':
         return (value: boolean) => setSnappingPreference('geometry', value)
       case 'snap-objects':

@@ -62,6 +62,7 @@ import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
+import { createStoryActions } from './stories'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
@@ -317,6 +318,7 @@ export function createEditor(options?: EditorOptions) {
   const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
+  const stories = createStoryActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
@@ -513,6 +515,7 @@ export function createEditor(options?: EditorOptions) {
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,
     setStatusWorkflow: statuses.setStatusWorkflow,
+    ...stories,
     ...connectorDrawing,
     ...connectorEndpoints,
     ...connectorLines,

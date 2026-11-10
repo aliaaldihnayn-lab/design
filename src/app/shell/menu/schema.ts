@@ -269,6 +269,7 @@ export const APP_MENU_SCHEMA = [
         target: 'browser'
       },
       { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
+      { id: 'view-user-stories', label: 'User Stories', checkbox: true, target: 'browser' },
       { type: 'separator' },
       {
         id: 'theme',

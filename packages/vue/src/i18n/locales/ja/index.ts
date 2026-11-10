@@ -32,6 +32,7 @@ import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
 import statuses from './statuses.json'
+import stories from './stories.json'
 import storage from './storage.json'
 import tools from './tools.json'
 import updates from './updates.json'
@@ -71,6 +72,7 @@ export default {
   settings,
   shapes,
   statuses,
+  stories,
   storage,
   tools,
   updates,

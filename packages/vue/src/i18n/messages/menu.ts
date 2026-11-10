@@ -11,6 +11,7 @@ export const menuMessageDefaults = {
   importPlugin: 'Import plugin from folder…',
   removePlugin: 'Remove plugin',
   prototypeConnections: 'Prototype connections',
+  userStories: 'User stories',
 
   new: 'New design',
   newTab: 'New tab',

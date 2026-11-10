@@ -695,3 +695,7 @@ zh-cn:writer.cloudRequired
 zh-cn:writer.downloadSigned
 zh-cn:writer.saveEncryptedDocx
 zh-cn:writer.saveEncryptedPDF
+ja:stories.exportMarkdown
+ja:stories.exportCSV
+zh-cn:stories.exportMarkdown
+zh-cn:stories.exportCSV

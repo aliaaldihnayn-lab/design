@@ -645,3 +645,13 @@ it:writer.password
 pl:writer.link
 es:writer.stampHidden
 fr:writer.stampHidden
+de:stories.tab
+de:stories.status
+de:stories.epic
+fr:menu.userStories
+fr:stories.tab
+fr:stories.userStories
+fr:stories.epic
+fr:stories.epicDescription
+it:stories.epic
+pl:stories.status

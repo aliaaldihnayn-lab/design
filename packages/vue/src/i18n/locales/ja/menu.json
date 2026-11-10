@@ -94,5 +94,6 @@
   "plugins": "プラグイン",
   "importPlugin": "フォルダーからプラグインを読み込む…",
   "removePlugin": "プラグインを削除",
-  "prototypeConnections": "プロトタイプの接続"
+  "prototypeConnections": "プロトタイプの接続",
+  "userStories": "ユーザーストーリー"
 }
