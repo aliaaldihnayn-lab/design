@@ -72,6 +72,7 @@ describe('normalizeToolbarLayout', () => {
       ['TEXT'],
       ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER'],
       ['MARQUEE_RECT', 'MARQUEE_ELLIPSE', 'MAGIC_WAND'],
+      ['CLONE_STAMP', 'HEALING_BRUSH'],
       ['STICKY'],
       ['SHAPE_WITH_TEXT'],
       ['CONNECTOR'],

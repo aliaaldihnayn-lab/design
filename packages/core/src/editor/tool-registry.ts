@@ -32,6 +32,8 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
     shortcut: 'M',
     flyout: ['MARQUEE_RECT', 'MARQUEE_ELLIPSE', 'MAGIC_WAND']
   },
+  // Retouching, on Photoshop's S and J; Alt-click sets the source.
+  { key: 'CLONE_STAMP', label: 'Clone', shortcut: 'S', flyout: ['CLONE_STAMP', 'HEALING_BRUSH'] },
   // Figma's S is Slice, and FigJam's sticky tool has no key in Figma Design.
   { key: 'STICKY', label: 'Sticky note', shortcut: '' },
   // FigJam's R; here R is the rectangle, as in Figma Design.
@@ -60,6 +62,8 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyM: 'MARQUEE_RECT',
   'Shift+KeyM': 'MARQUEE_ELLIPSE',
   KeyW: 'MAGIC_WAND',
+  KeyS: 'CLONE_STAMP',
+  KeyJ: 'HEALING_BRUSH',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }

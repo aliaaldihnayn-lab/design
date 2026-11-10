@@ -36,5 +36,6 @@
   "invertSelection": "選択範囲を反転",
   "maskFromSelection": "選択範囲からマスク",
   "invertMask": "マスクを反転",
-  "feather": "ぼかし"
+  "feather": "ぼかし",
+  "cloneSourceHint": "Altキーを押しながらクリックでソースを設定"
 }

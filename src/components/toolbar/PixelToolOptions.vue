@@ -16,7 +16,13 @@ const t = usePhotoMessages()
 const tool = computed<Tool>(() => store.state.activeTool)
 const settings = computed(() => store.state.pixelTools)
 
-const BRUSHES: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'ERASER'])
+const BRUSHES: ReadonlySet<Tool> = new Set<Tool>([
+  'BRUSH',
+  'ERASER',
+  'CLONE_STAMP',
+  'HEALING_BRUSH'
+])
+const CLONING: ReadonlySet<Tool> = new Set<Tool>(['CLONE_STAMP', 'HEALING_BRUSH'])
 const FILLS: ReadonlySet<Tool> = new Set<Tool>(['FILL_BUCKET', 'MAGIC_WAND'])
 const SELECTIONS: ReadonlySet<Tool> = new Set<Tool>([
   'MARQUEE_RECT',
@@ -167,6 +173,9 @@ function maskFromSelection() {
       />
       {{ t.contiguous }}
     </label>
+    <span v-if="CLONING.has(tool)" class="text-muted" data-test-id="pixel-clone-hint">
+      {{ t.cloneSourceHint }}
+    </span>
     <template v-if="SELECTIONS.has(tool)">
       <AppButton size="xs" data-test-id="pixel-select-all" @click="store.pixelSelectAll()">
         {{ t.selectAll }}

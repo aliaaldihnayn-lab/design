@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import IconBandage from '~icons/lucide/bandage'
 import IconCircle from '~icons/lucide/circle'
 import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconColumns from '~icons/lucide/columns-3'
@@ -27,6 +28,7 @@ import IconSquare from '~icons/lucide/square'
 import IconSlot from '~icons/lucide/square-dashed'
 import IconSquareDashed from '~icons/lucide/square-dashed-mouse-pointer'
 import IconMask from '~icons/lucide/squares-intersect'
+import IconStamp from '~icons/lucide/stamp'
 import IconStar from '~icons/lucide/star'
 import IconStickyNote from '~icons/lucide/sticky-note'
 import IconTriangle from '~icons/lucide/triangle'
@@ -61,6 +63,8 @@ export const toolIcons: Record<Tool, Component> = {
   MARQUEE_RECT: IconSquareDashed,
   MARQUEE_ELLIPSE: IconCircleDashed,
   MAGIC_WAND: IconWandSparkles,
+  CLONE_STAMP: IconStamp,
+  HEALING_BRUSH: IconBandage,
   TEXT: IconType,
   STICKY: IconStickyNote,
   SHAPE_WITH_TEXT: IconShapes,

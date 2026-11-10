@@ -36,5 +36,6 @@
   "invertSelection": "عكس التحديد",
   "maskFromSelection": "قناع من التحديد",
   "invertMask": "عكس القناع",
-  "feather": "تنعيم الحواف"
+  "feather": "تنعيم الحواف",
+  "cloneSourceHint": "انقر مع Alt لتحديد المصدر"
 }

@@ -15,6 +15,7 @@ import {
   type BrushTip,
   type StrokeCoverage
 } from '#core/pixels/brush'
+import { cloneDab, healDab, type CloneSampling } from '#core/pixels/clone'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
 import { combineMasks, type PixelMask } from '#core/pixels/mask'
@@ -31,10 +32,27 @@ import { createPixelSelectionActions, type PixelSession } from './select'
 import { DEFAULT_PIXEL_TOOL_SETTINGS, type PixelOverlay, type PixelToolSettings } from './types'
 
 /** The tools that paint along a drag. */
-export type PixelStrokeTool = Extract<Tool, 'BRUSH' | 'ERASER'>
+export type PixelStrokeTool = Extract<Tool, 'BRUSH' | 'ERASER' | 'CLONE_STAMP' | 'HEALING_BRUSH'>
 
 /** The tools the brush cursor follows on the canvas. */
-const BRUSH_CURSOR_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'ERASER'])
+const BRUSH_CURSOR_TOOLS: ReadonlySet<Tool> = new Set<Tool>([
+  'BRUSH',
+  'ERASER',
+  'CLONE_STAMP',
+  'HEALING_BRUSH'
+])
+
+/** Where the clone stamp and healing brush copy from, set with Alt-click, as in Affinity. */
+interface CloneSource {
+  nodeId: string
+  /** The source point in canvas coordinates. */
+  point: Vector
+  /**
+   * From where a stroke paints to where it copies, in canvas units, fixed by the first stroke
+   * after the source was set, so later strokes keep copying from the same relative place.
+   */
+  offset: Vector | null
+}
 
 interface StrokeSession {
   tool: PixelStrokeTool
@@ -53,11 +71,15 @@ interface StrokeSession {
   /** The name the stroke's pixels are shown under on the canvas until it is committed. */
   liveHash: string
   original: Pick<SceneNode, 'fills' | 'pluginData'>
+  /** What the clone stamp and healing brush copy, and from how far away. */
+  sampling: CloneSampling | null
 }
 
 const STROKE_LABELS: Record<PixelStrokeTool, string> = {
   BRUSH: 'Paint',
-  ERASER: 'Erase'
+  ERASER: 'Erase',
+  CLONE_STAMP: 'Clone',
+  HEALING_BRUSH: 'Heal'
 }
 
 function emptyOverlay(): PixelOverlay {
@@ -78,6 +100,7 @@ export function createPixelActions(
   const session: PixelSession = { selection: null }
   /** The grid scale of the layer painted last, so the brush cursor matches its pixels. */
   let lastScale: { nodeId: string; scale: number } | null = null
+  let cloneSource: CloneSource | null = null
 
   function codec(): RasterCodec | null {
     const ck = ctx.getCk()
@@ -130,7 +153,12 @@ export function createPixelActions(
 
   function dab(session: StrokeSession, at: Vector) {
     const { surface, before, coverage, tip, mask } = session
+    const { sampling } = session
     if (session.tool === 'ERASER') eraseDab(surface.paint, before, coverage, at, tip, mask)
+    else if (sampling && session.tool === 'CLONE_STAMP')
+      cloneDab(surface.paint, before, coverage, at, tip, sampling, mask)
+    else if (sampling && session.tool === 'HEALING_BRUSH')
+      healDab(surface.paint, before, coverage, at, tip, sampling, mask)
     else paintDab(surface.paint, before, coverage, at, tip, session.color, mask)
     session.changed = true
   }
@@ -144,6 +172,9 @@ export function createPixelActions(
     const surface = loadPixelSurface(ctx.graph, raster, node)
     const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!surface || !at) return false
+    const cloning = tool === 'CLONE_STAMP' || tool === 'HEALING_BRUSH'
+    const sampling = cloning ? cloneSampling(node, surface, { x: cx, y: cy }) : null
+    if (cloning && !sampling) return false
     const settings = ctx.state.pixelTools
     const liveHash = `live-paint-${randomHex(8)}`
     const original = structuredClone({ fills: node.fills, pluginData: node.pluginData })
@@ -170,7 +201,8 @@ export function createPixelActions(
       changed: false,
       preview,
       liveHash,
-      original
+      original,
+      sampling
     }
     stroke = session
     lastScale = { nodeId: node.id, scale: gridScale(node, surface) }
@@ -192,6 +224,52 @@ export function createPixelActions(
     session.last = at
     pixelHover(cx, cy)
     if (dabs.length > 0) showLive(session, session.surface.paint)
+  }
+
+  /**
+   * What a clone or heal stroke starting at `point` copies: the layer as it shows now, from the
+   * clone source's offset. Null until a source is set on this layer.
+   */
+  function cloneSampling(
+    node: SceneNode,
+    surface: PixelSurface,
+    point: Vector
+  ): CloneSampling | null {
+    if (cloneSource?.nodeId !== node.id) return null
+    cloneSource.offset ??= {
+      x: cloneSource.point.x - point.x,
+      y: cloneSource.point.y - point.y
+    }
+    const from = canvasToGrid(ctx.graph, node, surface, point)
+    const to = canvasToGrid(ctx.graph, node, surface, {
+      x: point.x + cloneSource.offset.x,
+      y: point.y + cloneSource.offset.y
+    })
+    if (!from || !to) return null
+    return {
+      source: compositeOver(surface.base, surface.paint),
+      offset: { x: to.x - from.x, y: to.y - from.y }
+    }
+  }
+
+  /**
+   * Sets where the clone stamp and healing brush copy from, on the layer under a canvas point,
+   * as Alt-click does in Affinity. False where nothing can be painted.
+   */
+  function pixelSetCloneSource(cx: number, cy: number): boolean {
+    const node = pixelTargetAt(cx, cy)
+    if (!node) return false
+    cloneSource = { nodeId: node.id, point: { x: cx, y: cy }, offset: null }
+    overlay().cloneSource = { x: cx, y: cy }
+    ctx.requestRepaint()
+    return true
+  }
+
+  /** Where the clone source sits for a pointer at a canvas point, shown as a crosshair. */
+  function showCloneSource(cx: number, cy: number) {
+    if (!cloneSource) return
+    const { offset, point } = cloneSource
+    overlay().cloneSource = offset ? { x: cx + offset.x, y: cy + offset.y } : point
   }
 
   function finishStroke(session: StrokeSession) {
@@ -292,6 +370,8 @@ export function createPixelActions(
     const [selected] = ctx.state.selectedIds
     const scale = lastScale?.nodeId === selected ? lastScale.scale : 1
     overlay().brush = { x: cx, y: cy, radius: ctx.state.pixelTools.size / 2 / scale }
+    if (ctx.state.activeTool === 'CLONE_STAMP' || ctx.state.activeTool === 'HEALING_BRUSH')
+      showCloneSource(cx, cy)
     ctx.requestRepaint()
   }
 
@@ -301,9 +381,16 @@ export function createPixelActions(
     ctx.requestRepaint()
   }
 
-  ctx.onEditorEvent('tool:changed', () => {
+  ctx.onEditorEvent('tool:changed', (tool) => {
     pixelStrokeCancel()
     pixelHoverEnd()
+    if (tool !== 'CLONE_STAMP' && tool !== 'HEALING_BRUSH' && ctx.state.pixelOverlay?.cloneSource)
+      overlay().cloneSource = null
+  })
+  ctx.onEditorEvent('node:deleted', (id) => {
+    if (cloneSource?.nodeId !== id) return
+    cloneSource = null
+    if (ctx.state.pixelOverlay) overlay().cloneSource = null
   })
 
   const selectionActions = createPixelSelectionActions(ctx, {
@@ -321,6 +408,7 @@ export function createPixelActions(
     pixelStrokeEnd,
     pixelStrokeCancel,
     pixelFillAt,
+    pixelSetCloneSource,
     pixelPickColorAt,
     pixelHover,
     pixelHoverEnd

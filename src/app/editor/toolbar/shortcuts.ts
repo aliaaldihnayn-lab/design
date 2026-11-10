@@ -30,6 +30,8 @@ const UNKEYED: Readonly<Record<Tool, string>> = {
   MARQUEE_RECT: '',
   MARQUEE_ELLIPSE: '',
   MAGIC_WAND: '',
+  CLONE_STAMP: '',
+  HEALING_BRUSH: '',
   TEXT: '',
   STICKY: '',
   SHAPE_WITH_TEXT: '',

@@ -6,9 +6,11 @@ import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import {
   BRUSH_TOOL,
+  CLONE_STAMP_TOOL,
   COLOR_PICKER_TOOL,
   ERASER_TOOL,
   FILL_BUCKET_TOOL,
+  HEALING_BRUSH_TOOL,
   MAGIC_WAND_TOOL,
   MARQUEE_ELLIPSE_TOOL,
   MARQUEE_RECT_TOOL
@@ -100,6 +102,8 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
   MARQUEE_RECT: MARQUEE_RECT_TOOL,
   MARQUEE_ELLIPSE: MARQUEE_ELLIPSE_TOOL,
   MAGIC_WAND: MAGIC_WAND_TOOL,
+  CLONE_STAMP: CLONE_STAMP_TOOL,
+  HEALING_BRUSH: HEALING_BRUSH_TOOL,
   TEXT: { press: ({ cx, cy }, { editor, setDrag }) => startTextDraw(cx, cy, editor, setDrag) },
   CONNECTOR: {
     press: ({ event, cx, cy, sx, sy }, { editor, setDrag }) =>

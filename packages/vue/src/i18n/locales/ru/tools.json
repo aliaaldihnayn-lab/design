@@ -21,5 +21,7 @@
   "colorPicker": "Пипетка",
   "marqueeRect": "Прямоугольное выделение",
   "marqueeEllipse": "Овальное выделение",
-  "magicWand": "Волшебная палочка"
+  "magicWand": "Волшебная палочка",
+  "cloneStamp": "Штамп",
+  "healingBrush": "Восстанавливающая кисть"
 }

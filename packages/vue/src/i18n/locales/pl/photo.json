@@ -36,5 +36,6 @@
   "invertSelection": "Odwróć zaznaczenie",
   "maskFromSelection": "Maska z zaznaczenia",
   "invertMask": "Odwróć maskę",
-  "feather": "Wtapianie"
+  "feather": "Wtapianie",
+  "cloneSourceHint": "Alt+klik ustawia źródło"
 }

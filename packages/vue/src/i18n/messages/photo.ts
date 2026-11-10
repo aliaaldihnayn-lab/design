@@ -41,7 +41,8 @@ export const photoMessageDefaults = {
   invertSelection: 'Invert selection',
   maskFromSelection: 'Mask from selection',
   invertMask: 'Invert mask',
-  feather: 'Feather'
+  feather: 'Feather',
+  cloneSourceHint: 'Alt-click to set the source'
 } as const
 
 export const photoMessages = i18n('photo', photoMessageDefaults)

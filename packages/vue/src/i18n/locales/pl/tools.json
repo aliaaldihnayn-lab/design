@@ -21,5 +21,7 @@
   "colorPicker": "Pipeta",
   "marqueeRect": "Zaznaczenie prostokątne",
   "marqueeEllipse": "Zaznaczenie eliptyczne",
-  "magicWand": "Różdżka"
+  "magicWand": "Różdżka",
+  "cloneStamp": "Stempel",
+  "healingBrush": "Pędzel korygujący"
 }

@@ -36,5 +36,6 @@
   "invertSelection": "反选",
   "maskFromSelection": "从选区创建蒙版",
   "invertMask": "反转蒙版",
-  "feather": "羽化"
+  "feather": "羽化",
+  "cloneSourceHint": "按住 Alt 单击设置源"
 }

@@ -58,6 +58,8 @@ export type Tool =
   | 'MARQUEE_RECT'
   | 'MARQUEE_ELLIPSE'
   | 'MAGIC_WAND'
+  | 'CLONE_STAMP'
+  | 'HEALING_BRUSH'
   | 'HAND'
   | 'COMMENT'
 

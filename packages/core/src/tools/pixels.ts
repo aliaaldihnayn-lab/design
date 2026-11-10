@@ -18,6 +18,7 @@ import {
   strokeDabs,
   type BrushTip
 } from '#core/pixels/brush'
+import { cloneDab, healDab } from '#core/pixels/clone'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
 import {
@@ -211,5 +212,51 @@ export const maskFromSelection = defineTool({
     if (!node.parentId) return { error: 'The layer is on no page' }
     const groupId = maskLayerWith(figma.graph, node, storeImage(figma.graph, png))
     return { group_id: groupId, layer_id: node.id }
+  }
+})
+
+export const clonePixels = defineTool({
+  name: 'clone_pixels',
+  description:
+    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but takes the tone around each dab, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: nodeIdInputSchema,
+    source: pointSchema,
+    points: v.pipe(v.array(pointSchema), v.minLength(1), v.maxLength(2000)),
+    heal: v.optional(v.boolean(), false),
+    size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.maxValue(2000))), 24),
+    hardness: unitSchema,
+    opacity: unitSchema
+  }),
+  execute: (figma, args) => {
+    const loaded = loadForTool(figma, args.id)
+    if ('error' in loaded) return loaded
+    const { node, surface, codec } = loaded
+    const tip: BrushTip = {
+      size: args.size,
+      hardness: args.hardness ?? 0.5,
+      opacity: args.opacity ?? 1
+    }
+    const points = args.points.map((point) => toGrid(node, surface, point))
+    const source = toGrid(node, surface, args.source)
+    const sampling = {
+      source: compositeOver(surface.base, surface.paint),
+      offset: { x: source.x - points[0].x, y: source.y - points[0].y }
+    }
+    const before = surface.paint.data.slice()
+    const coverage = createStrokeCoverage(surface.paint)
+    const dab = (at: Vector) =>
+      (args.heal ? healDab : cloneDab)(surface.paint, before, coverage, at, tip, sampling)
+    let carry = 0
+    dab(points[0])
+    for (let i = 1; i < points.length; i++) {
+      const stroke = strokeDabs(points[i - 1], points[i], dabSpacing(tip), carry)
+      for (const centre of stroke.dabs) dab(centre)
+      carry = stroke.carry
+    }
+    const failure = savePaint(figma, node, surface, codec)
+    if (failure) return failure
+    return { id: node.id }
   }
 })

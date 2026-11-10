@@ -98,3 +98,27 @@ describe('mask_layer_from_selection', () => {
     ).toHaveProperty('error')
   })
 })
+
+describe('clone_pixels', () => {
+  test('clones the layer from a source point', async () => {
+    const { figma, id, paint } = await setup()
+    tool('fill_pixels')(figma, { id, x: 5, y: 5, color: '#0000ff' })
+    tool('paint_pixels')(figma, {
+      id,
+      color: '#ff0000',
+      size: 4,
+      hardness: 1,
+      points: [{ x: 5, y: 10 }]
+    })
+    expect(
+      tool('clone_pixels')(figma, {
+        id,
+        source: { x: 5, y: 10 },
+        points: [{ x: 30, y: 10 }],
+        size: 4,
+        hardness: 1
+      })
+    ).toEqual({ id })
+    expect(paint()?.data[(10 * 40 + 30) * 4]).toBe(255)
+  })
+})

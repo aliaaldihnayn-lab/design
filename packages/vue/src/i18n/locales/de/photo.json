@@ -36,5 +36,6 @@
   "invertSelection": "Auswahl umkehren",
   "maskFromSelection": "Maske aus Auswahl",
   "invertMask": "Maske umkehren",
-  "feather": "Weiche Kante"
+  "feather": "Weiche Kante",
+  "cloneSourceHint": "Alt-Klick legt die Quelle fest"
 }

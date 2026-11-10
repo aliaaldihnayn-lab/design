@@ -54,7 +54,13 @@ import {
   setVisible
 } from '#core/tools/modify'
 import { setImageAdjustments } from '#core/tools/photo'
-import { fillPixels, maskFromSelection, paintPixels, samplePixelColor } from '#core/tools/pixels'
+import {
+  clonePixels,
+  fillPixels,
+  maskFromSelection,
+  paintPixels,
+  samplePixelColor
+} from '#core/tools/pixels'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
@@ -150,6 +156,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   fillPixels,
   samplePixelColor,
   maskFromSelection,
+  clonePixels,
   // Prototype
   getPrototype,
   setInteractions,

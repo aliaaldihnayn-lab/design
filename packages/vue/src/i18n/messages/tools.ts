@@ -23,7 +23,9 @@ export const toolMessageDefaults = {
   colorPicker: 'Color picker',
   marqueeRect: 'Rectangular marquee',
   marqueeEllipse: 'Elliptical marquee',
-  magicWand: 'Magic wand'
+  magicWand: 'Magic wand',
+  cloneStamp: 'Clone',
+  healingBrush: 'Healing brush'
 } as const
 
 export const toolMessages = i18n('tools', toolMessageDefaults)

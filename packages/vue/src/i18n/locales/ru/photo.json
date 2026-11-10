@@ -36,5 +36,6 @@
   "invertSelection": "Инвертировать выделение",
   "maskFromSelection": "Маска из выделения",
   "invertMask": "Инвертировать маску",
-  "feather": "Растушёвка"
+  "feather": "Растушёвка",
+  "cloneSourceHint": "Alt-щелчок задаёт источник"
 }

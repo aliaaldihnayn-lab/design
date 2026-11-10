@@ -44,6 +44,8 @@ const TOOL_CURSORS: Record<Tool, string> = {
   MARQUEE_RECT: 'crosshair',
   MARQUEE_ELLIPSE: 'crosshair',
   MAGIC_WAND: 'crosshair',
+  CLONE_STAMP: 'crosshair',
+  HEALING_BRUSH: 'crosshair',
   HAND: HAND_CURSOR,
   COMMENT: COMMENT_CURSOR
 }

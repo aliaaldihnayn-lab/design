@@ -21,5 +21,7 @@
   "colorPicker": "スポイト",
   "marqueeRect": "長方形選択",
   "marqueeEllipse": "楕円形選択",
-  "magicWand": "自動選択"
+  "magicWand": "自動選択",
+  "cloneStamp": "コピースタンプ",
+  "healingBrush": "修復ブラシ"
 }

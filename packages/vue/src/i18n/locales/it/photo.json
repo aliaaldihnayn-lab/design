@@ -36,5 +36,6 @@
   "invertSelection": "Inverti selezione",
   "maskFromSelection": "Maschera dalla selezione",
   "invertMask": "Inverti maschera",
-  "feather": "Sfumatura"
+  "feather": "Sfumatura",
+  "cloneSourceHint": "Alt-clic per impostare l'origine"
 }

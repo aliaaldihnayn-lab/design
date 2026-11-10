@@ -27,6 +27,8 @@ export function useToolLabels() {
     MARQUEE_RECT: tools.value.marqueeRect,
     MARQUEE_ELLIPSE: tools.value.marqueeEllipse,
     MAGIC_WAND: tools.value.magicWand,
+    CLONE_STAMP: tools.value.cloneStamp,
+    HEALING_BRUSH: tools.value.healingBrush,
     TEXT: tools.value.text,
     STICKY: tools.value.sticky,
     SHAPE_WITH_TEXT: tools.value.shape,

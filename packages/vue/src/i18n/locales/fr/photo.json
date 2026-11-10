@@ -36,5 +36,6 @@
   "invertSelection": "Inverser la sélection",
   "maskFromSelection": "Masque depuis la sélection",
   "invertMask": "Inverser le masque",
-  "feather": "Contour progressif"
+  "feather": "Contour progressif",
+  "cloneSourceHint": "Alt-clic pour définir la source"
 }

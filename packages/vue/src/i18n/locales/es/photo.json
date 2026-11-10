@@ -36,5 +36,6 @@
   "invertSelection": "Invertir selección",
   "maskFromSelection": "Máscara desde la selección",
   "invertMask": "Invertir máscara",
-  "feather": "Calado"
+  "feather": "Calado",
+  "cloneSourceHint": "Alt+clic para fijar el origen"
 }

@@ -21,5 +21,7 @@
   "colorPicker": "取色器",
   "marqueeRect": "矩形选框",
   "marqueeEllipse": "椭圆选框",
-  "magicWand": "魔棒"
+  "magicWand": "魔棒",
+  "cloneStamp": "仿制图章",
+  "healingBrush": "修复画笔"
 }

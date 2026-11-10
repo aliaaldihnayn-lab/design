@@ -612,3 +612,5 @@ ja:menu.exportSelectionAsJPG
 ja:menu.exportSelectionAsWebP
 zh-cn:menu.exportSelectionAsJPG
 zh-cn:menu.exportSelectionAsWebP
+ja:photo.cloneSourceHint
+zh-cn:photo.cloneSourceHint
