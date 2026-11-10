@@ -24,6 +24,7 @@ import { localHistoryAuthor } from './author'
 import { createHistoryController } from './controller'
 import { HISTORY_IDLE_CHECKPOINT_MS } from './design'
 import { getHistoryPersistence, type HistoryPersistence } from './persistence'
+import { provideHistoryToTools } from './tools'
 
 /** Typing pauses this long before what was typed is recorded as one edit. */
 export const WRITER_CHANGE_DELAY_MS = 1500
@@ -188,6 +189,23 @@ let shared: WriterHistory | null = null
 
 /** The document editor's one history, started the first time it is asked for. */
 export function useWriterHistory(): WriterHistory {
-  shared ??= createWriterHistory()
-  return shared
+  if (shared) return shared
+  const history = createWriterHistory()
+  shared = history
+  provideHistoryToTools('writer', () => ({
+    history: history.controller.history.value,
+    currentRecords: () => {
+      history.flush()
+      return writerRecords(writerDocument.value)
+    },
+    async save(title, description) {
+      await history.saveNamed(title, description)
+      return history.controller.history.value.latestVersion ?? null
+    },
+    async restore(versionId) {
+      await history.restore(versionId)
+      return history.controller.history.value.latestVersion ?? null
+    }
+  }))
+  return history
 }

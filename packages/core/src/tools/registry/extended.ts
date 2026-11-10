@@ -31,6 +31,7 @@ import {
   setBehaviour
 } from '#core/tools/create'
 import { buildDesignSystemTool } from '#core/tools/design-system'
+import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
 import { inspectLayerTool } from '#core/tools/inspect'
 import {
   createDeviceMockup,
@@ -312,6 +313,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   analyzeOverlaps,
   diffShow,
   diffApply,
+  // Version history of the open design or document
+  listVersions,
+  saveVersion,
+  restoreVersion,
+  diffVersions,
   // Codegen
   designToTokens,
   importDesignTokens,

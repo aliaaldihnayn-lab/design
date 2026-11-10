@@ -1,17 +1,21 @@
 import {
   createDesignHistoryRecorder,
+  designRecords,
   diffManifests,
+  restoreDesignVersion,
   type DesignHistoryRecorder,
   type DocumentHistory,
   type HistoryAuthor,
   type HistoryChange
 } from '@lawha/core/history'
 
+import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
 
 import { localHistoryAuthor } from './author'
 import { createHistoryController, type HistoryController } from './controller'
 import { getHistoryPersistence, type HistoryPersistence } from './persistence'
+import { provideHistoryToTools } from './tools'
 
 /** A pause in editing this long keeps an automatic version, as Google Docs does. */
 export const HISTORY_IDLE_CHECKPOINT_MS = 2 * 60 * 1000
@@ -143,7 +147,40 @@ export function attachDesignHistory(
     }
   }
   sessions.set(store, session)
+  provideHistoryToTools('design', activeDesignTarget)
   return session
+}
+
+/**
+ * The active tab's design history as the AI tools use it. A tool's restore runs inside the
+ * edit the tool call records, so it joins that step rather than adding one of its own.
+ */
+function activeDesignTarget() {
+  const store = getActiveEditorStoreOrNull()
+  const session = store && sessions.get(store)
+  if (!store || !session) return null
+  const history = session.controller.history.value
+  return {
+    history,
+    currentRecords: () => designRecords(store.graph),
+    async save(title: string, description: string) {
+      await session.saveNamed(title, description)
+      return session.controller.history.value.latestVersion ?? null
+    },
+    async restore(versionId: string) {
+      const recording = store.undo.isRecording
+      const version = restoreDesignVersion({
+        history: session.controller.history.value,
+        host: recording
+          ? { ...store, graph: store.graph, recordEdit: (_options, run) => run() }
+          : store,
+        versionId,
+        author: localHistoryAuthor()
+      })
+      await session.controller.persistNow()
+      return version
+    }
+  }
 }
 
 export function designHistoryOf(store: EditorStore): DesignHistorySession | undefined {
