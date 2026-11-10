@@ -92,5 +92,6 @@
   "saveToVersionHistory": "Salva nella cronologia versioni…",
   "plugins": "Plugin",
   "importPlugin": "Importa plugin da cartella…",
-  "removePlugin": "Rimuovi plugin"
+  "removePlugin": "Rimuovi plugin",
+  "prototypeConnections": "Collegamenti del prototipo"
 }

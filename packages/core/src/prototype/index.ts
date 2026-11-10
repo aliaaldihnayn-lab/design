@@ -28,4 +28,42 @@ export {
   type Transition,
   type Trigger
 } from './model'
-export { DIRECTIONS, EASINGS, OVERLAY_POSITIONS, TRANSITION_TYPES, TRIGGERS } from './schema'
+export {
+  DIRECTIONS,
+  EASINGS,
+  OVERLAY_POSITIONS,
+  SCROLL_DIRECTIONS,
+  TRANSITION_TYPES,
+  TRIGGERS
+} from './schema'
+export {
+  canvasRect,
+  noodle,
+  noodlePath,
+  prototypeConnections,
+  screenAt,
+  type Noodle,
+  type PrototypeConnection
+} from './connections'
+export {
+  contentExtent,
+  readScroll,
+  scrollContentGraph,
+  scrollRegions,
+  scrollTarget,
+  SCROLL_KEY,
+  type ScrollDirection,
+  type ScrollRegion
+} from './scroll'
+export {
+  ease,
+  pairChanges,
+  rectMapping,
+  smartAnimateGraph,
+  smartAnimatePlan,
+  tweenState,
+  type LayerState,
+  type SmartAnimateLayer,
+  type SmartAnimatePlan,
+  type SmartPair
+} from './smart-animate'

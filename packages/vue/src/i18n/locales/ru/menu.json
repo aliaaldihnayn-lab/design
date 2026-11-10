@@ -92,5 +92,6 @@
   "saveToVersionHistory": "Сохранить в историю версий…",
   "plugins": "Плагины",
   "importPlugin": "Импортировать плагин из папки…",
-  "removePlugin": "Удалить плагин"
+  "removePlugin": "Удалить плагин",
+  "prototypeConnections": "Связи прототипа"
 }

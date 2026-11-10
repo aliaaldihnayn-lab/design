@@ -92,5 +92,6 @@
   "saveToVersionHistory": "Zapisz w historii wersji…",
   "plugins": "Wtyczki",
   "importPlugin": "Importuj wtyczkę z folderu…",
-  "removePlugin": "Usuń wtyczkę"
+  "removePlugin": "Usuń wtyczkę",
+  "prototypeConnections": "Połączenia prototypu"
 }

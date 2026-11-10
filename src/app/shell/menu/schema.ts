@@ -256,6 +256,12 @@ export const APP_MENU_SCHEMA = [
         shortcut: 'ALT+MOD+\\'
       },
       { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
+      {
+        id: 'view-prototype-connections',
+        label: 'Prototype Connections',
+        checkbox: true,
+        target: 'browser'
+      },
       { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
       { type: 'separator' },
       {

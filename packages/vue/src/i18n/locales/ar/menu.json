@@ -92,5 +92,6 @@
   "removeGuide": "إزالة الدليل",
   "plugins": "الإضافات",
   "importPlugin": "استيراد إضافة من مجلد…",
-  "removePlugin": "إزالة إضافة"
+  "removePlugin": "إزالة إضافة",
+  "prototypeConnections": "روابط النموذج الأولي"
 }

@@ -24,6 +24,7 @@ import type { CommandPaletteGroup, CommandPaletteItem } from '@lawha/vue/primiti
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
+import { showPrototypeConnections } from '@/app/prototype/connections'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -138,6 +139,7 @@ export function useAppMenu() {
     'view-pixel-grid': 'pixelGrid',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
+    'view-prototype-connections': 'prototypeConnections',
     'view-comments': 'comments',
     'snap-geometry': 'snapToGeometry',
     'snap-objects': 'snapToObjects',
@@ -203,6 +205,9 @@ export function useAppMenu() {
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
     'plugins-import': plugins.importPlugin,
+    'view-prototype-connections': () => {
+      showPrototypeConnections.value = !showPrototypeConnections.value
+    },
     ...createSharedEditorMenuActions(setTheme)
   }
 
@@ -224,6 +229,8 @@ export function useAppMenu() {
         return store.state.showRemoteCursors
       case 'view-design-issues':
         return appPreferences.value.designCheck.showOnCanvas
+      case 'view-prototype-connections':
+        return showPrototypeConnections.value
       case 'view-comments':
         return appPreferences.value.comments.showOnCanvas
       case 'snap-geometry':
@@ -265,6 +272,10 @@ export function useAppMenu() {
         }
       case 'view-design-issues':
         return (value: boolean) => setDesignIssuesOnCanvas(value)
+      case 'view-prototype-connections':
+        return (value: boolean) => {
+          showPrototypeConnections.value = value
+        }
       case 'view-comments':
         return (value: boolean) => setCommentsOnCanvas(value)
       case 'snap-geometry':

@@ -5,6 +5,13 @@ import { i18n } from '#vue/i18n/create'
 /** The prototype panel and player. */
 export const prototypeMessageDefaults = {
   section: 'Prototype',
+  showConnections: 'Show connections',
+  connectHandle: 'Drag to a screen to link it',
+  scroll: 'Scrolling',
+  scrollNone: 'No scrolling',
+  scrollVertical: 'Vertical',
+  scrollHorizontal: 'Horizontal',
+  scrollBoth: 'Both directions',
   present: 'Present prototype',
   presentHint: 'Play the prototype full screen',
   close: 'Close',

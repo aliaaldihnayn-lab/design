@@ -60,3 +60,7 @@ export const flowSchema = v.object({
   start: v.pipe(v.string(), v.minLength(1))
 })
 export const flowListSchema = v.array(flowSchema)
+
+/** Which way a frame's content scrolls in the prototype, as Figma's overflow behaviour. */
+export const SCROLL_DIRECTIONS = ['none', 'vertical', 'horizontal', 'both'] as const
+export const scrollDirectionSchema = v.picklist(SCROLL_DIRECTIONS)

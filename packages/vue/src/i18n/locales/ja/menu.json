@@ -92,5 +92,6 @@
   "saveToVersionHistory": "バージョン履歴に保存…",
   "plugins": "プラグイン",
   "importPlugin": "フォルダーからプラグインを読み込む…",
-  "removePlugin": "プラグインを削除"
+  "removePlugin": "プラグインを削除",
+  "prototypeConnections": "プロトタイプの接続"
 }

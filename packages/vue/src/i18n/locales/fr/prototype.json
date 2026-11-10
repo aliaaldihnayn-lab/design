@@ -52,5 +52,12 @@
   "easingEaseInOut": "Ease in and out",
   "easingSpring": "Spring",
   "screenOf": "Screen {current} of {total}",
-  "hintClick": "Click a highlighted area to continue"
+  "hintClick": "Click a highlighted area to continue",
+  "showConnections": "Afficher les connexions",
+  "connectHandle": "Faites glisser vers un écran pour le relier",
+  "scroll": "Défilement",
+  "scrollNone": "Pas de défilement",
+  "scrollVertical": "Vertical",
+  "scrollHorizontal": "Horizontal",
+  "scrollBoth": "Les deux directions"
 }

@@ -61,7 +61,8 @@ import {
   autoPrototype,
   getPrototype,
   setFlow,
-  setInteractions
+  setInteractions,
+  setScrollBehavior
 } from '#core/tools/prototype'
 import {
   getComponents,
@@ -154,6 +155,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   addInteraction,
   setFlow,
   autoPrototype,
+  setScrollBehavior,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

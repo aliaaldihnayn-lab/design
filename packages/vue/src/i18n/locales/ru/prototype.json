@@ -52,5 +52,12 @@
   "easingEaseInOut": "Ease in and out",
   "easingSpring": "Spring",
   "screenOf": "Screen {current} of {total}",
-  "hintClick": "Click a highlighted area to continue"
+  "hintClick": "Click a highlighted area to continue",
+  "showConnections": "Показать связи",
+  "connectHandle": "Перетащите на экран, чтобы связать",
+  "scroll": "Прокрутка",
+  "scrollNone": "Без прокрутки",
+  "scrollVertical": "Вертикальная",
+  "scrollHorizontal": "Горизонтальная",
+  "scrollBoth": "В обе стороны"
 }

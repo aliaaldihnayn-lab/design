@@ -1275,3 +1275,8 @@ fr:photo.vignette
 de:photo.vignette
 de:menu.plugins
 fr:menu.plugins
+de:prototype.scrollHorizontal
+es:prototype.scrollVertical
+es:prototype.scrollHorizontal
+fr:prototype.scrollVertical
+fr:prototype.scrollHorizontal

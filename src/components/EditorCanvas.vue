@@ -49,6 +49,7 @@ import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue
 import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
 import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
+import PrototypeConnectionsLayer from '@/components/prototype/PrototypeConnectionsLayer.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 import { motionStyles } from '@/theme/motion/styles'
@@ -388,6 +389,11 @@ const cursor = computed(() =>
           v-if="isActivePane && followView.label.value"
           :followed="followView.label.value"
           @stop="followView.stop"
+        />
+        <PrototypeConnectionsLayer
+          v-if="isActivePane && paneProfile.edits && paneProfile.editChrome"
+          :canvas-el="canvasRef"
+          :drawn="drawnView"
         />
         <CommentsLayer v-if="isActivePane" :canvas-el="canvasRef" :drawn="drawnView" />
         <PreparationOverlay
