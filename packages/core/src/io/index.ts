@@ -13,7 +13,8 @@ export {
   jsxFormat,
   htmlFormat,
   tailwindJSXFormat,
-  handoffFormat
+  handoffFormat,
+  psdFormat
 } from './formats'
 export { vectorElement } from './formats/html/vectors'
 export {

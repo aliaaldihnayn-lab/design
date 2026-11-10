@@ -617,6 +617,47 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   }
 }
 
+/** Photoshop and Affinity documents: layers in, layers out. */
+export const psdFormat: IOFormatAdapter<'psd'> = {
+  id: 'psd',
+  label: 'Photoshop',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['psd', 'psb'],
+  mimeTypes: ['image/vnd.adobe.photoshop', 'application/x-photoshop'],
+  support: { readDocument: true, exportSelection: true, exportNode: true },
+  exportOptions: FIXED_SIZE_EXPORT,
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return ext === 'psd' || ext === 'psb' || mimeType === 'image/vnd.adobe.photoshop'
+  },
+  async readDocument(input, context) {
+    const { readPSDDocument } = await import('./formats/psd')
+    const graph = await readPSDDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.ps[db]$/i, '')
+    })
+    return { graph, sourceFormat: 'psd' }
+  },
+  async exportContent(request, _options?: unknown, context?: IOContext) {
+    const rootId = ensureSingleNode(request.target)
+    if (!rootId) throw new Error('Select one frame to export as Photoshop')
+    const { writePSDDocument } = await import('./formats/psd')
+    const data = await writePSDDocument({
+      graph: request.graph,
+      rootId,
+      canvasKit: context?.canvasKit,
+      rasterize: (nodeIds) =>
+        renderRaster(
+          { ...request, target: { scope: 'selection', nodeIds } },
+          { format: 'PNG', scale: 1 },
+          context
+        )
+    })
+    return { format: 'psd', mimeType: 'image/vnd.adobe.photoshop', extension: 'psd', data }
+  }
+}
+
 /** Everything a coding agent needs to rebuild the selection exactly; see `formats/handoff`. */
 export const handoffFormat: IOFormatAdapter<'handoff'> = {
   id: 'handoff',
@@ -666,7 +707,8 @@ export const BUILTIN_IO_FORMATS = [
   jsxFormat,
   tailwindJSXFormat,
   htmlFormat,
-  handoffFormat
+  handoffFormat,
+  psdFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

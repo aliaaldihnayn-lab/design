@@ -11,6 +11,7 @@ export const EXPORT_FORMAT_IDS = [
   'pdf',
   'pptx',
   'drawio',
+  'psd',
   'handoff'
 ] as const
 
