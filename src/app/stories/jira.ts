@@ -52,10 +52,10 @@ export const useJiraSync = createGlobalState(() => {
 
   /** The document's own project, or the one chosen in Settings. */
   const projectKey = computed(() => {
-    void storeRef.value.state.sceneVersion
-    return (
-      readStoryJiraProject(storeRef.value.graph)?.projectKey ?? jiraPreferences.value.projectKey
-    )
+    const store = storeRef.value
+    void store?.state.sceneVersion
+    const own = store ? readStoryJiraProject(store.graph)?.projectKey : undefined
+    return own ?? jiraPreferences.value.projectKey
   })
 
   const ready = computed(() => jiraConnected.value === true && !!projectKey.value)
