@@ -22,6 +22,8 @@ interface BuildReport {
   variables: { created: number; updated: number }
   bound: number
   inconsistencies: unknown[]
+  textStyles?: { styles: unknown[] } | null
+  components?: unknown[]
 }
 
 function isReport(value: unknown): value is BuildReport {
@@ -46,6 +48,12 @@ async function build() {
     if (!isReport(result)) return
     const tokens = result.variables.created + result.variables.updated
     toast.info(t.value.done({ tokens, bound: result.bound }))
+    toast.info(
+      t.value.extras({
+        styles: result.textStyles?.styles.length ?? 0,
+        components: result.components?.length ?? 0
+      })
+    )
     if (result.inconsistencies.length > 0)
       toast.warning(t.value.duplicates({ count: result.inconsistencies.length }))
   } catch (error) {

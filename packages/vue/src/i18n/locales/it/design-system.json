@@ -3,8 +3,9 @@
   "build": "Build design system",
   "buildPage": "From this page",
   "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
+  "buildHint": "Trasforma colori, testi, spaziature e raggi in uso in variabili con modalità chiara e scura e stili di testo, li collega ai livelli e li documenta con componenti di base in una pagina Design System",
   "done": "{tokens} tokens created, {bound} layers linked",
   "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "failed": "Could not build the design system: {error}",
+  "extras": "Aggiunti modalità scura, {styles} stili di testo e {components} set di componenti"
 }

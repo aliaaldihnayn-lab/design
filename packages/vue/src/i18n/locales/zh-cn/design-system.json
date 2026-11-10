@@ -3,8 +3,9 @@
   "build": "Build design system",
   "buildPage": "From this page",
   "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
+  "buildHint": "将正在使用的颜色、文字、间距和圆角转为带浅色和深色模式的变量及文本样式，关联到图层，并在设计系统页面中连同基础组件一起记录",
   "done": "{tokens} tokens created, {bound} layers linked",
   "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "failed": "Could not build the design system: {error}",
+  "extras": "已添加深色模式、{styles} 个文本样式和 {components} 个组件集"
 }

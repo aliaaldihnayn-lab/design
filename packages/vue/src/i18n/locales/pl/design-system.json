@@ -3,8 +3,9 @@
   "build": "Build design system",
   "buildPage": "From this page",
   "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
+  "buildHint": "Zamienia używane kolory, typografię, odstępy i promienie w zmienne z trybem jasnym i ciemnym oraz style tekstu, łączy je z warstwami i dokumentuje z komponentami startowymi na stronie Design System",
   "done": "{tokens} tokens created, {bound} layers linked",
   "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "failed": "Could not build the design system: {error}",
+  "extras": "Dodano tryb ciemny, {styles} stylów tekstu i {components} zestawów komponentów"
 }

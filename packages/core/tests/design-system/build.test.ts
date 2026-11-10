@@ -232,8 +232,19 @@ describe('building', () => {
     const { figma, graph } = design()
     const out = build(figma, {}) as Built
     const page = must(graph.getNode(must(out.docsPage)))
-    const sections = page.childIds.map((id) => must(graph.getNode(id)).name)
-    expect(sections).toEqual(['Colors', 'Typography', 'Spacing & radius'])
+    const sections = page.childIds
+      .map((id) => must(graph.getNode(id)))
+      .filter((node) => !node.internalOnly)
+      .map((node) => node.name)
+    expect(sections).toEqual([
+      'Colors',
+      'Typography',
+      'Spacing & radius',
+      'Colors · Dark',
+      'Button',
+      'Input',
+      'Badge'
+    ])
     const colors = must(graph.getNode(page.childIds[0]))
     const swatch = must(
       colors.childIds.map((id) => must(graph.getNode(id))).find((n) => n.name === 'color/primary')

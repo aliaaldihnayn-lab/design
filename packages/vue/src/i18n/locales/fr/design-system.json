@@ -3,8 +3,9 @@
   "build": "Build design system",
   "buildPage": "From this page",
   "buildSelection": "From the selection",
-  "buildHint": "Turn the colours, type, spacing and radii in use into variables, link them to the layers and document them on a Design System page",
+  "buildHint": "Transforme les couleurs, typographies, espacements et rayons utilisés en variables avec modes clair et sombre et en styles de texte, les relie aux calques et les documente avec des composants de départ sur une page Design System",
   "done": "{tokens} tokens created, {bound} layers linked",
   "duplicates": "{count} near-duplicate colours found: their layers keep their own colour",
-  "failed": "Could not build the design system: {error}"
+  "failed": "Could not build the design system: {error}",
+  "extras": "Mode sombre, {styles} styles de texte et {components} ensembles de composants ajoutés"
 }
