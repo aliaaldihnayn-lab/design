@@ -3,7 +3,8 @@ import {
   diffManifests,
   type DesignHistoryRecorder,
   type DocumentHistory,
-  type HistoryAuthor
+  type HistoryAuthor,
+  type HistoryChange
 } from '@lawha/core/history'
 
 import type { EditorStore } from '@/app/editor/session'
@@ -38,6 +39,18 @@ export interface DesignHistorySession {
 }
 
 const sessions = new WeakMap<EditorStore, DesignHistorySession>()
+
+export type DesignHistoryListener = (store: EditorStore, change: HistoryChange) => void
+const recordedListeners = new Set<DesignHistoryListener>()
+
+/**
+ * Listens for every edit any design tab records, as Cloud does to share the edits of its
+ * documents with their server. Returns what stops listening.
+ */
+export function onDesignHistoryRecorded(listener: DesignHistoryListener): () => void {
+  recordedListeners.add(listener)
+  return () => recordedListeners.delete(listener)
+}
 
 export interface AttachDesignHistoryOptions {
   persistence?: HistoryPersistence
@@ -88,8 +101,9 @@ export function attachDesignHistory(
       source: store,
       history: controller.history.value,
       author,
-      onRecorded: () => {
+      onRecorded: (change) => {
         controller.schedulePersist()
+        for (const listener of recordedListeners) listener(store, change)
         if (idle) clearTimeout(idle)
         idle = setTimeout(() => {
           if (recorder.checkpoint()) controller.schedulePersist()

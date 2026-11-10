@@ -202,4 +202,5 @@ export {
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './history'
 export * from './signatures'

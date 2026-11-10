@@ -1,4 +1,5 @@
 import {
+  parseAppendDocumentHistory,
   parseDuplicateDocumentVersion,
   parseSaveDocumentVersion,
   parseUpdateDocumentVersion
@@ -14,6 +15,11 @@ const pageSchema = v.object({
   before: v.optional(v.pipe(v.string(), v.uuid())),
   limit: v.optional(v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1)))
 })
+const changePageSchema = v.object({
+  before: v.optional(v.pipe(v.string(), v.uuid())),
+  limit: v.optional(v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1)))
+})
+const parseChangePage = (input: unknown) => v.parse(changePageSchema, input)
 const parsePage = (input: unknown) => v.parse(pageSchema, input)
 
 async function answer(context: Context, run: () => Promise<Response>): Promise<Response> {
@@ -26,9 +32,35 @@ async function answer(context: Context, run: () => Promise<Response>): Promise<R
   }
 }
 
-/** A document's version history: listing, naming, opening, restoring, and duplicating versions. */
+/**
+ * A document's version history: listing, naming, opening, restoring, and duplicating versions,
+ * and the log of edits between them.
+ */
 export function createDocumentVersionRoutes(service: DocumentVersionService) {
   return new Hono<DocumentRouteEnvironment>()
+    .get('/documents/:documentId/history', validatedQuery(parseChangePage), (context) =>
+      answer(context, async () =>
+        context.json(
+          await service.changes.list(
+            context.get('actor').userId,
+            context.req.param('documentId'),
+            context.req.valid('query')
+          )
+        )
+      )
+    )
+    .post('/documents/:documentId/history', validatedJSON(parseAppendDocumentHistory), (context) =>
+      answer(context, async () =>
+        context.json(
+          await service.changes.append(
+            context.get('actor').userId,
+            context.req.param('documentId'),
+            context.req.valid('json')
+          ),
+          201
+        )
+      )
+    )
     .get('/documents/:documentId/versions', validatedQuery(parsePage), (context) =>
       answer(context, async () =>
         context.json(
