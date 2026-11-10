@@ -25,6 +25,7 @@ export {
   usePluginMessages,
   usePhotoMessages,
   usePrintMessages,
+  useWriterMessages,
   usePrototypeMessages,
   useRenameMessages,
   useSettingsMessages,

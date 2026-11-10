@@ -1,7 +1,7 @@
 import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
-import type { CloudAIClient } from '@lawha/cloud/client'
+import type { CloudAIClient, CloudAPIClient } from '@lawha/cloud/client'
 import type { WorkspaceSummary } from '@lawha/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
@@ -89,4 +89,14 @@ export function useHomeCloud() {
     newWorkspace: noop,
     signOut: () => Promise.resolve()
   }
+}
+
+export const cloudSignaturesAvailable = computed(() => false)
+
+export function cloudSignatureClient(): CloudAPIClient | null {
+  return null
+}
+
+export async function signingPageClient(): Promise<CloudAPIClient> {
+  throw new Error('This build has no Lawha Cloud')
 }

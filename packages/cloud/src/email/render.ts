@@ -13,7 +13,9 @@ import type {
   TransactionalEmailKind,
   TwoStepChange,
   TwoStepChangedPayload,
-  WorkspaceInvitationEmailPayload
+  WorkspaceInvitationEmailPayload,
+  SignatureCompletedPayload,
+  SignatureRequestPayload
 } from './schema'
 import { DocumentInvitationEmail } from './templates/document-invitation'
 import { EnrollmentEmail } from './templates/enrollment'
@@ -74,6 +76,8 @@ type EnrollmentMessageKind = Exclude<
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'signature-request'
+  | 'signature-completed'
 >
 
 type EnrollmentCopy = {
@@ -254,6 +258,37 @@ async function renderTwoStepChanged(payload: TwoStepChangedPayload) {
   )
 }
 
+async function renderSignatureRequest(payload: SignatureRequestPayload) {
+  const note = payload.message ? ` Their message: “${payload.message}”` : ''
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'Please sign this document',
+      preview: `${payload.senderName} asks you to sign ${payload.documentName}`,
+      message: `${payload.senderName} sent you “${payload.documentName}” to read and sign on Lawha.${note}`,
+      actionLabel: 'Review and sign',
+      actionURL: payload.actionURL,
+      footer:
+        'Only you can open this link. If you did not expect it, you can decline on the signing page.'
+    },
+    `${payload.senderName} asks you to sign ${payload.documentName}`
+  )
+}
+
+async function renderSignatureCompleted(payload: SignatureCompletedPayload) {
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'Everyone has signed',
+      preview: `${payload.documentName} is signed by everyone`,
+      message: `Every signer has signed “${payload.documentName}”. The signed PDF with its audit trail is ready.`,
+      actionLabel: 'Download signed PDF',
+      actionURL: payload.actionURL
+    },
+    `Signed: ${payload.documentName}`
+  )
+}
+
 export async function renderTransactionalEmail(
   content: TransactionalEmailContent
 ): Promise<RenderedTransactionalEmail> {
@@ -272,5 +307,7 @@ export async function renderTransactionalEmail(
   if (content.kind === 'email-change-requested') return renderEmailChangeRequested(content.payload)
   if (content.kind === 'new-sign-in') return renderNewSignIn(content.payload)
   if (content.kind === 'two-step-changed') return renderTwoStepChanged(content.payload)
+  if (content.kind === 'signature-request') return renderSignatureRequest(content.payload)
+  if (content.kind === 'signature-completed') return renderSignatureCompleted(content.payload)
   return renderEnrollment(content.kind, content.payload)
 }

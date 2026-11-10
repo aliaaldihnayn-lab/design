@@ -30,6 +30,7 @@ import {
   recoveryMessages,
   photoMessages,
   printMessages,
+  writerMessages,
   prototypeMessages,
   renameMessages,
   settingsMessages,
@@ -73,6 +74,7 @@ export const useInspectMessages = () => useI18nNamespace(inspectMessages)
 export const usePluginMessages = () => useI18nNamespace(pluginsMessages)
 export const usePhotoMessages = () => useI18nNamespace(photoMessages)
 export const usePrintMessages = () => useI18nNamespace(printMessages)
+export const useWriterMessages = () => useI18nNamespace(writerMessages)
 export const usePrototypeMessages = () => useI18nNamespace(prototypeMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
@@ -107,6 +109,7 @@ export function useI18n() {
     recovery: useRecoveryMessages(),
     print: usePrintMessages(),
     paths: usePathMessages(),
+    writer: useWriterMessages(),
     prototype: usePrototypeMessages(),
     rename: useRenameMessages(),
     settings: useSettingsMessages(),

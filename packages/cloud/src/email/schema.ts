@@ -15,6 +15,8 @@ export type TransactionalEmailKind =
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'signature-request'
+  | 'signature-completed'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -82,6 +84,18 @@ const twoStepChangedPayloadSchema = v.object({
   actionURL: v.string()
 })
 
+const signatureRequestPayloadSchema = v.object({
+  senderName: v.string(),
+  documentName: v.string(),
+  message: v.string(),
+  actionURL: v.string()
+})
+
+const signatureCompletedPayloadSchema = v.object({
+  documentName: v.string(),
+  actionURL: v.string()
+})
+
 function content<const Kind extends TransactionalEmailKind, Payload extends v.GenericSchema>(
   kind: Kind,
   payload: Payload
@@ -102,7 +116,9 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('password-changed', authenticationEmailPayloadSchema),
   content('email-change-requested', emailChangeRequestedPayloadSchema),
   content('new-sign-in', newSignInPayloadSchema),
-  content('two-step-changed', twoStepChangedPayloadSchema)
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('signature-request', signatureRequestPayloadSchema),
+  content('signature-completed', signatureCompletedPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -123,6 +139,9 @@ export type EmailChangeRequestedPayload = v.InferOutput<typeof emailChangeReques
 export type NewSignInPayload = v.InferOutput<typeof newSignInPayloadSchema>
 export type TwoStepChange = v.InferOutput<typeof twoStepChangeSchema>
 export type TwoStepChangedPayload = v.InferOutput<typeof twoStepChangedPayloadSchema>
+
+export type SignatureRequestPayload = v.InferOutput<typeof signatureRequestPayloadSchema>
+export type SignatureCompletedPayload = v.InferOutput<typeof signatureCompletedPayloadSchema>
 
 export type TransactionalEmailPayloadByKind = {
   [Kind in TransactionalEmailKind]: Extract<TransactionalEmailContent, { kind: Kind }>['payload']

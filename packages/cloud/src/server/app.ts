@@ -58,6 +58,7 @@ import {
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
 import { createDocumentSharingService } from '#cloud/server/sharing'
+import { createSignatureService } from '#cloud/server/signatures'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
@@ -266,6 +267,12 @@ export function createCloudApp(services: CloudServices) {
     (context) => context.req.method === 'GET' || routeHasOwnBudget(context)
   )
 
+  const signatures = createSignatureService(services.database, {
+    email: services.transactionalEmail,
+    publicURL: services.config.publicURL
+  })
+  const signing = { trustedHeaders: services.config.authTrustedIPHeaders }
+
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
     pictures,
@@ -288,7 +295,9 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
-    resolveSession
+    resolveSession,
+    signatures,
+    signing
   })
   const publicCloudAPI = createPublicCloudAPIRouter({
     collaboration,
@@ -298,7 +307,9 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
-    resolveSession
+    resolveSession,
+    signatures,
+    signing
   })
 
   // Services such as billing authenticate with their own token, not a session.
@@ -364,6 +375,7 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
+    .use('/api/signing/*', publicRateLimiter)
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
     .use('/api/*', requireActiveSession)

@@ -20,6 +20,12 @@ import {
   createPublicDocumentRoutes,
   createPublicSharingRoutes
 } from '#cloud/server/sharing'
+import {
+  createPublicSigningRoutes,
+  createSignatureRoutes,
+  type SignatureService,
+  type SigningRouteOptions
+} from '#cloud/server/signatures'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -38,6 +44,9 @@ export type CloudAPIServices = {
   aiTokens?: AITokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
+  /** Documents sent for signature, and how to read a signer's address for the audit trail. */
+  signatures: SignatureService
+  signing: SigningRouteOptions
 }
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
@@ -48,6 +57,7 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
       createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
     )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
+    .route('/', createPublicSigningRoutes(services.signatures, services.signing))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {
@@ -92,6 +102,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
     )
     .route('/', createDocumentVersionRoutes(services.versions))
+    .route('/signatures', createSignatureRoutes(services.signatures, services.signing))
     .route(
       '/',
       createDocumentSharingRoutes(

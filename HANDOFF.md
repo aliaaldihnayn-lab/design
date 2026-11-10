@@ -19,6 +19,20 @@ its own branch cut from it, then the branches are merged back.
   press "Publish app" in Google Auth Platform → Audience. Desktop/phone sign-in (system browser
   flow) is deferred by the owner.
 
+- **Document editor (Google Docs)**: opening and saving Google Docs in the document editor
+  (`/writer`, `src/app/integrations/storage/google-drive/docs.ts`) asks the same OAuth client for
+  the additional scope `https://www.googleapis.com/auth/documents` (sensitive). The owner must add
+  it in Google Auth Platform → Data Access → Add or remove scopes, enable the **Google Docs API**
+  for the project in the Cloud console, and list it in the app's verification request before
+  publishing; until then only test users can grant it. Drive storage keeps asking for
+  `drive.file` alone, with its own token.
+
+- **Document editor (signatures)**: "Send for signature" needs a Lawha Cloud server (migration
+  `028_signature_envelopes`) with a transactional email transport configured, or signers get no
+  link; the final PDF is not sealed with a server certificate yet. PDF signing needs no setup:
+  people create a self-signed certificate in the app or import a .p12/.pfx from a CA; Adobe shows
+  self-signed signatures as valid but from an unknown signer until the certificate is trusted.
+
 Done in this branch (all tested): Arabic/RTL UI and Google Fonts; mockups; print library and
 dielines; frame presets and multi-screen adapt; interactive prototype; one-click design system;
 WebP; image adjustments, levels, curves, sharpen/grain/vignette; on-device background removal;

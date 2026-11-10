@@ -151,12 +151,17 @@ import {
   viewportGet,
   viewportSet
 } from '#core/tools/vector'
+import { editDocument, readDocument, writeDocument } from '#core/tools/writer'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
  * codegen, advanced structure, path manipulation, etc.
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
+  // Documents (the document editor)
+  readDocument,
+  writeDocument,
+  editDocument,
   // Mockups & social posts
   listMockupPresets,
   createSocialPost,
