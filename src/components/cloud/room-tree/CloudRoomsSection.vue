@@ -6,6 +6,7 @@ import type { RoomAccessMode, RoomFile } from '@lawha/cloud/contract'
 import type { DocumentKind } from '@lawha/scene-graph'
 import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
+import { useCloudRoomPresence } from '@/app/cloud/room-tree/presence'
 import { useCloudRooms, type RoomFailure } from '@/app/cloud/room-tree/store'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
@@ -38,6 +39,10 @@ const ui = cloudRooms()
 const t = useCloudMessages()
 const common = useCommonMessages()
 const rooms = useCloudRooms(toRef(() => serverId))
+const presence = useCloudRoomPresence(
+  toRef(() => serverId),
+  computed(() => (rooms.pageState.value === 'ready' ? rooms.selected.value : null))
+)
 const self = computed(() => cloudConnection(serverId).account?.id ?? null)
 const root = useTemplateRef<HTMLElement>('root')
 const { width } = useElementSize(root)
@@ -195,6 +200,7 @@ function newFile(kind: DocumentKind) {
         v-if="!compact || rooms.selected.value"
         :detail="rooms.detail.value"
         :state="rooms.pageState.value"
+        :people="presence.people.value"
         :failure="membersOpen || formOpen || moveOpen ? null : failure"
         :busy="rooms.busy.value"
         :compact="compact"
