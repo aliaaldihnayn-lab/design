@@ -6,6 +6,7 @@ export const APP_DATABASE_NAMES = {
   localCanvas: 'lawha-cloud-local',
   outbox: 'lawha-cloud-outbox',
   recovery: 'lawha-recovery',
+  history: 'lawha-history',
   diagnostics: 'lawha-diagnostics',
   skills: 'lawha-skills',
   plugins: 'lawha-plugins',

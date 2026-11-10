@@ -165,3 +165,21 @@ describe('DocumentHistory', () => {
     expect(DocumentHistory.parse({ format: 2 })).toBeNull()
   })
 })
+
+describe('absorbing history', () => {
+  test('merges another history in time order without duplicates', () => {
+    const time = clock()
+    const earlier = new DocumentHistory({ documentKind: 'writer', now: time.now })
+    earlier.recordChange({ author: ana, summary: summary('First') })
+    const kept = earlier.saveVersion({ author: ana, records: [['a', 1]] })
+    time.advance(1000)
+    const later = new DocumentHistory({ documentKind: 'writer', now: time.now })
+    later.recordChange({ author: omar, summary: summary('Second') })
+
+    expect(later.absorb(earlier)).toBe(true)
+    expect(later.absorb(earlier)).toBe(false)
+    expect(later.listChanges().map((change) => change.summary.label)).toEqual(['First', 'Second'])
+    if (!kept) throw new Error('expected a version')
+    expect(later.versionRecords(kept.id)).toEqual([['a', 1]])
+  })
+})

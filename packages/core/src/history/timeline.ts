@@ -103,6 +103,37 @@ export class DocumentHistory {
     }
   }
 
+  /**
+   * Takes in the changes and versions of `other` this history lacks, in time order, as when a
+   * document first saved to a file finds history kept under its earlier name.
+   */
+  absorb(other: DocumentHistory | HistoryState): boolean {
+    const state = other instanceof DocumentHistory ? other.toState() : other
+    const changeIds = new Set(this.changes.map((change) => change.id))
+    const versionIds = new Set(this.versions.map((version) => version.id))
+    const changes = state.changes.filter((change) => !changeIds.has(change.id))
+    const versions = state.versions.filter((version) => !versionIds.has(version.id))
+    if (changes.length === 0 && versions.length === 0) return false
+    for (const version of versions) {
+      if (!Object.hasOwn(state.manifests, version.id)) continue
+      const manifest = state.manifests[version.id]
+      this.manifests.set(version.id, manifest)
+      for (const [, hash] of manifest) {
+        if (Object.hasOwn(state.blobs, hash) && !this.blobs.has(hash)) {
+          this.blobs.set(hash, state.blobs[hash])
+        }
+      }
+    }
+    const byTime = <T extends { at: number }>(left: T, right: T) => left.at - right.at
+    this.changes = [...this.changes, ...changes].sort(byTime)
+    this.versions = [
+      ...this.versions,
+      ...versions.filter((version) => this.manifests.has(version.id))
+    ].sort(byTime)
+    this.changed()
+    return true
+  }
+
   subscribe(listener: HistoryListener): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)

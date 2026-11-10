@@ -3,6 +3,7 @@ import type { UndoStepEvent } from '@lawha/scene-graph/undo'
 
 import {
   createDesignChangeTracker,
+  designPendingPages,
   designRecords,
   graphFromDesignRecords,
   restoreDesignGraph,
@@ -119,9 +120,10 @@ export function restoreDesignVersion(input: RestoreDesignVersionInput): HistoryV
   const { history, host, versionId, author } = input
   const version = history.getVersion(versionId)
   if (!version) throw new Error(`No version ${versionId}`)
-  const target = graphFromDesignRecords(history.versionRecords(versionId))
+  const records = history.versionRecords(versionId)
+  const target = graphFromDesignRecords(records)
   history.saveVersion({ author, records: designRecords(host.graph) })
-  restoreDesignGraph(host, target)
+  restoreDesignGraph(host, target, designPendingPages(records))
   const restored = history.saveVersion({
     author,
     records: designRecords(host.graph),

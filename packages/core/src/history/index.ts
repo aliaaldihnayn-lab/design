@@ -24,6 +24,7 @@ export {
 export {
   createDesignChangeTracker,
   designDiffFromKeys,
+  designPendingPages,
   designRecordNodeId,
   designRecords,
   graphFromDesignRecords,

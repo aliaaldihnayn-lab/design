@@ -14,6 +14,7 @@ import {
   serializeSceneGraph,
   type SerializedSceneGraph
 } from '#core/kiwi/fig/parse/transfer'
+import { isReaderPagePending } from '#core/kiwi/fig/session/document-state'
 
 import type { HistoryAction, HistoryChangeSummary } from './model'
 
@@ -30,7 +31,13 @@ const IMAGE = 'i:'
 type DesignMeta = Omit<
   SerializedSceneGraph,
   'nodes' | 'images' | 'variables' | 'variableCollections' | 'instanceIndex'
->
+> & {
+  /**
+   * Pages of a `.fig` whose layers were not read yet when the version was kept, so the version
+   * does not hold them; a restore leaves those pages' layers as they are.
+   */
+  pendingPageIds?: string[]
+}
 
 export function designRecords(graph: SceneGraph): [string, unknown][] {
   const data = serializeSceneGraph(graph)
@@ -41,7 +48,11 @@ export function designRecords(graph: SceneGraph): [string, unknown][] {
     figSchemaDeflated: data.figSchemaDeflated,
     documentColorSpace: data.documentColorSpace,
     documentKind: data.documentKind,
-    enabledLibraries: data.enabledLibraries
+    enabledLibraries: data.enabledLibraries,
+    pendingPageIds: graph
+      .getPages()
+      .filter((page) => isReaderPagePending(graph, page.id))
+      .map((page) => page.id)
   }
   return [
     [META, meta],
@@ -54,6 +65,14 @@ export function designRecords(graph: SceneGraph): [string, unknown][] {
 
 function isMeta(value: unknown): value is DesignMeta {
   return typeof value === 'object' && value !== null && 'rootId' in value
+}
+
+/** The pages a version kept without their layers, which a restore leaves alone. */
+export function designPendingPages(records: Iterable<[string, unknown]>): string[] {
+  for (const [key, value] of records) {
+    if (key === META && isMeta(value)) return value.pendingPageIds ?? []
+  }
+  return []
 }
 
 /** Builds a standalone graph from records `designRecords` wrote. */
@@ -80,8 +99,9 @@ export function graphFromDesignRecords(records: Iterable<[string, unknown]>): Sc
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     instanceIndex.set(node.componentId, [...(instanceIndex.get(node.componentId) ?? []), id])
   }
+  const { pendingPageIds: _pending, ...settings } = meta
   const graph = deserializeSceneGraph({
-    ...meta,
+    ...settings,
     nodes,
     variables,
     variableCollections: collections,
@@ -145,7 +165,12 @@ const PAGE_FIXED_FIELDS = new Set(['id', 'parentId', 'childIds', 'type'])
  * "Restore version": undo takes the restore back, and history records it as a change of its own,
  * so the state before it is never lost. Layer ids are kept, as the version saved them.
  */
-export function restoreDesignGraph(host: DesignRestoreHost, target: SceneGraph): void {
+export function restoreDesignGraph(
+  host: DesignRestoreHost,
+  target: SceneGraph,
+  pendingPageIds: readonly string[] = []
+): void {
+  const pending = new Set(pendingPageIds)
   host.recordEdit({ label: RESTORE_VERSION_LABEL }, () => {
     const graph = host.graph
     host.clearSelection()
@@ -158,9 +183,12 @@ export function restoreDesignGraph(host: DesignRestoreHost, target: SceneGraph):
       const fields = Object.fromEntries(
         Object.entries(structuredClone(page)).filter(([key]) => !PAGE_FIXED_FIELDS.has(key))
       ) as Partial<SceneNode>
-      if (graph.getNode(page.id)) graph.updateNode(page.id, fields)
+      const exists = !!graph.getNode(page.id)
+      if (exists) graph.updateNode(page.id, fields)
       else graph.createNode('CANVAS', graph.rootId, { ...fields, id: page.id, childIds: [] })
-      host.restorePageFromSnapshot(snapshotPage(target, page.id))
+      if (!exists || !pending.has(page.id)) {
+        host.restorePageFromSnapshot(snapshotPage(target, page.id))
+      }
       graph.insertChildAt(page.id, graph.rootId, index)
     })
     for (const page of graph.getPages()) {
@@ -190,6 +218,18 @@ const ACTION_PRIORITY: HistoryAction[] = [
   'reorder',
   'restyle'
 ]
+
+/** Undo labels that name what the step did, lower-cased. */
+const LABEL_ACTIONS = new Map<string, HistoryAction>([
+  ['move', 'move'],
+  ['nudge', 'move'],
+  ['resize', 'resize'],
+  ['rotate', 'rotate'],
+  ['delete', 'delete'],
+  ['rename', 'rename'],
+  ['edit text', 'edit-text'],
+  ['reorder', 'reorder']
+])
 
 function fieldAction(fields: string[]): HistoryAction {
   for (const [action, names] of FIELD_ACTIONS) {
@@ -249,7 +289,11 @@ export function createDesignChangeTracker(graph: () => SceneGraph) {
     observer,
     /** Describes the step that just ended and starts over for the next. */
     take(label: string): HistoryChangeSummary {
-      const action = ACTION_PRIORITY.find((candidate) => (touched.get(candidate)?.size ?? 0) > 0)
+      const has = (candidate: HistoryAction) => (touched.get(candidate)?.size ?? 0) > 0
+      // The step's own name wins when it says what it did, since changes made outside undo,
+      // such as a collaborator's, may have been reported since the last step.
+      const named = LABEL_ACTIONS.get(label.toLowerCase())
+      const action = named && has(named) ? named : ACTION_PRIORITY.find(has)
       const ids = action ? (touched.get(action) ?? new Map<string, string>()) : new Map()
       const summary: HistoryChangeSummary = {
         action: action ?? 'edit',
