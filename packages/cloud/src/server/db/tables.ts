@@ -2,6 +2,10 @@ import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import type {
   CloudSignInMethod,
   DocumentPermission,
+  RoomAccessMode,
+  RoomAuditAction,
+  RoomMemberRole,
+  RoomRole,
   SignatureEnvelopeStatus,
   SignatureEventKind,
   SignatureSignerStatus,
@@ -387,6 +391,69 @@ export interface SignatureEventTable {
   createdAt: TimestampColumn
 }
 
+/** A room in a workspace, under another or at the top; see migration 029. */
+export interface RoomTable {
+  id: string
+  workspaceId: string
+  parentId: string | null
+  name: string
+  accessMode: RoomAccessMode
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  archivedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+/** Someone on a room's own list; exactly one row per room is its owner. */
+export interface RoomMemberTable {
+  roomId: string
+  userId: string
+  role: RoomRole
+  addedBy: string
+  createdAt: TimestampColumn
+}
+
+export interface RoomInvitationTable {
+  id: string
+  roomId: string
+  emailNormalized: string
+  role: RoomMemberRole
+  /** SHA-256 of the secret in the invitation link; the secret itself is never stored. */
+  tokenHash: string
+  status: Generated<'pending' | 'accepted' | 'revoked'>
+  invitedBy: string
+  invitedAt: TimestampColumn
+  expiresAt: TimestampColumn
+  acceptedAt: TimestampColumn | null
+  acceptedBy: string | null
+  revokedAt: TimestampColumn | null
+}
+
+/** A document kept in a room; while it is, the room decides who reaches it. */
+export interface RoomFileTable {
+  documentId: string
+  roomId: string
+  addedBy: string
+  addedAt: TimestampColumn
+}
+
+export interface RoomAuditEventTable {
+  id: string
+  roomId: string
+  actorUserId: string
+  action: RoomAuditAction
+  subjectUserId: string | null
+  subjectEmail: string | null
+  metadata: unknown
+  createdAt: TimestampColumn
+}
+
+export interface RoomPresenceTable {
+  roomId: string
+  userId: string
+  seenAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -422,6 +489,12 @@ export interface CloudDatabase {
   signatureEnvelope: SignatureEnvelopeTable
   signatureSigner: SignatureSignerTable
   signatureEvent: SignatureEventTable
+  room: RoomTable
+  roomMember: RoomMemberTable
+  roomInvitation: RoomInvitationTable
+  roomFile: RoomFileTable
+  roomAuditEvent: RoomAuditEventTable
+  roomPresence: RoomPresenceTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

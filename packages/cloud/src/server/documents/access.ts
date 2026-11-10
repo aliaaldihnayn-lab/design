@@ -5,6 +5,7 @@ import type {
   WorkspaceRole
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { documentRoomAccess } from '#cloud/server/rooms/access'
 import { maxBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -43,6 +44,9 @@ export async function resolveDocumentAccess(
     .where('document.deletedAt', 'is', null)
     .executeTakeFirst()
   if (!document) return undefined
+  // A document kept in a room is reached through the room, not through its workspace.
+  const room = await documentRoomAccess(database, userId, documentId)
+  const workspaceRole = room ? null : document.workspaceRole
 
   const sources: DocumentAccessSource[] = []
   const candidates: DocumentPermission[] = []
@@ -51,9 +55,13 @@ export async function resolveDocumentAccess(
     sources.push('owner')
     candidates.push('edit')
   }
-  if (document.workspaceRole) {
+  if (workspaceRole) {
     sources.push('workspace')
-    candidates.push(workspacePermission(document.workspaceRole))
+    candidates.push(workspacePermission(workspaceRole))
+  }
+  if (room?.role) {
+    sources.push('room')
+    candidates.push(room.role === 'viewer' ? 'view' : 'edit')
   }
   if (document.grantPermission) {
     sources.push('direct-grant')
@@ -61,11 +69,12 @@ export async function resolveDocumentAccess(
   }
   const permission = maxBy(candidates, (candidate) => PERMISSION_WEIGHT[candidate])
   if (!permission) return undefined
-  const workspaceCanManage =
-    document.workspaceRole === 'admin' || document.workspaceRole === 'editor'
+  const workspaceCanManage = workspaceRole === 'admin' || workspaceRole === 'editor'
+  const roomCanManage = room?.role === 'owner' || room?.role === 'editor'
   return {
     permission,
-    canManageSharing: owner || workspaceCanManage || document.grantPermission === 'edit',
+    canManageSharing:
+      owner || workspaceCanManage || roomCanManage || document.grantPermission === 'edit',
     sources
   }
 }
@@ -75,8 +84,9 @@ export function canEditDocument(access: DocumentAccess): boolean {
 }
 
 /**
- * Removing a document belongs to its owner and its workspace's admins and editors. A direct grant
- * or an accepted invitation lets someone edit, never delete the owner's document.
+ * Removing a document belongs to its owner and its workspace's admins and editors, or, for a
+ * document kept in a room, the room's owner and editors. A direct grant or an accepted invitation
+ * lets someone edit, never delete the owner's document.
  */
 export async function canDeleteDocument(
   database: AccessDatabase,
@@ -95,9 +105,8 @@ export async function canDeleteDocument(
     .where('document.deletedAt', 'is', null)
     .executeTakeFirst()
   if (!document) return false
-  return (
-    document.createdBy === userId ||
-    document.workspaceRole === 'admin' ||
-    document.workspaceRole === 'editor'
-  )
+  if (document.createdBy === userId) return true
+  const room = await documentRoomAccess(database, userId, documentId)
+  if (room) return room.role === 'owner' || room.role === 'editor'
+  return document.workspaceRole === 'admin' || document.workspaceRole === 'editor'
 }

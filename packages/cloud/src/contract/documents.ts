@@ -52,7 +52,7 @@ export type RequestImageLinksInput = v.InferOutput<typeof requestImageLinksSchem
 export const documentPermissionSchema = v.picklist(['view', 'edit'])
 export type DocumentPermission = v.InferOutput<typeof documentPermissionSchema>
 
-export const documentAccessSourceSchema = v.picklist(['owner', 'workspace', 'direct-grant'])
+export const documentAccessSourceSchema = v.picklist(['owner', 'workspace', 'room', 'direct-grant'])
 export type DocumentAccessSource = v.InferOutput<typeof documentAccessSourceSchema>
 
 export const documentAccessSchema = v.object({
