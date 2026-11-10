@@ -61,6 +61,8 @@ interface ZoneFrame {
   outside: Record<Edge, number>
   /** A side under `innerMinSide` keeps every band outside the layer. */
   small: boolean
+  /** How much farther than on a desktop the resize and rotation zones reach, for a finger. */
+  scale: number
 }
 
 /** How far an edge band reaches inside the layer. */
@@ -79,7 +81,7 @@ function inBand(frame: ZoneFrame, edge: Edge) {
   // right and bottom ones beyond it. A larger layer's bands stop short of their inner reach.
   const startsBeyond = edge === 'e' || edge === 's' ? across >= 0 : across > 0
   return (
-    across <= TRANSFORM_ZONE.resizeReach &&
+    across <= TRANSFORM_ZONE.resizeReach * frame.scale &&
     (limit === 0 ? startsBeyond : -across < limit) &&
     along >= 0 &&
     along <= (vertical ? frame.height : frame.width)
@@ -87,7 +89,7 @@ function inBand(frame: ZoneFrame, edge: Edge) {
 }
 
 function resizesCorner(frame: ZoneFrame, corner: Corner) {
-  const reach = TRANSFORM_ZONE.resizeReach
+  const reach = TRANSFORM_ZONE.resizeReach * frame.scale
   const dx = frame.outside[corner.x]
   const dy = frame.outside[corner.y]
   const distance = Math.hypot(dx, dy)
@@ -106,7 +108,9 @@ function rotatedCorner(frame: ZoneFrame): CornerPosition | null {
   if (outside.w <= 0 && outside.e <= 0 && outside.n <= 0 && outside.s <= 0) return null
   const distance = (corner: Corner) => Math.hypot(outside[corner.x], outside[corner.y])
   const nearest = minBy(CORNERS, distance)
-  return nearest && distance(nearest) <= TRANSFORM_ZONE.rotateReach ? nearest.handle : null
+  return nearest && distance(nearest) <= TRANSFORM_ZONE.rotateReach * frame.scale
+    ? nearest.handle
+    : null
 }
 
 /** Whether a layer of this size on screen shows and takes resize and rotation handles. */
@@ -117,8 +121,14 @@ export function hasTransformHandles(width: number, height: number): boolean {
 /**
  * The zone under a point given in the layer's own frame, with the layer's rect in that frame and
  * the zoom that maps it to the screen; `null` where the pointer neither resizes nor rotates.
+ * `scale` widens the zones for a finger (`TOUCH_HANDLE_SCALE`).
  */
-export function transformZoneAt(point: Vector, rect: Rect, zoom: number): TransformZone | null {
+export function transformZoneAt(
+  point: Vector,
+  rect: Rect,
+  zoom: number,
+  scale = 1
+): TransformZone | null {
   const width = rect.width * zoom
   const height = rect.height * zoom
   if (!hasTransformHandles(width, height)) return null
@@ -130,7 +140,8 @@ export function transformZoneAt(point: Vector, rect: Rect, zoom: number): Transf
     x,
     y,
     outside: { w: -x, e: x - width, n: -y, s: y - height },
-    small: width < TRANSFORM_ZONE.innerMinSide || height < TRANSFORM_ZONE.innerMinSide
+    small: width < TRANSFORM_ZONE.innerMinSide || height < TRANSFORM_ZONE.innerMinSide,
+    scale
   }
   const corner = CORNERS.find((candidate) => resizesCorner(frame, candidate))
   if (corner) return { kind: 'resize', handle: corner.handle }
@@ -145,13 +156,13 @@ export function transformZoneAt(point: Vector, rect: Rect, zoom: number): Transf
  * Figma widens it: to `tinyHitSpan` across its centre along either axis, within its extent along
  * the other.
  */
-export function pressesTinyLayer(point: Vector, rect: Rect, zoom: number): boolean {
+export function pressesTinyLayer(point: Vector, rect: Rect, zoom: number, scale = 1): boolean {
   const width = rect.width * zoom
   const height = rect.height * zoom
   if (hasTransformHandles(width, height)) return false
   const x = (point.x - rect.x) * zoom
   const y = (point.y - rect.y) * zoom
-  const half = TRANSFORM_ZONE.tinyHitSpan / 2
+  const half = (TRANSFORM_ZONE.tinyHitSpan * scale) / 2
   const across = (offset: number, side: number) =>
     Math.abs(offset - side / 2) <= Math.max(half, side / 2)
   const within = (offset: number, side: number) => offset >= 0 && offset <= side

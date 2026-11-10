@@ -53,7 +53,8 @@ export function tryStartStickyScale(
     node,
     editor.graph,
     editor.renderer?.zoom,
-    editor.state.rotationPreview
+    editor.state.rotationPreview,
+    editor.state.handleScale
   )
   if (!hit) return null
   const wide = isWideSticky(editor.graph, node)

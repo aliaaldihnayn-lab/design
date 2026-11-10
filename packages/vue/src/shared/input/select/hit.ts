@@ -1,9 +1,5 @@
 import type { Editor } from '@lawha/core'
-import {
-  createSceneGeometry,
-  pressesTinyLayer,
-  selectionHandleRect
-} from '@lawha/core/geometry'
+import { createSceneGeometry, pressesTinyLayer, selectionHandleRect } from '@lawha/core/geometry'
 import type { SceneNode } from '@lawha/scene-graph'
 
 import type { HitTestFns } from '#vue/shared/input/select'
@@ -28,7 +24,12 @@ export function tinySelectionAt(cx: number, cy: number, editor: Editor): SceneNo
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     const point = node && geometry.toLocal(node, { x: cx, y: cy })
-    if (node && point && pressesTinyLayer(point, selectionHandleRect(node), zoom)) return node
+    if (
+      node &&
+      point &&
+      pressesTinyLayer(point, selectionHandleRect(node), zoom, editor.state.handleScale)
+    )
+      return node
   }
   return null
 }

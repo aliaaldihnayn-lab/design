@@ -28,6 +28,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     pageColor: { ...CANVAS_BG_COLOR },
     panY: 0,
     zoom: 1,
+    handleScale: 1,
     navigation: { phase: 'idle', generation: 0, lastInputAt: 0 },
     renderVersion: 0,
     textSelectionVersion: 0,

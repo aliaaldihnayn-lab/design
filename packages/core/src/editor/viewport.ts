@@ -181,6 +181,13 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
+  /** Sizes selection handles for the pointer: `TOUCH_HANDLE_SCALE` for a finger, 1 otherwise. */
+  function setHandleScale(scale: number) {
+    if (ctx.state.handleScale === scale) return
+    ctx.state.handleScale = scale
+    ctx.requestRepaint()
+  }
+
   function zoomTo100() {
     zoomToLevel(1)
   }
@@ -234,6 +241,7 @@ export function createViewportActions(ctx: EditorContext) {
     zoomToFit,
     zoomTo100,
     zoomToLevel,
-    zoomToSelection
+    zoomToSelection,
+    setHandleScale
   }
 }

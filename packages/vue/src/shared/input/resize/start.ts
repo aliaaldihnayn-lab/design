@@ -18,7 +18,8 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
       node,
       editor.graph,
       editor.renderer?.zoom,
-      editor.state.rotationPreview
+      editor.state.rotationPreview,
+      editor.state.handleScale
     )
     if (handleResult) {
       const snap = createResizeSnapshot(node)

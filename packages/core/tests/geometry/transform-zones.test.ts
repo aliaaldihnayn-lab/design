@@ -126,3 +126,30 @@ describe('Figma transform zones', () => {
     expect(presses(6, 30, 11, 15)).toBe(false)
   })
 })
+
+describe('touch-sized transform zones', () => {
+  const at = (dx: number, dy: number, scale: number) => {
+    const found = transformZoneAt(
+      { x: 240 + dx, y: 160 + dy },
+      { x: 0, y: 0, width: 240, height: 160 },
+      1,
+      scale
+    )
+    if (!found) return null
+    return found.kind === 'resize' ? found.handle : `rotate ${found.corner}`
+  }
+
+  test('a finger resizes and rotates from twice as far as a mouse', () => {
+    expect(at(12, 0, 1)).toBe('rotate se')
+    expect(at(12, 0, 2)).toBe('se')
+    expect(at(24, 0, 1)).toBeNull()
+    expect(at(24, 0, 2)).toBe('rotate se')
+    expect(at(40, 0, 2)).toBeNull()
+  })
+
+  test('a finger presses a tiny selected layer across a wider span', () => {
+    const rect = { x: 0, y: 0, width: 6, height: 6 }
+    expect(pressesTinyLayer({ x: 14, y: 3 }, rect, 1)).toBe(false)
+    expect(pressesTinyLayer({ x: 14, y: 3 }, rect, 1, 2)).toBe(true)
+  })
+})

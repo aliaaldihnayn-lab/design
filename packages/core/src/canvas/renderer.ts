@@ -204,6 +204,8 @@ export class SkiaRenderer {
   // What the overlays show and leave behind for hit testing.
   /** Selections draw handles to drag; off while the canvas offers no edits. */
   editHandles = true
+  /** How much larger handles draw than `HANDLE_HALF_SIZE`; larger where a finger is the pointer. */
+  handleScale = 1
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;
    * null for a canvas that draws only the document, such as an export.

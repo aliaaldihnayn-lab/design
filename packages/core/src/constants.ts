@@ -75,6 +75,11 @@ export const SIZE_FONT_SIZE = 10
 export const VALUE_FONT_SIZE = 11
 
 export const HANDLE_HALF_SIZE = 3
+/**
+ * How much larger selection handles draw, and how much farther their resize and rotation zones
+ * reach, where a finger is the pointer.
+ */
+export const TOUCH_HANDLE_SCALE = 2
 
 export const LABEL_OFFSET_Y = 8
 export const SIZE_PILL_PADDING_X = 6

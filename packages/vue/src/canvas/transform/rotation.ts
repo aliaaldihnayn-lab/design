@@ -38,9 +38,18 @@ export function tryStartRotation(
       node,
       editor.graph,
       zoom,
-      editor.state.rotationPreview
+      editor.state.rotationPreview,
+      editor.state.handleScale
     ) ||
-    hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, zoom, editor.state.rotationPreview)
+    hitTestCornerRotationByMatrix(
+      cx,
+      cy,
+      node,
+      editor.graph,
+      zoom,
+      editor.state.rotationPreview,
+      editor.state.handleScale
+    )
   if (!hitsRotationHandle) return false
   const startAngle = Math.atan2(cy - center.y, cx - center.x) * (180 / Math.PI)
   setDrag({

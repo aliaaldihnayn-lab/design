@@ -105,6 +105,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePageNodes',
   'loadPageNodes',
   'revealNodes',
+  'setHandleScale',
   'setZoomAroundPoint',
   'switchPage',
   'switchToNextPage',

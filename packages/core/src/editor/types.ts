@@ -183,6 +183,11 @@ export interface EditorViewState {
   pageColor: Color
   panY: number
   zoom: number
+  /**
+   * How much larger selection handles draw and take the pointer than on a desktop, 1 there;
+   * `TOUCH_HANDLE_SCALE` where a finger is the pointer.
+   */
+  handleScale: number
   navigation: NavigationState
   renderVersion: number
   /** Bumped when the caret or selection of the text being edited moves, which changes nothing else. */

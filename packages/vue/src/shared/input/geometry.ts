@@ -167,10 +167,13 @@ function transformZoneOf(
   cy: number,
   node: SceneNode,
   geometry: SceneGeometry,
-  zoom: number
+  zoom: number,
+  handleScale: number
 ): TransformZone | null {
   const pointer = geometry.toLocal(node, { x: cx, y: cy })
-  const zone = pointer ? transformZoneAt(pointer, selectionHandleRect(node), zoom) : null
+  const zone = pointer
+    ? transformZoneAt(pointer, selectionHandleRect(node), zoom, handleScale)
+    : null
   // A line is aimed by its two end handles, not resized: see `lineEndAt`.
   return zone?.kind === 'resize' && isLineLike(node) ? null : zone
 }
@@ -181,13 +184,14 @@ export function getHitHandleByMatrix(
   node: SceneNode,
   graph: SceneGraph,
   zoom = 1,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  handleScale = 1
 ): {
   handle: HandlePosition
   rotation: number
 } | null {
   const geometry = createSceneGeometry(graph, preview)
-  const zone = transformZoneOf(cx, cy, node, geometry, zoom)
+  const zone = transformZoneOf(cx, cy, node, geometry, zoom, handleScale)
   if (zone?.kind !== 'resize') return null
   return { handle: zone.handle, rotation: getCursorAngleFromHandle(zone.handle, node, geometry) }
 }
@@ -198,13 +202,14 @@ export function hitTestTopRotationHandleByMatrix(
   node: SceneNode,
   graph: SceneGraph,
   zoom: number = 1,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  handleScale = 1
 ): boolean {
   const rect = selectionHandleRect(node)
   if (isLineLike(node) || !hasTransformHandles(rect.width * zoom, rect.height * zoom)) return false
   const geometry = createSceneGeometry(graph, preview)
   const handle = geometry.toWorld(node, rotationHandleLayout(node, geometry, zoom).handle)
-  const radius = HANDLE_HIT_RADIUS / zoom
+  const radius = (HANDLE_HIT_RADIUS * handleScale) / zoom
   const dx = cx - handle.x
   const dy = cy - handle.y
   return dx * dx + dy * dy <= radius * radius
@@ -216,9 +221,10 @@ export function hitTestCornerRotationByMatrix(
   node: SceneNode,
   graph: SceneGraph,
   zoom: number = 1,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  handleScale = 1
 ): CornerPosition | null {
-  const zone = transformZoneOf(cx, cy, node, createSceneGeometry(graph, preview), zoom)
+  const zone = transformZoneOf(cx, cy, node, createSceneGeometry(graph, preview), zoom, handleScale)
   return zone?.kind === 'rotate' ? zone.corner : null
 }
 

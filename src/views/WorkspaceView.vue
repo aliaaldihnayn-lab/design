@@ -294,7 +294,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+  <div
+    data-test-id="editor-root"
+    class="flex h-dvh w-screen flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+  >
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />

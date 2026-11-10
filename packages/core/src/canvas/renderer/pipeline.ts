@@ -93,6 +93,7 @@ export function renderFromEditorState(
   r.panX = state.panX
   r.panY = state.panY
   r.zoom = state.zoom
+  r.handleScale = state.handleScale
   r.viewportWidth = viewportWidth
   r.viewportHeight = viewportHeight
   r.showRulers = showRulers
