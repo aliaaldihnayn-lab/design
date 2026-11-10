@@ -20,6 +20,22 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
   // Illustrator's Shape Builder and its key.
   { key: 'SHAPE_BUILDER', label: 'Shape builder', shortcut: 'Shift+M' },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
+  // Affinity Photo's pixel tools, on Photoshop's keys: B, E, G, and I.
+  {
+    key: 'BRUSH',
+    label: 'Paint brush',
+    shortcut: 'B',
+    flyout: ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER']
+  },
+  // Selections of a layer's pixels, on Photoshop's M and W.
+  {
+    key: 'MARQUEE_RECT',
+    label: 'Rectangular marquee',
+    shortcut: 'M',
+    flyout: ['MARQUEE_RECT', 'MARQUEE_ELLIPSE', 'MAGIC_WAND']
+  },
+  // Retouching, on Photoshop's S and J; Alt-click sets the source.
+  { key: 'CLONE_STAMP', label: 'Clone', shortcut: 'S', flyout: ['CLONE_STAMP', 'HEALING_BRUSH'] },
   // Figma's S is Slice, and FigJam's sticky tool has no key in Figma Design.
   { key: 'STICKY', label: 'Sticky note', shortcut: '' },
   // FigJam's R; here R is the rectangle, as in Figma Design.
@@ -42,6 +58,14 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyP: 'PEN',
   'Shift+KeyP': 'PENCIL',
   'Shift+KeyM': 'SHAPE_BUILDER',
+  KeyB: 'BRUSH',
+  KeyE: 'ERASER',
+  KeyG: 'FILL_BUCKET',
+  KeyI: 'COLOR_PICKER',
+  KeyM: 'MARQUEE_RECT',
+  KeyW: 'MAGIC_WAND',
+  KeyS: 'CLONE_STAMP',
+  KeyJ: 'HEALING_BRUSH',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }

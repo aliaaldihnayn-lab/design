@@ -648,3 +648,5 @@ zh-cn:print.productGreetingCardA5
 zh-cn:print.productLetterhead
 zh-cn:print.productEnvelopeDl
 zh-cn:print.productPresentationFolderA4
+ja:photo.cloneSourceHint
+zh-cn:photo.cloneSourceHint

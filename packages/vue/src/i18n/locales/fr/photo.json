@@ -24,5 +24,18 @@
   "removeBackground": "Supprimer l’arrière-plan",
   "removingBackground": "Suppression de l’arrière-plan… La première fois, le modèle est téléchargé (environ 45 Mo).",
   "backgroundRemoved": "Arrière-plan supprimé.",
-  "removeBackgroundFailed": "Impossible de supprimer l’arrière-plan : {error}"
+  "removeBackgroundFailed": "Impossible de supprimer l’arrière-plan : {error}",
+  "brushColor": "Couleur",
+  "brushSize": "Taille",
+  "brushHardness": "Dureté",
+  "brushOpacity": "Opacité",
+  "tolerance": "Tolérance",
+  "contiguous": "Contigu",
+  "selectAll": "Tout sélectionner",
+  "deselect": "Désélectionner",
+  "invertSelection": "Inverser la sélection",
+  "maskFromSelection": "Masque depuis la sélection",
+  "invertMask": "Inverser le masque",
+  "feather": "Contour progressif",
+  "cloneSourceHint": "Alt-clic pour définir la source"
 }

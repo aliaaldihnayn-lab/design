@@ -37,6 +37,16 @@ const TOOL_CURSORS: Record<Tool, string> = {
   PEN: PEN_CURSOR,
   PENCIL: PENCIL_CURSOR,
   SHAPE_BUILDER: 'crosshair',
+  // The brush and eraser draw their own outline on the canvas.
+  BRUSH: 'crosshair',
+  ERASER: 'crosshair',
+  FILL_BUCKET: 'cell',
+  COLOR_PICKER: 'crosshair',
+  MARQUEE_RECT: 'crosshair',
+  MARQUEE_ELLIPSE: 'crosshair',
+  MAGIC_WAND: 'crosshair',
+  CLONE_STAMP: 'crosshair',
+  HEALING_BRUSH: 'crosshair',
   HAND: HAND_CURSOR,
   COMMENT: COMMENT_CURSOR
 }

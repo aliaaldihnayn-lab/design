@@ -27,6 +27,7 @@ import type {
 } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { PixelOverlay, PixelToolSettings } from '#core/editor/pixels/types'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
@@ -51,6 +52,15 @@ export type Tool =
   | 'PEN'
   | 'PENCIL'
   | 'SHAPE_BUILDER'
+  | 'BRUSH'
+  | 'ERASER'
+  | 'FILL_BUCKET'
+  | 'COLOR_PICKER'
+  | 'MARQUEE_RECT'
+  | 'MARQUEE_ELLIPSE'
+  | 'MAGIC_WAND'
+  | 'CLONE_STAMP'
+  | 'HEALING_BRUSH'
   | 'HAND'
   | 'COMMENT'
 
@@ -80,6 +90,8 @@ export interface EditorSharedState {
   activeTool: Tool
   /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
   shapeWithTextKind: ShapeWithTextType
+  /** The pixel tools' brush, fill, and selection settings, shared by every pane. */
+  pixelTools: PixelToolSettings
   /**
    * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
    * read through `resolveEditorProfile`, set with `setReadOnly`.
@@ -173,6 +185,8 @@ export interface EditorViewState {
   pencilState: PencilState | null
   /** The regions the Shape Builder tool would merge or delete. */
   shapeBuilderHover: ShapeBuilderHover | null
+  /** The pixel tools' brush cursor, selection outline, and marquee. */
+  pixelOverlay: PixelOverlay | null
   autoLayoutHover: {
     nodeId: string
     kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'

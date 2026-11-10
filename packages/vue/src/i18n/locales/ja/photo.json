@@ -24,5 +24,18 @@
   "removeBackground": "背景を削除",
   "removingBackground": "背景を削除しています… 初回はモデル(約45メガバイト)をダウンロードします。",
   "backgroundRemoved": "背景を削除しました。",
-  "removeBackgroundFailed": "背景を削除できませんでした: {error}"
+  "removeBackgroundFailed": "背景を削除できませんでした: {error}",
+  "brushColor": "色",
+  "brushSize": "サイズ",
+  "brushHardness": "硬さ",
+  "brushOpacity": "不透明度",
+  "tolerance": "許容値",
+  "contiguous": "隣接",
+  "selectAll": "すべて選択",
+  "deselect": "選択解除",
+  "invertSelection": "選択範囲を反転",
+  "maskFromSelection": "選択範囲からマスク",
+  "invertMask": "マスクを反転",
+  "feather": "ぼかし",
+  "cloneSourceHint": "Altキーを押しながらクリックでソースを設定"
 }

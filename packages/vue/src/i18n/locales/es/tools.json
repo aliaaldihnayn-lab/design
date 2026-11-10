@@ -15,5 +15,14 @@
   "connector": "Conector",
   "hand": "Mano",
   "comment": "Comentario",
-  "shapeBuilder": "Generador de formas"
+  "shapeBuilder": "Generador de formas",
+  "brush": "Pincel",
+  "eraser": "Borrador",
+  "fillBucket": "Bote de pintura",
+  "colorPicker": "Cuentagotas",
+  "marqueeRect": "Marco rectangular",
+  "marqueeEllipse": "Marco elíptico",
+  "magicWand": "Varita mágica",
+  "cloneStamp": "Tampón de clonar",
+  "healingBrush": "Pincel corrector"
 }

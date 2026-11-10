@@ -51,6 +51,8 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
+import { createPixelActions } from './pixels'
+import { createPublisherActions } from './publisher'
 import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
@@ -329,6 +331,8 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
+  const pixels = createPixelActions(ctx, nodes.beginNodePreview)
+  const publisher = createPublisherActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -344,6 +348,7 @@ export function createEditor(options?: EditorOptions) {
     if (state.editingTextId) text.commitTextEdit()
     shapes.penCancel()
     shapes.pencilCancel()
+    pixels.pixelStrokeCancel()
     state.gradientEdit = null
   })
 
@@ -474,6 +479,8 @@ export function createEditor(options?: EditorOptions) {
 
     // Shapes & tools
     ...shapes,
+    ...pixels,
+    ...publisher,
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,

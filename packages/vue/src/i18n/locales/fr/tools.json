@@ -15,5 +15,14 @@
   "connector": "Connecteur",
   "hand": "Main",
   "comment": "Commentaire",
-  "shapeBuilder": "Concepteur de formes"
+  "shapeBuilder": "Concepteur de formes",
+  "brush": "Pinceau",
+  "eraser": "Gomme",
+  "fillBucket": "Pot de peinture",
+  "colorPicker": "Pipette",
+  "marqueeRect": "Rectangle de sélection",
+  "marqueeEllipse": "Ellipse de sélection",
+  "magicWand": "Baguette magique",
+  "cloneStamp": "Tampon de duplication",
+  "healingBrush": "Correcteur"
 }

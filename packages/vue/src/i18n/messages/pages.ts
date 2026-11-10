@@ -11,7 +11,13 @@ export const pageMessageDefaults = {
   goToPage: 'Go to page…',
   recentPage: 'Recent',
   currentPage: 'Current page',
-  pageNameLabel: 'Page name'
+  pageNameLabel: 'Page name',
+  newMasterPage: 'New master page',
+  applyMasterPage: params('Apply {name}'),
+  removeMasterPage: 'Remove master page',
+  insertPageNumber: 'Insert page number',
+  linkTextFrames: 'Link text frames',
+  unlinkTextFrame: 'Unlink text frame'
 } as const
 
 export const pageMessages = i18n('pages', pageMessageDefaults)

@@ -498,6 +498,35 @@ export class SkiaRenderer {
   }
 
   /**
+   * Shows unpremultiplied RGBA `pixels` wherever image `hash` is drawn until called again with
+   * null, without encoding them: the canvas follows a brush stroke this way while it is painted.
+   */
+  setLivePixels(
+    hash: string,
+    pixels: { width: number; height: number; data: Uint8Array } | null,
+    nodeIds: Iterable<string> = []
+  ): void {
+    const live = this.images.live.get(hash)
+    if (live?.surface === this.surface) live.image.delete()
+    this.images.live.delete(hash)
+    if (pixels) {
+      const image = this.ck.MakeImage(
+        {
+          alphaType: this.ck.AlphaType.Unpremul,
+          colorType: this.ck.ColorType.RGBA_8888,
+          colorSpace: this.ck.ColorSpace.SRGB,
+          width: pixels.width,
+          height: pixels.height
+        },
+        pixels.data,
+        pixels.width * 4
+      )
+      if (image) this.images.live.set(hash, { image, surface: this.surface })
+    }
+    for (const id of nodeIds) this.redrawNode(id)
+  }
+
+  /**
    * Forgets the decoded image `hash` after its bytes were replaced, such as a shader's frame
    * rendered again, and redraws whatever showed it. Previews notice new bytes themselves.
    */

@@ -24,5 +24,18 @@
   "removeBackground": "Удалить фон",
   "removingBackground": "Удаление фона… В первый раз загружается модель (около 45 МБ).",
   "backgroundRemoved": "Фон удалён.",
-  "removeBackgroundFailed": "Не удалось удалить фон: {error}"
+  "removeBackgroundFailed": "Не удалось удалить фон: {error}",
+  "brushColor": "Цвет",
+  "brushSize": "Размер",
+  "brushHardness": "Жёсткость",
+  "brushOpacity": "Непрозрачность",
+  "tolerance": "Допуск",
+  "contiguous": "Смежные",
+  "selectAll": "Выделить всё",
+  "deselect": "Снять выделение",
+  "invertSelection": "Инвертировать выделение",
+  "maskFromSelection": "Маска из выделения",
+  "invertMask": "Инвертировать маску",
+  "feather": "Растушёвка",
+  "cloneSourceHint": "Alt-щелчок задаёт источник"
 }

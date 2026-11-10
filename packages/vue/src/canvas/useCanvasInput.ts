@@ -389,6 +389,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'pixel') {
+      d.move(cx, cy, e.shiftKey)
+      return
+    }
+
     if (d.type === 'connector-draw') {
       handleConnectorDrawMove(d, cx, cy, sx, sy, editor, attachModifiers(e))
       return
@@ -598,6 +603,7 @@ export function useCanvasInput(
         if (
           type === 'draw' ||
           type === 'sticky-draw' ||
+          type === 'pixel' ||
           type === 'rotate' ||
           type === 'shape-handle' ||
           type === 'sticky-scale'

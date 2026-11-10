@@ -18,6 +18,7 @@ import { useToolbarActions } from '@/components/toolbar/actions'
 import DesktopToolbar from '@/components/toolbar/DesktopToolbar.vue'
 import { useToolLabels } from '@/components/toolbar/labels'
 import MobileToolbar from '@/components/toolbar/MobileToolbar.vue'
+import PixelToolOptions from '@/components/toolbar/PixelToolOptions.vue'
 import ToolbarContextMenu from '@/components/toolbar/ToolbarContextMenu.vue'
 import type { ToolbarActionItem } from '@/components/toolbar/types'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -123,5 +124,6 @@ function onActionTap(item: ToolbarActionItem) {
         </template>
       </MobileToolbar>
     </ToolbarContextMenu>
+    <PixelToolOptions v-if="!isMobile" />
   </ToolbarRoot>
 </template>

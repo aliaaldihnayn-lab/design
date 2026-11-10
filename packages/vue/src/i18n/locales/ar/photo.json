@@ -24,5 +24,18 @@
   "removeBackground": "إزالة الخلفية",
   "removingBackground": "جارٍ إزالة الخلفية… أول مرة يتم تنزيل النموذج (حوالي 45 ميغابايت).",
   "backgroundRemoved": "تمت إزالة الخلفية.",
-  "removeBackgroundFailed": "تعذّرت إزالة الخلفية: {error}"
+  "removeBackgroundFailed": "تعذّرت إزالة الخلفية: {error}",
+  "brushColor": "اللون",
+  "brushSize": "الحجم",
+  "brushHardness": "الصلابة",
+  "brushOpacity": "العتامة",
+  "tolerance": "التفاوت",
+  "contiguous": "متجاور فقط",
+  "selectAll": "تحديد الكل",
+  "deselect": "إلغاء التحديد",
+  "invertSelection": "عكس التحديد",
+  "maskFromSelection": "قناع من التحديد",
+  "invertMask": "عكس القناع",
+  "feather": "تنعيم الحواف",
+  "cloneSourceHint": "انقر مع Alt لتحديد المصدر"
 }

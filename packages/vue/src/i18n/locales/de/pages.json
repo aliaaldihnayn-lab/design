@@ -7,5 +7,11 @@
   "goToPage": "Zu Seite wechseln…",
   "recentPage": "Zuletzt besucht",
   "currentPage": "Aktuelle Seite",
-  "pageNameLabel": "Seitenname"
+  "pageNameLabel": "Seitenname",
+  "newMasterPage": "Neue Musterseite",
+  "applyMasterPage": "{name} anwenden",
+  "removeMasterPage": "Musterseite entfernen",
+  "insertPageNumber": "Seitenzahl einfügen",
+  "linkTextFrames": "Textrahmen verketten",
+  "unlinkTextFrame": "Textrahmen lösen"
 }

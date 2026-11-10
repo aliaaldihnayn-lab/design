@@ -7,5 +7,11 @@
   "goToPage": "Vai alla pagina…",
   "recentPage": "Recente",
   "currentPage": "Pagina corrente",
-  "pageNameLabel": "Nome della pagina"
+  "pageNameLabel": "Nome della pagina",
+  "newMasterPage": "Nuova pagina mastro",
+  "applyMasterPage": "Applica {name}",
+  "removeMasterPage": "Rimuovi pagina mastro",
+  "insertPageNumber": "Inserisci numero di pagina",
+  "linkTextFrames": "Collega cornici di testo",
+  "unlinkTextFrame": "Scollega cornice di testo"
 }

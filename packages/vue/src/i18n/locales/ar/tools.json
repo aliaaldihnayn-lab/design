@@ -15,5 +15,14 @@
   "connector": "موصل",
   "hand": "اليد",
   "comment": "تعليق",
-  "shapeBuilder": "منشئ الأشكال"
+  "shapeBuilder": "منشئ الأشكال",
+  "brush": "فرشاة الرسم",
+  "eraser": "الممحاة",
+  "fillBucket": "دلو التعبئة",
+  "colorPicker": "منتقي الألوان",
+  "marqueeRect": "تحديد مستطيل",
+  "marqueeEllipse": "تحديد بيضاوي",
+  "magicWand": "العصا السحرية",
+  "cloneStamp": "ختم النسخ",
+  "healingBrush": "فرشاة المعالجة"
 }

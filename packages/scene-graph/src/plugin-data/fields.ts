@@ -180,6 +180,18 @@ const imageAdjustmentsSchema = v.record(
   })
 )
 
+const paintLayerSchema = v.object({ hash: v.pipe(v.string(), v.minLength(1)) })
+
+const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
+
+const pageNumberSchema = v.object({ template: v.pipe(v.string(), v.maxLength(200)) })
+
+const textThreadSchema = v.object({
+  story: v.pipe(v.string(), v.minLength(1)),
+  order: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  lead: v.pipe(v.string(), v.maxLength(1000))
+})
+
 /**
  * Every plugin-data entry Lawha writes under {@link LAWHA_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
@@ -202,6 +214,23 @@ export const LAWHA_PLUGIN_DATA = {
    * and vibrance have no Figma field, so this keeps every one exactly.
    */
   imageAdjustments: jsonPluginDataField('imageAdjustments', 'format', imageAdjustmentsSchema),
+  /**
+   * The image fill that holds what was painted on the layer with the brush, eraser and fill
+   * bucket, by its image's hash, so its other fills stay as they were (Affinity's pixel layer).
+   */
+  paintLayer: jsonPluginDataField('paintLayer', 'content', paintLayerSchema),
+  /**
+   * A publication's master page (a component) or a master applied to a page (its instance at the
+   * bottom of the page frame), as Affinity Publisher's master pages.
+   */
+  masterPage: jsonPluginDataField('masterPage', 'content', masterPageSchema),
+  /** A text that shows its page's number: `{page}` and `{pages}` in the template are filled in. */
+  pageNumber: jsonPluginDataField('pageNumber', 'content', pageNumberSchema),
+  /**
+   * A text frame in a threaded story: the story (its first frame's id), its place in the chain,
+   * and the white space the story had where the text broke into this frame.
+   */
+  textThread: jsonPluginDataField('textThread', 'content', textThreadSchema),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
   /**

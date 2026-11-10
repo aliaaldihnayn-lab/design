@@ -24,5 +24,18 @@
   "removeBackground": "Hintergrund entfernen",
   "removingBackground": "Hintergrund wird entfernt… Beim ersten Mal wird das Modell geladen (ca. 45 MB).",
   "backgroundRemoved": "Hintergrund entfernt.",
-  "removeBackgroundFailed": "Hintergrund konnte nicht entfernt werden: {error}"
+  "removeBackgroundFailed": "Hintergrund konnte nicht entfernt werden: {error}",
+  "brushColor": "Farbe",
+  "brushSize": "Größe",
+  "brushHardness": "Härte",
+  "brushOpacity": "Deckkraft",
+  "tolerance": "Toleranz",
+  "contiguous": "Benachbart",
+  "selectAll": "Alles auswählen",
+  "deselect": "Auswahl aufheben",
+  "invertSelection": "Auswahl umkehren",
+  "maskFromSelection": "Maske aus Auswahl",
+  "invertMask": "Maske umkehren",
+  "feather": "Weiche Kante",
+  "cloneSourceHint": "Alt-Klick legt die Quelle fest"
 }

@@ -15,5 +15,14 @@
   "connector": "Verbinder",
   "hand": "Hand",
   "comment": "Kommentar",
-  "shapeBuilder": "Formerstellung"
+  "shapeBuilder": "Formerstellung",
+  "brush": "Pinsel",
+  "eraser": "Radiergummi",
+  "fillBucket": "Füllwerkzeug",
+  "colorPicker": "Pipette",
+  "marqueeRect": "Auswahlrechteck",
+  "marqueeEllipse": "Auswahlellipse",
+  "magicWand": "Zauberstab",
+  "cloneStamp": "Kopierstempel",
+  "healingBrush": "Reparatur-Pinsel"
 }

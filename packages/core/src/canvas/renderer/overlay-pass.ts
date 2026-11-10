@@ -29,6 +29,7 @@ import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
+import { drawPixelOverlay } from '#core/canvas/overlays/pixels'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawShapeBuilderHover } from '#core/canvas/overlays/shape-builder'
 import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
@@ -181,6 +182,7 @@ export function drawOverlayPass(
   drawPenOverlay(r, canvas, overlays.penState)
   drawPencilOverlay(r, canvas, overlays.pencilState)
   drawShapeBuilderHover(r, canvas, overlays.shapeBuilderHover)
+  drawPixelOverlay(r, canvas, graph, overlays.pixelOverlay)
   drawSnapMarks(r, canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays, sceneVersion)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)

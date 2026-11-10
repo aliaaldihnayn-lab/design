@@ -56,6 +56,13 @@ import {
 } from '#core/tools/modify'
 import { setImageAdjustments } from '#core/tools/photo'
 import { runFigmaPlugin } from '#core/tools/plugins'
+import {
+  clonePixels,
+  fillPixels,
+  maskFromSelection,
+  paintPixels,
+  samplePixelColor
+} from '#core/tools/pixels'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
@@ -65,6 +72,12 @@ import {
   setInteractions,
   setScrollBehavior
 } from '#core/tools/prototype'
+import {
+  applyMasterPageTool,
+  createMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool
+} from '#core/tools/publisher'
 import {
   getComponents,
   getCurrentPage,
@@ -160,8 +173,18 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   inspectLayerTool,
   // Photo
   setImageAdjustments,
+  paintPixels,
+  fillPixels,
+  samplePixelColor,
+  maskFromSelection,
+  clonePixels,
   // Plugins
   runFigmaPlugin,
+  // Publisher
+  createMasterPageTool,
+  applyMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool,
   // Prototype
   getPrototype,
   setInteractions,

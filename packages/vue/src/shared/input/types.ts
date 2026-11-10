@@ -280,6 +280,15 @@ export interface DragGuide {
   originalPosition?: number
 }
 
+/** A pixel tool dragged over a layer: a brush stroke, or a selection shape. */
+export interface DragPixel {
+  type: 'pixel'
+  /** Follows the pointer, in canvas coordinates; Shift constrains a selection shape. */
+  move: (cx: number, cy: number, shiftKey: boolean) => void
+  commit: () => void
+  cancel: () => void
+}
+
 /** Dragging a handle or stop of the gradient whose picker is open. */
 export interface DragGradient {
   type: 'gradient'
@@ -299,6 +308,7 @@ export interface DragShapeHandle {
 }
 
 export type DragState =
+  | DragPixel
   | DragShapeHandle
   | DragDraw
   | DragStickyDraw

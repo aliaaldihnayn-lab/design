@@ -15,5 +15,14 @@
   "connector": "Соединитель",
   "hand": "Рука",
   "comment": "Комментарий",
-  "shapeBuilder": "Создание фигур"
+  "shapeBuilder": "Создание фигур",
+  "brush": "Кисть",
+  "eraser": "Ластик",
+  "fillBucket": "Заливка",
+  "colorPicker": "Пипетка",
+  "marqueeRect": "Прямоугольное выделение",
+  "marqueeEllipse": "Овальное выделение",
+  "magicWand": "Волшебная палочка",
+  "cloneStamp": "Штамп",
+  "healingBrush": "Восстанавливающая кисть"
 }
