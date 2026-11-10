@@ -257,17 +257,29 @@ function readHeaderFooter(
   return { node: { type: 'doc', content }, watermark }
 }
 
+/** Paragraph ids of resolved comments, from Word 2013's comments extension part. */
+function resolvedParagraphs(files: PackageFiles): Set<string> {
+  const root = parseXML(readText(files, 'word/commentsExtended.xml') ?? '')
+  const done = kids(root, 'commentEx').filter((entry) => attrOf(entry, 'done') === '1')
+  return new Set(done.map((entry) => attrOf(entry, 'paraId') ?? ''))
+}
+
 function readComments(files: PackageFiles): WriterComment[] {
   const root = parseXML(readText(files, 'word/comments.xml') ?? '')
-  return kids(root, 'comment').map((comment) => ({
-    id: `c${attrOf(comment, 'id') ?? ''}`,
-    author: attrOf(comment, 'author') ?? '',
-    initials: attrOf(comment, 'initials') ?? undefined,
-    date: attrOf(comment, 'date') ?? '',
-    text: kids(comment, 'p')
-      .map((p) => p.textContent ?? '')
-      .join('\n')
-  }))
+  const resolved = resolvedParagraphs(files)
+  return kids(root, 'comment').map((comment) => {
+    const paragraphs = kids(comment, 'p')
+    const entry: WriterComment = {
+      id: `c${attrOf(comment, 'id') ?? ''}`,
+      author: attrOf(comment, 'author') ?? '',
+      date: attrOf(comment, 'date') ?? '',
+      text: paragraphs.map((p) => p.textContent ?? '').join('\n')
+    }
+    const initials = attrOf(comment, 'initials')
+    if (initials) entry.initials = initials
+    if (resolved.has(attrOf(paragraphs.at(-1), 'paraId') ?? '')) entry.resolved = true
+    return entry
+  })
 }
 
 function readFootnotes(context: ReadContext): WriterFootnote[] {

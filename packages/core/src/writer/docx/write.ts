@@ -7,13 +7,13 @@ import {
   nodeText,
   numberAttr,
   stringAttr,
-  type WriterComment,
   type WriterDocument,
   type WriterNode
 } from '#core/writer/model'
 
 import { imageFromDataURL, imageSize } from './images'
 import {
+  commentsExtendedXML,
   commentsXML,
   contentTypesXML,
   watermarkXML,
@@ -444,10 +444,6 @@ class PackageWriter {
       return node.type === 'heading' && level <= 3 ? [{ level, text: nodeText(node) }] : []
     })
   }
-
-  usedComments(): WriterComment[] {
-    return this.model.comments
-  }
 }
 
 function relsXML(rels: readonly Relationship[]): string {
@@ -574,7 +570,11 @@ export function writeDocx(model: WriterDocument, options: WriteDocxOptions = {})
   if (model.comments.length) {
     part.rel(REL.comments, 'comments.xml')
     pkg.files['word/comments.xml'] = strToU8(
-      commentsXML(pkg.usedComments(), (id) => pkg.commentNumber(id))
+      commentsXML(pkg.model.comments, (id) => pkg.commentNumber(id))
+    )
+    part.rel(REL.commentsExtended, 'commentsExtended.xml')
+    pkg.files['word/commentsExtended.xml'] = strToU8(
+      commentsExtendedXML(pkg.model.comments, (id) => pkg.commentNumber(id))
     )
   }
   if (model.footnotes.length) {

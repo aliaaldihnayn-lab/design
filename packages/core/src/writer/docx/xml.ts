@@ -7,6 +7,8 @@ export const NS = {
   wp: 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing',
   a: 'http://schemas.openxmlformats.org/drawingml/2006/main',
   pic: 'http://schemas.openxmlformats.org/drawingml/2006/picture',
+  w14: 'http://schemas.microsoft.com/office/word/2010/wordml',
+  w15: 'http://schemas.microsoft.com/office/word/2012/wordml',
   pkgRels: 'http://schemas.openxmlformats.org/package/2006/relationships',
   contentTypes: 'http://schemas.openxmlformats.org/package/2006/content-types'
 } as const
@@ -20,6 +22,7 @@ export const REL = {
   numbering: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering',
   settings: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings',
   comments: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments',
+  commentsExtended: 'http://schemas.microsoft.com/office/2011/relationships/commentsExtended',
   footnotes: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes',
   header: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/header',
   footer: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer',

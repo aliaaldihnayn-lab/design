@@ -4,6 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { documentStatistics } from '@lawha/core/writer'
 import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import {
@@ -25,10 +26,13 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
+import WriterFindBar from '@/components/writer/WriterFindBar.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
 import WriterRegion from '@/components/writer/WriterRegion.vue'
+import WriterSidePanel from '@/components/writer/WriterSidePanel.vue'
 import WriterToolbar from '@/components/writer/WriterToolbar.vue'
+import WriterWordCount from '@/components/writer/WriterWordCount.vue'
 
 const t = useWriterMessages()
 const { locale } = useI18n()
@@ -43,6 +47,13 @@ useHead({
 const editor = useWriterEditor(() => t.value.untitled)
 const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
+const findOpen = ref(false)
+const sideTab = ref<'comments' | 'changes' | null>(null)
+const statistics = computed(() => documentStatistics(writerDocument.value.body))
+
+function toggleSide(tab: 'comments' | 'changes') {
+  sideTab.value = sideTab.value === tab ? null : tab
+}
 const error = ref<string | null>(null)
 const statusLabel = computed(() => {
   if (busy.value) return t.value.saving
@@ -89,7 +100,13 @@ function createDocument() {
 }
 
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
-  if (!(event.ctrlKey || event.metaKey) || event.code !== 'KeyS') return
+  if (!(event.ctrlKey || event.metaKey)) return
+  if (event.code === 'KeyF' || event.code === 'KeyH') {
+    event.preventDefault()
+    findOpen.value = true
+    return
+  }
+  if (event.code !== 'KeyS') return
   event.preventDefault()
   void run(event.shiftKey ? saveWriterDocumentAs : saveWriterDocument, saveFailed)
 })
@@ -145,9 +162,38 @@ onBeforeUnmount(() => editor.value?.destroy())
           <icon-lucide-printer class="size-3.5" />
         </IconButton>
         <WriterPageSetup />
+        <IconButton
+          :label="t.findAndReplace"
+          toggle
+          :active="findOpen"
+          data-test-id="writer-find-toggle"
+          @click="findOpen = !findOpen"
+        >
+          <icon-lucide-search class="size-3.5" />
+        </IconButton>
+        <IconButton
+          :label="t.comments"
+          toggle
+          :active="sideTab === 'comments'"
+          data-test-id="writer-comments-toggle"
+          @click="toggleSide('comments')"
+        >
+          <icon-lucide-message-square class="size-3.5" />
+        </IconButton>
+        <IconButton
+          :label="t.trackChanges"
+          toggle
+          :active="sideTab === 'changes'"
+          data-test-id="writer-changes-toggle"
+          @click="toggleSide('changes')"
+        >
+          <icon-lucide-file-diff class="size-3.5" />
+        </IconButton>
+        <WriterWordCount :statistics="statistics" />
       </div>
     </div>
     <WriterToolbar v-if="editor" :editor="editor" />
+    <WriterFindBar v-if="editor && findOpen" :editor="editor" @close="findOpen = false" />
     <AppAlert v-if="error" tone="error" :heading="error" class="m-2" />
     <div :class="ui.workspace()">
       <div :class="ui.scroller()">
@@ -156,6 +202,12 @@ onBeforeUnmount(() => editor.value?.destroy())
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>
       </div>
+      <WriterSidePanel
+        v-if="editor && sideTab"
+        :editor="editor"
+        :tab="sideTab"
+        @close="sideTab = null"
+      />
     </div>
   </div>
 </template>

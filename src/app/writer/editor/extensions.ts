@@ -20,11 +20,15 @@ import {
   Superscript,
   TableOfContents
 } from './nodes'
+import { Search } from './search'
+import { TrackChanges, type TrackChangesOptions } from './track-changes'
 
 export interface WriterExtensionOptions {
   placeholder?: string
   /** Header and footer editors hold one short region: no tables, breaks, or footnotes. */
   region?: boolean
+  /** Records typing as tracked changes while `enabled()` says so. */
+  trackChanges?: TrackChangesOptions
 }
 
 /** The editor schema, whose node and mark names are the ones `@lawha/core/writer` reads. */
@@ -59,8 +63,10 @@ export function writerExtensions(options: WriterExtensionOptions = {}): Extensio
     PageNumber,
     PageCount,
     FormField,
-    CharacterCount
+    CharacterCount,
+    Search
   ]
+  if (options.trackChanges) extensions.push(TrackChanges.configure(options.trackChanges))
   if (!options.region) {
     extensions.push(
       TableKit.configure({ table: { resizable: true } }),

@@ -16,6 +16,8 @@ const OVERRIDES: Record<string, string> = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml',
   'word/comments.xml':
     'application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml',
+  'word/commentsExtended.xml':
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtended+xml',
   'word/footnotes.xml':
     'application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml',
   'word/header1.xml': 'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml',
@@ -183,9 +185,15 @@ export function commentsXML(
 ): string {
   const items = comments
     .map((comment) => {
-      const paragraphs = comment.text.split('\n').map((line) => {
+      const lines = comment.text.split('\n')
+      const paragraphs = lines.map((line, index) => {
         const rtl = detectDirection(line) === 'rtl'
-        return `<w:p><w:pPr><w:pStyle w:val="CommentText"/>${rtl ? '<w:bidi/>' : ''}</w:pPr><w:r><w:t xml:space="preserve">${escapeText(line)}</w:t></w:r></w:p>`
+        // Word ties a comment's resolved state to its last paragraph's id.
+        const paraId =
+          index === lines.length - 1
+            ? ` w14:paraId="${commentParaId(commentNumber(comment.id))}"`
+            : ''
+        return `<w:p${paraId}><w:pPr><w:pStyle w:val="CommentText"/>${rtl ? '<w:bidi/>' : ''}</w:pPr><w:r><w:t xml:space="preserve">${escapeText(line)}</w:t></w:r></w:p>`
       })
       return el(
         'w:comment',
@@ -200,4 +208,25 @@ export function commentsXML(
     })
     .join('')
   return `${XML_HEADER}<w:comments ${DOCUMENT_NAMESPACES}>${items}</w:comments>`
+}
+
+/** The paragraph id `commentsExtended.xml` refers to a comment by; Word requires < 0x80000000. */
+export function commentParaId(number: number): string {
+  return (0x10000000 + number).toString(16).toUpperCase()
+}
+
+/** Which comments are resolved, in Word 2013's comments extension part. */
+export function commentsExtendedXML(
+  comments: readonly WriterComment[],
+  commentNumber: (id: string) => number
+): string {
+  const items = comments
+    .map((comment) =>
+      el('w15:commentEx', {
+        'w15:paraId': commentParaId(commentNumber(comment.id)),
+        'w15:done': comment.resolved ? 1 : 0
+      })
+    )
+    .join('')
+  return `${XML_HEADER}<w15:commentsEx xmlns:w15="${NS.w15}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">${items}</w15:commentsEx>`
 }

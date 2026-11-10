@@ -54,6 +54,9 @@ export default {
     side: 'flex w-72 shrink-0 flex-col border-s border-border bg-panel',
     sideHeader:
       'flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold',
+    card: 'flex flex-col gap-1 rounded-md border border-border bg-panel-secondary p-2 data-[resolved]:opacity-60',
+    findBar:
+      'flex flex-wrap items-center gap-1.5 border-b border-border bg-panel px-2 py-1.5 text-xs',
     form: 'flex flex-col gap-2 text-xs',
     formRow: 'grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-2',
     formGrid: 'grid grid-cols-2 gap-2',

@@ -140,4 +140,37 @@ describe('docx round trip', () => {
     expect(document.footer).toEqual(footer)
     expect(document.title).toBe('Report')
   })
+
+  test('keeps comments, their resolved state, and tracked changes as Word records them', () => {
+    const change = { author: 'Ali', date: '2026-11-10T10:00:00Z' }
+    const body: WriterNode[] = [
+      paragraph(
+        { dir: 'rtl' },
+        text('بند ', [{ type: 'comment', attrs: { commentId: 'c0' } }]),
+        text('أول', [{ type: 'bold' }, { type: 'comment', attrs: { commentId: 'c0' } }]),
+        text(' محذوف', [{ type: 'deletion', attrs: change }]),
+        text(' مضاف', [{ type: 'insertion', attrs: change }])
+      ),
+      paragraph({ dir: 'ltr' }, text('Second', [{ type: 'comment', attrs: { commentId: 'c1' } }]))
+    ]
+    const comments = [
+      {
+        id: 'c0',
+        author: 'Ali',
+        initials: 'A',
+        date: '2026-11-10T10:00:00Z',
+        text: 'راجع هذا البند\nسطر ثانٍ'
+      },
+      { id: 'c1', author: 'Sara', date: '2026-11-10T11:00:00Z', text: 'Done', resolved: true }
+    ]
+    const { document, files } = roundTrip(body, { comments, trackChanges: true })
+    expect(document.body.content).toEqual(body)
+    expect(document.comments).toEqual(comments)
+    expect(document.trackChanges).toBe(true)
+    const xml = strFromU8(files['word/document.xml'])
+    expect(xml).toContain('<w:del w:id=')
+    expect(xml).toContain('<w:delText xml:space="preserve"> محذوف</w:delText>')
+    expect(xml).toContain('<w:commentRangeStart w:id="0"/>')
+    expect(strFromU8(files['word/commentsExtended.xml'])).toContain('w15:done="1"')
+  })
 })

@@ -120,7 +120,8 @@ function changeMark(name: 'insertion' | 'deletion', tag: 'ins' | 'del') {
   return Mark.create({
     name,
     inclusive: name === 'insertion',
-    excludes: name === 'insertion' ? 'deletion' : 'insertion',
+    // A change is one or the other, and one author's at a time.
+    excludes: 'insertion deletion',
     addAttributes: () => ({
       author: {
         default: '',
