@@ -90,5 +90,15 @@
   "jiraEmailInvalid": "Wpisz e-mail swojego konta Atlassian.",
   "jiraTokenRequired": "Wpisz token API.",
   "jiraCloudHolds": "Token API przechowuje serwer Lawha Cloud; dokumenty nigdy go nie zawierają.",
-  "jiraDesktopHolds": "Token API przechowuje systemowy magazyn poświadczeń; dokumenty nigdy go nie zawierają."
+  "jiraDesktopHolds": "Token API przechowuje systemowy magazyn poświadczeń; dokumenty nigdy go nie zawierają.",
+  "draftForFrame": "Napisz historyjki użytkownika dla tej ramki",
+  "drafting": "Piszę historyjki…",
+  "draftReview": "Napisano historyjki: {count}. Zostaw te, które chcesz, i zapisz je.",
+  "draftOnLayer": "Na {layer}",
+  "draftSave": "Zapisz historyjki",
+  "draftDiscard": "Odrzuć",
+  "draftNoModel": "Do pisania potrzebny jest model dla „Szybkich zadań” lub „Agenta projektowego”.",
+  "draftChooseModel": "Wybierz model",
+  "draftUnreadable": "Model nie zwrócił czytelnych historyjek. Spróbuj ponownie.",
+  "draftFailed": "Nie udało się napisać historyjek."
 }

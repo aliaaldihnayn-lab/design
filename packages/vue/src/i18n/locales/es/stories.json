@@ -89,5 +89,15 @@
   "jiraEmailInvalid": "Escribe el correo de tu cuenta de Atlassian.",
   "jiraTokenRequired": "Escribe un token de API.",
   "jiraCloudHolds": "Tu servidor de Lawha Cloud guarda el token de API; los documentos nunca lo contienen.",
-  "jiraDesktopHolds": "El almacén de credenciales del sistema guarda el token de API; los documentos nunca lo contienen."
+  "jiraDesktopHolds": "El almacén de credenciales del sistema guarda el token de API; los documentos nunca lo contienen.",
+  "draftForFrame": "Redactar historias de usuario para este marco",
+  "drafting": "Redactando historias…",
+  "draftReview": "Se redactaron {count} historias. Conserva las que quieras y guárdalas.",
+  "draftOnLayer": "En {layer}",
+  "draftSave": "Guardar historias",
+  "draftDiscard": "Descartar",
+  "draftNoModel": "Para redactar se necesita un modelo para «Tareas rápidas» o el «Agente de diseño».",
+  "draftChooseModel": "Elegir un modelo",
+  "draftUnreadable": "El modelo no devolvió historias legibles. Inténtalo de nuevo.",
+  "draftFailed": "No se pudieron redactar las historias."
 }

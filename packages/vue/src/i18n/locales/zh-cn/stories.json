@@ -88,5 +88,15 @@
   "jiraEmailInvalid": "请输入 Atlassian 账户的邮箱。",
   "jiraTokenRequired": "请输入 API 令牌。",
   "jiraCloudHolds": "API 令牌由你的 Lawha Cloud 服务器保管，文档中绝不包含它。",
-  "jiraDesktopHolds": "API 令牌保存在系统凭据存储中，文档中绝不包含它。"
+  "jiraDesktopHolds": "API 令牌保存在系统凭据存储中，文档中绝不包含它。",
+  "draftForFrame": "为此框架起草用户故事",
+  "drafting": "正在起草故事…",
+  "draftReview": "已起草 {count} 个故事。保留需要的故事，然后保存。",
+  "draftOnLayer": "位于 {layer}",
+  "draftSave": "保存故事",
+  "draftDiscard": "放弃",
+  "draftNoModel": "起草需要为“快速任务”或“设计代理”配置模型。",
+  "draftChooseModel": "选择模型",
+  "draftUnreadable": "模型没有返回可读取的故事。请重试。",
+  "draftFailed": "无法起草故事。"
 }

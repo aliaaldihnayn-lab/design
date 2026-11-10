@@ -88,5 +88,15 @@
   "jiraEmailInvalid": "Atlassian アカウントのメールを入力してください。",
   "jiraTokenRequired": "API トークンを入力してください。",
   "jiraCloudHolds": "API トークンは Lawha Cloud サーバーが保管し、ドキュメントには含まれません。",
-  "jiraDesktopHolds": "API トークンはシステムの資格情報ストアに保管され、ドキュメントには含まれません。"
+  "jiraDesktopHolds": "API トークンはシステムの資格情報ストアに保管され、ドキュメントには含まれません。",
+  "draftForFrame": "このフレームのユーザーストーリーを下書き",
+  "drafting": "ストーリーを下書き中…",
+  "draftReview": "{count} 件のストーリーを下書きしました。残すものを選んで保存してください。",
+  "draftOnLayer": "{layer} 上",
+  "draftSave": "ストーリーを保存",
+  "draftDiscard": "破棄",
+  "draftNoModel": "下書きには「高速タスク」または「デザインエージェント」のモデルが必要です。",
+  "draftChooseModel": "モデルを選択",
+  "draftUnreadable": "モデルが読み取れるストーリーを返しませんでした。もう一度お試しください。",
+  "draftFailed": "ストーリーを下書きできませんでした。"
 }

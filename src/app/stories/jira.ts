@@ -61,10 +61,10 @@ export const useJiraSync = createGlobalState(() => {
   const ready = computed(() => jiraConnected.value === true && !!projectKey.value)
 
   async function run(work: () => Promise<JiraSyncResult>): Promise<JiraSyncSummary | null> {
-    if (busy.value) return null
+    const store = storeRef.value
+    if (busy.value || !store) return null
     busy.value = true
     lastError.value = null
-    const store = storeRef.value
     try {
       const result = await work()
       applyJiraUpdates(store.graph, result.updates)
@@ -84,8 +84,8 @@ export const useJiraSync = createGlobalState(() => {
   function push(scope: JiraScope = {}) {
     const connection = getJiraConnection()
     const key = projectKey.value
-    if (!connection || !key) return Promise.resolve(null)
-    const graph = storeRef.value.graph
+    const graph = storeRef.value?.graph
+    if (!connection || !key || !graph) return Promise.resolve(null)
     return run(() =>
       pushToJira(graph, connection.client, { ...scope, site: connection.site, projectKey: key })
     )
@@ -94,14 +94,15 @@ export const useJiraSync = createGlobalState(() => {
   /** Reads the status and assignee of the linked stories in scope. */
   function pull(scope: JiraScope = {}) {
     const connection = getJiraConnection()
-    if (!connection) return Promise.resolve(null)
-    const graph = storeRef.value.graph
+    const graph = storeRef.value?.graph
+    if (!connection || !graph) return Promise.resolve(null)
     return run(() => pullFromJira(graph, connection.client, scope))
   }
 
   const pulling = useIntervalFn(
     () => {
-      if (!document.hidden) void pull({ rootIds: [storeRef.value.state.currentPageId] })
+      const pageId = storeRef.value?.state.currentPageId
+      if (!document.hidden && pageId) void pull({ rootIds: [pageId] })
     },
     JIRA_PULL_INTERVAL_MS,
     { immediate: false }

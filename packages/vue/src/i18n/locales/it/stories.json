@@ -89,5 +89,15 @@
   "jiraEmailInvalid": "Inserisci l’email del tuo account Atlassian.",
   "jiraTokenRequired": "Inserisci un token API.",
   "jiraCloudHolds": "Il tuo server Lawha Cloud conserva il token API; i documenti non lo contengono mai.",
-  "jiraDesktopHolds": "L’archivio credenziali di sistema conserva il token API; i documenti non lo contengono mai."
+  "jiraDesktopHolds": "L’archivio credenziali di sistema conserva il token API; i documenti non lo contengono mai.",
+  "draftForFrame": "Scrivi le user story di questo frame",
+  "drafting": "Scrittura delle storie…",
+  "draftReview": "{count} storie scritte. Tieni quelle che vuoi, poi salvale.",
+  "draftOnLayer": "Su {layer}",
+  "draftSave": "Salva le storie",
+  "draftDiscard": "Scarta",
+  "draftNoModel": "Per scrivere serve un modello per «Attività rapide» o l’«Agente di design».",
+  "draftChooseModel": "Scegli un modello",
+  "draftUnreadable": "Il modello non ha restituito storie leggibili. Riprova.",
+  "draftFailed": "Non è stato possibile scrivere le storie."
 }

@@ -89,5 +89,15 @@
   "jiraEmailInvalid": "Gib die E-Mail deines Atlassian-Kontos ein.",
   "jiraTokenRequired": "Gib ein API-Token ein.",
   "jiraCloudHolds": "Dein Lawha-Cloud-Server verwahrt das API-Token; Dokumente enthalten es nie.",
-  "jiraDesktopHolds": "Der Schlüsselbund des Systems verwahrt das API-Token; Dokumente enthalten es nie."
+  "jiraDesktopHolds": "Der Schlüsselbund des Systems verwahrt das API-Token; Dokumente enthalten es nie.",
+  "draftForFrame": "User Stories für diesen Frame entwerfen",
+  "drafting": "Stories werden entworfen…",
+  "draftReview": "{count} Stories entworfen. Behalte die gewünschten und speichere sie.",
+  "draftOnLayer": "Auf {layer}",
+  "draftSave": "Stories speichern",
+  "draftDiscard": "Verwerfen",
+  "draftNoModel": "Zum Entwerfen braucht es ein Modell für „Schnelle Aufgaben“ oder den „Design-Agent“.",
+  "draftChooseModel": "Modell wählen",
+  "draftUnreadable": "Das Modell hat keine lesbaren Stories geliefert. Versuche es erneut.",
+  "draftFailed": "Die Stories konnten nicht entworfen werden."
 }

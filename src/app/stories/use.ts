@@ -26,28 +26,30 @@ export const useStories = createGlobalState(() => {
   const focusedStoryId = ref<string | null>(null)
 
   /** Read again on every scene change: stories are plugin data, which edits replace. */
-  const sceneVersion = () => storeRef.value.state.sceneVersion
+  const sceneVersion = () => storeRef.value?.state.sceneVersion
 
   const selectedNodeId = computed(() => {
-    const ids = storeRef.value.state.selectedIds
-    return ids.size === 1 ? [...ids][0] : null
+    const ids = storeRef.value?.state.selectedIds
+    return ids?.size === 1 ? [...ids][0] : null
   })
 
   const selectedStories = computed<UserStory[]>(() => {
     void sceneVersion()
     const id = selectedNodeId.value
-    return id ? readNodeStories(storeRef.value.graph.getNode(id)) : []
+    return id ? readNodeStories(storeRef.value?.graph.getNode(id)) : []
   })
 
   const epics = computed<Epic[]>(() => {
     void sceneVersion()
-    return readEpics(storeRef.value.graph)
+    const store = storeRef.value
+    return store ? readEpics(store.graph) : []
   })
 
   /** Every epic with the stories of the current page, stories without an epic last. */
   const pageGroups = computed<StoryGroup[]>(() => {
     void sceneVersion()
     const store = storeRef.value
+    if (!store) return []
     return nonEmptyGroups(storyReport(store.graph, [store.state.currentPageId]), true)
   })
 
@@ -65,6 +67,7 @@ export const useStories = createGlobalState(() => {
   /** Selects the story's layer and shows the story in the Stories tab. */
   async function openStory(nodeId: string, storyId: string | null = null) {
     const store = storeRef.value
+    if (!store) return
     const pageId = store.graph.pageOf(nodeId)
     if (pageId && pageId !== store.state.currentPageId) await store.switchPage(pageId)
     store.select([nodeId])

@@ -18,6 +18,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 
+import StoriesPanelDraft from './StoriesPanelDraft.vue'
 import StoriesPanelEpics from './StoriesPanelEpics.vue'
 import StoriesPanelJira from './StoriesPanelJira.vue'
 import StoriesPanelStory from './StoriesPanelStory.vue'
@@ -118,7 +119,7 @@ async function exportAs(formatId: 'stories-markdown' | 'stories-csv') {
 
     <section v-if="selectedNode" :class="ui.section()" data-slot="layer-stories">
       <div :class="ui.sectionTitle()">
-        <span class="flex-1">{{ t.stories({ count: stories.selectedStories.value.length }) }}</span>
+        <span class="flex-1">{{ t.stories(stories.selectedStories.value.length) }}</span>
         <AppButton variant="outline" size="xs" data-action="add-story" @click="addStory">
           <icon-lucide-plus class="size-3" aria-hidden="true" />
           {{ t.addStory }}
@@ -136,6 +137,7 @@ async function exportAs(formatId: 'stories-markdown' | 'stories-csv') {
         :focused="stories.focusedStoryId.value === story.id"
       />
     </section>
+    <StoriesPanelDraft v-if="selectedNode" :node-id="selectedNode.id" />
     <AppPlaceholder
       v-else
       size="compact"

@@ -89,5 +89,15 @@
   "jiraEmailInvalid": "Saisissez l’e-mail de votre compte Atlassian.",
   "jiraTokenRequired": "Saisissez un jeton d’API.",
   "jiraCloudHolds": "Votre serveur Lawha Cloud conserve le jeton d’API ; les documents ne le contiennent jamais.",
-  "jiraDesktopHolds": "Le trousseau du système conserve le jeton d’API ; les documents ne le contiennent jamais."
+  "jiraDesktopHolds": "Le trousseau du système conserve le jeton d’API ; les documents ne le contiennent jamais.",
+  "draftForFrame": "Rédiger les user stories de ce cadre",
+  "drafting": "Rédaction des stories…",
+  "draftReview": "{count} stories rédigées. Gardez celles que vous voulez, puis enregistrez-les.",
+  "draftOnLayer": "Sur {layer}",
+  "draftSave": "Enregistrer les stories",
+  "draftDiscard": "Abandonner",
+  "draftNoModel": "La rédaction nécessite un modèle pour « Tâches rapides » ou l’« Agent de design ».",
+  "draftChooseModel": "Choisir un modèle",
+  "draftUnreadable": "Le modèle n’a pas renvoyé de stories lisibles. Réessayez.",
+  "draftFailed": "Les stories n’ont pas pu être rédigées."
 }

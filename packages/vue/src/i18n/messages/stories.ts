@@ -92,7 +92,17 @@ export const storiesMessageDefaults = {
   jiraEmailInvalid: 'Enter the email of your Atlassian account.',
   jiraTokenRequired: 'Enter an API token.',
   jiraCloudHolds: 'Your Lawha Cloud server keeps the API token; documents never contain it.',
-  jiraDesktopHolds: 'The system credential store keeps the API token; documents never contain it.'
+  jiraDesktopHolds: 'The system credential store keeps the API token; documents never contain it.',
+  draftForFrame: 'Draft user stories for this frame',
+  drafting: 'Drafting stories…',
+  draftReview: params('{count} drafted stories. Keep the ones you want, then save them.'),
+  draftOnLayer: params('On {layer}'),
+  draftSave: 'Save stories',
+  draftDiscard: 'Discard',
+  draftNoModel: 'Drafting needs an AI model for Fast tasks or the Design agent.',
+  draftChooseModel: 'Choose a model',
+  draftUnreadable: 'The model did not return stories that could be read. Try again.',
+  draftFailed: 'The stories could not be drafted.'
 } as const
 
 export const storiesMessages = i18n('stories', storiesMessageDefaults)
