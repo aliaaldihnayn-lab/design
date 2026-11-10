@@ -1,53 +1,38 @@
 import { readPsd, type Layer, type Psd } from 'ag-psd'
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import { SceneGraph, type BlendMode, type Fill } from '@lawha/scene-graph'
+import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
 import { BLACK } from '@lawha/scene-graph/constants'
 import { computeImageHash } from '@lawha/scene-graph/images'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { getCanvasKit } from '#core/canvaskit'
+import { parsePDFFontName } from '#core/io/formats/pdf/import/font-name'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
 
+import { psdColor } from './color'
+import { layerStyle, psdBlendMode, type LayerStyle } from './effects'
 import { preparePSDRuntime } from './runtime'
+import { addShapeLayer, isEditableShapeLayer } from './shapes'
 
 /**
  * Photoshop and Affinity `.psd`/`.psb` files as editable layers: one frame the size of the
  * canvas, groups as frames without a fill, pixel layers as images at their exact position,
- * text layers as live text (with their pixels hidden underneath, so nothing is lost if a font
- * is missing), and layer opacity, visibility and blend modes kept.
+ * text layers as live text and shape and fill layers as shapes (with their pixels hidden
+ * underneath, so nothing is lost if a font or a shape cannot be redrawn), layer styles (shadows,
+ * glows, strokes, overlays) as effects, and layer opacity, visibility and blend modes kept.
  */
 export interface PSDReadOptions {
   canvasKit?: CanvasKit
   name?: string
 }
 
-const BLEND_MODES: Record<string, BlendMode> = {
-  normal: 'NORMAL',
-  'pass through': 'PASS_THROUGH',
-  multiply: 'MULTIPLY',
-  screen: 'SCREEN',
-  overlay: 'OVERLAY',
-  darken: 'DARKEN',
-  lighten: 'LIGHTEN',
-  'color dodge': 'COLOR_DODGE',
-  'color burn': 'COLOR_BURN',
-  'hard light': 'HARD_LIGHT',
-  'soft light': 'SOFT_LIGHT',
-  difference: 'DIFFERENCE',
-  exclusion: 'EXCLUSION',
-  hue: 'HUE',
-  saturation: 'SATURATION',
-  color: 'COLOR',
-  luminosity: 'LUMINOSITY',
-  'linear burn': 'LINEAR_BURN',
-  'linear dodge': 'LINEAR_DODGE'
-}
-
 interface Context {
   graph: SceneGraph
   canvas: { width: number; height: number }
   encode: (pixels: ImageDataLike) => Uint8Array | null
+  /** The document's light angle, which layer styles that use global light take. */
+  globalAngle: number
 }
 
 interface ImageDataLike {
@@ -88,7 +73,10 @@ function common(layer: Layer) {
     name: layer.name ?? 'Layer',
     visible: !layer.hidden,
     opacity: layer.opacity ?? 1,
-    blendMode: BLEND_MODES[layer.blendMode ?? 'normal'] ?? 'NORMAL'
+    blendMode:
+      layer.blendMode === 'pass through'
+        ? 'PASS_THROUGH'
+        : (psdBlendMode(layer.blendMode) ?? 'NORMAL')
   }
 }
 
@@ -103,20 +91,19 @@ function bounds(layer: Layer) {
   }
 }
 
-/** A PSD colour (0–255 channels) as a scene colour. */
-function textColor(layer: Layer) {
-  const fill = layer.text?.style?.fillColor
-  if (fill && 'r' in fill) return { r: fill.r / 255, g: fill.g / 255, b: fill.b / 255, a: 1 }
-  return { ...BLACK }
-}
-
-function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector) {
+function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector, style: LayerStyle) {
   const text = layer.text
   if (!text) return
   const box = bounds(layer)
   const scale = Math.abs(text.transform?.[3] ?? 1) || 1
   const size = (text.style?.fontSize ?? 16) * scale
-  const family = text.style?.font?.name.replace(/-.*$/, '') ?? 'Inter'
+  const face = text.style?.font?.name ? parsePDFFontName(text.style.font.name) : null
+  const fill: Fill = {
+    type: 'SOLID',
+    color: psdColor(text.style?.fillColor),
+    opacity: layer.fillOpacity ?? 1,
+    visible: true
+  }
   ctx.graph.createNode('TEXT', parentId, {
     ...common(layer),
     x: box.x - origin.x,
@@ -124,12 +111,15 @@ function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector) {
     width: box.width,
     height: box.height,
     text: text.text.replace(/\r/g, '\n'),
-    fontFamily: family,
+    fontFamily: face?.family ?? 'Inter',
     fontSize: Math.round(size * 100) / 100,
-    fontWeight: /bold/i.test(text.style?.font?.name ?? '') ? 700 : 400,
+    fontWeight: face?.weight ?? 400,
+    italic: face?.italic ?? false,
     textAutoResize: 'NONE',
     textDirection: /[֐-ࣿ]/.test(text.text) ? 'RTL' : 'LTR',
-    fills: [{ type: 'SOLID', color: textColor(layer), opacity: 1, visible: true }]
+    fills: [fill, ...style.overlays],
+    strokes: style.strokes,
+    effects: style.effects
   })
 }
 
@@ -149,13 +139,36 @@ function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) 
     return
   }
   const pixels = layer.imageData
+  const style = layerStyle(layer.effects, ctx.globalAngle)
   if (layer.text) {
     // The rendered text stays underneath, hidden, as the exact look if a font is missing.
     if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
-    addText(ctx, parentId, layer, origin)
+    addText(ctx, parentId, layer, origin, style)
     return
   }
-  if (pixels) addPixels(ctx, parentId, layer, pixels, origin, !layer.hidden)
+  if (isEditableShapeLayer(layer)) {
+    // So does a shape's, in case it cannot be redrawn exactly (a boolean of paths, say).
+    if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
+    const shape = addShapeLayer(
+      ctx.graph,
+      parentId,
+      layer,
+      { ...common(layer), effects: style.effects },
+      ctx.canvas
+    )
+    if (shape) {
+      ctx.graph.updateNode(shape.id, {
+        x: shape.x - origin.x,
+        y: shape.y - origin.y,
+        fills: [...shape.fills, ...style.overlays],
+        strokes: [...shape.strokes, ...style.strokes]
+      })
+      return
+    }
+  }
+  // Pixels cast shadows and glows from what they draw. A stroke or overlay would outline or
+  // cover their whole box rather than what they draw, so a pixel layer goes without those.
+  if (pixels) addPixels(ctx, parentId, layer, pixels, origin, !layer.hidden, style.effects)
 }
 
 function addPixels(
@@ -164,7 +177,8 @@ function addPixels(
   layer: Layer,
   pixels: ImageDataLike,
   origin: Vector,
-  visible: boolean
+  visible: boolean,
+  effects: SceneNode['effects'] = []
 ) {
   if (pixels.width === 0 || pixels.height === 0) return
   const fill = imageFill(ctx, pixels)
@@ -178,7 +192,8 @@ function addPixels(
     y: box.y - origin.y,
     width: pixels.width,
     height: pixels.height,
-    fills: [fill]
+    fills: [fill],
+    effects
   })
 }
 
@@ -204,7 +219,8 @@ export async function readPSDDocument(
         width: pixels.width,
         height: pixels.height,
         data: toRGBA8(pixels.data)
-      })
+      }),
+    globalAngle: psd.imageResources?.globalAngle ?? 120
   }
   const frame = graph.createNode('FRAME', page.id, {
     name: options.name ?? 'Photoshop document',
