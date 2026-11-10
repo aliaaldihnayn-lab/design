@@ -518,8 +518,12 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   category: 'print',
   extensions: ['pptx'],
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-  support: EXPORT_EVERY_TARGET,
+  support: { ...EXPORT_EVERY_TARGET, readDocument: true },
   exportOptions: FIXED_SIZE_EXPORT,
+  async readDocument(input) {
+    const { readPPTXDocument } = await import('./formats/pptx/import')
+    return { graph: await readPPTXDocument(input.data), sourceFormat: 'pptx' }
+  },
   async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
