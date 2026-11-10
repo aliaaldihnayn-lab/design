@@ -3,7 +3,7 @@ import { uniq } from 'es-toolkit'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile } from '@lawha/core'
+import { BOARD_TOOL_SHORTCUTS, cycleToolKey, resolveEditorProfile } from '@lawha/core'
 import { isCanvasTextInput } from '@lawha/vue/canvas/text-edit'
 import { editorCommandMetadata, type EditorCommandId } from '@lawha/vue/editor/commands'
 
@@ -169,7 +169,8 @@ function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRun
       options.spaceTool.resetToolBeforeSpace()
       // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
       if (tool === 'SHAPE_WITH_TEXT') options.store.setShapeWithTextKind('SQUARE')
-      options.store.setTool(tool)
+      // Tools that share a key, such as M's two marquees, take turns as it is pressed again.
+      options.store.setTool(cycleToolKey(tool, options.store.state.activeTool))
     }
   }
 }

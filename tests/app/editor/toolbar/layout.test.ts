@@ -301,4 +301,13 @@ describe('toolShortcutLabels', () => {
       board.SHAPE_WITH_TEXT
     ]).toEqual(['R', '', '', 'S', 'R'])
   })
+
+  test('keeps Shift+M for the Shape Builder and names the elliptical marquee by M', () => {
+    const design = toolShortcutLabels(TOOL_SHORTCUTS, 'windows')
+    expect([design.SHAPE_BUILDER, design.MARQUEE_RECT, design.MARQUEE_ELLIPSE]).toEqual([
+      'Shift+M',
+      'M',
+      'M'
+    ])
+  })
 })

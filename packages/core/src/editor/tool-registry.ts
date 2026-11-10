@@ -62,12 +62,26 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyE: 'ERASER',
   KeyG: 'FILL_BUCKET',
   KeyI: 'COLOR_PICKER',
+  // Shift+M stays Illustrator's Shape Builder; M again reaches the elliptical marquee.
   KeyM: 'MARQUEE_RECT',
   KeyW: 'MAGIC_WAND',
   KeyS: 'CLONE_STAMP',
   KeyJ: 'HEALING_BRUSH',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
+}
+
+/**
+ * Tools that share one key, as in Affinity: the key picks a cycle's first tool, and pressing it
+ * again while one of the cycle's tools is active moves to the next.
+ */
+export const TOOL_KEY_CYCLES: readonly (readonly Tool[])[] = [['MARQUEE_RECT', 'MARQUEE_ELLIPSE']]
+
+/** The tool a key picks while `current` is active: the key's tool, or the next one in its cycle. */
+export function cycleToolKey(tool: Tool, current: Tool): Tool {
+  const cycle = TOOL_KEY_CYCLES.find((tools) => tools[0] === tool)
+  const index = cycle?.indexOf(current) ?? -1
+  return cycle && index !== -1 ? (cycle[(index + 1) % cycle.length] ?? tool) : tool
 }
 
 /**

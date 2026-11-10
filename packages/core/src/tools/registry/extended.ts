@@ -55,7 +55,6 @@ import {
   setVisible
 } from '#core/tools/modify'
 import { setImageAdjustments } from '#core/tools/photo'
-import { runFigmaPlugin } from '#core/tools/plugins'
 import {
   clonePixels,
   fillPixels,
@@ -63,6 +62,7 @@ import {
   paintPixels,
   samplePixelColor
 } from '#core/tools/pixels'
+import { runFigmaPlugin } from '#core/tools/plugins'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,

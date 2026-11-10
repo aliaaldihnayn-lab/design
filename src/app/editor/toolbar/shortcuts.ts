@@ -1,6 +1,6 @@
 import { mapValues } from 'es-toolkit/object'
 
-import { TOOL_SHORTCUTS, type Tool } from '@lawha/core'
+import { TOOL_KEY_CYCLES, TOOL_SHORTCUTS, type Tool } from '@lawha/core'
 import { formatShortcut, type ShortcutPlatform } from '@lawha/vue/editor/commands'
 
 /** A key code (`KeyR`, `Shift+KeyS`) in the command registry's notation (`R`, `SHIFT+S`). */
@@ -52,6 +52,11 @@ export function toolShortcutLabels(
   const keys = new Map<Tool, string>()
   for (const [code, tool] of Object.entries(toolKeys)) {
     if (tool && !keys.has(tool)) keys.set(tool, registryKeys(code))
+  }
+  // A tool reached by pressing another tool's key again is named by that key.
+  for (const [first, ...rest] of TOOL_KEY_CYCLES) {
+    const key = keys.get(first)
+    if (key) for (const tool of rest) if (!keys.has(tool)) keys.set(tool, key)
   }
   return mapValues(UNKEYED, (_, tool) => {
     const key = keys.get(tool)
