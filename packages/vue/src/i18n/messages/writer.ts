@@ -159,6 +159,9 @@ export const writerMessageDefaults = {
   reason: 'Reason',
   location: 'Location',
   signAndSave: 'Sign and save',
+  stampBottomRight: 'Visible, bottom right of the last page',
+  stampBottomLeft: 'Visible, bottom left of the last page',
+  stampHidden: 'Invisible',
   signed: 'Signed PDF saved',
   signFailed: params('Could not sign the PDF: {error}'),
   selfSignedNote:

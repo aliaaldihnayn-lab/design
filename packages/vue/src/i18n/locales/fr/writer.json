@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "Enregistrer un document Word chiffré",
   "saveEncryptedPDF": "Enregistrer un PDF chiffré",
   "openEncrypted": "Ouvrir",
-  "wrongPassword": "Le mot de passe est incorrect."
+  "wrongPassword": "Le mot de passe est incorrect.",
+  "stampBottomRight": "Visible, en bas à droite de la dernière page",
+  "stampBottomLeft": "Visible, en bas à gauche de la dernière page",
+  "stampHidden": "Invisible"
 }

@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "Сохранить зашифрованный документ Word",
   "saveEncryptedPDF": "Сохранить зашифрованный PDF",
   "openEncrypted": "Открыть",
-  "wrongPassword": "Неверный пароль."
+  "wrongPassword": "Неверный пароль.",
+  "stampBottomRight": "Видимая, внизу справа на последней странице",
+  "stampBottomLeft": "Видимая, внизу слева на последней странице",
+  "stampHidden": "Невидимая"
 }

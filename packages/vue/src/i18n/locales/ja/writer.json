@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "暗号化した Word 文書を保存",
   "saveEncryptedPDF": "暗号化した PDF を保存",
   "openEncrypted": "開く",
-  "wrongPassword": "パスワードが正しくありません。"
+  "wrongPassword": "パスワードが正しくありません。",
+  "stampBottomRight": "表示、最終ページの右下",
+  "stampBottomLeft": "表示、最終ページの左下",
+  "stampHidden": "非表示"
 }

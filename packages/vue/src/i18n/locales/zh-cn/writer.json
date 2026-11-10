@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "保存加密的 Word 文档",
   "saveEncryptedPDF": "保存加密的 PDF",
   "openEncrypted": "打开",
-  "wrongPassword": "密码不正确。"
+  "wrongPassword": "密码不正确。",
+  "stampBottomRight": "可见，位于最后一页右下角",
+  "stampBottomLeft": "可见，位于最后一页左下角",
+  "stampHidden": "不可见"
 }

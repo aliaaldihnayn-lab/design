@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "Zapisz zaszyfrowany dokument Word",
   "saveEncryptedPDF": "Zapisz zaszyfrowany PDF",
   "openEncrypted": "Otwórz",
-  "wrongPassword": "Hasło jest nieprawidłowe."
+  "wrongPassword": "Hasło jest nieprawidłowe.",
+  "stampBottomRight": "Widoczny, prawy dolny róg ostatniej strony",
+  "stampBottomLeft": "Widoczny, lewy dolny róg ostatniej strony",
+  "stampHidden": "Niewidoczny"
 }

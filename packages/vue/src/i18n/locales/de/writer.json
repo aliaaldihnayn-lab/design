@@ -209,5 +209,8 @@
   "saveEncryptedDocx": "Verschlüsseltes Word-Dokument speichern",
   "saveEncryptedPDF": "Verschlüsseltes PDF speichern",
   "openEncrypted": "Öffnen",
-  "wrongPassword": "Das Kennwort ist nicht korrekt."
+  "wrongPassword": "Das Kennwort ist nicht korrekt.",
+  "stampBottomRight": "Sichtbar, unten rechts auf der letzten Seite",
+  "stampBottomLeft": "Sichtbar, unten links auf der letzten Seite",
+  "stampHidden": "Unsichtbar"
 }

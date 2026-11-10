@@ -33,6 +33,7 @@ import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
 import WriterPaper from '@/components/writer/WriterPaper.vue'
 import WriterRegion from '@/components/writer/WriterRegion.vue'
 import WriterSidePanel from '@/components/writer/WriterSidePanel.vue'
+import WriterSignPDFDialog from '@/components/writer/WriterSignPDFDialog.vue'
 import WriterToolbar from '@/components/writer/WriterToolbar.vue'
 import WriterWordCount from '@/components/writer/WriterWordCount.vue'
 
@@ -50,6 +51,7 @@ const editor = useWriterEditor(() => t.value.untitled)
 const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
 const findOpen = ref(false)
+const signPDFOpen = ref(false)
 const sideTab = ref<'comments' | 'changes' | null>(null)
 const statistics = computed(() => documentStatistics(writerDocument.value.body))
 
@@ -166,6 +168,9 @@ onBeforeUnmount(() => editor.value?.destroy())
         <IconButton :label="t.exportPDF" data-test-id="writer-print" @click="printDocument">
           <icon-lucide-printer class="size-3.5" />
         </IconButton>
+        <IconButton :label="t.signPDF" data-test-id="writer-sign-pdf" @click="signPDFOpen = true">
+          <icon-lucide-file-badge class="size-3.5" />
+        </IconButton>
         <WriterGoogleDocs
           @open="(link: string) => run(() => openGoogleDocument(link), openFailed)"
         />
@@ -201,6 +206,7 @@ onBeforeUnmount(() => editor.value?.destroy())
       </div>
     </div>
     <WriterToolbar v-if="editor" :editor="editor" />
+    <WriterSignPDFDialog v-model:open="signPDFOpen" />
     <WriterFindBar v-if="editor && findOpen" :editor="editor" @close="findOpen = false" />
     <AppAlert v-if="error" tone="error" :heading="error" class="m-2" />
     <div :class="ui.workspace()">
