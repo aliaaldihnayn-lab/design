@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import type { Transition } from '@lawha/core/prototype'
+import { transitionDuration, type Transition } from '@lawha/core/prototype'
 
 /** Which prototype the player shows; `null` while it is closed. */
 export interface PlayerSession {
@@ -23,7 +23,12 @@ const EASING: Record<NonNullable<Transition['easing']>, string> = {
   'ease-in': 'cubic-bezier(0.42, 0, 1, 1)',
   'ease-out': 'cubic-bezier(0, 0, 0.58, 1)',
   'ease-in-out': 'cubic-bezier(0.42, 0, 0.58, 1)',
-  spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+  'ease-in-back': 'cubic-bezier(0.3, -0.05, 0.7, -0.5)',
+  'ease-out-back': 'cubic-bezier(0.45, 1.45, 0.8, 1)',
+  'ease-in-out-back': 'cubic-bezier(0.7, -0.4, 0.4, 1.4)',
+  spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  // A screen-sized transition approximates a custom spring's overshoot; its length is the spring's.
+  'custom-spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)'
 }
 
 type Keyframes = Keyframe[]
@@ -76,6 +81,7 @@ export function transitionFrames(transition: Transition): {
     case 'move-in':
       return { incoming: [{ transform: offset(dir) }, { transform: 'none' }], outgoing: [] }
     case 'slide-out':
+    case 'move-out':
       return {
         incoming: [],
         outgoing: [{ transform: 'none' }, { transform: offset(opposite(dir)) }]
@@ -92,7 +98,7 @@ export function transitionFrames(transition: Transition): {
 
 export function transitionTiming(transition: Transition): KeyframeAnimationOptions {
   return {
-    duration: transition.type === 'instant' ? 0 : transition.duration,
+    duration: transitionDuration(transition),
     easing: EASING[transition.easing],
     fill: 'both'
   }
@@ -100,5 +106,5 @@ export function transitionTiming(transition: Transition): KeyframeAnimationOptio
 
 /** Slide out reveals the new screen underneath, so the old one stays on top while it leaves. */
 export function outgoingOnTop(transition: Transition | null): boolean {
-  return transition?.type === 'slide-out'
+  return transition?.type === 'slide-out' || transition?.type === 'move-out'
 }

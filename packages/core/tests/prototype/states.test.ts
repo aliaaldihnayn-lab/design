@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
+import { playIslandRoots } from '#core/editor/play/islands'
 import { resolvePlayState } from '#core/editor/play/states'
 import { getPluginData, setPluginData } from '#core/figma-api/plugin-data'
 import { figInteractionsOf } from '#core/prototype/fig'
@@ -335,5 +336,13 @@ describe('.fig interactive components', () => {
       }
     ])
     expect(readInteractions(readA, read)).toHaveLength(2)
+  })
+})
+
+describe('live islands', () => {
+  test('a screen holding interactive components runs as an island; the sets do not', () => {
+    const { graph, screen } = fixture()
+    const pageId = graph.getPages()[0]?.id ?? graph.rootId
+    expect(playIslandRoots(graph, pageId)).toEqual([screen.id])
   })
 })

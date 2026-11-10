@@ -1,7 +1,10 @@
 import { onMounted, shallowRef, type Ref } from 'vue'
 
 /** Styles of an island's own document; the app's styles do not reach into it. */
-const ISLAND_CSS = ':host{all:initial;display:block}*,*::before,*::after{box-sizing:border-box}'
+const ISLAND_CSS =
+  ':host{all:initial;display:block}*,*::before,*::after{box-sizing:border-box}' +
+  '[data-interactive]{cursor:pointer}[data-island-stage]{position:relative}' +
+  '[data-island-overlays]{position:absolute;inset:0;display:flex}'
 
 /**
  * A container inside a shadow root of `host`, created once `host` mounts, styled only by the

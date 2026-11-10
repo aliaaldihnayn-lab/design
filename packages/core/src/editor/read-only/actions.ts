@@ -119,7 +119,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToSelection',
 
   // Preview
+  'handleLiveKey',
   'leaveCanvasView',
+  'onLiveKey',
   'resetPlay',
   'startPlay',
   'stopPlay',

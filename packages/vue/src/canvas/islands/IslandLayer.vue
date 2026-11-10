@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computedAsync } from '@vueuse/core'
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 
 import {
   playIslandRoots,
@@ -9,11 +8,12 @@ import {
   type EditorState
 } from '@lawha/core'
 import type { ViewportTransform } from '@lawha/core/geometry'
-import { tokenStylesheet } from '@lawha/dom-css/export'
+import type { Action } from '@lawha/core/prototype'
 
 import { useEditor } from '#vue/editor/context'
 
 import Island from './Island.vue'
+import { useIslandTokens } from './tokens'
 
 /**
  * The live islands of a previewing canvas pane, laid over the canvas at its pan and zoom. The
@@ -35,19 +35,7 @@ const placement = computed(() => drawn ?? view)
 const live = computed(() => resolveEditorProfile(view).live)
 const editor = useEditor()
 
-/**
- * The document's variables as custom properties, which the islands' `var()` references read in
- * the modes their layers set. Built once for every island while previewing; an island is a
- * shadow root, so the stylesheet's `:root` is its host.
- */
-const tokens = new CSSStyleSheet()
-const tokensCSS = computedAsync(async () => {
-  void editor.state.sceneVersion
-  if (!live.value) return ''
-  const { css } = await tokenStylesheet(editor.graph, { format: 'css' })
-  return css.replaceAll(':root', ':host')
-}, '')
-watch(tokensCSS, (css) => tokens.replaceSync(css), { immediate: true })
+const tokens = useIslandTokens(computed(() => !!live.value))
 
 const islands = computed(() => {
   void editor.state.sceneVersion
@@ -57,6 +45,16 @@ const islands = computed(() => {
     position: editor.graph.getAbsolutePosition(id)
   }))
 })
+
+/**
+ * What an island leaves to the canvas: Navigate brings the destination screen into view, as a
+ * prototype moves to it, and Open link opens the page in a new tab.
+ */
+function islandAction(action: Action) {
+  if (action.type === 'navigate' || action.type === 'scroll-to')
+    editor.revealNodes([action.destination])
+  else if (action.type === 'open-url') window.open(action.url, '_blank', 'noopener')
+}
 
 function forwardWheel(event: WheelEvent) {
   if (!canvas) return
@@ -85,6 +83,7 @@ function forwardWheel(event: WheelEvent) {
         :revision="live.revision"
         :tokens="tokens"
         class="pointer-events-auto absolute"
+        @action="islandAction"
         :style="{ left: `${island.position.x}px`, top: `${island.position.y}px` }"
       />
     </div>
