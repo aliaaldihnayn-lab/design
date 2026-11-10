@@ -14,5 +14,9 @@
   "shape": "Forma",
   "connector": "Connettore",
   "hand": "Mano",
-  "comment": "Commento"
+  "comment": "Commento",
+  "brush": "Pennello",
+  "eraser": "Gomma",
+  "fillBucket": "Secchiello",
+  "colorPicker": "Contagocce"
 }

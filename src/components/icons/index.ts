@@ -3,6 +3,7 @@ import IconCircle from '~icons/lucide/circle'
 import IconColumns from '~icons/lucide/columns-3'
 import IconComponentSet from '~icons/lucide/component'
 import IconComponent from '~icons/lucide/diamond'
+import IconEraser from '~icons/lucide/eraser'
 import IconFrame from '~icons/lucide/frame'
 import IconGrid from '~icons/lucide/grid-3x3'
 import IconGroup from '~icons/lucide/group'
@@ -12,8 +13,11 @@ import IconSection from '~icons/lucide/layout-grid'
 import IconMessageCircle from '~icons/lucide/message-circle'
 import IconMinus from '~icons/lucide/minus'
 import IconMousePointer from '~icons/lucide/mouse-pointer'
+import IconPaintBucket from '~icons/lucide/paint-bucket'
+import IconPaintbrush from '~icons/lucide/paintbrush'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
+import IconPipette from '~icons/lucide/pipette'
 import IconRows from '~icons/lucide/rows-3'
 import IconShapes from '~icons/lucide/shapes'
 import IconSmile from '~icons/lucide/smile'
@@ -47,6 +51,10 @@ export const toolIcons: Record<Tool, Component> = {
   STAR: IconStar,
   PEN: IconPenTool,
   PENCIL: IconPencil,
+  BRUSH: IconPaintbrush,
+  ERASER: IconEraser,
+  FILL_BUCKET: IconPaintBucket,
+  COLOR_PICKER: IconPipette,
   TEXT: IconType,
   STICKY: IconStickyNote,
   SHAPE_WITH_TEXT: IconShapes,

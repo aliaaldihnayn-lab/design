@@ -14,5 +14,9 @@
   "shape": "Фигура",
   "connector": "Соединитель",
   "hand": "Рука",
-  "comment": "Комментарий"
+  "comment": "Комментарий",
+  "brush": "Кисть",
+  "eraser": "Ластик",
+  "fillBucket": "Заливка",
+  "colorPicker": "Пипетка"
 }

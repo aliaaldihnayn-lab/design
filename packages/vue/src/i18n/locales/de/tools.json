@@ -14,5 +14,9 @@
   "shape": "Form",
   "connector": "Verbinder",
   "hand": "Hand",
-  "comment": "Kommentar"
+  "comment": "Kommentar",
+  "brush": "Pinsel",
+  "eraser": "Radiergummi",
+  "fillBucket": "Füllwerkzeug",
+  "colorPicker": "Pipette"
 }

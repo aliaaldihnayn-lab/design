@@ -137,6 +137,7 @@ export function renderFromEditorState(
           }
         : null,
       pencilState: state.pencilState,
+      pixelOverlay: editChrome ? state.pixelOverlay : null,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,

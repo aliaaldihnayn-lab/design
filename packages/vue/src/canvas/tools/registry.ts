@@ -4,6 +4,12 @@ import type { Editor, Tool } from '@lawha/core'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
+import {
+  BRUSH_TOOL,
+  COLOR_PICKER_TOOL,
+  ERASER_TOOL,
+  FILL_BUCKET_TOOL
+} from '#vue/canvas/pixels/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
@@ -84,6 +90,10 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
     }
   },
   PENCIL: { press: ({ cx, cy }, { editor, setDrag }) => startPencilInput(cx, cy, editor, setDrag) },
+  BRUSH: BRUSH_TOOL,
+  ERASER: ERASER_TOOL,
+  FILL_BUCKET: FILL_BUCKET_TOOL,
+  COLOR_PICKER: COLOR_PICKER_TOOL,
   TEXT: { press: ({ cx, cy }, { editor, setDrag }) => startTextDraw(cx, cy, editor, setDrag) },
   CONNECTOR: {
     press: ({ event, cx, cy, sx, sy }, { editor, setDrag }) =>

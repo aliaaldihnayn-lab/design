@@ -70,6 +70,7 @@ describe('normalizeToolbarLayout', () => {
     const stored: ToolbarEntry[][] = [['TEXT'], ['SELECT'], SHAPES, ['HAND']]
     expect(layout(stored).groups).toEqual([
       ['TEXT'],
+      ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER'],
       ['STICKY'],
       ['SHAPE_WITH_TEXT'],
       ['CONNECTOR'],

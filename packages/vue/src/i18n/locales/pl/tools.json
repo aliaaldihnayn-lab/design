@@ -14,5 +14,9 @@
   "shape": "Kształt",
   "connector": "Łącznik",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "brush": "Pędzel",
+  "eraser": "Gumka",
+  "fillBucket": "Wiadro z farbą",
+  "colorPicker": "Pipeta"
 }

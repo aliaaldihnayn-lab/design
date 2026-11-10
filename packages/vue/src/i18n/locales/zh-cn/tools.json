@@ -14,5 +14,9 @@
   "shape": "形状",
   "connector": "连接线",
   "hand": "抓手",
-  "comment": "评论"
+  "comment": "评论",
+  "brush": "画笔",
+  "eraser": "橡皮擦",
+  "fillBucket": "油漆桶",
+  "colorPicker": "取色器"
 }

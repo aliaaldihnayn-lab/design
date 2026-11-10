@@ -24,5 +24,11 @@
   "removeBackground": "Rimuovi sfondo",
   "removingBackground": "Rimozione dello sfondo… La prima volta viene scaricato il modello (circa 45 MB).",
   "backgroundRemoved": "Sfondo rimosso.",
-  "removeBackgroundFailed": "Impossibile rimuovere lo sfondo: {error}"
+  "removeBackgroundFailed": "Impossibile rimuovere lo sfondo: {error}",
+  "brushColor": "Colore",
+  "brushSize": "Dimensione",
+  "brushHardness": "Durezza",
+  "brushOpacity": "Opacità",
+  "tolerance": "Tolleranza",
+  "contiguous": "Contiguo"
 }

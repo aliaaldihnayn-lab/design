@@ -24,5 +24,11 @@
   "removeBackground": "移除背景",
   "removingBackground": "正在移除背景… 首次使用会下载模型(约45兆字节)。",
   "backgroundRemoved": "背景已移除。",
-  "removeBackgroundFailed": "无法移除背景:{error}"
+  "removeBackgroundFailed": "无法移除背景:{error}",
+  "brushColor": "颜色",
+  "brushSize": "大小",
+  "brushHardness": "硬度",
+  "brushOpacity": "不透明度",
+  "tolerance": "容差",
+  "contiguous": "连续"
 }

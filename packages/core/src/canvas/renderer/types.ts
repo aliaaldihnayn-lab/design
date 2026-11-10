@@ -5,6 +5,7 @@ import type { SnapGuide } from '@lawha/scene-graph/snap'
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { PixelOverlay } from '#core/editor/pixels/types'
 import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -93,6 +94,7 @@ export interface RenderOverlays {
     cursorY?: number
   } | null
   pencilState?: PencilState | null
+  pixelOverlay?: PixelOverlay | null
   nodeEditState?: {
     nodeId: string
     vertices: VectorVertex[]

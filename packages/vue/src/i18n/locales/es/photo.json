@@ -24,5 +24,11 @@
   "removeBackground": "Quitar fondo",
   "removingBackground": "Quitando el fondo… La primera vez se descarga el modelo (unos 45 MB).",
   "backgroundRemoved": "Fondo quitado.",
-  "removeBackgroundFailed": "No se pudo quitar el fondo: {error}"
+  "removeBackgroundFailed": "No se pudo quitar el fondo: {error}",
+  "brushColor": "Color del pincel",
+  "brushSize": "Tamaño",
+  "brushHardness": "Dureza",
+  "brushOpacity": "Opacidad",
+  "tolerance": "Tolerancia",
+  "contiguous": "Contiguo"
 }

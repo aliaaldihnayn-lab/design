@@ -180,6 +180,8 @@ const imageAdjustmentsSchema = v.record(
   })
 )
 
+const paintLayerSchema = v.object({ hash: v.pipe(v.string(), v.minLength(1)) })
+
 /**
  * Every plugin-data entry Lawha writes under {@link LAWHA_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
@@ -202,6 +204,11 @@ export const LAWHA_PLUGIN_DATA = {
    * and vibrance have no Figma field, so this keeps every one exactly.
    */
   imageAdjustments: jsonPluginDataField('imageAdjustments', 'format', imageAdjustmentsSchema),
+  /**
+   * The image fill that holds what was painted on the layer with the brush, eraser and fill
+   * bucket, by its image's hash, so its other fills stay as they were (Affinity's pixel layer).
+   */
+  paintLayer: jsonPluginDataField('paintLayer', 'content', paintLayerSchema),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
   /**

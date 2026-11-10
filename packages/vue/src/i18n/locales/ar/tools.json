@@ -14,5 +14,9 @@
   "shape": "شكل",
   "connector": "موصل",
   "hand": "اليد",
-  "comment": "تعليق"
+  "comment": "تعليق",
+  "brush": "فرشاة الرسم",
+  "eraser": "الممحاة",
+  "fillBucket": "دلو التعبئة",
+  "colorPicker": "منتقي الألوان"
 }

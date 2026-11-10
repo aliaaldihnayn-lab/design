@@ -24,5 +24,11 @@
   "removeBackground": "Hintergrund entfernen",
   "removingBackground": "Hintergrund wird entfernt… Beim ersten Mal wird das Modell geladen (ca. 45 MB).",
   "backgroundRemoved": "Hintergrund entfernt.",
-  "removeBackgroundFailed": "Hintergrund konnte nicht entfernt werden: {error}"
+  "removeBackgroundFailed": "Hintergrund konnte nicht entfernt werden: {error}",
+  "brushColor": "Farbe",
+  "brushSize": "Größe",
+  "brushHardness": "Härte",
+  "brushOpacity": "Deckkraft",
+  "tolerance": "Toleranz",
+  "contiguous": "Benachbart"
 }

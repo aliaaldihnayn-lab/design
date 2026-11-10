@@ -14,5 +14,9 @@
   "shape": "Forma",
   "connector": "Conector",
   "hand": "Mano",
-  "comment": "Comentario"
+  "comment": "Comentario",
+  "brush": "Pincel",
+  "eraser": "Borrador",
+  "fillBucket": "Bote de pintura",
+  "colorPicker": "Cuentagotas"
 }

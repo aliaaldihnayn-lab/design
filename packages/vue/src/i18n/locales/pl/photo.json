@@ -24,5 +24,11 @@
   "removeBackground": "Usuń tło",
   "removingBackground": "Usuwanie tła… Za pierwszym razem pobierany jest model (ok. 45 MB).",
   "backgroundRemoved": "Usunięto tło.",
-  "removeBackgroundFailed": "Nie udało się usunąć tła: {error}"
+  "removeBackgroundFailed": "Nie udało się usunąć tła: {error}",
+  "brushColor": "Kolor",
+  "brushSize": "Rozmiar",
+  "brushHardness": "Twardość",
+  "brushOpacity": "Krycie",
+  "tolerance": "Tolerancja",
+  "contiguous": "Ciągły"
 }

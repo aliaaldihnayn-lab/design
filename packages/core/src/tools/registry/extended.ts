@@ -30,6 +30,14 @@ import {
   searchIconsTool,
   setBehaviour
 } from '#core/tools/create'
+import { buildDesignSystemTool } from '#core/tools/design-system'
+import {
+  createDeviceMockup,
+  createSocialPost,
+  listMockupPresets,
+  resizeForPlatforms,
+  resizeForScreens
+} from '#core/tools/mockup'
 import {
   setBlend,
   setConstraints,
@@ -45,6 +53,16 @@ import {
   setTextResize,
   setVisible
 } from '#core/tools/modify'
+import { setImageAdjustments } from '#core/tools/photo'
+import { fillPixels, paintPixels, samplePixelColor } from '#core/tools/pixels'
+import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
+import {
+  addInteraction,
+  autoPrototype,
+  getPrototype,
+  setFlow,
+  setInteractions
+} from '#core/tools/prototype'
 import {
   getComponents,
   getCurrentPage,
@@ -108,23 +126,6 @@ import {
   viewportGet,
   viewportSet
 } from '#core/tools/vector'
-import {
-  createDeviceMockup,
-  createSocialPost,
-  listMockupPresets,
-  resizeForPlatforms,
-  resizeForScreens
-} from '#core/tools/mockup'
-import { buildDesignSystemTool } from '#core/tools/design-system'
-import { setImageAdjustments } from '#core/tools/photo'
-import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
-import {
-  addInteraction,
-  autoPrototype,
-  getPrototype,
-  setFlow,
-  setInteractions
-} from '#core/tools/prototype'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
@@ -145,6 +146,9 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   buildDesignSystemTool,
   // Photo
   setImageAdjustments,
+  paintPixels,
+  fillPixels,
+  samplePixelColor,
   // Prototype
   getPrototype,
   setInteractions,

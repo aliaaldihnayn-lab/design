@@ -29,7 +29,13 @@ export const photoMessageDefaults = {
   removeBackground: 'Remove background',
   removingBackground: 'Removing background… The first time downloads the model (about 45 MB).',
   backgroundRemoved: 'Background removed.',
-  removeBackgroundFailed: params('Could not remove the background: {error}')
+  removeBackgroundFailed: params('Could not remove the background: {error}'),
+  brushColor: 'Color',
+  brushSize: 'Size',
+  brushHardness: 'Hardness',
+  brushOpacity: 'Opacity',
+  tolerance: 'Tolerance',
+  contiguous: 'Contiguous'
 } as const
 
 export const photoMessages = i18n('photo', photoMessageDefaults)

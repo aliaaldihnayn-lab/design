@@ -18,6 +18,13 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
   },
   { key: 'PEN', label: 'Pen', shortcut: 'P', flyout: ['PEN', 'PENCIL'] },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
+  // Affinity Photo's pixel tools, on Photoshop's keys: B, E, G, and I.
+  {
+    key: 'BRUSH',
+    label: 'Paint brush',
+    shortcut: 'B',
+    flyout: ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER']
+  },
   // Figma's S is Slice, and FigJam's sticky tool has no key in Figma Design.
   { key: 'STICKY', label: 'Sticky note', shortcut: '' },
   // FigJam's R; here R is the rectangle, as in Figma Design.
@@ -39,6 +46,10 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyT: 'TEXT',
   KeyP: 'PEN',
   'Shift+KeyP': 'PENCIL',
+  KeyB: 'BRUSH',
+  KeyE: 'ERASER',
+  KeyG: 'FILL_BUCKET',
+  KeyI: 'COLOR_PICKER',
   KeyH: 'HAND',
   KeyC: 'COMMENT'
 }
