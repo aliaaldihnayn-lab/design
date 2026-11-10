@@ -75,5 +75,12 @@
   "easingCustomSpring": "Своя пружина",
   "stiffness": "Жёсткость",
   "damping": "Затухание",
-  "mass": "Масса"
+  "mass": "Масса",
+  "actionSetVariable": "Задать переменную",
+  "actionConditional": "Условие",
+  "variable": "Переменная",
+  "value": "Значение",
+  "toggleValue": "Переключить",
+  "noVariables": "Добавьте переменную, чтобы задавать её из прототипа",
+  "conditionSummary": "Если выполнены условия ({count}): действий {then}, иначе {otherwise}"
 }

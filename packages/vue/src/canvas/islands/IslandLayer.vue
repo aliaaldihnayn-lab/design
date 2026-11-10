@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import {
   playIslandRoots,
@@ -14,6 +14,7 @@ import { useEditor } from '#vue/editor/context'
 
 import Island from './Island.vue'
 import { useIslandTokens } from './tokens'
+import { providePlayVariables } from './variables'
 
 /**
  * The live islands of a previewing canvas pane, laid over the canvas at its pan and zoom. The
@@ -36,6 +37,12 @@ const live = computed(() => resolveEditorProfile(view).live)
 const editor = useEditor()
 
 const tokens = useIslandTokens(computed(() => !!live.value))
+const variables = providePlayVariables()
+// Starting again, or another run, starts every variable from the document's value.
+watch(
+  () => live.value?.revision,
+  () => (variables.value = new Map())
+)
 
 const islands = computed(() => {
   void editor.state.sceneVersion

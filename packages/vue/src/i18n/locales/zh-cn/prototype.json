@@ -75,5 +75,12 @@
   "easingCustomSpring": "自定义弹簧",
   "stiffness": "刚度",
   "damping": "阻尼",
-  "mass": "质量"
+  "mass": "质量",
+  "actionSetVariable": "设置变量",
+  "actionConditional": "条件",
+  "variable": "变量",
+  "value": "值",
+  "toggleValue": "切换",
+  "noVariables": "添加一个变量以便在原型中设置",
+  "conditionSummary": "满足 {count} 个条件时执行 {then} 个动作，否则执行 {otherwise} 个"
 }

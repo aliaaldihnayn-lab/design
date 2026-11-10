@@ -75,5 +75,12 @@
   "easingCustomSpring": "Muelle personalizado",
   "stiffness": "Rigidez",
   "damping": "Amortiguación",
-  "mass": "Masa"
+  "mass": "Masa",
+  "actionSetVariable": "Establecer variable",
+  "actionConditional": "Condicional",
+  "variable": "Variable del prototipo",
+  "value": "Valor",
+  "toggleValue": "Alternar",
+  "noVariables": "Añade una variable para establecerla desde el prototipo",
+  "conditionSummary": "Si se cumplen {count} condiciones: {then} acciones; si no, {otherwise}"
 }

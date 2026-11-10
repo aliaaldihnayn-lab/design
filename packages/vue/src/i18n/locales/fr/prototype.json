@@ -75,5 +75,12 @@
   "easingCustomSpring": "Ressort personnalisé",
   "stiffness": "Rigidité",
   "damping": "Amortissement",
-  "mass": "Masse"
+  "mass": "Masse",
+  "actionSetVariable": "Définir la variable",
+  "actionConditional": "Conditionnel",
+  "variable": "Variable du prototype",
+  "value": "Valeur",
+  "toggleValue": "Basculer",
+  "noVariables": "Ajoutez une variable pour la définir depuis le prototype",
+  "conditionSummary": "Si {count} conditions sont remplies : {then} actions, sinon {otherwise}"
 }

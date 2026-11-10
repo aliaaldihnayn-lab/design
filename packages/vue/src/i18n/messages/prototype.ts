@@ -80,7 +80,14 @@ export const prototypeMessageDefaults = {
   easingCustomSpring: 'Custom spring',
   stiffness: 'Stiffness',
   damping: 'Damping',
-  mass: 'Mass'
+  mass: 'Mass',
+  actionSetVariable: 'Set variable',
+  actionConditional: 'Conditional',
+  variable: 'Variable',
+  value: 'Value',
+  toggleValue: 'Toggle',
+  noVariables: 'Add a variable to set it from the prototype',
+  conditionSummary: params('If {count} conditions hold: {then} actions, otherwise {otherwise}')
 } as const
 
 export const prototypeMessages = i18n('prototype', prototypeMessageDefaults)

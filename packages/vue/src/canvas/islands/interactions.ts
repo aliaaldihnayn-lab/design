@@ -4,6 +4,7 @@ import { nextTick, onBeforeUnmount, shallowRef, watch, type Ref, type ShallowRef
 import type { InstanceState } from '@lawha/core'
 import {
   applyStateChanges,
+  boundInstanceStates,
   dispatchStateEvent,
   dispatchStateKey,
   interactionsOf,
@@ -13,6 +14,7 @@ import {
   type Action,
   type ComponentStates,
   type Interaction,
+  type PlayVariables,
   type StateChange,
   type StateDispatch,
   type StateHold,
@@ -51,10 +53,10 @@ interface Options {
   stage: Readonly<Ref<HTMLElement | null>>
   /** Actions the island leaves to its host: navigation, links, and overlays it cannot hold. */
   onAction: (action: Action) => void
+  /** The prototype variables the running view shares. */
+  variables: ShallowRef<PlayVariables>
   /** Registers a handler for keys the host offers before its own shortcuts. */
   onLiveKey?: (handler: (key: string) => boolean) => () => void
-  /** Runs the island's other actions first, such as variables; true when it handled one. */
-  runAction?: (action: Action) => boolean
 }
 
 /**
@@ -135,7 +137,6 @@ export function useIslandInteractions(options: Options) {
 
   function runActions(actions: readonly Action[]): void {
     for (const action of actions) {
-      if (options.runAction?.(action)) continue
       if (action.type === 'overlay') {
         overlays.value = [
           ...overlays.value,
@@ -160,6 +161,7 @@ export function useIslandInteractions(options: Options) {
   function run(result: StateDispatch): boolean {
     if (!result.handledBy && result.changes.length === 0 && result.actions.length === 0)
       return false
+    if (result.variables !== options.variables.value) options.variables.value = result.variables
     for (const hold of result.holds) {
       const change = result.changes.find((item) => item.instance === hold.instance)
       if (change)
@@ -173,7 +175,9 @@ export function useIslandInteractions(options: Options) {
   /** An event that goes to the layer and up its ancestors, the nearest answering it. */
   function bubble(path: string | null, type: TriggerType): boolean {
     if (path === null) return false
-    return run(dispatchStateEvent(options.showing(), options.rootId(), path, type))
+    return run(
+      dispatchStateEvent(options.showing(), options.rootId(), path, type, options.variables.value)
+    )
   }
 
   /** An event only the layer itself answers, as entering or leaving it. */
@@ -190,7 +194,16 @@ export function useIslandInteractions(options: Options) {
 
   /** Runs an interaction of the layer at `path` against the root as it shows by then. */
   function fireLater(path: string, interaction: Interaction): void {
-    if (!disposed) run(runInteraction(options.showing(), options.rootId(), path, interaction))
+    if (disposed) return
+    run(
+      runInteraction(
+        options.showing(),
+        options.rootId(),
+        path,
+        interaction,
+        options.variables.value
+      )
+    )
   }
 
   /** Puts back the instances a hold changed, with the change's own transition. */
@@ -307,9 +320,21 @@ export function useIslandInteractions(options: Options) {
     for (const id of timers.values()) window.clearTimeout(id)
   })
 
-  /** The instance states the changes ask for, merged under the controls' own. */
+  /**
+   * The instance states the changes and the variables ask for, merged under the controls' own:
+   * a property bound to a variable shows its running value.
+   */
   function mergeStates(controls: Map<string, InstanceState>): Map<string, InstanceState> {
     const merged = new Map(controls)
+    const bound = boundInstanceStates(options.document(), options.rootId(), options.variables.value)
+    for (const [path, state] of bound) {
+      const own = merged.get(path)
+      merged.set(path, {
+        ...own,
+        variants: { ...own?.variants, ...state.variants },
+        properties: { ...own?.properties, ...state.properties }
+      })
+    }
     for (const [path, variant] of variants.value) {
       const own = merged.get(path)
       const values = variantValues(options.document(), variant)

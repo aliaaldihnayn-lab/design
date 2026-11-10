@@ -2,10 +2,12 @@ import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { hasBehaviour } from '@lawha/scene-graph/behaviours'
 
 import { interactionsOf } from '#core/prototype/states'
+import { readPropertyBindings } from '#core/prototype/variables'
 
 /** A control with a behaviour, or a layer with interactions: an interactive component's too. */
 function containsControl(graph: SceneGraph, node: SceneNode): boolean {
   if (hasBehaviour(graph, node) || interactionsOf(graph, node).length > 0) return true
+  if (Object.keys(readPropertyBindings(node)).length > 0) return true
   return graph.getChildren(node.id).some((child) => containsControl(graph, child))
 }
 

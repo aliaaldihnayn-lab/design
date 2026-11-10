@@ -3,6 +3,7 @@ import { findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
 import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import { readInteractions, type Action, type Interaction, type Transition } from './model'
+import { runVariableActions, type PlayVariables } from './variables'
 
 /**
  * Interactive components: while a prototype runs, each instance can show another variant of
@@ -42,9 +43,15 @@ export interface StateDispatch {
   holds: StateHold[]
   /** The layer path whose interaction handled the event, or null when none did. */
   handledBy: string | null
+  /** The prototype variables after the event: changed by its Set variable actions. */
+  variables: PlayVariables
 }
 
-const NOTHING: StateDispatch = { changes: [], actions: [], holds: [], handledBy: null }
+const NO_VARIABLES: PlayVariables = new Map()
+
+function nothing(variables: PlayVariables): StateDispatch {
+  return { changes: [], actions: [], holds: [], handledBy: null, variables }
+}
 
 /** How deep `interactionsOf` follows a layer into the main components it comes from. */
 const SOURCE_DEPTH = 8
@@ -135,14 +142,17 @@ export function runInteraction(
   graph: SceneGraph,
   rootId: string,
   path: string,
-  interaction: Interaction
+  interaction: Interaction,
+  variables: PlayVariables = NO_VARIABLES
 ): StateDispatch {
   const layer = findLayerByPath(graph, rootId, path)
-  if (!layer) return NOTHING
+  if (!layer) return nothing(variables)
   const changes: StateChange[] = []
   const actions: Action[] = []
   const holds: StateHold[] = []
-  for (const action of actionsOf(interaction)) {
+  // Variables are set and conditionals decided first, in order, so a branch can Change to.
+  const expanded = runVariableActions(graph, variables, actionsOf(interaction))
+  for (const action of expanded.actions) {
     if (action.type !== 'change-to') {
       actions.push(action)
       continue
@@ -161,7 +171,7 @@ export function runInteraction(
     if (release === 'hover' || release === 'press')
       holds.push({ instance: instancePath, variant: from.id, release })
   }
-  return { changes, actions, holds, handledBy: path }
+  return { changes, actions, holds, handledBy: path, variables: expanded.variables }
 }
 
 /** The layer paths from `path` up to the root, deepest first. */
@@ -182,15 +192,15 @@ export function dispatchStateEvent(
   rootId: string,
   path: string,
   type: Interaction['trigger']['type'],
-  key?: string
+  variables: PlayVariables = NO_VARIABLES
 ): StateDispatch {
   for (const candidate of ancestorPaths(path)) {
     const layer = findLayerByPath(graph, rootId, candidate)
     if (!layer || !layer.visible) continue
-    const match = interactionsOf(graph, layer).find((item) => answers(item, type, key))
-    if (match) return runInteraction(graph, rootId, candidate, match)
+    const match = interactionsOf(graph, layer).find((item) => answers(item, type))
+    if (match) return runInteraction(graph, rootId, candidate, match, variables)
   }
-  return NOTHING
+  return nothing(variables)
 }
 
 /** Every visible layer below the root with its path, the root first. */
@@ -207,12 +217,17 @@ function layersBelow(graph: SceneGraph, rootId: string): { path: string; node: S
 }
 
 /** A key press on a running root: the first layer, in document order, bound to the key. */
-export function dispatchStateKey(graph: SceneGraph, rootId: string, key: string): StateDispatch {
+export function dispatchStateKey(
+  graph: SceneGraph,
+  rootId: string,
+  key: string,
+  variables: PlayVariables = NO_VARIABLES
+): StateDispatch {
   for (const { path, node } of layersBelow(graph, rootId)) {
     const match = interactionsOf(graph, node).find((item) => answers(item, 'key', key))
-    if (match) return runInteraction(graph, rootId, path, match)
+    if (match) return runInteraction(graph, rootId, path, match, variables)
   }
-  return NOTHING
+  return nothing(variables)
 }
 
 /** An After delay interaction of a layer the root shows now. */

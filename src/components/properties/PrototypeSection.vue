@@ -33,6 +33,8 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import PrototypeSectionVariableAction from './PrototypeSectionVariableAction.vue'
+
 const { nodeId = null } = defineProps<{ nodeId?: string | null }>()
 
 const store = useEditorStore()
@@ -83,6 +85,7 @@ const actionOptions = computed(() =>
       'overlay',
       'close-overlay',
       'open-url',
+      'set-variable',
       ...(variantOptions.value.length > 1 ? (['change-to'] as const) : [])
     ] as const
   ).map((v) => ({
@@ -208,6 +211,10 @@ function defaultAction(type: Action['type'], destination: string, transition: Tr
       return { type, url: 'https://example.com' }
     case 'scroll-to':
       return { type, destination }
+    case 'set-variable': {
+      const variable = [...store.graph.variables.values()].find((item) => item.type !== 'COLOR')
+      return { type, variable: variable?.id ?? '', toggle: variable?.type === 'BOOLEAN' }
+    }
     case 'change-to': {
       // Another variant than the one the layer sits in.
       const other = variantOptions.value.find(
@@ -251,6 +258,10 @@ function setDelay(index: number, value: string) {
 
 function setKey(index: number, key: string) {
   if (key) update(index, (i) => ({ ...i, trigger: { type: 'key', key } }))
+}
+
+function setActionValue(index: number, action: Action) {
+  update(index, (i) => ({ ...i, action }))
 }
 
 function setURL(index: number, url: string) {
@@ -401,6 +412,20 @@ function setSpring(index: number, field: (typeof SPRING_FIELDS)[number], value: 
             :value="item.action.url"
             @change="setURL(index, ($event.target as HTMLInputElement).value)"
           />
+          <PrototypeSectionVariableAction
+            v-if="item.action.type === 'set-variable'"
+            :action="item.action"
+            @change="setActionValue(index, $event)"
+          />
+          <p v-if="item.action.type === 'conditional'" class="text-[11px] text-muted">
+            {{
+              t.conditionSummary({
+                count: item.action.when.length,
+                then: item.action.actions.length,
+                otherwise: item.action.otherwise?.length ?? 0
+              })
+            }}
+          </p>
           <template v-if="transitionOf(item)">
             <AppSelect
               :model-value="transitionOf(item)?.type ?? 'instant'"

@@ -75,5 +75,12 @@
   "easingCustomSpring": "Eigene Feder",
   "stiffness": "Steifigkeit",
   "damping": "Dämpfung",
-  "mass": "Masse"
+  "mass": "Masse",
+  "actionSetVariable": "Variable setzen",
+  "actionConditional": "Bedingung",
+  "variable": "Prototypvariable",
+  "value": "Wert",
+  "toggleValue": "Umschalten",
+  "noVariables": "Füge eine Variable hinzu, um sie im Prototyp zu setzen",
+  "conditionSummary": "Wenn {count} Bedingungen gelten: {then} Aktionen, sonst {otherwise}"
 }

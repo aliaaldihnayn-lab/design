@@ -14,6 +14,7 @@ import { renderNode } from './render'
 import { useShadowContainer } from './shadow'
 import { createIslandState, instanceStates } from './state'
 import { animateOverlayIn } from './transitions'
+import { usePlayVariables } from './variables'
 
 /**
  * One live island: a top-level layer that holds controls or prototype interactions, rendered as
@@ -44,6 +45,7 @@ const controls = computed(() => {
 const roles = computed(() => controlRoles(controls.value))
 const state = shallowRef(createIslandState(controls.value))
 
+const variables = usePlayVariables()
 /** The root as it shows now, kept apart so interactions can read it while it changes. */
 const showing = shallowRef(editor.graph)
 const interactions = useIslandInteractions({
@@ -52,6 +54,7 @@ const interactions = useIslandInteractions({
   showing: () => showing.value,
   root: stage,
   stage,
+  variables,
   onAction: (action) => emit('action', action),
   onLiveKey: (handler) => editor.onLiveKey(handler)
 })
@@ -67,7 +70,7 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const states = interactions.mergeStates(instanceStates(controls.value, state.value))
-  const graph = resolvePlayState(editor.graph, rootId, states)
+  const graph = resolvePlayState(editor.graph, rootId, states, variables.value)
   const [root] = sceneNodeToDesignDocument(graph, rootId, { vectorElement }).children
   return { graph, root }
 })

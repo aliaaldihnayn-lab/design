@@ -75,5 +75,12 @@
   "easingCustomSpring": "Własna sprężyna",
   "stiffness": "Sztywność",
   "damping": "Tłumienie",
-  "mass": "Masa"
+  "mass": "Masa",
+  "actionSetVariable": "Ustaw zmienną",
+  "actionConditional": "Warunek",
+  "variable": "Zmienna",
+  "value": "Wartość",
+  "toggleValue": "Przełącz",
+  "noVariables": "Dodaj zmienną, aby ustawiać ją z prototypu",
+  "conditionSummary": "Jeśli spełnione są warunki ({count}): akcje: {then}, w przeciwnym razie: {otherwise}"
 }

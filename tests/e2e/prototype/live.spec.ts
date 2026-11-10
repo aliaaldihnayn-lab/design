@@ -241,3 +241,136 @@ test('a modal opens over its frame and closes from its button or the backdrop', 
   await overlay.click({ position: { x: 8, y: 8 } })
   await expect(overlay).toHaveCount(0)
 })
+
+/**
+ * A terms screen: an Agree checkbox (Unchecked and Checked variants) whose click toggles the
+ * `agreed` variable and changes variant, a Submit button whose State follows `agreed`, and a
+ * label that shows the `agreed` value as text.
+ */
+async function createTerms() {
+  return editor.page.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const plugin = (id: string, key: string, value: unknown) => {
+      const node = graph.getNode(id)
+      if (!node) throw new Error(`No node ${id}`)
+      graph.updateNode(id, {
+        pluginData: [...node.pluginData, { pluginId: 'lawha', key, value: JSON.stringify(value) }]
+      })
+    }
+    const collection = graph.createCollection('Prototype')
+    const agreed = graph.createVariable('agreed', 'BOOLEAN', collection.id, false)
+    const instant = { type: 'instant', direction: 'left', duration: 0, easing: 'linear' }
+    const checkboxes = graph.createNode('COMPONENT_SET', pageId, {
+      name: 'Checkbox',
+      x: 600,
+      y: 600,
+      width: 120,
+      height: 60,
+      componentPropertyDefinitions: [
+        {
+          id: 'c',
+          name: 'Checked',
+          type: 'VARIANT',
+          defaultValue: 'false',
+          variantOptions: ['false', 'true']
+        }
+      ]
+    })
+    const variant = (checked: boolean) =>
+      graph.createNode('COMPONENT', checkboxes.id, {
+        name: `Checked=${checked}`,
+        x: checked ? 60 : 10,
+        y: 10,
+        width: 24,
+        height: 24,
+        cornerRadius: 4,
+        fills: checked ? solid(0.1, 0.5, 1) : solid(0.85, 0.85, 0.88),
+        componentPropertyValues: { Checked: String(checked) }
+      })
+    const unchecked = variant(false)
+    const checked = variant(true)
+    for (const [from, to] of [
+      [unchecked, checked],
+      [checked, unchecked]
+    ])
+      plugin(from.id, 'prototype.interactions', [
+        {
+          trigger: { type: 'click' },
+          action: { type: 'set-variable', variable: agreed.id, toggle: true },
+          andThen: [{ type: 'change-to', destination: to.id, transition: instant }]
+        }
+      ])
+    const buttons = graph.createNode('COMPONENT_SET', pageId, {
+      name: 'Button',
+      x: 600,
+      y: 700,
+      width: 260,
+      height: 60,
+      componentPropertyDefinitions: [
+        {
+          id: 's',
+          name: 'State',
+          type: 'VARIANT',
+          defaultValue: 'Disabled',
+          variantOptions: ['Disabled', 'Default']
+        }
+      ]
+    })
+    const disabled = graph.createNode('COMPONENT', buttons.id, {
+      name: 'State=Disabled',
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 36,
+      fills: solid(0.8, 0.8, 0.8),
+      componentPropertyValues: { State: 'Disabled' }
+    })
+    graph.createNode('COMPONENT', buttons.id, {
+      name: 'State=Default',
+      x: 130,
+      y: 10,
+      width: 100,
+      height: 36,
+      fills: solid(0.1, 0.6, 0.3),
+      componentPropertyValues: { State: 'Default' }
+    })
+    const screen = graph.createNode('FRAME', pageId, {
+      name: 'Terms',
+      x: 40,
+      y: 120,
+      width: 320,
+      height: 200,
+      fills: solid(1, 1, 1)
+    })
+    const box = graph.createInstance(unchecked.id, screen.id, { x: 20, y: 20 })
+    const submit = graph.createInstance(disabled.id, screen.id, { x: 20, y: 120 })
+    if (!box || !submit) throw new Error('Instances not created')
+    graph.updateNode(box.id, { name: 'Agree' })
+    graph.updateNode(submit.id, { name: 'Submit' })
+    plugin(submit.id, 'prototype.bindings', {
+      State: { variable: agreed.id, on: 'Default', off: 'Disabled' }
+    })
+    store.requestRender()
+    return { screenId: screen.id }
+  })
+}
+
+test('a checkbox enables a button through a prototype variable', async () => {
+  const ids = await createTerms()
+  await editor.canvas.waitForRender()
+  await startLiveMode()
+
+  const submit = layer(ids.screenId, 'Submit')
+  await expect(submit).toHaveCSS('background-color', 'rgb(204, 204, 204)')
+  await layer(ids.screenId, 'Agree').click()
+  await expect(submit).toHaveCSS('background-color', 'rgb(26, 153, 77)')
+  await layer(ids.screenId, 'Agree').click()
+  await expect(submit).toHaveCSS('background-color', 'rgb(204, 204, 204)')
+  await editor.page.keyboard.press('Escape')
+})

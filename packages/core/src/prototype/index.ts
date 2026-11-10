@@ -32,6 +32,7 @@ export {
   DIRECTIONS,
   EASINGS,
   OVERLAY_POSITIONS,
+  CONDITION_OPERATORS,
   POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
   TRANSITION_TYPES,
@@ -92,3 +93,17 @@ export {
   type SmartAnimatePlan,
   type SmartPair
 } from './smart-animate'
+export {
+  boundInstanceStates,
+  conditionsHold,
+  playValue,
+  PROPERTY_BINDINGS_KEY,
+  readPropertyBindings,
+  runVariableActions,
+  showPlayVariables,
+  type BoundInstanceState,
+  type Condition,
+  type PlayValue,
+  type PlayVariables,
+  type PropertyBinding
+} from './variables'

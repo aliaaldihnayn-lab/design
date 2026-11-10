@@ -24,7 +24,7 @@ import {
   type Transition,
   type TriggerType
 } from '@lawha/core/prototype'
-import { PlayIsland, useIslandTokens } from '@lawha/vue/canvas'
+import { PlayIsland, providePlayVariables, useIslandTokens } from '@lawha/vue/canvas'
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -82,6 +82,8 @@ const live = computed(() => !!state.value && liveScreens.value.has(state.value.s
 const islandTokens = useIslandTokens(computed(() => !!playerSession.value))
 /** Bumped on restart, so live screens start again as designed. */
 const islandRevision = ref(0)
+/** The prototype variables the player's live screens share; restarting resets them. */
+const playVariables = providePlayVariables()
 
 /** What a live screen leaves to the player: navigation, Back, links, and scrolling. */
 function onIslandAction(action: Action) {
@@ -293,6 +295,7 @@ async function restart(startId = playerSession.value?.start) {
   clearTimers()
   await imageFor(startId)
   islandRevision.value++
+  playVariables.value = new Map()
   state.value = start(startId)
   scheduleTimers(state.value)
 }

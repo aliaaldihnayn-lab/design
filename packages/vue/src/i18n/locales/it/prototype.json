@@ -75,5 +75,12 @@
   "easingCustomSpring": "Molla personalizzata",
   "stiffness": "Rigidità",
   "damping": "Smorzamento",
-  "mass": "Massa"
+  "mass": "Massa",
+  "actionSetVariable": "Imposta variabile",
+  "actionConditional": "Condizionale",
+  "variable": "Variabile",
+  "value": "Valore",
+  "toggleValue": "Alterna",
+  "noVariables": "Aggiungi una variabile per impostarla dal prototipo",
+  "conditionSummary": "Se valgono {count} condizioni: {then} azioni, altrimenti {otherwise}"
 }

@@ -75,5 +75,12 @@
   "easingCustomSpring": "نابض مخصص",
   "stiffness": "الصلابة",
   "damping": "التخميد",
-  "mass": "الكتلة"
+  "mass": "الكتلة",
+  "actionSetVariable": "تعيين متغير",
+  "actionConditional": "شرطي",
+  "variable": "المتغير",
+  "value": "القيمة",
+  "toggleValue": "عكس القيمة",
+  "noVariables": "أضف متغيرًا لتعيينه من النموذج التفاعلي",
+  "conditionSummary": "إذا تحققت الشروط ({count}): {then} إجراءات، وإلا {otherwise}"
 }

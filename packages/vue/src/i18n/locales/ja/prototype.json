@@ -75,5 +75,12 @@
   "easingCustomSpring": "カスタムスプリング",
   "stiffness": "剛性",
   "damping": "減衰",
-  "mass": "質量"
+  "mass": "質量",
+  "actionSetVariable": "変数を設定",
+  "actionConditional": "条件分岐",
+  "variable": "変数",
+  "value": "値",
+  "toggleValue": "切り替え",
+  "noVariables": "プロトタイプから設定する変数を追加してください",
+  "conditionSummary": "{count} 件の条件を満たす場合は {then} 件のアクション、それ以外は {otherwise} 件"
 }

@@ -98,7 +98,42 @@ export const triggerSchema = v.variant('type', [
   v.object({ type: v.literal('key'), key: v.pipe(v.string(), v.minLength(1)) })
 ])
 
-export const actionSchema = v.variant('type', [
+/** A value a prototype variable can be set to or compared with. */
+export const playValueSchema = v.union([v.string(), v.pipe(v.number(), v.finite()), v.boolean()])
+
+/**
+ * Sets a variable while the prototype runs, as Figma's Set variable: to `value`, to its
+ * opposite with `toggle`, or by `add` to a number. The document keeps the variable's value.
+ */
+const setVariableSchema = v.object({
+  type: v.literal('set-variable'),
+  /** The variable's id. */
+  variable: v.pipe(v.string(), v.minLength(1)),
+  value: v.optional(playValueSchema),
+  toggle: v.optional(v.boolean()),
+  add: v.optional(v.pipe(v.number(), v.finite()))
+})
+
+export const CONDITION_OPERATORS = [
+  'eq',
+  'neq',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'truthy',
+  'falsy'
+] as const
+
+/** A comparison of a variable's running value: equal, ordered, or whether it reads as true. */
+export const conditionSchema = v.object({
+  variable: v.pipe(v.string(), v.minLength(1)),
+  op: v.picklist(CONDITION_OPERATORS),
+  value: v.optional(playValueSchema)
+})
+
+/** The actions a step of a prototype can run, short of a conditional. */
+const simpleActions = [
   v.object({
     type: v.literal('navigate'),
     destination: v.pipe(v.string(), v.minLength(1)),
@@ -127,6 +162,23 @@ export const actionSchema = v.variant('type', [
     /** A variant (component) of the same component set. */
     destination: v.pipe(v.string(), v.minLength(1)),
     transition: transitionSchema
+  }),
+  setVariableSchema
+] as const
+
+const simpleActionSchema = v.variant('type', [...simpleActions])
+
+export const actionSchema = v.variant('type', [
+  ...simpleActions,
+  /**
+   * Runs `actions` when every condition holds and `otherwise` when one does not, as Figma's
+   * Conditional. Its branches run plain actions, not another conditional.
+   */
+  v.object({
+    type: v.literal('conditional'),
+    when: v.pipe(v.array(conditionSchema), v.minLength(1), v.maxLength(10)),
+    actions: v.pipe(v.array(simpleActionSchema), v.maxLength(20)),
+    otherwise: v.optional(v.pipe(v.array(simpleActionSchema), v.maxLength(20)))
   })
 ])
 
