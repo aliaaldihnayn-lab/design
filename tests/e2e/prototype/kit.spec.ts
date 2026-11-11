@@ -74,9 +74,7 @@ test('a kit text input takes real typing and counts it', async () => {
   await leaveLiveMode()
 })
 
-// The combobox's field is a text field instance nested in the combobox, which the island does
-// not run as a live control yet, so typing does not reach it on the canvas.
-test.fixme('a kit combobox filters its suggestions as you type, in any case', async () => {
+test('a kit combobox filters its suggestions as you type, in any case', async () => {
   const id = await insertFromAssets('Combobox')
   await startLiveMode()
 
@@ -90,12 +88,15 @@ test.fixme('a kit combobox filters its suggestions as you type, in any case', as
   await field.fill('Cairo')
   await expect(layer(id, 'Menu/Empty')).toBeVisible()
   await expect(layer(id, 'Menu/Option 2')).toBeHidden()
-  await field.fill('')
-  await expect(layer(id, 'Menu/Option 1')).toBeVisible()
+  await field.fill('jed')
+  // The arrow keys skip the options the filter hides.
+  await editor.page.keyboard.press('ArrowDown')
+  await editor.page.keyboard.press('Enter')
+  await expect(layer(id, 'Trigger/Caption/Value')).toHaveText('Jeddah')
   await leaveLiveMode()
 })
 
-test('a kit range slider shows two thumbs whose drag lands on a step', async () => {
+test('a kit range slider drags and steps both of its thumbs', async () => {
   const id = await insertFromAssets('Range slider')
   await startLiveMode()
 
@@ -103,6 +104,11 @@ test('a kit range slider shows two thumbs whose drag lands on a step', async () 
   await expect(thumbs).toHaveCount(2)
   await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '25')
   await expect(thumbs.nth(1)).toHaveAttribute('aria-valuenow', '75')
+  await thumbs.nth(0).focus()
+  await editor.page.keyboard.press('ArrowRight')
+  await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '30')
+  await editor.page.keyboard.press('ArrowLeft')
+  await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '25')
 
   // Dragging moves continuously and lands on a step.
   const box = await thumbs.nth(1).boundingBox()

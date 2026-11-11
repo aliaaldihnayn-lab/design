@@ -20,7 +20,9 @@ const suggestionsSchema = v.object({
   /** The option rows' layer paths below the instance. */
   options: v.array(v.string()),
   /** The row shown when the field holds text and no option matches. */
-  empty: v.optional(v.string())
+  empty: v.optional(v.string()),
+  /** The variant, by name, that highlights each option, which arrow keys move between. */
+  highlights: v.optional(v.array(v.string()))
 })
 
 export type SuggestionsSpec = v.InferOutput<typeof suggestionsSchema>
@@ -124,4 +126,39 @@ export function showSuggestions(
   const root = graph.getNode(rootId)
   if (root) walk(root)
   return changed
+}
+
+/**
+ * Where a Change to that highlights an option goes when the instance's list is filtered: that
+ * option if it shows, else the nearest one that shows on the way the change moves, wrapping, or
+ * undefined to stay put when none does. Other changes go where they say.
+ */
+export function shownHighlight(
+  graph: SceneGraph,
+  instance: SceneNode,
+  destinationId: string
+): string | undefined {
+  const spec = suggestionsOf(graph, instance)
+  const main = instanceMainComponent(graph, instance)
+  const set = main?.parentId ? graph.getNode(main.parentId) : undefined
+  const destination = graph.getNode(destinationId)
+  const highlights = spec?.highlights
+  if (!spec || !highlights || !main || !set || !destination) return destinationId
+  const target = highlights.indexOf(destination.name)
+  if (target === -1) return destinationId
+  const shown = (index: number) =>
+    findLayerByPath(graph, instance.id, spec.options[index] ?? '')?.visible ?? false
+  if (shown(target)) return destinationId
+  const current = highlights.indexOf(main.name)
+  const count = highlights.length
+  // Moving down from the open list (no highlight) or down by one goes forward; else back.
+  const step = current === -1 || (current + 1) % count === target ? 1 : -1
+  for (let offset = 1; offset < count; offset++) {
+    const index = (((target + step * offset) % count) + count) % count
+    if (shown(index)) {
+      const variant = graph.getChildren(set.id).find((child) => child.name === highlights[index])
+      return variant?.id
+    }
+  }
+  return undefined
 }

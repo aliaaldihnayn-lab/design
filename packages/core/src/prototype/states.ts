@@ -4,6 +4,7 @@ import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import { runCalendarAction } from './calendar'
 import { readInteractions, type Action, type Interaction, type Transition } from './model'
+import { shownHighlight } from './suggestions'
 import { instanceScope, runVariableActions, type PlayVariables } from './variables'
 
 /**
@@ -160,12 +161,14 @@ export function runInteraction(
     }
     const instance = changeTarget(graph, layer, action.destination)
     const from = instance && instanceMainComponent(graph, instance)
-    if (!instance || !from || from.id === action.destination) continue
+    // A highlight on a filtered list skips the options it hides.
+    const to = instance && shownHighlight(graph, instance, action.destination)
+    if (!instance || !from || !to || from.id === to) continue
     const instancePath = layerPath(graph, rootId, instance.id)
     changes.push({
       instance: instancePath,
       from: from.id,
-      to: action.destination,
+      to,
       transition: action.transition
     })
     const release = interaction.trigger.type

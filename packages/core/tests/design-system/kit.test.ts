@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { CalendarDate } from '@internationalized/date'
 
+import { behaviourControls } from '@lawha/dom-css/export'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import { findLayerByPath, readBehaviour } from '@lawha/scene-graph/behaviours'
 
@@ -410,5 +411,27 @@ describe('interactive kit', () => {
       'click'
     )
     expect(result.changes.length).toBe(1)
+  })
+
+  test('a filtered combobox runs its field live and its arrow keys skip hidden options', async () => {
+    const { graph, screen, instance } = await screenWith('combobox')
+    const path = instance.name
+    expect([...behaviourControls(graph, screen.id).keys()]).toContain(`${path}/Trigger/Field`)
+    const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+    const variant = (name: string) =>
+      set && graph.getChildren(set.id).find((child) => child.name === name)?.id
+    const typed = new Map([[`${path}/Trigger/Field`, 'jed']])
+    const press = (shown: string) => {
+      const showing = resolvePlayState(
+        graph,
+        screen.id,
+        new Map([[path, { variants: variantValues(graph, shown) }]]),
+        new Map(),
+        typed
+      )
+      return dispatchStateKey(showing, screen.id, 'ArrowDown').changes.map((change) => change.to)
+    }
+    expect(press(variant('State=Open') ?? '')).toEqual([variant('State=Option 2')])
+    expect(press(variant('State=Option 2') ?? '')).toEqual([])
   })
 })

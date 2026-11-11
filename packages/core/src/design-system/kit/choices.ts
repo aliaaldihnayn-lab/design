@@ -130,7 +130,8 @@ function wireList(list: ListOptions) {
         w.data(w.layer(name), SUGGESTIONS_KEY, {
           field: list.filterField,
           options: options.map((_, index) => `Menu/Option ${index + 1}`),
-          empty: 'Menu/Empty'
+          empty: 'Menu/Empty',
+          highlights: options.map((_, index) => highlighted(index))
         })
       const active = position - 1
       const root = w.layer(name)
