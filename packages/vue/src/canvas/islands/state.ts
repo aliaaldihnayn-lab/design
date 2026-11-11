@@ -10,6 +10,8 @@ export interface ControlState {
   /** The chosen tab, radio, toggle, or accordion item, as its index; '' when none is. */
   choice: string
   number: number
+  /** A range slider's second end. */
+  end: number
   texts: Partial<Record<string, string>>
   hovered: boolean
   pressed: boolean
@@ -53,6 +55,10 @@ export function createIslandState(controls: ReadonlyMap<string, ControlModel>) {
           ),
           choice: initialChoice(control),
           number: numberSettings(control.behaviour, 'value')?.default ?? 0,
+          end:
+            numberSettings(control.behaviour, 'end')?.default ??
+            numberSettings(control.behaviour, 'value')?.max ??
+            0,
           texts: initialTexts(control),
           hovered: false,
           pressed: false,

@@ -231,4 +231,17 @@ describe('interactive kit', () => {
       expect(shownWith(rtl ? 'القاهرة' : 'Cairo')).toEqual(['Empty'])
     }
   })
+
+  test('the range slider is one slider with two thumbs that step through its range', async () => {
+    const graph = new SceneGraph()
+    const built = await buildKitComponent(graph, 'range-slider')
+    const set = graph.getNode(built.id)
+    const behaviour = set && readBehaviour(set)
+    expect(behaviour?.kind).toBe('slider')
+    expect(Object.keys(behaviour?.parts ?? {}).sort()).toEqual(
+      ['endThumb', 'range', 'thumb', 'track'].sort()
+    )
+    expect(behaviour?.numbers.value).toEqual({ min: 0, max: 100, step: 5, default: 25 })
+    expect(behaviour?.numbers.end).toEqual({ min: 0, max: 100, step: 5, default: 75 })
+  })
 })

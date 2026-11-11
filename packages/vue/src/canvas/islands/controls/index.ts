@@ -29,7 +29,7 @@ import {
 import { h, type Component, type VNode } from 'vue'
 
 import { groupOf, type ControlRole, type DesignElement } from '@lawha/dom-css/export'
-import { numberSettings } from '@lawha/scene-graph/behaviours'
+import { numberSettings, partBinding } from '@lawha/scene-graph/behaviours'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
 
@@ -96,13 +96,17 @@ function valueRoot(
   const state = stateOf(island, control)
   const off = disabled(island, control)
   const settings = numberSettings(control.behaviour, 'value')
-  if (control.kind === 'slider')
+  if (control.kind === 'slider') {
+    // A range slider has its end thumb bound and holds both ends, the lower first.
+    const range = !!partBinding(control.behaviour, 'endThumb')
     return asChild(
       SliderRoot,
       {
-        modelValue: [state.number],
-        'onUpdate:modelValue': (value: number[] | undefined) =>
-          (state.number = value?.[0] ?? state.number),
+        modelValue: range ? [state.number, state.end] : [state.number],
+        'onUpdate:modelValue': (value: number[] | undefined) => {
+          state.number = value?.[0] ?? state.number
+          if (range) state.end = value?.[1] ?? state.end
+        },
         min: settings?.min,
         max: settings?.max,
         step: settings?.step,
@@ -110,6 +114,7 @@ function valueRoot(
       },
       () => base({ props: interaction(state) })
     )
+  }
   if (control.kind === 'progress')
     return asChild(ProgressRoot, { modelValue: state.number, max: settings?.max }, () => base())
   if (control.kind === 'tabs')
@@ -182,7 +187,8 @@ function item({ island, role, base }: RoleContext<Extract<ControlRole, { type: '
 const SLIDER_PARTS: Record<string, { component: Component; omit: readonly string[] }> = {
   track: { component: SliderTrack, omit: [] },
   range: { component: SliderRange, omit: ['left', 'width'] },
-  thumb: { component: SliderThumb, omit: ['left', 'transform'] }
+  thumb: { component: SliderThumb, omit: ['left', 'transform'] },
+  endThumb: { component: SliderThumb, omit: ['left', 'transform'] }
 }
 
 function part({ island, role, base }: RoleContext<Extract<ControlRole, { type: 'part' }>>): VNode {
