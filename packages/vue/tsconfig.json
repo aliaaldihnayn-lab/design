@@ -25,6 +25,12 @@
       "@lawha/core/color": ["../core/src/color.ts"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts", "../core/src/global.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/**/*.d.ts",
+    "../core/src/global.d.ts",
+    "../core/src/pdfjs-worker.d.ts"
+  ],
   "exclude": ["node_modules", "dist", "example"]
 }
