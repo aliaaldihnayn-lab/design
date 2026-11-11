@@ -8,7 +8,7 @@ import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import { DIELINE_SPOTS } from '#core/io/formats/pdf/print/color'
 import { BLEED_GUIDE_NAME } from '#core/io/formats/pdf/print/sheet'
 import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'
-import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
+import { defineTool, nodeSummary, pagePositionInputs, requireNode } from '#core/tools/schema'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 import { mmToPt, roundedRectPath, type DieLine } from './geometry'
@@ -168,15 +168,6 @@ function describe(template: Template) {
   }
 }
 
-const positionInputs = {
-  x: v.optional(
-    toolNumber(
-      v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
-    )
-  ),
-  y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0'))))
-}
-
 export const listPrintProducts = defineTool({
   name: 'list_print_products',
   description:
@@ -208,7 +199,7 @@ export const createPrintTemplate = defineTool({
     product: printProductInputSchema,
     size: printSizeInputSchema,
     name: v.optional(v.pipe(v.string(), v.description('Sheet name'))),
-    ...positionInputs
+    ...pagePositionInputs
   }),
   execute: (figma, args) => describe(buildTemplate(figma, args.product, args.size, args))
 })
@@ -222,7 +213,7 @@ export const convertToDieline = defineTool({
     id: v.pipe(v.string(), v.description('Design to convert (usually a frame)')),
     product: printProductInputSchema,
     size: printSizeInputSchema,
-    ...positionInputs
+    ...pagePositionInputs
   }),
   execute: (figma, args) => {
     const source = requireNode(figma, args.id)

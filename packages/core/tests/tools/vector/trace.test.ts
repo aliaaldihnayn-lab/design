@@ -78,10 +78,11 @@ describe('image_trace', () => {
       throw new Error(`no frame: ${JSON.stringify(result)}`)
     expect(result).toMatchObject({ colors: 3, paths: 3 })
     const frame = graph.getNode(String(result.id))
+    if (!frame) throw new Error('the traced frame is not in the document')
     expect(graph.getNode(photo.id)).toBeUndefined()
-    expect(graph.getNode(pageId)?.childIds).toEqual([frame?.id])
+    expect(graph.getNode(pageId)?.childIds).toEqual([frame.id])
     expect(frame).toMatchObject({ type: 'FRAME', name: 'Photo', x: 10, y: 20 })
-    const colours = (frame?.childIds ?? []).map((id) => {
+    const colours = frame.childIds.map((id) => {
       const fill = graph.getNode(id)?.fills[0]
       return fill?.type === 'SOLID' ? [fill.color.r, fill.color.b].map((c) => Math.round(c)) : null
     })

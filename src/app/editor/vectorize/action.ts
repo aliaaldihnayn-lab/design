@@ -1,5 +1,5 @@
+import { traceableImageFill } from '@lawha/core/tools'
 import { preprocessForVectorize, svgToVectorPaths } from '@lawha/core/vector'
-import type { Fill, SceneNode } from '@lawha/scene-graph'
 import { pathMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -16,10 +16,13 @@ import { VectorizeAuthError } from './types'
 const activeStores = new WeakSet<EditorStore>()
 const ERROR_MAX_LENGTH = 240
 
-function imageFill(node: SceneNode): Fill | null {
-  if (node.type !== 'RECTANGLE' || node.childIds.length > 0 || node.fills.length !== 1) return null
-  const fill = node.fills[0]
-  return fill.type === 'IMAGE' && fill.imageHash ? fill : null
+/** The layer and its image, when the layer is only an image and no conversion runs for `store`. */
+function traceableImage(store: EditorStore, nodeId: string) {
+  if (activeStores.has(store)) return null
+  const node = store.graph.getNode(nodeId)
+  const fill = node ? traceableImageFill(node) : null
+  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return null
+  return { node, imageHash: fill.imageHash }
 }
 
 export function canVectorizeImageNode(store: EditorStore): boolean {
@@ -27,7 +30,7 @@ export function canVectorizeImageNode(store: EditorStore): boolean {
   const nodeId = store.state.selectedIds.values().next().value
   if (!nodeId) return false
   const node = store.graph.getNode(nodeId)
-  return Boolean(node && imageFill(node))
+  return Boolean(node && traceableImageFill(node))
 }
 
 function vectorizeErrorMessage(error: unknown): string {
@@ -50,10 +53,9 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 }
 
 async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Promise<void> {
-  if (activeStores.has(store)) return
-  const node = store.graph.getNode(nodeId)
-  const fill = node ? imageFill(node) : null
-  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return
+  const image = traceableImage(store, nodeId)
+  if (!image) return
+  const { node, imageHash } = image
 
   const provider = getVectorizeProvider(vectorizeProviderID.value)
   activeStores.add(store)
@@ -67,7 +69,7 @@ async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Pr
       return
     }
 
-    const imageBytes = store.graph.images.get(fill.imageHash)
+    const imageBytes = store.graph.images.get(imageHash)
     if (!imageBytes) {
       toast.error(notificationMessages.get().vectorizeImageMissing)
       return
@@ -79,8 +81,8 @@ async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Pr
 
     const svg = await provider.vectorize(preprocessed.pngBytes, apiKey)
     const currentNode = store.graph.getNode(node.id)
-    const currentFill = currentNode ? imageFill(currentNode) : null
-    if (!currentNode || currentFill?.type !== 'IMAGE' || currentFill.imageHash !== fill.imageHash) {
+    const currentFill = currentNode ? traceableImageFill(currentNode) : null
+    if (!currentNode || currentFill?.type !== 'IMAGE' || currentFill.imageHash !== imageHash) {
       throw new Error('The image changed before vectorization finished')
     }
     const vectorized = svgToVectorPaths(svg, {
@@ -117,14 +119,13 @@ export async function traceImageNodeOnDevice(
   nodeId: string,
   options: LocalTraceOptions = localTraceOptions.value
 ): Promise<void> {
-  if (activeStores.has(store)) return
-  const node = store.graph.getNode(nodeId)
-  const fill = node ? imageFill(node) : null
-  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return
+  const image = traceableImage(store, nodeId)
+  if (!image) return
+  const { node, imageHash } = image
   const messages = pathMessages.get()
   activeStores.add(store)
   try {
-    const imageBytes = store.graph.images.get(fill.imageHash)
+    const imageBytes = store.graph.images.get(imageHash)
     if (!imageBytes) {
       toast.error(notificationMessages.get().vectorizeImageMissing)
       return

@@ -1,15 +1,14 @@
+import { coveredCellBounds } from '@lawha/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
 import type { Rect } from '@lawha/scene-graph/primitives'
+
+import type { ByteGrid } from '#core/io/formats/raster/pixels'
 
 /**
  * How much of each pixel a selection or layer mask covers, 0 (none) to 255 (all), row-major over
  * a `width` × `height` grid with no padding.
  */
-export interface PixelMask {
-  width: number
-  height: number
-  data: Uint8Array
-}
+export type PixelMask = ByteGrid
 
 /** How a new selection joins the one there is, as Affinity's and Photoshop's selection modes do. */
 export type SelectionMode = 'replace' | 'add' | 'subtract' | 'intersect'
@@ -137,21 +136,7 @@ export function featherMask(mask: PixelMask, radius: number): PixelMask {
 /** The smallest rectangle of grid pixels holding every selected pixel, or null when none is. */
 export function maskBounds(mask: PixelMask): Rect | null {
   const { width, height, data } = mask
-  let minX = width
-  let minY = height
-  let maxX = -1
-  let maxY = -1
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (data[y * width + x] === 0) continue
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-    }
-  }
-  if (maxX < 0) return null
-  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 }
+  return coveredCellBounds(width, height, (index) => data[index] !== 0)
 }
 
 /** Which way an edge between two pixels faces: 0 when both are on the same side of it. */

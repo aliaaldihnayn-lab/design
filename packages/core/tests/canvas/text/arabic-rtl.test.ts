@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
-import type { Paragraph, Surface, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { Surface, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SkiaRenderer } from '@lawha/core/canvas'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
@@ -16,7 +16,7 @@ import {
 } from '@lawha/scene-graph/text/direction'
 
 import { renderText } from '#core/canvas/scene'
-import { buildParagraph } from '#core/canvas/text'
+import { buildParagraph, type TextLayout } from '#core/canvas/text'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'
 
@@ -72,7 +72,7 @@ function textNode(props: Partial<SceneNode>): SceneNode {
   return expectDefined(graph.getNode(node.id), 'text node')
 }
 
-function withParagraph<T>(props: Partial<SceneNode>, run: (p: Paragraph) => T): T {
+function withParagraph<T>(props: Partial<SceneNode>, run: (p: TextLayout) => T): T {
   const { renderer, surface } = makeRenderer()
   const paragraph = buildParagraph(renderer, textNode(props))
   try {
@@ -99,7 +99,7 @@ function utf8Length(code: number): number {
 }
 
 /** Shaped glyphs in visual order. Skia reports UTF-8 byte offsets; map them back to UTF-16. */
-function glyphs(p: Paragraph, text: string): PlacedGlyph[] {
+function glyphs(p: TextLayout, text: string): PlacedGlyph[] {
   const byteToIndex = new Map<number, number>()
   let bytes = 0
   for (let i = 0; i < text.length; i++) {

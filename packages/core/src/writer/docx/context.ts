@@ -1,7 +1,5 @@
 import { strFromU8 } from 'fflate'
 
-import type { WriterNode } from '#core/writer/model'
-
 import { readStyleSheet, type StyleSheet } from './styles'
 import { attrOf, kids, parseXML, valOf } from './xml'
 
@@ -32,18 +30,6 @@ export interface ReadContext {
   base: string
   styles: StyleSheet
   numbering: Numbering
-}
-
-export interface ListInfo {
-  numId: string
-  level: number
-  ordered: boolean
-  start: number
-}
-
-export interface BlockItem {
-  node: WriterNode
-  list?: ListInfo
 }
 
 export function readText(files: PackageFiles, path: string): string | null {

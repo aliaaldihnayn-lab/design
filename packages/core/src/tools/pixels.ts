@@ -34,6 +34,32 @@ import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
 const pointSchema = v.strictObject({ x: v.number(), y: v.number() })
 const unitSchema = v.optional(toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(1))))
+/** A brush stroke's path through the layer and the tip it is drawn with. */
+const strokeInputs = {
+  points: v.pipe(v.array(pointSchema), v.minLength(1), v.maxLength(2000)),
+  size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.maxValue(2000))), 24),
+  hardness: unitSchema,
+  opacity: unitSchema
+}
+
+/** The tip a stroke's inputs describe, `hardness` unless they give their own. */
+function brushTip(
+  args: { size: number; hardness?: number; opacity?: number },
+  hardness: number
+): BrushTip {
+  return { size: args.size, hardness: args.hardness ?? hardness, opacity: args.opacity ?? 1 }
+}
+
+/** Dabs the tip at the first point and then along each segment, evenly spaced across them. */
+function strokeThrough(points: Vector[], tip: BrushTip, dab: (at: Vector) => void) {
+  let carry = 0
+  dab(points[0])
+  for (let i = 1; i < points.length; i++) {
+    const stroke = strokeDabs(points[i - 1], points[i], dabSpacing(tip), carry)
+    for (const centre of stroke.dabs) dab(centre)
+    carry = stroke.carry
+  }
+}
 
 type Loaded = { node: SceneNode; surface: PixelSurface; codec: RasterCodec } | { error: string }
 
@@ -102,21 +128,14 @@ export const paintPixels = defineTool({
   input: v.strictObject({
     id: nodeIdInputSchema,
     tool: v.optional(v.picklist(['brush', 'eraser']), 'brush'),
-    points: v.pipe(v.array(pointSchema), v.minLength(1), v.maxLength(2000)),
     color: v.optional(v.pipe(v.string(), v.description('Brush colour (hex); default black'))),
-    size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.maxValue(2000))), 24),
-    hardness: unitSchema,
-    opacity: unitSchema
+    ...strokeInputs
   }),
   execute: (figma, args) => {
+    const tip = brushTip(args, 0.8)
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface, codec } = loaded
-    const tip: BrushTip = {
-      size: args.size,
-      hardness: args.hardness ?? 0.8,
-      opacity: args.opacity ?? 1
-    }
     const color = args.color ? parseColor(args.color) : { ...BLACK }
     const before = surface.paint.data.slice()
     const coverage = createStrokeCoverage(surface.paint)
@@ -125,13 +144,7 @@ export const paintPixels = defineTool({
       else paintDab(surface.paint, before, coverage, at, tip, color)
     }
     const points = args.points.map((point) => toGrid(node, surface, point))
-    let carry = 0
-    dab(points[0])
-    for (let i = 1; i < points.length; i++) {
-      const stroke = strokeDabs(points[i - 1], points[i], dabSpacing(tip), carry)
-      for (const centre of stroke.dabs) dab(centre)
-      carry = stroke.carry
-    }
+    strokeThrough(points, tip, dab)
     const failure = savePaint(figma, node, surface, codec)
     if (failure) return failure
     return { id: node.id, grid: { width: surface.width, height: surface.height } }
@@ -254,21 +267,14 @@ export const clonePixels = defineTool({
   input: v.strictObject({
     id: nodeIdInputSchema,
     source: pointSchema,
-    points: v.pipe(v.array(pointSchema), v.minLength(1), v.maxLength(2000)),
-    heal: v.optional(v.boolean(), false),
-    size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.maxValue(2000))), 24),
-    hardness: unitSchema,
-    opacity: unitSchema
+    ...strokeInputs,
+    heal: v.optional(v.boolean(), false)
   }),
   execute: (figma, args) => {
+    const tip = brushTip(args, 0.5)
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface, codec } = loaded
-    const tip: BrushTip = {
-      size: args.size,
-      hardness: args.hardness ?? 0.5,
-      opacity: args.opacity ?? 1
-    }
     const points = args.points.map((point) => toGrid(node, surface, point))
     const source = toGrid(node, surface, args.source)
     const sampling = {
@@ -282,13 +288,7 @@ export const clonePixels = defineTool({
       healing
         ? healDab(surface.paint, before, coverage, at, tip, healing)
         : cloneDab(surface.paint, before, coverage, at, tip, sampling)
-    let carry = 0
-    dab(points[0])
-    for (let i = 1; i < points.length; i++) {
-      const stroke = strokeDabs(points[i - 1], points[i], dabSpacing(tip), carry)
-      for (const centre of stroke.dabs) dab(centre)
-      carry = stroke.carry
-    }
+    strokeThrough(points, tip, dab)
     if (healing) finishHealingStroke(surface.paint, before, coverage, healing)
     const failure = savePaint(figma, node, surface, codec)
     if (failure) return failure

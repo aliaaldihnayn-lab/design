@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { converter } from 'culori'
 
-import { FigmaAPI } from '@lawha/core/figma-api'
+import { FigmaAPI, type FigmaComponentSetNode, type FigmaNodeProxy } from '@lawha/core/figma-api'
 import { ALL_TOOLS } from '@lawha/core/tools'
 import { SceneGraph } from '@lawha/scene-graph'
 import { getSharedStyles } from '@lawha/scene-graph/shared-styles'
@@ -34,6 +34,9 @@ const hex = (h: string) => ({
 const fill = (h: string) => [{ type: 'SOLID' as const, color: hex(h), opacity: 1, visible: true }]
 
 /** A screen with a white background, dark and grey text at 28/16/12, and an indigo button. */
+const isComponentSet = (node: FigmaNodeProxy): node is FigmaComponentSetNode =>
+  node.type === 'COMPONENT_SET'
+
 function design() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
@@ -177,10 +180,8 @@ describe('components', () => {
     ])
     const button = must(figma.getNodeById(out.components[0].id))
     expect(button.type).toBe('COMPONENT_SET')
-    const definitions = button.componentPropertyDefinitions as Record<
-      string,
-      { type: string; defaultValue: unknown; variantOptions?: string[] }
-    >
+    if (!isComponentSet(button)) throw new Error('not a component set')
+    const definitions = button.componentPropertyDefinitions
     expect(definitions.Variant.variantOptions).toEqual(['Primary', 'Secondary', 'Ghost'])
     expect(definitions.State.variantOptions).toEqual(['Default', 'Hover', 'Disabled'])
     const labelKey = must(Object.keys(definitions).find((key) => key.startsWith('Label#')))

@@ -1,5 +1,7 @@
 import type { SceneGraph } from '@lawha/scene-graph'
 import { colorToHex } from '@lawha/scene-graph/color'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import type { PDFPageComposer } from '#core/io/formats/pdf/export'
 
@@ -24,18 +26,11 @@ export function markMargin(layout: SheetLayout): number {
   return layout.cropMarks ? MARK_GAP + MARK_LENGTH + 3 : 0
 }
 
-interface Box {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
 /** Tolerance, in points, for a guide or cut line to line up with the sheet. */
 const ALIGN_TOLERANCE = 0.5
 const HAIRLINE = 0.02
 
-function absoluteBox(graph: SceneGraph, id: string): Box | null {
+function absoluteRect(graph: SceneGraph, id: string): Rect | null {
   const node = graph.getNode(id)
   if (!node) return null
   const at = graph.getAbsolutePosition(id)
@@ -48,13 +43,13 @@ function absoluteBox(graph: SceneGraph, id: string): Box | null {
  * outlined by a bleed guide covering the sheet, with its cut lines on the trim.
  */
 export function artworkBleed(graph: SceneGraph, nodeId: string): number | null {
-  const sheet = absoluteBox(graph, nodeId)
+  const sheet = absoluteRect(graph, nodeId)
   if (!sheet) return null
-  const cuts: Box[] = []
-  const guides: Box[] = []
+  const cuts: Rect[] = []
+  const guides: Rect[] = []
   const visit = (id: string, depth: number) => {
     for (const child of graph.getChildren(id)) {
-      const box = absoluteBox(graph, child.id)
+      const box = absoluteRect(graph, child.id)
       if (box && child.name === BLEED_GUIDE_NAME) guides.push(box)
       // A straight cut is a hairline vector, given a hundredth of a point across.
       if (box && child.name === DIELINE_SPOTS.cut.name)
@@ -86,22 +81,14 @@ export function artworkBleed(graph: SceneGraph, nodeId: string): number | null {
 }
 
 /** The layers' trim: the union of their boxes on the canvas. */
-function trimBox(graph: SceneGraph, nodeIds: readonly string[]): Box | null {
+function trimBox(graph: SceneGraph, nodeIds: readonly string[]): Rect | null {
   const boxes = nodeIds.flatMap((id) => {
     const node = graph.getNode(id)
     if (!node?.visible) return []
     const at = graph.getAbsolutePosition(id)
-    return [{ x: at.x, y: at.y, right: at.x + node.width, bottom: at.y + node.height }]
+    return [{ x: at.x, y: at.y, width: node.width, height: node.height }]
   })
-  if (boxes.length === 0) return null
-  const x = Math.min(...boxes.map((box) => box.x))
-  const y = Math.min(...boxes.map((box) => box.y))
-  return {
-    x,
-    y,
-    width: Math.max(...boxes.map((box) => box.right)) - x,
-    height: Math.max(...boxes.map((box) => box.bottom)) - y
-  }
+  return boxes.length === 0 ? null : computeBounds(boxes)
 }
 
 function hex(color: { r: number; g: number; b: number }): string {
@@ -119,7 +106,7 @@ function bleedBackground(graph: SceneGraph, nodeIds: readonly string[]): string 
   return alpha >= 1 ? hex(fill.color) : null
 }
 
-function cropMarks(trim: Box, offset: number, bleed: number): string {
+function cropMarks(trim: Rect, offset: number, bleed: number): string {
   const near = bleed + MARK_GAP
   const far = near + MARK_LENGTH
   const left = offset

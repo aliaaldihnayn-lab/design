@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { figArchiveOf, readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
+import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '#fig-tests/helpers/heavy'
 import { parseFigBuffer } from '#fig/archive'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
 import {
@@ -52,25 +53,30 @@ test('record headers keep only their header fields and decode whole into the eag
 })
 
 // The archive reader keeps records as headers and decodes each whole when a read needs it; the
-// document it builds must match one built from records decoded whole up front.
-test('an archive reader with record headers builds the document records decoded whole build', () => {
-  const bytes = readFixtureArrayBuffer(FIXTURE)
-  const parsed = parseFigBuffer(bytes.slice(0))
-  const options = { derivedBounds: true, onUnresolvedProperty: () => undefined }
+// document it builds must match one built from records decoded whole up front. Building the
+// fixture twice makes it heavy.
+test.if(runsHeavyTests)(
+  'an archive reader with record headers builds the document records decoded whole build',
+  () => {
+    const bytes = readFixtureArrayBuffer(FIXTURE)
+    const parsed = parseFigBuffer(bytes.slice(0))
+    const options = { derivedBounds: true, onUnresolvedProperty: () => undefined }
 
-  const previousSession = setIdSession(TEST_SESSION)
-  try {
-    const whole = materializeDocument(parsed.nodeChanges, parsed.blobs, {
-      ...options,
-      images: new Map(parsed.images)
-    })
-    const lazy = materializeFigArchive(bytes.slice(0), options)
+    const previousSession = setIdSession(TEST_SESSION)
+    try {
+      const whole = materializeDocument(parsed.nodeChanges, parsed.blobs, {
+        ...options,
+        images: new Map(parsed.images)
+      })
+      const lazy = materializeFigArchive(bytes.slice(0), options)
 
-    expect(canonical(lazy.graph)).toBe(canonical(whole.graph))
-  } finally {
-    setIdSession(previousSession)
-  }
-})
+      expect(canonical(lazy.graph)).toBe(canonical(whole.graph))
+    } finally {
+      setIdSession(previousSession)
+    }
+  },
+  HEAVY_TEST_TIMEOUT_MS
+)
 
 // A file whose layers each name the other as parent cannot be read; reading those records must
 // fail as a document read whole fails, not by recursing until the stack runs out. The archive

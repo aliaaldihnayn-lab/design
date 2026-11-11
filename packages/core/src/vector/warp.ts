@@ -1,6 +1,8 @@
 import type { MeshHandleSide, MeshPoint, WarpPreset } from '@lawha/scene-graph/path-effects'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
+import { controlPolygonLength, splitCubicAt } from '#core/vector/curve-math'
+
 /** How a warp bends: `bend` and both distortions run from −1 to 1, as Illustrator's percentages. */
 export interface WarpOptions {
   preset: WarpPreset
@@ -229,35 +231,17 @@ export function resampleMesh(
   return flatMeshPoints(nextRows, nextColumns).map((point) => map(point))
 }
 
-function lerp(a: Vector, b: Vector, t: number): Vector {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
-}
-
 /** Splits a cubic at `t`: the control points and end of each half. */
 function splitCubic(
   p0: Vector,
   [p1, p2, p3]: [Vector, Vector, Vector],
   t: number
 ): [[Vector, Vector, Vector], [Vector, Vector, Vector]] {
-  const a = lerp(p0, p1, t)
-  const b = lerp(p1, p2, t)
-  const c = lerp(p2, p3, t)
-  const d = lerp(a, b, t)
-  const e = lerp(b, c, t)
-  const f = lerp(d, e, t)
+  const { left, right } = splitCubicAt(p0, p1, p2, p3, t)
   return [
-    [a, d, f],
-    [e, c, p3]
+    [left.cp1, left.cp2, left.p3],
+    [right.cp1, right.cp2, right.p3]
   ]
-}
-
-/** A cubic's control polygon length, an upper bound on its arc length. */
-function polygonLength(p0: Vector, [p1, p2, p3]: [Vector, Vector, Vector]): number {
-  return (
-    Math.hypot(p1.x - p0.x, p1.y - p0.y) +
-    Math.hypot(p2.x - p1.x, p2.y - p1.y) +
-    Math.hypot(p3.x - p2.x, p3.y - p2.y)
-  )
 }
 
 /**
@@ -272,7 +256,10 @@ export function subdivideContour(
   const segments: [Vector, Vector, Vector][] = []
   let from = contour.start
   for (const segment of contour.segments) {
-    const pieces = Math.max(1, Math.min(maxPieces, Math.ceil(polygonLength(from, segment) / step)))
+    const pieces = Math.max(
+      1,
+      Math.min(maxPieces, Math.ceil(controlPolygonLength(from, ...segment) / step))
+    )
     let rest = segment
     let restStart = from
     for (let piece = pieces; piece > 1; piece--) {

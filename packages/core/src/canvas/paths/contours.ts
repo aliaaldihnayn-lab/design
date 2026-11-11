@@ -10,7 +10,7 @@ interface Contour {
 }
 
 /** How many numbers follow each path verb. */
-function verbArgs(ck: CanvasKit): Map<number, number> {
+export function verbArgs(ck: CanvasKit): Map<number, number> {
   return new Map<number, number>([
     [ck.MOVE_VERB, 2],
     [ck.LINE_VERB, 2],

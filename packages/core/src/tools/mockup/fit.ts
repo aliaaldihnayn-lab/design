@@ -1,14 +1,11 @@
+import type { Size } from '@lawha/scene-graph/primitives'
+
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 
 export type Fit = 'contain' | 'cover'
 
-export interface Box {
-  width: number
-  height: number
-}
-
 /** The uniform scale that fits `content` into `target`. */
-export function fitScale(content: Box, target: Box, fit: Fit): number {
+export function fitScale(content: Size, target: Size, fit: Fit): number {
   const sx = target.width / content.width
   const sy = target.height / content.height
   return fit === 'cover' ? Math.max(sx, sy) : Math.min(sx, sy)
@@ -21,7 +18,7 @@ export function fitScale(content: Box, target: Box, fit: Fit): number {
 export function placeCopy(
   source: FigmaNodeProxy,
   container: FigmaNodeProxy,
-  target: Box,
+  target: Size,
   fit: Fit
 ): FigmaNodeProxy {
   if (source.width <= 0 || source.height <= 0) throw new Error(`Node ${source.id} has no size`)

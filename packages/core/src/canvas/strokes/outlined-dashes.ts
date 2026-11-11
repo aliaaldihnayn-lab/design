@@ -3,6 +3,7 @@ import type { Canvas, CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
 import type { SceneNode, Stroke } from '@lawha/scene-graph'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
+import { verbArgs } from '#core/canvas/paths/contours'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import { getStrokeCapEntity, getStrokeJoinEntity } from '#core/canvas/strokes'
@@ -192,14 +193,7 @@ function forEachVerb(
   visit: (verb: number, args: Float32Array) => void
 ): void {
   const cmds = path.toCmds()
-  const counts = new Map([
-    [ck.MOVE_VERB, 2],
-    [ck.LINE_VERB, 2],
-    [ck.QUAD_VERB, 4],
-    [ck.CONIC_VERB, 5],
-    [ck.CUBIC_VERB, 6],
-    [ck.CLOSE_VERB, 0]
-  ])
+  const counts = verbArgs(ck)
   for (let index = 0; index < cmds.length;) {
     const verb = cmds[index]
     const count = counts.get(verb) ?? 0

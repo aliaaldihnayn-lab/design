@@ -2,12 +2,15 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { ExportFormat, RasterExportFormat } from './render'
 
-/** Unpremultiplied sRGB RGBA pixels, row-major with no padding. */
-export interface RGBAImage {
+/** A `width` × `height` grid of bytes, row-major with no padding; its user says what they mean. */
+export interface ByteGrid {
   width: number
   height: number
   data: Uint8Array
 }
+
+/** Unpremultiplied sRGB RGBA pixels, four bytes each. */
+export type RGBAImage = ByteGrid
 
 /** Decode and encode raster images for pixel-level tools; backed by CanvasKit in app and CLI. */
 export interface RasterCodec {

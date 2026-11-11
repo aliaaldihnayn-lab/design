@@ -1,10 +1,11 @@
 import type { Element } from '@xmldom/xmldom'
 import { unzipSync } from 'fflate'
 
-import { buildLists } from '#core/writer/lists'
+import { buildLists, type ListedBlock, type ListPlace } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
+  mergeText,
   type PageSetup,
   type WriterComment,
   type WriterDocument,
@@ -19,12 +20,10 @@ import {
   readStyles,
   readText,
   resolvePath,
-  type BlockItem,
   type PackageFiles,
-  type ListInfo,
   type ReadContext
 } from './context'
-import { mergeText, readInlines, type InlineState } from './inline'
+import { readInlines, type InlineState } from './inline'
 import {
   documentDefaults,
   effectiveParagraph,
@@ -79,15 +78,15 @@ function readAlignment(jc: string | null, rtl: boolean): string | null {
 }
 
 /** The list a numbered paragraph is an item of, from its own numbering or its style's. */
-function listOf(props: ParagraphProperties, context: ReadContext): ListInfo | undefined {
+function listOf(props: ParagraphProperties, context: ReadContext): ListPlace | undefined {
   const numId = props.numId
   if (!numId || numId === '0') return undefined
   const level = props.ilvl ?? 0
   const info = context.numbering.levels.get(numId)?.[level]
-  return info ? { numId, level, ordered: info.ordered, start: info.start } : undefined
+  return info ? { id: numId, level, ordered: info.ordered, start: info.start } : undefined
 }
 
-function readParagraph(p: Element, state: InlineState): BlockItem[] {
+function readParagraph(p: Element, state: InlineState): ListedBlock[] {
   const { context } = state
   const pPr = kid(p, 'pPr')
   const sheet = context.styles
@@ -113,7 +112,7 @@ function readParagraph(p: Element, state: InlineState): BlockItem[] {
   const list = listOf(props, context)
 
   const items = readInlines(p, state, [])
-  const blocks: BlockItem[] = []
+  const blocks: ListedBlock[] = []
   let current: WriterNode[] = []
   let sawBreak = false
   for (const item of items) {
@@ -199,7 +198,7 @@ function countItems(node: WriterNode): number {
 }
 
 export function readSourcedBlocks(parent: Element, state: InlineState): SourcedBlock[] {
-  const items: Array<BlockItem & { owner: Element }> = []
+  const items: Array<ListedBlock & { owner: Element }> = []
   const visit = (container: Element, owner: Element | null) => {
     for (const child of kids(container)) {
       const top = owner ?? child
@@ -223,13 +222,7 @@ export function readSourcedBlocks(parent: Element, state: InlineState): SourcedB
     }
   }
   visit(parent, null)
-  const blocks = buildLists(
-    items.map((item) =>
-      item.list
-        ? { node: item.node, list: { ...item.list, id: item.list.numId } }
-        : { node: item.node }
-    )
-  )
+  const blocks = buildLists(items)
   // A list consumed one item per list item in it; any other block, one item.
   let index = 0
   return blocks.map((node) => {

@@ -13,9 +13,15 @@ export {
 
 export { blendShapes, editBlend, expandBlend, releaseBlend } from './vector/blend'
 
-export { offsetPath, outlineStroke, setPatternFill, widthProfile } from './vector/path-effects'
+export { offsetPath, outlineStroke, setPatternFill, widthProfile } from './vector/effects'
 
-export { imageTrace, traceSettings, TRACE_DETAIL, type TraceDetail } from './vector/trace'
+export {
+  imageTrace,
+  traceableImageFill,
+  traceSettings,
+  TRACE_DETAIL,
+  type TraceDetail
+} from './vector/trace'
 
 export { pathFlip, pathGet, pathMove, pathScale, pathSet } from './vector/path'
 

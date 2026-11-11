@@ -7,8 +7,8 @@ import {
   SOCIAL_FORMATS,
   type SocialFormatId
 } from '#core/tools/mockup/presets'
-import { fitInputSchema } from '#core/tools/mockup/schema'
-import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
+import { copyGapInputSchema, fitInputSchema } from '#core/tools/mockup/schema'
+import { defineTool, nodeSummary, pagePositionInputs, requireNode } from '#core/tools/schema'
 
 const formatSchema = v.pipe(
   v.picklist(SOCIAL_FORMAT_IDS),
@@ -43,12 +43,7 @@ export const createSocialPost = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     format: formatSchema,
-    x: v.optional(
-      toolNumber(
-        v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
-      )
-    ),
-    y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0')))),
+    ...pagePositionInputs,
     name: v.optional(v.pipe(v.string(), v.description('Frame name')))
   }),
   execute: (figma, args) => {
@@ -77,10 +72,7 @@ export const resizeForPlatforms = defineTool({
       v.description('Target formats')
     ),
     fit: fitInputSchema,
-    gap: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Space between copies'))),
-      100
-    )
+    gap: copyGapInputSchema
   }),
   execute: (figma, args) => {
     const source = requireNode(figma, args.id)

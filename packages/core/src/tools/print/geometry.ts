@@ -1,3 +1,5 @@
+import type { Rect } from '@lawha/scene-graph/primitives'
+
 /**
  * Die-line geometry from flat pieces. A product is a set of polygons laid out on the sheet; an
  * edge two pieces share is a fold (crease) and an edge only one piece has is a cut. Holes and
@@ -11,13 +13,7 @@ export interface Piece {
   points: readonly Point[]
 }
 
-export interface Panel {
-  name: string
-  x: number
-  y: number
-  width: number
-  height: number
-}
+export type Panel = Rect & { name: string }
 
 export interface DieLine {
   /** Trim box size: the bounding box of every piece. */

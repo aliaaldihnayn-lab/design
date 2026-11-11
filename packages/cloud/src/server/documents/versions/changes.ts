@@ -5,15 +5,13 @@ import {
   type DocumentHistoryPage
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
-import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
-import { getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import { historyStart } from './history'
+import { historyDocument, historyStart } from './history'
 
 const DEFAULT_PAGE_SIZE = 100
 const MAXIMUM_PAGE_SIZE = 500
@@ -37,11 +35,7 @@ export function createDocumentChangeService(
   const now = options.now ?? (() => new Date())
 
   async function open(userId: string, documentId: string, edit: boolean) {
-    const access = await resolveDocumentAccess(database, userId, documentId)
-    if (!access) throw new DocumentNotFoundError()
-    if (edit && !canEditDocument(access)) throw new DocumentForbiddenError()
-    const document = await getDocumentSummaryRow(database, documentId)
-    if (!document) throw new DocumentNotFoundError()
+    const document = await historyDocument(database, userId, documentId, edit)
     return historyStart(options.policy, deploymentMode, document.workspaceId, now())
   }
 

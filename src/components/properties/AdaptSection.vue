@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import {
-  ALL_TOOLS,
-  PRINT_PRODUCT_IDS,
-  type PrintProductId,
-  type ToolDef
-} from '@lawha/core/tools'
+import { ALL_TOOLS, PRINT_PRODUCT_IDS, type PrintProductId, type ToolDef } from '@lawha/core/tools'
 import { usePrintMessages } from '@lawha/vue/i18n'
 
 import { runEditorTool } from '@/app/ai/tools/runner'
@@ -14,6 +9,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
@@ -90,28 +86,30 @@ async function run(name: string, args: Record<string, unknown>) {
 <template>
   <PanelSection :label="print.section" data-test-id="adapt-section">
     <div class="flex flex-col gap-1.5">
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="adapt-to-screens"
-        :title="print.toScreensHint"
-        :disabled="busy"
-        @click="run('resize_for_screens', {})"
-      >
-        <icon-lucide-monitor-smartphone class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ print.toScreens }}</span>
-      </AppButton>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="adapt-to-social"
-        :title="print.toSocialHint"
-        :disabled="busy"
-        @click="run('resize_for_platforms', { formats: SOCIAL_FORMATS })"
-      >
-        <icon-lucide-share-2 class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ print.toSocial }}</span>
-      </AppButton>
+      <Tip :label="print.toScreensHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="adapt-to-screens"
+          :disabled="busy"
+          @click="run('resize_for_screens', {})"
+        >
+          <icon-lucide-monitor-smartphone class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ print.toScreens }}</span>
+        </AppButton>
+      </Tip>
+      <Tip :label="print.toSocialHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="adapt-to-social"
+          :disabled="busy"
+          @click="run('resize_for_platforms', { formats: SOCIAL_FORMATS })"
+        >
+          <icon-lucide-share-2 class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ print.toSocial }}</span>
+        </AppButton>
+      </Tip>
       <div class="mt-1 flex items-center gap-1.5">
         <AppSelect
           v-model="product"
@@ -121,17 +119,18 @@ async function run(name: string, args: Record<string, unknown>) {
           data-test-id="print-product"
         />
       </div>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="convert-to-dieline"
-        :title="print.toDielineHint"
-        :disabled="busy"
-        @click="run('convert_to_dieline', { product })"
-      >
-        <icon-lucide-scissors class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ print.toDieline }}</span>
-      </AppButton>
+      <Tip :label="print.toDielineHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="convert-to-dieline"
+          :disabled="busy"
+          @click="run('convert_to_dieline', { product })"
+        >
+          <icon-lucide-scissors class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ print.toDieline }}</span>
+        </AppButton>
+      </Tip>
     </div>
   </PanelSection>
 </template>
