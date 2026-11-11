@@ -18,6 +18,7 @@ import type { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { MeshPointSelection } from '#core/canvas/live-effect-handles'
 import type { RulerTheme, ShapeBuilderHover, SkiaRenderer } from '#core/canvas/renderer'
 import type {
   MeasurementMode,
@@ -186,6 +187,8 @@ export interface EditorViewState {
   pencilState: PencilState | null
   /** The regions the Shape Builder tool would merge or delete. */
   shapeBuilderHover: ShapeBuilderHover | null
+  /** The envelope mesh points picked on the canvas, by index, whose curve handles show. */
+  meshPointSelection: MeshPointSelection | null
   /** The pixel tools' brush cursor, selection outline, and marquee. */
   pixelOverlay: PixelOverlay | null
   autoLayoutHover: {

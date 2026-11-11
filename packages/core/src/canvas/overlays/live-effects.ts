@@ -46,11 +46,11 @@ export function drawLiveEffectHandles(
     canvas.drawPath(screen, line)
     screen.delete()
   }
-  const square = (x: number, y: number) => {
+  const square = (x: number, y: number, picked = false) => {
     const at = toScreen(x, y)
     const half = POINT_SIZE / 2
     const rect = r.ck.XYWHRect(at.x - half, at.y - half, POINT_SIZE, POINT_SIZE)
-    canvas.drawRect(rect, fill)
+    canvas.drawRect(rect, picked ? solid : fill)
     canvas.drawRect(rect, line)
   }
   const dot = (x: number, y: number) => {
@@ -67,7 +67,7 @@ export function drawLiveEffectHandles(
       arm(handle.fromX, handle.fromY, handle.x, handle.y)
       dot(handle.x, handle.y)
     }
-    for (const point of handles.points) square(point.x, point.y)
+    for (const point of handles.points) square(point.x, point.y, point.picked)
   } else {
     for (const point of handles.points) {
       arm(point.left.x, point.left.y, point.right.x, point.right.y)

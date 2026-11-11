@@ -67,6 +67,30 @@ describe('envelope mesh handles on the canvas', () => {
     })
   })
 
+  test('handles show only for picked points; Shift adds and removes points', async () => {
+    const { editor } = await meshedRectangle()
+    const handleCount = () => {
+      const shown = editor.liveEffectHandles()
+      return shown?.kind === 'mesh' ? shown.handles.length : -1
+    }
+    expect(handleCount()).toBe(0)
+    const press = (x: number, y: number, shift = false) => {
+      const target = editor.liveEffectHandleAt(x, y)
+      if (!target) throw new Error('no handle')
+      editor.beginLiveEffectDrag(target.nodeId, target.hit, { shift })?.commit()
+    }
+    // The middle point has four handles, a corner two.
+    press(50, 50)
+    expect(handleCount()).toBe(4)
+    press(0, 0, true)
+    expect(handleCount()).toBe(6)
+    press(50, 50, true)
+    expect(handleCount()).toBe(2)
+    press(100, 100)
+    expect(handleCount()).toBe(2)
+    expect(editor.state.meshPointSelection?.indices).toEqual([8])
+  })
+
   test('dragging a point reshapes live, and one undo puts it back', async () => {
     const { editor, id } = await meshedRectangle()
     const target = editor.liveEffectHandleAt(100, 100)

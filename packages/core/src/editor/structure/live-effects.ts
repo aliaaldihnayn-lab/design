@@ -87,6 +87,19 @@ export function createLiveEffectActions(ctx: EditorContext) {
     return renderer ? liveEffectHandlesForState(renderer, ctx.graph, ctx.state) : null
   }
 
+  /**
+   * Picks a mesh point, whose curve handles then show: alone, or with Shift added to the points
+   * already picked, or taken out of them when it was one, as Illustrator's Direct Selection does.
+   */
+  function pickMeshPoint(nodeId: string, index: number, extend: boolean) {
+    const current = ctx.state.meshPointSelection
+    const kept = extend && current?.nodeId === nodeId ? current.indices : []
+    let indices = [...kept, index]
+    if (kept.includes(index)) indices = extend ? kept.filter((i) => i !== index) : kept
+    ctx.state.meshPointSelection = { nodeId, indices }
+    ctx.requestRepaint()
+  }
+
   /** The live effect handle under a canvas point, and the layer it belongs to. */
   function liveEffectHandleAtPoint(cx: number, cy: number) {
     const renderer = ctx.getRenderer()
@@ -141,12 +154,14 @@ export function createLiveEffectActions(ctx: EditorContext) {
   function beginLiveEffectDrag(
     nodeId: string,
     hit: LiveEffectHandleHit,
-    options: { alt?: boolean } = {}
+    options: { alt?: boolean; shift?: boolean } = {}
   ): LiveEffectDrag | null {
     const renderer = ctx.getRenderer()
     const node = ctx.graph.getNode(nodeId)
     const effect = node && pathEffectOf(node)
     if (!renderer || !node || !effect) return null
+    if (effect.kind === 'mesh' && hit.kind === 'mesh-point')
+      pickMeshPoint(nodeId, hit.row * (effect.columns + 1) + hit.column, options.shift === true)
     const before = pick(node, LIVE_EFFECT_FIELDS)
     const apply = (settings: PathEffectSettings | null) => {
       const current = ctx.graph.getNode(nodeId)
@@ -213,6 +228,7 @@ export function createLiveEffectActions(ctx: EditorContext) {
     liveEffectHandles: handles,
     liveEffectHandleAt: liveEffectHandleAtPoint,
     makeLiveWidth,
+    pickMeshPoint,
     beginLiveEffectDrag
   }
 }

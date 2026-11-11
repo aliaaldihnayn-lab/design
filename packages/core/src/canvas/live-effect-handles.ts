@@ -27,7 +27,7 @@ export interface MeshHandles {
   nodeId: string
   rows: number
   columns: number
-  points: { row: number; column: number; x: number; y: number }[]
+  points: { row: number; column: number; x: number; y: number; picked: boolean }[]
   handles: MeshHandleMark[]
   /** The mesh's edges as SVG path data. */
   grid: string
@@ -61,6 +61,12 @@ export type LiveEffectHandleHit =
   | { kind: 'width-point'; index: number; along: boolean }
   | { kind: 'width-path'; t: number }
 
+/** The envelope mesh points picked on the canvas, by index row by row, on one layer. */
+export interface MeshPointSelection {
+  nodeId: string
+  indices: number[]
+}
+
 /** What decides whose live effect handles a canvas pane shows. */
 export interface LiveEffectHandleState {
   activeTool: string
@@ -68,6 +74,7 @@ export interface LiveEffectHandleState {
   hoveredNodeId: string | null
   editingTextId: string | null
   nodeEditState?: unknown
+  meshPointSelection?: MeshPointSelection | null
 }
 
 /** Which live effect's handles each tool shows: a width profile's or an envelope mesh's. */
@@ -103,7 +110,12 @@ export function liveEffectHandlesForState(
   if (!node) return null
   return state.activeTool === 'WIDTH'
     ? widthHandlesFor(r, graph, node)
-    : meshHandlesFor(r, graph, node)
+    : meshHandlesFor(r, graph, node, pickedPoints(state.meshPointSelection, node.id))
+}
+
+/** The picked mesh points of a layer, none when the pick belongs to another layer. */
+function pickedPoints(selection: MeshPointSelection | null | undefined, nodeId: string) {
+  return new Set(selection?.nodeId === nodeId ? selection.indices : [])
 }
 
 const SIDES: readonly MeshHandleSide[] = ['left', 'right', 'up', 'down']
@@ -156,7 +168,9 @@ function handleEndIn(
 export function meshHandlesFor(
   r: SkiaRenderer,
   graph: SceneGraph,
-  node: SceneNode
+  node: SceneNode,
+  /** Points, by index, whose curve handles show; Illustrator shows only the picked ones. */
+  picked: ReadonlySet<number> = new Set()
 ): MeshHandles | null {
   const effect = pathEffectOf(node)
   if (effect?.kind !== 'mesh') return null
@@ -175,8 +189,15 @@ export function meshHandlesFor(
     for (let column = 0; column <= columns; column++) {
       const point = mesh.points[row * (columns + 1) + column]
       const at = toCanvas(point)
-      points.push({ row, column, x: at.x, y: at.y })
-      for (const side of SIDES) {
+      points.push({
+        row,
+        column,
+        x: at.x,
+        y: at.y,
+        picked: picked.has(row * (columns + 1) + column)
+      })
+      const sides = picked.has(row * (columns + 1) + column) ? SIDES : []
+      for (const side of sides) {
         const end = handleEndIn(mesh.points, columns, rows, row, column, side)
         if (!end) continue
         const mark = toCanvas(end)

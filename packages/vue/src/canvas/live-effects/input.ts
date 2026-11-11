@@ -15,7 +15,10 @@ export function startLiveEffectDrag(
 ): boolean {
   const target = editor.liveEffectHandleAt(cx, cy)
   if (!target) return false
-  const session = editor.beginLiveEffectDrag(target.nodeId, target.hit, { alt: event.altKey })
+  const session = editor.beginLiveEffectDrag(target.nodeId, target.hit, {
+    alt: event.altKey,
+    shift: event.shiftKey
+  })
   // Alt on a width point removes it at once; the press is still taken.
   if (!session) return true
   setDrag({
