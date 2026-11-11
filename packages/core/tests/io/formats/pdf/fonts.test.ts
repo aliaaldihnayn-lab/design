@@ -1,9 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
+import { fontFixture } from '#core-tests/helpers/paths'
 import { toUint8Array } from 'js-base64'
 
 import {
@@ -49,11 +47,6 @@ function font(
   }
 }
 
-const fixture = async (name: string) => {
-  const data = await readFile(join(FIXTURES, 'fonts', name))
-  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-}
-
 let inter: ArrayBuffer
 let interVariable: ArrayBuffer
 let cff: ArrayBuffer
@@ -61,8 +54,9 @@ let cff: ArrayBuffer
 beforeAll(async () => {
   // Static, as jsPDF embeds only static TrueType; the canvas labels' face.
   inter = expectDefined(await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'), 'Inter')
-  interVariable = await fixture('InterVariable-Latin.ttf')
-  cff = await fixture('NotoSansCJK-Test.otf')
+  // Inter's variable file as Core bundles it, which is in the repository itself, not in LFS.
+  interVariable = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
+  cff = await fontFixture('NotoSansCJK-Test.otf')
 })
 
 describe('PDF font embedding', () => {
