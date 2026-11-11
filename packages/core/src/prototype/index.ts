@@ -130,6 +130,7 @@ export {
   overlayOrigin,
   type GeometryStyle
 } from './smart-geometry'
+export {
   matchesQuery,
   readSuggestions,
   searchKey,
