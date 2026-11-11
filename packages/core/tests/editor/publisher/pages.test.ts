@@ -61,7 +61,7 @@ describe('the Pages panel', () => {
     expect(editor.graph.getNode(copy ?? '')?.childIds).toHaveLength(1)
     expect(editor.deletePublicationPage(pages[0].id)).toBe(true)
     expect(order()).toEqual(['Page 1', 'Page 2'])
-    expect(editor.publicationPageList()[0].id).toBe(copy)
+    expect(editor.publicationPageList()[0].id).toBe(copy ?? '')
     expect(editor.graph.getNode(copy ?? '')?.x).toBe(0)
   })
 
