@@ -88,6 +88,7 @@ async function build() {
   const def = ALL_TOOLS.find((tool) => tool.name === 'build_design_system')
   if (!def) return
   busy.value = true
+  const stepsBefore = store.undo.undoDepth
   try {
     const result = await runEditorTool({
       store,
@@ -110,6 +111,8 @@ async function build() {
     if (result.inconsistencies.length > 0)
       toast.warning(t.value.duplicates({ count: result.inconsistencies.length }))
     await buildKit()
+    // The tokens and the kit drawn in them are one build: undo takes both.
+    store.undo.mergeLastSteps(store.undo.undoDepth - stepsBefore)
   } catch (error) {
     toast.error(t.value.failed({ error: error instanceof Error ? error.message : String(error) }))
   } finally {

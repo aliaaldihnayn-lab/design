@@ -201,6 +201,26 @@ export class UndoManager {
     return true
   }
 
+  /**
+   * Folds the newest `count` committed steps into one, named after the oldest, so a command that
+   * ran several edits undoes as one. False when there are fewer steps or a batch is open.
+   */
+  mergeLastSteps(count: number): boolean {
+    if (count < 2 || this.undoStack.length < count || this.currentBatch) return false
+    const steps = this.undoStack.splice(-count)
+    this.undoStack.push({
+      label: steps[0].label,
+      forward: () => {
+        for (const step of steps) step.forward()
+      },
+      inverse: () => {
+        for (const step of steps.toReversed()) step.inverse()
+      }
+    })
+    this.onChange?.()
+    return true
+  }
+
   private replay(step: () => void) {
     this.replaying++
     try {
@@ -237,6 +257,11 @@ export class UndoManager {
   }
 
   /** Committed history, or changes in an open batch that a settling hook commits first. */
+  /** How many steps undo can take back. */
+  get undoDepth(): number {
+    return this.undoStack.length
+  }
+
   get canUndo(): boolean {
     if (this.undoStack.length > 0) return true
     return this.settlers.size > 0 && this.batches.some((batch) => batch.entries.length > 0)
