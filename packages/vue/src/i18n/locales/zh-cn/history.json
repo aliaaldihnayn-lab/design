@@ -52,5 +52,6 @@
   "actionUndo": "撤销了一次编辑",
   "actionRedo": "重做了一次编辑",
   "actionRestore": "恢复了一个版本",
-  "unknownAuthor": "你"
+  "unknownAuthor": "你",
+  "cloudVersions": "已保存到云端"
 }

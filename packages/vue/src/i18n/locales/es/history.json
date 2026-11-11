@@ -55,5 +55,6 @@
   "actionUndo": "Deshizo un cambio",
   "actionRedo": "Rehízo un cambio",
   "actionRestore": "Restauró una versión",
-  "unknownAuthor": "Tú"
+  "unknownAuthor": "Tú",
+  "cloudVersions": "Guardado en Lawha Cloud"
 }

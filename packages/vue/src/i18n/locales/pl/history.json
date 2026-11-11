@@ -58,5 +58,6 @@
   "actionUndo": "Cofnięto zmianę",
   "actionRedo": "Ponowiono zmianę",
   "actionRestore": "Przywrócono wersję",
-  "unknownAuthor": "Ty"
+  "unknownAuthor": "Ty",
+  "cloudVersions": "Zapisane w Lawha Cloud"
 }

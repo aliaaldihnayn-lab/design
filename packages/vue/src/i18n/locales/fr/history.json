@@ -55,5 +55,6 @@
   "actionUndo": "A annulé une modification",
   "actionRedo": "A rétabli une modification",
   "actionRestore": "A restauré une version",
-  "unknownAuthor": "Vous"
+  "unknownAuthor": "Vous",
+  "cloudVersions": "Enregistré sur Lawha Cloud"
 }

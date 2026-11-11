@@ -28,6 +28,7 @@ export {
   signingPageClient
 } from '../signatures/access'
 export { openingCloudLink } from '../sessions/startup'
+export { cloudWriterVersionBytes, cloudWriterVersions } from '../versions/writer'
 export { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 export {
   isVersionHistoryOpen,

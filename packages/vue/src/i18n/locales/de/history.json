@@ -55,5 +55,6 @@
   "actionUndo": "Änderung rückgängig gemacht",
   "actionRedo": "Änderung wiederholt",
   "actionRestore": "Version wiederhergestellt",
-  "unknownAuthor": "Du"
+  "unknownAuthor": "Du",
+  "cloudVersions": "In Lawha Cloud gespeichert"
 }
