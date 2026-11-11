@@ -3,12 +3,16 @@ import { computed } from 'vue'
 import { useHomeCloud } from '@/app/cloud/integration'
 import { recentFilesAvailable } from '@/app/recent-files/preferences'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import type { HomeLocation as HomeSidebarLocation } from '@/components/home/cloud/types'
 
 import { homeLocation, homeLocationChosen, type HomeLocation } from './location'
 
 /** A Home location as the sidebar and the phone menu name it. */
-export type HomeLocationView = HomeSidebarLocation
+export type HomeLocationView =
+  | { kind: 'recent'; id: 'recent' }
+  | { kind: 'workspace'; id: string }
+  | { kind: 'shared'; id: 'shared' }
+  | { kind: 'rooms'; id: 'rooms' }
+  | { kind: 'storage'; id: 'storage' }
 
 const VIEWS = {
   recent: { kind: 'recent', id: 'recent' },
