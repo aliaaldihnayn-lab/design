@@ -2,13 +2,11 @@
 import { computed, ref } from 'vue'
 import IconGrid3x3 from '~icons/lucide/grid-3x3'
 
-import {
-  WARP_PRESETS,
-  WIDTH_PROFILES,
-  type WarpPreset,
-  type WidthProfile
-} from '@lawha/core/vector'
+import { WIDTH_PROFILES, type WidthProfile } from '@lawha/core/vector'
+import { WARP_PRESETS, type WarpPreset } from '@lawha/scene-graph/path-effects'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 import { usePathMessages } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -18,6 +16,8 @@ import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import BlendFields from './BlendFields.vue'
+import LiveEffectFields from './LiveEffectFields.vue'
 import { usePathToolRun } from './run'
 
 /** The selected layers the section works on. */
@@ -49,6 +49,40 @@ const presetOptions = computed(() => {
 type Join = 'MITER' | 'ROUND' | 'BEVEL'
 
 const store = useEditorStore()
+
+/** The one selected layer's live warp, mesh, or width profile. */
+const live = useSceneComputed(() => {
+  if (nodeIds.length !== 1) return null
+  const node = store.graph.getNode(nodeIds[0])
+  const effect = node && readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.pathEffect)
+  return node && effect ? { nodeId: node.id, effect } : null
+})
+
+/** The live blend a selected layer is or sits in, and another selected layer to be its spine. */
+const liveBlend = useSceneComputed(() => {
+  for (const id of nodeIds) {
+    const node = store.graph.getNode(id)
+    const parent = node?.parentId ? store.graph.getNode(node.parentId) : undefined
+    for (const candidate of [node, parent]) {
+      const blend = candidate && readPluginData(candidate.pluginData, LAWHA_PLUGIN_DATA.liveBlend)
+      if (!candidate || !blend) continue
+      const other = nodeIds.find(
+        (otherId) => otherId !== id && otherId !== blend.fromId && otherId !== blend.toId
+      )
+      return { groupId: candidate.id, blend, spineCandidateId: other ?? null }
+    }
+  }
+  return null
+})
+
+const meshRows = ref(3)
+const meshColumns = ref(3)
+
+function makeMesh() {
+  if (nodeIds.length !== 1) return
+  void run('envelope_mesh', { id: nodeIds[0], rows: meshRows.value, columns: meshColumns.value })
+}
+
 const distance = ref(10)
 const join = ref<Join>('MITER')
 const profile = ref<WidthProfile>('taper-both')
@@ -119,6 +153,14 @@ function applyWarp() {
 <template>
   <PanelSection :label="paths.section" data-test-id="path-effects-section">
     <div class="flex flex-col gap-1.5">
+      <LiveEffectFields v-if="live" :node-id="live.nodeId" :effect="live.effect" class="mb-2" />
+      <BlendFields
+        v-if="liveBlend"
+        :group-id="liveBlend.groupId"
+        :blend="liveBlend.blend"
+        :spine-candidate-id="liveBlend.spineCandidateId"
+        class="mb-2"
+      />
       <PanelFieldGroup :label="paths.warpStyle">
         <AppSelect
           v-model="preset"
@@ -169,6 +211,40 @@ function applyWarp() {
         <span class="truncate">{{ paths.applyWarp }}</span>
       </AppButton>
 
+      <template v-if="nodeIds.length === 1 && !live">
+        <PanelGrid :columns="2" class="mt-2">
+          <PanelFieldGroup :label="paths.meshRows">
+            <NumberField
+              v-model="meshRows"
+              :min="1"
+              :max="16"
+              :step="1"
+              :aria-label="paths.meshRows"
+            />
+          </PanelFieldGroup>
+          <PanelFieldGroup :label="paths.meshColumns">
+            <NumberField
+              v-model="meshColumns"
+              :min="1"
+              :max="16"
+              :step="1"
+              :aria-label="paths.meshColumns"
+            />
+          </PanelFieldGroup>
+        </PanelGrid>
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="make-mesh"
+          :title="paths.makeMeshHint"
+          :disabled="busy"
+          @click="makeMesh"
+        >
+          <IconGrid3x3 class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.makeMesh }}</span>
+        </AppButton>
+      </template>
+
       <PanelGrid :columns="2" class="mt-2">
         <PanelFieldGroup :label="paths.offset">
           <NumberField
@@ -216,7 +292,7 @@ function applyWarp() {
         <span class="truncate">{{ paths.applyWidth }}</span>
       </AppButton>
 
-      <template v-if="pair">
+      <template v-if="pair && !liveBlend">
         <PanelFieldGroup :label="paths.blendSteps" class="mt-2">
           <NumberField
             v-model="blendSteps"

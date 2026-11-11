@@ -216,6 +216,18 @@ function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | 
   return null
 }
 
+/**
+ * Where a pattern's tiles sit on the layer: moved by its offset and turned about the layer's
+ * middle; undefined when it does neither, so tiles start at the layer's corner.
+ */
+export function patternPlacementMatrix(r: SkiaRenderer, fill: Fill, node: SceneNode) {
+  const offset = fill.patternOffset ?? { x: 0, y: 0 }
+  const degrees = fill.patternRotation ?? 0
+  if (offset.x === 0 && offset.y === 0 && degrees === 0) return undefined
+  const turn = r.ck.Matrix.rotated((degrees * Math.PI) / 180, node.width / 2, node.height / 2)
+  return r.ck.Matrix.multiply(turn, r.ck.Matrix.translated(offset.x, offset.y))
+}
+
 function applyPatternFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -243,7 +255,7 @@ function applyPatternFill(
     r.ck.TileMode.Repeat,
     r.ck.TileMode.Repeat,
     r.ck.FilterMode.Linear,
-    undefined,
+    patternPlacementMatrix(r, fill, node),
     tileRect
   )
   r.fillPaint.setShader(shader)

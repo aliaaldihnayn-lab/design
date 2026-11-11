@@ -21,6 +21,7 @@ import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokeAlign, convertStrokes } from './paint'
 import { expandPathTextLayoutBox } from './path/text-layout'
+import { withPatternPlacement } from './pattern-placement'
 import {
   extractBoundVariables,
   extractExportSettings,
@@ -744,9 +745,12 @@ export function nodeChangeToProps(
     internalOnly: nc.internalOnly === true || sharedStyleType(nc.styleType) !== null,
     blendMode: (nc.blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
     booleanOperation: mapBooleanOperation(nc),
-    fills: withImageAdjustments(
-      convertFills(nc.fillPaints),
-      readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.imageAdjustments)
+    fills: withPatternPlacement(
+      withImageAdjustments(
+        convertFills(nc.fillPaints),
+        readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.imageAdjustments)
+      ),
+      readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.patternPlacement)
     ),
     strokes: convertStrokes(
       nc.strokePaints,

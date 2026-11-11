@@ -10,6 +10,10 @@ describe('design tool keys', () => {
     ])
   })
 
+  test('Shift+W picks the Width tool, as in Illustrator', () => {
+    expect(TOOL_SHORTCUTS['Shift+KeyW']).toBe('WIDTH')
+  })
+
   test('M again moves between the two marquees and starts from the rectangle', () => {
     expect([
       cycleToolKey('MARQUEE_RECT', 'SELECT'),

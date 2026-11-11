@@ -286,30 +286,37 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Structure
 
-| Tool                    | Description                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `delete_node`           | Delete a node                                                                                                |
-| `clone_node`            | Duplicate a node                                                                                             |
-| `rename_node`           | Rename a node                                                                                                |
-| `reparent_node`         | Move a node into a different parent                                                                          |
-| `select_nodes`          | Select nodes by ID                                                                                           |
-| `group_nodes`           | Group nodes                                                                                                  |
-| `ungroup_node`          | Ungroup a group                                                                                              |
-| `flatten_nodes`         | Flatten nodes into a single vector                                                                           |
-| `boolean_union`         | Boolean union of two or more nodes                                                                           |
-| `boolean_subtract`      | Boolean subtraction                                                                                          |
-| `boolean_intersect`     | Boolean intersection                                                                                         |
-| `boolean_exclude`       | Boolean exclusion                                                                                            |
-| `shape_builder_regions` | List the regions overlapping shapes divide into, with a point inside each                                    |
-| `shape_builder`         | Merge or delete regions of overlapping shapes, as Illustrator's Shape Builder                                |
-| `warp_shape`            | Bend layers with a Warp preset (arc, arch, bulge, flag, wave, fish, rise, squeeze, twist)                    |
-| `envelope_mesh`         | Distort a layer with an envelope mesh by moving grid points                                                  |
-| `image_trace`           | Trace an image layer into vector shapes on this device (colour quantisation, contour tracing, curve fitting) |
-| `offset_path`           | Add each layer's outline grown or shrunk by a distance, with miter, round, or bevel joins                    |
-| `width_profile`         | Turn strokes into shapes whose width varies along the path (profiles or width points)                        |
-| `blend_shapes`          | Make steps that blend one shape, colour, and opacity into another                                            |
-| `outline_stroke`        | Replace stroked layers with their fill and stroke as shapes                                                  |
-| `set_pattern_fill`      | Fill layers with a pattern tiled from another layer                                                          |
+| Tool                    | Description                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `delete_node`           | Delete a node                                                                                                      |
+| `clone_node`            | Duplicate a node                                                                                                   |
+| `rename_node`           | Rename a node                                                                                                      |
+| `reparent_node`         | Move a node into a different parent                                                                                |
+| `select_nodes`          | Select nodes by ID                                                                                                 |
+| `group_nodes`           | Group nodes                                                                                                        |
+| `ungroup_node`          | Ungroup a group                                                                                                    |
+| `flatten_nodes`         | Flatten nodes into a single vector                                                                                 |
+| `boolean_union`         | Boolean union of two or more nodes                                                                                 |
+| `boolean_subtract`      | Boolean subtraction                                                                                                |
+| `boolean_intersect`     | Boolean intersection                                                                                               |
+| `boolean_exclude`       | Boolean exclusion                                                                                                  |
+| `shape_builder_regions` | List the regions overlapping shapes divide into, with a point inside each                                          |
+| `shape_builder`         | Merge or delete regions of overlapping shapes, as Illustrator's Shape Builder                                      |
+| `warp_shape`            | Bend layers with a live Warp preset (arc, arch, bulge, flag, wave, fish, rise, squeeze, twist)                     |
+| `get_path_effect`       | Read the live warp, envelope mesh, or width profile of layers                                                      |
+| `edit_path_effect`      | Edit a live warp, envelope mesh (points, handles, rows, columns), or width profile                                 |
+| `expand_path_effect`    | Expand live warps, meshes, or width profiles into ordinary vectors                                                 |
+| `release_path_effect`   | Release live warps, meshes, or width profiles back to the outline they reshaped                                    |
+| `envelope_mesh`         | Distort a layer with a live envelope mesh by moving grid points                                                    |
+| `image_trace`           | Trace an image layer into vector shapes on this device, with Illustrator's presets and a black and white threshold |
+| `offset_path`           | Add each layer's outline grown or shrunk by a distance, with miter, round, or bevel joins                          |
+| `width_profile`         | Give strokes a live width that varies along the path (profiles or width points)                                    |
+| `blend_shapes`          | Make a live blend of steps from one shape, colour, and opacity into another, optionally along a spine              |
+| `edit_blend`            | Change a live blend's steps, spacing, or spine, and make its steps again                                           |
+| `release_blend`         | Remove a live blend's steps and keep its ends                                                                      |
+| `expand_blend`          | Keep a live blend's steps as ordinary vectors                                                                      |
+| `outline_stroke`        | Replace stroked layers with their fill and stroke as shapes                                                        |
+| `set_pattern_fill`      | Fill layers with a pattern tiled from another layer or component, spaced, moved, and turned                        |
 
 ### Vector Path
 
@@ -389,13 +396,13 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### User stories and Jira
 
-| Tool | Description |
-|------|-------------|
-| `add_epic` | Add an epic that groups user stories, or return the one with that title |
-| `add_user_story` | Attach a user story to a frame or element: narrative, Given/When/Then criteria, behaviour, states, priority, epic |
-| `list_user_stories` | List the epics and stories of a frame, page, or document, with Jira links, status, and what each story still lacks |
-| `link_jira_issue` | Link a story or an epic to an existing Jira issue by key |
-| `sync_jira` | Create and update Jira Epics and Stories (linked through `parent`) and read their status back, through the site connected in Settings → Jira |
+| Tool                | Description                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `add_epic`          | Add an epic that groups user stories, or return the one with that title                                                                      |
+| `add_user_story`    | Attach a user story to a frame or element: narrative, Given/When/Then criteria, behaviour, states, priority, epic                            |
+| `list_user_stories` | List the epics and stories of a frame, page, or document, with Jira links, status, and what each story still lacks                           |
+| `link_jira_issue`   | Link a story or an epic to an existing Jira issue by key                                                                                     |
+| `sync_jira`         | Create and update Jira Epics and Stories (linked through `parent`) and read their status back, through the site connected in Settings → Jira |
 
 ### Navigation
 

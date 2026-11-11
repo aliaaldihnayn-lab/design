@@ -18,3 +18,9 @@ export {
   type TraceResult
 } from './trace'
 export { downsample, tracePixelsFromImage } from './trace/pixels'
+export {
+  TRACE_PRESETS,
+  tracePresetIsBlackAndWhite,
+  tracePresetSettings,
+  type TracePreset
+} from './trace/presets'

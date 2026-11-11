@@ -14,8 +14,13 @@ const FILL_CATEGORY: Partial<Record<Fill['type'], FillCategory>> = {
   GRADIENT_RADIAL: 'GRADIENT',
   GRADIENT_ANGULAR: 'GRADIENT',
   GRADIENT_DIAMOND: 'GRADIENT',
-  IMAGE: 'IMAGE'
+  IMAGE: 'IMAGE',
+  PATTERN: 'PATTERN'
 }
+
+/** A pattern's swatch: a grid of dots, since its tile is a layer the swatch cannot draw. */
+const PATTERN_SWATCH =
+  'radial-gradient(circle, rgb(127 127 127) 1.5px, transparent 1.6px) 0 0 / 5px 5px, rgb(230 230 230)'
 
 function effectiveColor(color: Color, opacity: number): Color {
   return { ...color, a: color.a * opacity }
@@ -39,6 +44,7 @@ export function fillIsTransparent(fill: Fill): boolean {
 }
 
 export function fillSwatchBackground(fill: Fill): string {
+  if (fillCategory(fill) === 'PATTERN') return PATTERN_SWATCH
   if (fillCategory(fill) === 'GRADIENT' && fill.gradientStops?.length) {
     return `linear-gradient(to right, ${gradientCSS(fill.gradientStops, fill.opacity)})`
   }
@@ -75,7 +81,21 @@ export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
     onUpdate({ ...fill.value, type: 'IMAGE' })
   }
 
-  const actions = { toSolid, toGradient, toImage }
+  /** A pattern paint; its tile is chosen in the pattern picker, so none is drawn until then. */
+  function toPattern() {
+    if (category.value === 'PATTERN') return
+    onUpdate({
+      ...fill.value,
+      type: 'PATTERN',
+      scale: fill.value.scale ?? 1,
+      patternSpacing: fill.value.patternSpacing ?? { x: 0, y: 0 },
+      patternTileType: fill.value.patternTileType ?? 'RECTANGULAR',
+      horizontalAlignment: fill.value.horizontalAlignment ?? 'START',
+      verticalAlignment: fill.value.verticalAlignment ?? 'START'
+    })
+  }
+
+  const actions = { toSolid, toGradient, toImage, toPattern }
 
   return {
     category,
@@ -84,6 +104,7 @@ export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
     actions,
     toSolid,
     toGradient,
-    toImage
+    toImage,
+    toPattern
   }
 }

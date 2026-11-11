@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash がこのキーを拒否しました。Secret key ではなく、アプリの Access Key を貼り付けてください。",
   "photoKeyRateLimited": "このキーは今の 1 時間の {service} リクエスト上限に達しました。しばらくしてからお試しください。",
   "photoKeyUnreachable": "{service} に接続できませんでした。ネットワーク接続を確認してください。",
-  "photoKeyCheckFailed": "{service} がテストに応答しませんでした。しばらくしてからお試しください。"
+  "photoKeyCheckFailed": "{service} がテストに応答しませんでした。しばらくしてからお試しください。",
+  "traceOnDevice": "このデバイスで画像トレース",
+  "tracePreset": "プリセット",
+  "tracePresetLogo": "ロゴ",
+  "tracePresetPhotoHigh": "写真（高精度）",
+  "tracePresetPhotoLow": "写真（低精度）",
+  "tracePresetLineArt": "線画",
+  "tracePresetSketch": "スケッチ",
+  "traceThreshold": "しきい値",
+  "traceColors": "カラー数",
+  "tracePreview": "画像トレースのプレビュー",
+  "tracePreviewSelection": "選択した画像を {count} 色でトレースしました。",
+  "tracePreviewSample": "サンプルを {count} 色でトレースしました。画像レイヤーを選択するとプレビューできます。"
 }

@@ -2,9 +2,10 @@ import type { Path } from 'canvaskit-wasm'
 import { omit } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { WidthPoint } from '@lawha/scene-graph/path-effects'
 import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
-import { widthAt, type WidthPoint } from '#core/vector/width'
+import { widthAt } from '#core/vector/width'
 
 import { canMakeBooleanSourceNode } from './boolean'
 import type { SkiaRenderer } from './renderer'
@@ -71,7 +72,7 @@ export function offsetPathProps(
 }
 
 /** Points along every contour of `path` at about `spacing` apart, with each one's unit normal. */
-function sampleContours(r: SkiaRenderer, path: Path, spacing: number) {
+export function sampleContours(r: SkiaRenderer, path: Path, spacing: number) {
   const contours: { points: Vector[]; normals: Vector[]; closed: boolean }[] = []
   const iter = new r.ck.ContourMeasureIter(path, false, 1)
   for (let contour = iter.next(); contour; contour = iter.next()) {
@@ -96,6 +97,66 @@ function sampleContours(r: SkiaRenderer, path: Path, spacing: number) {
   return contours
 }
 
+/** The visible stroke a width profile draws with, and its weight; null without one. */
+export function widthStroke(node: SceneNode) {
+  const stroke = node.strokes.find((paint) => paint.visible && paint.opacity > 0)
+  const weight = stroke?.weight ?? node.strokeWeight
+  if (!stroke || weight <= 0) return null
+  return { stroke, weight }
+}
+
+/** A stroke as the fill of the shape its width profile makes. */
+export function widthFill(stroke: SceneNode['strokes'][number]) {
+  return omit(stroke, ['weight', 'align', 'cap', 'join', 'dashPattern'])
+}
+
+/**
+ * The filled area a stroke of `weight` along `centre` covers when its width varies by `points`,
+ * each contour running its own 0…1. Null when nothing is covered.
+ */
+export function widthOutlinePath(
+  r: SkiaRenderer,
+  centre: Path,
+  weight: number,
+  points: readonly WidthPoint[]
+): Path | null {
+  let area: Path | null = null
+  for (const contour of sampleContours(r, centre, Math.max(0.5, weight / 4))) {
+    const n = contour.points.length
+    const side = (sign: 1 | -1, i: number) => {
+      const t = contour.closed ? i / n : i / Math.max(1, n - 1)
+      const half = (weight * widthAt(points, t)) / 2
+      const p = contour.points[i]
+      const normal = contour.normals[i]
+      return { x: p.x + sign * normal.x * half, y: p.y + sign * normal.y * half }
+    }
+    const left = contour.points.map((_, i) => side(1, i))
+    const right = contour.points.map((_, i) => side(-1, i))
+    const builder = new r.ck.PathBuilder()
+    if (contour.closed) {
+      // A closed path's band is the ring between its two sides.
+      addPolygon(builder, left)
+      addPolygon(builder, right.toReversed())
+    } else {
+      addPolygon(builder, [...left, ...right.toReversed()])
+    }
+    const band = builder.detachAndDelete()
+    // A ring is the area between its sides; an open band that folds over itself stays filled.
+    band.setFillType(contour.closed ? r.ck.FillType.EvenOdd : r.ck.FillType.Winding)
+    const united: Path | null = area ? r.ck.Path.MakeFromOp(area, band, r.ck.PathOp.Union) : band
+    if (area) {
+      area.delete()
+      band.delete()
+    }
+    area = united
+  }
+  if (area?.isEmpty()) {
+    area.delete()
+    return null
+  }
+  return area
+}
+
 /**
  * Illustrator's Width tool, expanded: the layer's stroke drawn with a width that varies along
  * the path by `points`, as a filled vector painted with the stroke. Each contour runs its own
@@ -108,51 +169,21 @@ export function widthProfileProps(
   points: readonly WidthPoint[]
 ): Partial<SceneNode> | null {
   if (!canTakePathEffect(node, graph)) return null
-  const stroke = node.strokes.find((paint) => paint.visible && paint.opacity > 0)
-  const weight = stroke?.weight ?? node.strokeWeight
-  if (!stroke || weight <= 0) return null
+  const painted = widthStroke(node)
+  if (!painted) return null
   const centre = shapeBuilderSourcePath(r, node, graph)
   if (!centre) return null
-  let area: Path | null = null
+  const area = widthOutlinePath(r, centre, painted.weight, points)
+  centre.delete()
+  if (!area) return null
   try {
-    for (const contour of sampleContours(r, centre, Math.max(0.5, weight / 4))) {
-      const n = contour.points.length
-      const side = (sign: 1 | -1, i: number) => {
-        const t = contour.closed ? i / n : i / Math.max(1, n - 1)
-        const half = (weight * widthAt(points, t)) / 2
-        const p = contour.points[i]
-        const normal = contour.normals[i]
-        return { x: p.x + sign * normal.x * half, y: p.y + sign * normal.y * half }
-      }
-      const left = contour.points.map((_, i) => side(1, i))
-      const right = contour.points.map((_, i) => side(-1, i))
-      const builder = new r.ck.PathBuilder()
-      if (contour.closed) {
-        // A closed path's band is the ring between its two sides.
-        addPolygon(builder, left)
-        addPolygon(builder, right.toReversed())
-      } else {
-        addPolygon(builder, [...left, ...right.toReversed()])
-      }
-      const band = builder.detachAndDelete()
-      // A ring is the area between its sides; an open band that folds over itself stays filled.
-      band.setFillType(contour.closed ? r.ck.FillType.EvenOdd : r.ck.FillType.Winding)
-      const united: Path | null = area ? r.ck.Path.MakeFromOp(area, band, r.ck.PathOp.Union) : band
-      if (area) {
-        area.delete()
-        band.delete()
-      }
-      area = united
-    }
-    if (!area || area.isEmpty()) return null
     return {
       ...vectorPropsForPath(r, area, node, `${node.name} (Width)`),
-      fills: [omit(stroke, ['weight', 'align', 'cap', 'join', 'dashPattern'])],
+      fills: [widthFill(painted.stroke)],
       strokes: []
     }
   } finally {
-    area?.delete()
-    centre.delete()
+    area.delete()
   }
 }
 
@@ -195,6 +226,27 @@ function outlinePoints(r: SkiaRenderer, path: Path, count: number): Vector[] | n
   return twice < 0 ? best.toReversed() : best
 }
 
+/** The middle of an outline's points. */
+export function centroid(points: readonly Vector[]): Vector {
+  let x = 0
+  let y = 0
+  for (const point of points) {
+    x += point.x
+    y += point.y
+  }
+  const n = Math.max(1, points.length)
+  return { x: x / n, y: y / n }
+}
+
+/** The middle of a layer's outline in its parent, as a blend places its ends. */
+export function outlineCentre(r: SkiaRenderer, graph: SceneGraph, node: SceneNode): Vector | null {
+  const path = shapeBuilderSourcePath(r, node, graph)
+  if (!path) return null
+  const points = outlinePoints(r, path, BLEND_SAMPLES)
+  path.delete()
+  return points ? centroid(points) : null
+}
+
 /** `to` turned so its first point is the one nearest `from`'s first, so steps do not twist. */
 function aligned(from: readonly Vector[], to: readonly Vector[]): Vector[] {
   let best = 0
@@ -235,7 +287,9 @@ export function blendStepProps(
   graph: SceneGraph,
   from: SceneNode,
   to: SceneNode,
-  steps: number
+  steps: number,
+  /** Where each step's middle goes, by how far along the blend it is; a straight line if left out. */
+  placeAt?: (t: number) => Vector
 ): Partial<SceneNode>[] | null {
   if (!canTakePathEffect(from, graph) || !canTakePathEffect(to, graph) || steps < 1) return null
   const fromPath = shapeBuilderSourcePath(r, from, graph)
@@ -246,15 +300,24 @@ export function blendStepProps(
     const bRaw = outlinePoints(r, toPath, BLEND_SAMPLES)
     if (!a || !bRaw) return null
     const b = aligned(a, bRaw)
+    const ca = centroid(a)
+    const cb = centroid(b)
     const fromFill = from.fills.find((fill) => fill.visible && fill.type === 'SOLID')
     const toFill = to.fills.find((fill) => fill.visible && fill.type === 'SOLID')
     const results: Partial<SceneNode>[] = []
     for (let step = 1; step <= steps; step++) {
       const t = step / (steps + 1)
+      const middle = { x: ca.x + (cb.x - ca.x) * t, y: ca.y + (cb.y - ca.y) * t }
+      const place = placeAt?.(t) ?? middle
+      const dx = place.x - middle.x
+      const dy = place.y - middle.y
       const builder = new r.ck.PathBuilder()
       addPolygon(
         builder,
-        a.map((p, i) => ({ x: p.x + (b[i].x - p.x) * t, y: p.y + (b[i].y - p.y) * t }))
+        a.map((p, i) => ({
+          x: p.x + (b[i].x - p.x) * t + dx,
+          y: p.y + (b[i].y - p.y) * t + dy
+        }))
       )
       const path = builder.detachAndDelete()
       const style = t < 0.5 ? from : to

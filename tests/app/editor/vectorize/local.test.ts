@@ -27,7 +27,11 @@ async function squarePNG() {
 describe('on-device Image Trace provider', () => {
   test('answers with SVG the vector importer reads, without a key or network', async () => {
     const { ck, bytes } = await squarePNG()
-    const svg = LOCAL_TRACE_PROVIDER.vectorize(bytes, ck, { detail: 'low', colors: 2 })
+    const svg = LOCAL_TRACE_PROVIDER.vectorize(bytes, ck, {
+      preset: 'logo',
+      colors: 2,
+      threshold: 128
+    })
     expect(svg).toStartWith('<svg')
     expect(svg).toContain('fill="#0aa03c"')
     const imported = svgToVectorPaths(svg, { width: 64, height: 64 })

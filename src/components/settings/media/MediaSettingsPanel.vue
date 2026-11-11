@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useMediaMessages, useSettingsMessages } from '@lawha/vue/i18n'
 
-import { vectorizeProviderID, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
+import { vectorizeEngine, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
 import { pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
 import type { MediaSettingsService } from '@/app/settings/media/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -23,8 +23,10 @@ const stockServices = computed(() => [
   { id: 'pexels' as const, name: 'Pexels', status: pexelsKeyStatus.value },
   { id: 'unsplash' as const, name: 'Unsplash', status: unsplashKeyStatus.value }
 ])
-const vectorProvider = computed(() =>
-  VECTORIZE_PROVIDER_DEFINITIONS.find((item) => item.id === vectorizeProviderID.value)
+const vectorProviderName = computed(() =>
+  vectorizeEngine.value === 'local'
+    ? media.value.traceOnDevice
+    : VECTORIZE_PROVIDER_DEFINITIONS.find((item) => item.id === vectorizeEngine.value)?.name
 )
 </script>
 
@@ -60,7 +62,7 @@ const vectorProvider = computed(() =>
           <template #title>{{ media.vectorization }}</template>
           <template #description>{{ media.vectorizationDescription }}</template>
           <AppActionRow data-vectorize-settings @click="editing = 'vectorize'">
-            {{ vectorProvider?.name }}
+            {{ vectorProviderName }}
             <template #trailing
               >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
             /></template>

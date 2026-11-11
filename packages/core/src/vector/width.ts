@@ -1,3 +1,5 @@
+import type { WidthPoint } from '@lawha/scene-graph/path-effects'
+
 /** Illustrator's width profiles, as the Width tool's presets in the Stroke panel name them. */
 export const WIDTH_PROFILES = [
   'uniform',
@@ -8,12 +10,6 @@ export const WIDTH_PROFILES = [
   'pinch'
 ] as const
 export type WidthProfile = (typeof WIDTH_PROFILES)[number]
-
-/** A width point: at `t` along the path (0 start, 1 end) the stroke is `width` times its weight. */
-export interface WidthPoint {
-  t: number
-  width: number
-}
 
 export function profileWidthPoints(profile: WidthProfile): WidthPoint[] {
   switch (profile) {

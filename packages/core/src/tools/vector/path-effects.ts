@@ -2,15 +2,15 @@ import * as v from 'valibot'
 
 import type { Fill, SceneNode } from '@lawha/scene-graph'
 
+import { applyLiveEffect } from '#core/canvas/live-effects'
 import { outlineStrokeLayer, type OutlinePiece } from '#core/canvas/outline-stroke'
 import {
-  blendStepProps,
   canTakePathEffect,
   offsetPathProps,
-  widthProfileProps
+  widthProfileProps,
+  widthStroke
 } from '#core/canvas/path-effects'
 import { BLACK } from '#core/constants'
-import { wrapNodes } from '#core/editor/structure/container-wrap'
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
@@ -67,7 +67,7 @@ export const offsetPath = defineTool({
 
 export const widthProfile = defineTool({
   name: 'width_profile',
-  description: `Illustrator's Width tool, expanded: each layer's stroke becomes a filled vector whose width varies along the path, by a preset profile (${WIDTH_PROFILES.join(', ')}) or by width points (t 0…1 along the path, width as a multiple of the stroke weight). A layer with a fill keeps it, without its stroke; a layer with only a stroke is replaced.`,
+  description: `Illustrator's Width tool, expanded: each layer's stroke becomes a filled vector whose width varies along the path, by a preset profile (${WIDTH_PROFILES.join(', ')}) or by width points (t 0…1 along the path, width as a multiple of the stroke weight). A layer with a fill keeps it, without its stroke; a layer with only a stroke is replaced. The profile stays live, as the Width tool leaves it (edit_path_effect changes its points, expand_path_effect and release_path_effect end it), unless expand is true.`,
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ids: v.pipe(v.array(v.string()), v.minLength(1)),
@@ -84,9 +84,10 @@ export const widthProfile = defineTool({
         v.maxLength(32),
         v.description('Width points; they override profile')
       )
-    )
+    ),
+    expand: v.optional(v.pipe(v.boolean(), v.description('Expand at once: no live profile')), false)
   }),
-  execute: (figma, { ids, profile, points }) => {
+  execute: (figma, { ids, profile, points, expand }) => {
     const renderer = measuringRenderer(figma)
     if (!renderer) return { error: NO_RENDERER }
     const widths = points ?? profileWidthPoints(profile)
@@ -95,7 +96,10 @@ export const widthProfile = defineTool({
       const found = layer(figma, id)
       if ('error' in found) return found
       const { node } = found
-      const props = widthProfileProps(renderer, figma.graph, node, widths)
+      const weight = widthStroke(node)?.weight ?? 0
+      const props = expand
+        ? widthProfileProps(renderer, figma.graph, node, widths)
+        : applyLiveEffect(renderer, figma.graph, node, { kind: 'width', weight, points: widths })
       if (!props) return { error: `${node.name} has no visible stroke` }
       const madeId = insertBeside(figma, node, props, true)
       if (!madeId) continue
@@ -104,44 +108,6 @@ export const widthProfile = defineTool({
       else figma.graph.deleteNode(node.id)
     }
     return { created }
-  }
-})
-
-export const blendShapes = defineTool({
-  name: 'blend_shapes',
-  description:
-    'Illustrator\'s Blend (Object → Blend → Make, specified steps): steps shapes between two sibling layers, their outlines, solid fill colours, opacity, and stroke weight eased from the first to the second, grouped with both as "Blend".',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    from_id: v.string(),
-    to_id: v.string(),
-    steps: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(256))
-  }),
-  execute: (figma, { from_id, to_id, steps }) => {
-    const renderer = measuringRenderer(figma)
-    if (!renderer) return { error: NO_RENDERER }
-    const from = layer(figma, from_id)
-    if ('error' in from) return from
-    const to = layer(figma, to_id)
-    if ('error' in to) return to
-    const parentId = from.node.parentId
-    const parent = parentId ? figma.graph.getNode(parentId) : undefined
-    if (!parentId || !parent || to.node.parentId !== parentId)
-      return { error: 'Blended layers must share one parent' }
-    const stepProps = blendStepProps(renderer, figma.graph, from.node, to.node, steps)
-    if (!stepProps) return { error: 'These layers cannot be blended' }
-    // Steps stack from the first layer up to the second, between them.
-    const low = Math.min(parent.childIds.indexOf(from.node.id), parent.childIds.indexOf(to.node.id))
-    const fromBelow = parent.childIds.indexOf(from.node.id) === low
-    const ordered = fromBelow ? stepProps : stepProps.toReversed()
-    const made = ordered.map((props, i) => {
-      const vector = figma.graph.createNode('VECTOR', parentId, props)
-      figma.graph.insertChildAt(vector.id, parentId, low + 1 + i)
-      return vector
-    })
-    const members = [from.node, ...made, to.node]
-    const group = wrapNodes(figma.graph, 'GROUP', members, parentId, low, { name: 'Blend' })
-    return { id: group.id, steps: made.map((node) => node.id) }
   }
 })
 
@@ -180,7 +146,7 @@ export const outlineStroke = defineTool({
 export const setPatternFill = defineTool({
   name: 'set_pattern_fill',
   description:
-    "Fill layers with a pattern tiled from another layer (Illustrator's pattern swatches, Figma's pattern fill): the source layer is drawn repeatedly, scaled, with spacing as a fraction of the tile, in a rectangular or hexagonal grid. Replaces the layers' fills unless keep_fills is true, which adds the pattern on top.",
+    "Fill layers with a pattern tiled from another layer (Illustrator's pattern swatches, Figma's pattern fill): the source layer or component is drawn repeatedly, scaled, with spacing as a fraction of the tile, in a rectangular or hexagonal grid, moved by offset_x and offset_y pixels and turned by rotation degrees about the layer's middle. Replaces the layers' fills unless keep_fills is true, which adds the pattern on top.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ids: v.pipe(v.array(v.string()), v.minLength(1)),
@@ -192,6 +158,9 @@ export const setPatternFill = defineTool({
       v.picklist(['RECTANGULAR', 'HORIZONTAL_HEXAGONAL', 'VERTICAL_HEXAGONAL']),
       'RECTANGULAR'
     ),
+    offset_x: v.optional(v.pipe(v.number(), v.minValue(-100_000), v.maxValue(100_000)), 0),
+    offset_y: v.optional(v.pipe(v.number(), v.minValue(-100_000), v.maxValue(100_000)), 0),
+    rotation: v.optional(v.pipe(v.number(), v.minValue(-360), v.maxValue(360)), 0),
     keep_fills: v.optional(v.boolean(), false)
   }),
   execute: (figma, args) => {
@@ -208,6 +177,8 @@ export const setPatternFill = defineTool({
       scale: args.scale,
       patternSpacing: { x: args.spacing_x, y: args.spacing_y },
       patternTileType: args.tile_type,
+      patternOffset: { x: args.offset_x, y: args.offset_y },
+      patternRotation: args.rotation,
       horizontalAlignment: 'START',
       verticalAlignment: 'START'
     }

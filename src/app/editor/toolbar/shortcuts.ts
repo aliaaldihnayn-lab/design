@@ -24,6 +24,7 @@ const UNKEYED: Readonly<Record<Tool, string>> = {
   PEN: '',
   PENCIL: '',
   SHAPE_BUILDER: '',
+  WIDTH: '',
   BRUSH: '',
   ERASER: '',
   FILL_BUCKET: '',

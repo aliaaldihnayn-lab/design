@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { svgToVectorPaths, traceImage, traceToSVG, type TracePixels } from '@lawha/core/vector'
+import {
+  svgToVectorPaths,
+  traceImage,
+  tracePresetSettings,
+  traceToSVG,
+  type TracePixels
+} from '@lawha/core/vector'
 
 type Paint = (x: number, y: number) => [number, number, number, number]
 
@@ -71,5 +77,37 @@ describe('traceImage', () => {
     const { layers } = traceImage(square, { colors: 4 })
     expect(layers).toHaveLength(1)
     expect(layers[0].area).toBe(100)
+  })
+})
+
+describe('black and white tracing', () => {
+  const GREY: [number, number, number, number] = [100, 100, 100, 255]
+  const LIGHT: [number, number, number, number] = [200, 200, 200, 255]
+  // A dark grey bar and a light grey bar on white.
+  const bars = image(64, 32, (x) => {
+    if (x >= 8 && x < 20) return GREY
+    if (x >= 40 && x < 52) return LIGHT
+    return WHITE
+  })
+
+  test('a threshold splits the image into black and white, and ignore white keeps only black', () => {
+    const traced = traceImage(bars, { threshold: 150, ignoreWhite: true })
+    expect(traced.layers.map((layer) => layer.color)).toEqual([[0, 0, 0]])
+    // Only the dark bar is below the threshold.
+    expect(traced.layers[0].area).toBe(12 * 32)
+  })
+
+  test('a higher threshold takes the light bar in too', () => {
+    const traced = traceImage(bars, { threshold: 220, ignoreWhite: true })
+    expect(traced.layers[0].area).toBe(24 * 32)
+  })
+
+  test('the line art preset traces in black and white at the threshold given', () => {
+    const { options } = tracePresetSettings('line-art', { threshold: 220, colors: 16 })
+    expect(options).toMatchObject({ threshold: 220, ignoreWhite: true })
+    expect(tracePresetSettings('logo', { colors: 3, threshold: 10 }).options).toMatchObject({
+      colors: 3
+    })
+    expect(tracePresetSettings('logo', { threshold: 10 }).options.threshold).toBeUndefined()
   })
 })

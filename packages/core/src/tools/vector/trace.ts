@@ -9,6 +9,8 @@ import {
   svgToVectorPaths,
   traceImage,
   tracePixelsFromImage,
+  tracePresetSettings,
+  TRACE_PRESETS,
   traceToSVG,
   type TraceOptions
 } from '#core/vector/vectorize'
@@ -53,11 +55,26 @@ export const imageTrace = defineTool({
         v.integer(),
         v.minValue(2),
         v.maxValue(32),
-        v.description('Colours, 2–32')
-      ),
-      8
+        v.description('Colours, 2–32 (8 unless a preset sets them)')
+      )
     ),
     detail: v.optional(v.picklist(['low', 'medium', 'high']), 'medium'),
+    preset: v.optional(
+      v.pipe(
+        v.picklist(TRACE_PRESETS),
+        v.description(
+          'An Illustrator Image Trace preset; it sets the detail, and the line-art and sketch presets trace in black and white at threshold'
+        )
+      )
+    ),
+    threshold: v.optional(
+      v.pipe(
+        v.number(),
+        v.minValue(0),
+        v.maxValue(255),
+        v.description('Black and white at this luminance, 0–255, for line-art and sketch')
+      )
+    ),
     noise: v.optional(
       v.pipe(
         v.number(),
@@ -68,7 +85,7 @@ export const imageTrace = defineTool({
       )
     )
   }),
-  execute: (figma, { id, colors, detail, noise }) => {
+  execute: (figma, { id, colors, detail, preset, threshold, noise }) => {
     const node = figma.graph.getNode(id)
     if (!node) return { error: `Node ${id} not found` }
     const fill = traceableImageFill(node)
@@ -77,7 +94,10 @@ export const imageTrace = defineTool({
     if (!bytes) return { error: 'Image data is missing for this layer' }
     const renderer = measuringRenderer(figma)
     if (!renderer) return { error: 'Image Trace needs CanvasKit to decode the image' }
-    const { maxSide, options } = traceSettings(detail, colors, noise)
+    const { maxSide, options } = preset
+      ? tracePresetSettings(preset, { colors, threshold })
+      : traceSettings(detail, colors ?? 8, noise)
+    if (preset && noise !== undefined) options.noise = noise
     const pixels = tracePixelsFromImage(renderer.ck, bytes, maxSide)
     if (!pixels) return { error: 'The image could not be decoded' }
     const traced = traceImage(pixels, options)

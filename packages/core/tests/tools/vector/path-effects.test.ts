@@ -181,6 +181,24 @@ describe('set_pattern_fill', () => {
     ])
   })
 
+  test('moves and turns the tiles', async () => {
+    const { graph, figma, pageId } = await setup()
+    const tile = graph.createNode('COMPONENT', pageId, { width: 10, height: 10 })
+    const target = graph.createNode('RECTANGLE', pageId, { width: 100, height: 100 })
+    run('set_pattern_fill', figma, {
+      ids: [target.id],
+      source_id: tile.id,
+      offset_x: 5,
+      offset_y: -3,
+      rotation: 45
+    })
+    expect(graph.getNode(target.id)?.fills[0]).toMatchObject({
+      sourceNodeId: tile.id,
+      patternOffset: { x: 5, y: -3 },
+      patternRotation: 45
+    })
+  })
+
   test('refuses to fill a layer with itself', async () => {
     const { graph, figma, pageId } = await setup()
     const tile = graph.createNode('RECTANGLE', pageId, { width: 10, height: 10 })

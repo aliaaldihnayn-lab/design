@@ -2,9 +2,9 @@ import type { Ref } from 'vue'
 
 import type { Editor, Tool } from '@lawha/core'
 
+import { startLiveEffectDrag, widthCanvasTool } from '#vue/canvas/live-effects/input'
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
-import { hoverShapeBuilder, startShapeBuilderDrag } from '#vue/canvas/shape-builder/input'
 import {
   BRUSH_TOOL,
   CLONE_STAMP_TOOL,
@@ -16,6 +16,7 @@ import {
   MARQUEE_ELLIPSE_TOOL,
   MARQUEE_RECT_TOOL
 } from '#vue/canvas/pixels/input'
+import { hoverShapeBuilder, startShapeBuilderDrag } from '#vue/canvas/shape-builder/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
@@ -69,20 +70,27 @@ const shape: CanvasTool = {
  * editor's profile decides which tools are on offer.
  */
 const select: CanvasTool = {
-  press: ({ event, cx, cy, sx, sy }, context) =>
-    handleSelectDown(
-      event,
-      cx,
-      cy,
-      sx,
-      sy,
-      context.editor,
-      context.hitFns,
-      context.tryStartRotation,
-      context.handleTextEditClick,
-      context.setDrag
-    ),
+  press: (pointer, context) => {
+    // A selected envelope mesh's points and handles take the press before the layers do.
+    if (startLiveEffectDrag(pointer, context.editor, context.setDrag)) return
+    selectPress(pointer, context)
+  },
   hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+}
+
+function selectPress({ event, cx, cy, sx, sy }: CanvasToolPointer, context: CanvasToolContext) {
+  handleSelectDown(
+    event,
+    cx,
+    cy,
+    sx,
+    sy,
+    context.editor,
+    context.hitFns,
+    context.tryStartRotation,
+    context.handleTextEditClick,
+    context.setDrag
+  )
 }
 
 export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
@@ -99,6 +107,7 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
       if (!context.editor.state.shapeBuilderHover) context.hoverLayers(pointer)
     }
   },
+  WIDTH: widthCanvasTool(select),
   HAND: pan,
   // Comments are placed by the app's comments layer above the canvas.
   COMMENT: { press: () => undefined },

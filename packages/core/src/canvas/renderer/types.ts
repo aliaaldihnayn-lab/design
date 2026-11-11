@@ -4,6 +4,7 @@ import type { SnapGuide } from '@lawha/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { LiveEffectHandles } from '#core/canvas/live-effect-handles'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { PixelOverlay } from '#core/editor/pixels/types'
 import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
@@ -102,6 +103,8 @@ export interface RenderOverlays {
   pencilState?: PencilState | null
   /** The Shape Builder regions under the pointer or the drag. */
   shapeBuilderHover?: ShapeBuilderHover | null
+  /** A live envelope mesh's or width profile's on-canvas handles. */
+  liveEffectHandles?: LiveEffectHandles | null
   pixelOverlay?: PixelOverlay | null
   nodeEditState?: {
     nodeId: string

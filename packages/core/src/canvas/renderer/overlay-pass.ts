@@ -27,6 +27,7 @@ import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
+import { drawLiveEffectHandles } from '#core/canvas/overlays/live-effects'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawPixelOverlay } from '#core/canvas/overlays/pixels'
@@ -182,6 +183,7 @@ export function drawOverlayPass(
   drawPenOverlay(r, canvas, overlays.penState)
   drawPencilOverlay(r, canvas, overlays.pencilState)
   drawShapeBuilderHover(r, canvas, overlays.shapeBuilderHover)
+  drawLiveEffectHandles(r, canvas, overlays.liveEffectHandles)
   drawPixelOverlay(r, canvas, graph, overlays.pixelOverlay)
   drawSnapMarks(r, canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays, sceneVersion)

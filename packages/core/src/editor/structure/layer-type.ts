@@ -1,11 +1,7 @@
 import { pick } from 'es-toolkit/object'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
-import {
-  fitEnclosingGroups,
-  redoGroupFit,
-  undoGroupFit
-} from '@lawha/scene-graph/group-bounds'
+import { fitEnclosingGroups, redoGroupFit, undoGroupFit } from '@lawha/scene-graph/group-bounds'
 
 import { groupFitOptions } from '#core/canvas/boolean'
 import type { EditorContext } from '#core/editor/types'

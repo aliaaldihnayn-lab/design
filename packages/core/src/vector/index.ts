@@ -27,23 +27,18 @@ export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
 export {
   flatMesh,
+  flatMeshPoints,
   mapContours,
   meshFunction,
+  meshInBox,
+  resampleMesh,
   subdivideContour,
   warpFunction,
-  WARP_PRESETS,
   type CubicContour,
   type EnvelopeMesh,
-  type WarpOptions,
-  type WarpPreset
+  type WarpOptions
 } from './warp'
-export {
-  profileWidthPoints,
-  widthAt,
-  WIDTH_PROFILES,
-  type WidthPoint,
-  type WidthProfile
-} from './width'
+export { profileWidthPoints, widthAt, WIDTH_PROFILES, type WidthProfile } from './width'
 
 /**
  * Fill types go on the detached `Path`: CanvasKit 0.41's `PathBuilder.setFillType` returns an

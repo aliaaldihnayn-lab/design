@@ -34,7 +34,11 @@ export function usePathToolRun() {
   const paths = usePathMessages()
   const busy = ref(false)
 
-  async function run(name: string, args: Record<string, unknown>) {
+  /**
+   * Runs a path tool; `quiet` edits a live effect in place, which selects nothing new and needs
+   * no toast unless it fails.
+   */
+  async function run(name: string, args: Record<string, unknown>, { quiet = false } = {}) {
     if (busy.value) return
     busy.value = true
     try {
@@ -47,6 +51,7 @@ export function usePathToolRun() {
       })
       if (result && typeof result === 'object' && 'error' in result)
         throw new Error(String(result.error))
+      if (quiet) return
       const created = createdIds(result)
       if (created.length > 0) store.select(created)
       toast.info(paths.value.done({ count: created.length }))

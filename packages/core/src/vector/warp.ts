@@ -1,19 +1,5 @@
+import type { MeshHandleSide, MeshPoint, WarpPreset } from '@lawha/scene-graph/path-effects'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
-
-/** Illustrator's Warp presets (Effect → Warp, Object → Envelope Distort → Make with Warp). */
-export const WARP_PRESETS = [
-  'arc',
-  'arch',
-  'bulge',
-  'flag',
-  'wave',
-  'fish',
-  'rise',
-  'squeeze',
-  'twist'
-] as const
-
-export type WarpPreset = (typeof WARP_PRESETS)[number]
 
 /** How a warp bends: `bend` and both distortions run from −1 to 1, as Illustrator's percentages. */
 export interface WarpOptions {
@@ -34,12 +20,15 @@ export interface CubicContour {
   closed: boolean
 }
 
-/** An envelope mesh: `rows + 1` by `columns + 1` points, row by row, where each grid point went. */
+/**
+ * An envelope mesh: `rows + 1` by `columns + 1` points, row by row, where each grid point went,
+ * with its curve handles as offsets from it. A handle left out runs straight to the next point.
+ */
 export interface EnvelopeMesh {
   rows: number
   columns: number
   /** Every grid point's position in the box, row by row from the top left. */
-  points: Vector[]
+  points: (Vector & Partial<Record<MeshHandleSide, Vector>>)[]
 }
 
 /** A map of the unit square centred on the origin (−1…1 both ways) onto the warped shape. */
@@ -141,10 +130,33 @@ export function flatMesh(box: Rect, rows: number, columns: number): EnvelopeMesh
   return { rows, columns, points }
 }
 
+type MeshGridPoint = EnvelopeMesh['points'][number]
+
+/** A cubic's point at `s` from its four control points. */
+function cubicAt(p0: Vector, p1: Vector, p2: Vector, p3: Vector, s: number): Vector {
+  const u = 1 - s
+  const a = u * u * u
+  const b = 3 * u * u * s
+  const c = 3 * u * s * s
+  const d = s * s * s
+  return {
+    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
+    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y
+  }
+}
+
+/** Where a point's handle on `side` reaches: its own, or a third of the way to `neighbour`. */
+function handleEnd(point: MeshGridPoint, side: MeshHandleSide, neighbour: Vector): Vector {
+  const offset = point[side]
+  if (offset) return { x: point.x + offset.x, y: point.y + offset.y }
+  return { x: point.x + (neighbour.x - point.x) / 3, y: point.y + (neighbour.y - point.y) / 3 }
+}
+
 /**
- * The envelope a mesh makes of points in `box`: a point keeps its place in its grid cell, and the
- * cell's corners are where the mesh put them, blended bilinearly as Illustrator's mesh envelope
- * does between its points.
+ * The envelope a mesh makes of points in `box`: a point keeps its place in its grid cell, and
+ * the cell is the Coons patch between its four edges, each a cubic curve from one mesh point to
+ * the next through their handles, as Illustrator's mesh envelope bends between its points. With
+ * no handles moved every edge is straight and the patch blends its corners bilinearly.
  */
 export function meshFunction(box: Rect, mesh: EnvelopeMesh): (point: Vector) => Vector {
   const { rows, columns, points } = mesh
@@ -160,11 +172,61 @@ export function meshFunction(box: Rect, mesh: EnvelopeMesh): (point: Vector) => 
     const b = at(row, column + 1)
     const c = at(row + 1, column)
     const d = at(row + 1, column + 1)
+    const top = cubicAt(a, handleEnd(a, 'right', b), handleEnd(b, 'left', a), b, s)
+    const bottom = cubicAt(c, handleEnd(c, 'right', d), handleEnd(d, 'left', c), d, s)
+    const left = cubicAt(a, handleEnd(a, 'down', c), handleEnd(c, 'up', a), c, t)
+    const right = cubicAt(b, handleEnd(b, 'down', d), handleEnd(d, 'up', b), d, t)
+    const corner = (key: 'x' | 'y') =>
+      (1 - s) * (1 - t) * a[key] + s * (1 - t) * b[key] + (1 - s) * t * c[key] + s * t * d[key]
     return {
-      x: (1 - t) * ((1 - s) * a.x + s * b.x) + t * ((1 - s) * c.x + s * d.x),
-      y: (1 - t) * ((1 - s) * a.y + s * b.y) + t * ((1 - s) * c.y + s * d.y)
+      x: (1 - t) * top.x + t * bottom.x + (1 - s) * left.x + s * right.x - corner('x'),
+      y: (1 - t) * top.y + t * bottom.y + (1 - s) * left.y + s * right.y - corner('y')
     }
   }
+}
+
+/** A mesh stored against a box (0…1 both ways) placed in `box`. */
+export function meshInBox(
+  box: Rect,
+  rows: number,
+  columns: number,
+  points: readonly MeshPoint[]
+): EnvelopeMesh {
+  const scale = (offset: Vector | undefined) =>
+    offset ? { x: offset.x * box.width, y: offset.y * box.height } : undefined
+  return {
+    rows,
+    columns,
+    points: points.map((point) => ({
+      x: box.x + point.x * box.width,
+      y: box.y + point.y * box.height,
+      left: scale(point.left),
+      right: scale(point.right),
+      up: scale(point.up),
+      down: scale(point.down)
+    }))
+  }
+}
+
+/** The flat mesh of `rows` by `columns` cells in box units (0…1 both ways). */
+export function flatMeshPoints(rows: number, columns: number): MeshPoint[] {
+  return flatMesh({ x: 0, y: 0, width: 1, height: 1 }, rows, columns).points
+}
+
+/**
+ * A mesh of another size that bends as `points` did: each new grid point is where the old mesh
+ * took that place in the box, with straight handles, as Illustrator adds rows and columns.
+ */
+export function resampleMesh(
+  rows: number,
+  columns: number,
+  points: readonly MeshPoint[],
+  nextRows: number,
+  nextColumns: number
+): MeshPoint[] {
+  const unit = { x: 0, y: 0, width: 1, height: 1 }
+  const map = meshFunction(unit, meshInBox(unit, rows, columns, points))
+  return flatMeshPoints(nextRows, nextColumns).map((point) => map(point))
 }
 
 function lerp(a: Vector, b: Vector, t: number): Vector {

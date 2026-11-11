@@ -210,6 +210,14 @@ export interface DragShapeBuilder {
   cancel: () => void
 }
 
+/** A drag of a live effect's handle: an envelope mesh point or handle, or a width point. */
+export interface DragLiveEffect {
+  type: 'live-effect'
+  move: (cx: number, cy: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 export interface DragPencil {
   type: 'pencil-drag'
 }
@@ -326,6 +334,7 @@ export type DragState =
   | DragPen
   | DragPencil
   | DragShapeBuilder
+  | DragLiveEffect
   | DragTextSelect
   | DragEditNode
   | DragEditHandle

@@ -250,6 +250,10 @@ export interface Fill {
   spacing?: number
   patternSpacing?: Vector
   patternTileType?: PatternTileType
+  /** How far a pattern's tiles are moved across the layer, in pixels; Figma has no field for it. */
+  patternOffset?: Vector
+  /** A pattern's turn about the layer's middle, in degrees clockwise; Figma has no field for it. */
+  patternRotation?: number
   verticalAlignment?: PatternAlignment
   horizontalAlignment?: PatternAlignment
   noiseType?: NoiseType
