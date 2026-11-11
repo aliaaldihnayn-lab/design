@@ -25,9 +25,15 @@ const OVERRIDES: Record<string, string> = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtended+xml',
   'word/footnotes.xml':
     'application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml',
-  'word/header1.xml': 'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml',
-  'word/footer1.xml': 'application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml',
   'docProps/core.xml': 'application/vnd.openxmlformats-package.core-properties+xml'
+}
+
+/** The content type of a header or footer part the writer names (`header2.xml`). */
+export function regionContentType(path: string): string | undefined {
+  const kind = /^word\/(?:lawha-)?(header|footer)\d+\.xml$/.exec(path)?.[1]
+  return kind
+    ? `application/vnd.openxmlformats-officedocument.wordprocessingml.${kind}+xml`
+    : undefined
 }
 
 export function contentTypesXML(paths: readonly string[]): string {
@@ -46,9 +52,10 @@ export function contentTypesXML(paths: readonly string[]): string {
       el('Default', { Extension: extension, ContentType: contentTypeFor(extension) })
     )
   ]
-  const overrides = paths
-    .filter((path) => OVERRIDES[path])
-    .map((path) => el('Override', { PartName: `/${path}`, ContentType: OVERRIDES[path] }))
+  const overrides = paths.flatMap((path) => {
+    const type = OVERRIDES[path] ?? regionContentType(path)
+    return type ? [el('Override', { PartName: `/${path}`, ContentType: type })] : []
+  })
   return `${XML_HEADER}<Types xmlns="${NS.contentTypes}">${defaults.join('')}${overrides.join('')}</Types>`
 }
 

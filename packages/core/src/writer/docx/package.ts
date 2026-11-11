@@ -1,13 +1,9 @@
-import * as v from 'valibot'
-
 import {
   nodeText,
   numberAttr,
   type PageSetup,
-  type WriterDocument,
-  type WriterNode
+  type WriterDocument
 } from '#core/writer/model'
-import { pageSetupSchema } from '#core/writer/schema'
 
 import { el, NS, XML_HEADER } from './xml'
 
@@ -37,6 +33,8 @@ export interface PackageOptions {
    * package's unchanged paragraphs still refer to; new ones number after them.
    */
   keepNumbers?: boolean
+  /** Part paths already in the package, which new header and footer parts must not reuse. */
+  existingParts?: ReadonlySet<string>
 }
 
 const keptNumber = (id: string, prefix: string) => {
@@ -52,6 +50,7 @@ export class PackageWriter {
   private readonly comments = new Map<string, number>()
   private readonly footnotes = new Map<string, number>()
   private drawings = 0
+  private readonly regions = { header: 0, footer: 0 }
   private revisions = 0
 
   constructor(
@@ -65,6 +64,15 @@ export class PackageWriter {
       model.comments.forEach((comment, index) => this.comments.set(comment.id, index))
       model.footnotes.forEach((note, index) => this.footnotes.set(note.id, index + 1))
     }
+  }
+
+  /** A file name in `word/` for a new header or footer part. */
+  regionName(kind: 'header' | 'footer'): string {
+    const prefix = this.options.existingParts ? 'lawha-' : ''
+    let name: string
+    do name = `${prefix}${kind}${++this.regions[kind]}.xml`
+    while (this.options.existingParts?.has(`word/${name}`))
+    return name
   }
 
   addList(ordered: boolean, start: number): number {
@@ -138,10 +146,6 @@ function numberKept(
 }
 
 /** A section break's page, as the model stores it on the node. */
-export function sectionPage(node: WriterNode): PageSetup | null {
-  const result = v.safeParse(pageSetupSchema, node.attrs?.page)
-  return result.success ? result.output : null
-}
 
 /** `<w:sectPr>` for a page setup, after the header and footer references given. */
 export function sectionPropertiesXML(page: PageSetup, references: string): string {

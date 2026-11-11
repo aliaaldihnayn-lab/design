@@ -1,7 +1,8 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-import { corePackagePath } from '#core-tests/helpers/paths'
+import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
 import {
   decodePDFRawStream,
   PDFArray,
@@ -16,6 +17,7 @@ import {
   createWriterDocument,
   defaultPageSetup,
   exportWriterPDF,
+  readDocx,
   type WriterFontRequest,
   type WriterNode
 } from '@lawha/core/writer'
@@ -91,6 +93,21 @@ async function pageTexts(pdf: Uint8Array): Promise<string[]> {
 const LONG = 'هذا نص عربي طويل يملأ الصفحة ويستمر حتى ينتقل إلى صفحة جديدة. '.repeat(90)
 
 describe('PDF export', () => {
+  test("draws each section's own page size, header and footer", async () => {
+    const sectioned = readDocx(
+      new Uint8Array(readFileSync(join(FIXTURES, 'writer/lawha-section-headers.docx')))
+    )
+    const pdf = await exportWriterPDF(sectioned, { fonts })
+    const pages = (await PDFDocument.load(pdf)).getPages()
+    expect(pages.map((page) => Math.round(page.getSize().width))).toEqual([612, 792, 792])
+    const written = await writtenTexts(pdf)
+    expect(written[0]).toContain('عقد إيجار')
+    const latin = await pageTexts(pdf)
+    expect(latin[1]).toContain('Annex header')
+    expect(latin[2]).toContain('Annex header')
+    expect(latin[2]).toContain('First footer')
+  })
+
   test('flows text into pages with a header and footer numbered on every page', async () => {
     const body: WriterNode = {
       type: 'doc',

@@ -1,5 +1,6 @@
 import { escapeText } from 'entities'
 import { strToU8, zipSync } from 'fflate'
+import * as v from 'valibot'
 
 import {
   detectDirection,
@@ -11,12 +12,13 @@ import {
   type WriterFootnote,
   type WriterNode
 } from '#core/writer/model'
+import { writerNodeSchema } from '#core/writer/schema'
+import { sectionPage } from '#core/writer/sections'
 
 import { imageFromDataURL, imageSize } from './images'
 import {
   PackageWriter,
   relsXML,
-  sectionPage,
   sectionPropertiesXML,
   textWidthOf,
   type Relationship
@@ -92,11 +94,25 @@ export class PartWriter {
         return this.tableOfContents()
       case 'sectionBreak': {
         const page = sectionPage(node)
-        return page ? `<w:p><w:pPr>${sectionPropertiesXML(page, '')}</w:pPr></w:p>` : ''
+        return page
+          ? `<w:p><w:pPr>${sectionPropertiesXML(page, this.sectionReferences(node))}</w:pPr></w:p>`
+          : ''
       }
       default:
         return node.content ? this.blocks(node.content, textWidth) : ''
     }
+  }
+
+  /** A section's own header and footer, written as parts of their own. */
+  private sectionReferences(node: WriterNode): string {
+    let references = ''
+    for (const kind of ['header', 'footer'] as const) {
+      const region = v.safeParse(writerNodeSchema, node.attrs?.[kind])
+      if (!region.success) continue
+      const id = writeHeaderFooter(this.pkg, this, kind, region.output, '')
+      references += el(`w:${kind}Reference`, { 'w:type': 'default', 'r:id': id })
+    }
+    return references
   }
 
   private paragraph(node: WriterNode, list?: { numId: number; level: number }): string {
@@ -412,7 +428,7 @@ function writeHeaderFooter(
   const tag = kind === 'header' ? 'w:hdr' : 'w:ftr'
   const body = part.blocks(node.content, textWidthOf(pkg.model)) || '<w:p/>'
   const xml = `${XML_HEADER}<${tag} ${DOCUMENT_NAMESPACES}>${watermark}${body}</${tag}>`
-  const name = `${kind}1.xml`
+  const name = pkg.regionName(kind)
   pkg.files[`word/${name}`] = strToU8(xml)
   if (part.rels.length) pkg.files[`word/_rels/${name}.rels`] = strToU8(relsXML(part.rels))
   return documentPart.rel(kind === 'header' ? REL.header : REL.footer, name)

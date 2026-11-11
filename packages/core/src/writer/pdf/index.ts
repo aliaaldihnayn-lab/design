@@ -1,6 +1,6 @@
-import { sectionPage } from '#core/writer/docx/package'
 import { numberedFootnotes } from '#core/writer/footnotes'
 import { detectDirection, nodeText, type WriterDocument } from '#core/writer/model'
+import { writerSections } from '#core/writer/sections'
 
 import { flowBlocks, flowContext, type FlowBlock, type InlineRun } from './flow'
 import { FontSet, type WriterFontResolver } from './fonts'
@@ -55,8 +55,11 @@ export async function exportWriterPDF(
     flowBlocks(region?.content ?? [], small, rtl).map((block) =>
       block.kind === 'paragraph' ? { ...block, spaceAfter: 0 } : block
     )
-  const header = regionBlocks(doc.header)
-  const footer = regionBlocks(doc.footer)
+  const sections = writerSections(doc).map((section) => ({
+    page: section.page,
+    header: regionBlocks(section.header),
+    footer: regionBlocks(section.footer)
+  }))
   const footnotes = numberedFootnotes(doc).flatMap((note) =>
     note.number === null
       ? []
@@ -66,8 +69,7 @@ export async function exportWriterPDF(
   const fonts = new FontSet(options.fonts, options.fallbackFamilies ?? DEFAULT_FALLBACK_FAMILIES)
   const runs = [
     ...runsOf(blocks),
-    ...runsOf(header),
-    ...runsOf(footer),
+    ...sections.flatMap((section) => [...runsOf(section.header), ...runsOf(section.footer)]),
     ...footnotes.flatMap((note) => runsOf(note.blocks))
   ]
   await loadParagraphFaces(runs, fonts)
@@ -109,11 +111,9 @@ export async function exportWriterPDF(
     watermark = piece?.kind === 'glyphs' ? { ...piece, width: line?.width ?? piece.width } : null
   }
 
-  const sections = (body.content ?? []).flatMap((node) =>
-    node.type === 'sectionBreak' ? [sectionPage(node) ?? doc.page] : []
-  )
-  const pageFor = (section: number) => sections[section] ?? doc.page
-  const input = { blocks, pageFor, header, footer, footnotes, watermark, fonts }
+  const last = sections.length - 1
+  const sectionFor = (section: number) => sections[Math.min(section, last)]
+  const input = { blocks, sectionFor, footnotes, watermark, fonts }
   // A first pass finds the page count and each heading's page, which page fields and a table
   // of contents show; the second lays the pages out with them.
   const first = paginate(input)

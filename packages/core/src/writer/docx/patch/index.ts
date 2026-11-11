@@ -7,6 +7,7 @@ import {
   commentsExtendedXML,
   commentsXML,
   corePropertiesXML,
+  regionContentType,
   watermarkXML
 } from '#core/writer/docx/parts'
 import { newInlineState, openDocx, readDocx, readSourcedBlocks } from '#core/writer/docx/read'
@@ -66,9 +67,7 @@ function relatedPath(state: PatchState, type: string): string | null {
 
 /** A new header or footer part, referenced first in the section. */
 function addRegionPart(state: PatchState, sectPr: Element, kind: 'header' | 'footer'): string {
-  let number = 1
-  while (`word/lawha-${kind}${number}.xml` in state.files) number += 1
-  const name = `lawha-${kind}${number}.xml`
+  const name = state.pkg.regionName(kind)
   const id = state.documentRels.rel(kind === 'header' ? REL.header : REL.footer, name)
   const element = ownerOf(sectPr).createElementNS(NS.w, `w:${kind}Reference`)
   element.setAttributeNS(NS.w, 'w:type', 'default')
@@ -255,7 +254,8 @@ export function patchDocx(
   const pkg = new PackageWriter(model, {
     ...numberingBases(files, numberingPath),
     mediaPrefix: 'lawha-image',
-    keepNumbers: true
+    keepNumbers: true,
+    existingParts: new Set(Object.keys(files))
   })
   const documentRelsBefore = readRelationships(files, opened.documentPath)
   const state: PatchState = {
@@ -279,6 +279,10 @@ export function patchDocx(
   patchSharedParts(state, numberingPath, original, model, options.creator ?? 'Lawha')
 
   Object.assign(files, pkg.files)
+  for (const path of Object.keys(pkg.files)) {
+    const type = regionContentType(path)
+    if (type) state.overrides.push({ path, type })
+  }
   writeRelationships(files, opened.documentPath, documentRelsBefore, state.documentRels.rels)
   const media = Object.keys(pkg.files).filter((path) => path.includes('/media/'))
   declareContentTypes(

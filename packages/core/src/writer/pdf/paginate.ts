@@ -35,12 +35,16 @@ interface Frame {
   right: number
 }
 
-export interface PaginateInput {
-  blocks: FlowBlock[]
-  /** Each section's page setup, the last one the document's own. */
-  pageFor: (section: number) => PageSetup
+export interface PaginateSection {
+  page: PageSetup
   header: FlowBlock[]
   footer: FlowBlock[]
+}
+
+export interface PaginateInput {
+  blocks: FlowBlock[]
+  /** Each section's page setup, header and footer, the last one the document's own. */
+  sectionFor: (section: number) => PaginateSection
   footnotes: Array<{ number: number; blocks: FlowBlock[] }>
   watermark: GlyphPiece | null
   fonts: FontSet
@@ -216,6 +220,8 @@ class Paginator {
   readonly pages: LaidOutPage[]
   /** Each page's setup, by page. */
   private readonly setups: PageSetup[]
+  /** Each page's section, by page. */
+  private readonly pageSections: number[]
   private y: number
   private empty = true
   private section = 0
@@ -223,10 +229,11 @@ class Paginator {
   private tocIndex = 0
 
   constructor(private readonly input: PaginateInput) {
-    this.setup = input.pageFor(0)
+    this.setup = input.sectionFor(0).page
     this.page = pageOf(this.setup)
     this.pages = [this.page]
     this.setups = [this.setup]
+    this.pageSections = [0]
     this.y = this.setup.margins.top * PT_PER_TWIP
   }
 
@@ -246,6 +253,7 @@ class Paginator {
     this.page = pageOf(setup)
     this.pages.push(this.page)
     this.setups.push(setup)
+    this.pageSections.push(this.section)
     this.y = setup.margins.top * PT_PER_TWIP
     this.empty = true
   }
@@ -258,7 +266,7 @@ class Paginator {
       if (block.kind === 'pageBreak') this.open(this.setup)
       else if (block.kind === 'sectionBreak') {
         this.section += 1
-        this.open(this.input.pageFor(this.section))
+        this.open(this.input.sectionFor(this.section).page)
       } else if (block.kind === 'paragraph') this.paragraph(block)
       else this.table(block)
     }
@@ -344,12 +352,13 @@ class Paginator {
           cy: page.height / 2
         })
       }
-      if (this.input.header.length) {
-        const header = blocksInFrame(this.input.header, frame, fonts, field)
+      const section = this.input.sectionFor(this.pageSections[index] ?? 0)
+      if (section.header.length) {
+        const header = blocksInFrame(section.header, frame, fonts, field)
         page.ops.push(...header.ops.map((op) => offset(op, setup.margins.header * PT_PER_TWIP)))
       }
-      if (this.input.footer.length) {
-        const footer = blocksInFrame(this.input.footer, frame, fonts, field)
+      if (section.footer.length) {
+        const footer = blocksInFrame(section.footer, frame, fonts, field)
         const top = page.height - setup.margins.footer * PT_PER_TWIP - footer.height
         page.ops.push(...footer.ops.map((op) => offset(op, top)))
       }

@@ -128,7 +128,15 @@ function readParagraph(p: Element, state: InlineState): BlockItem[] {
     blocks.push({ node: make(current), list: current.length || !sawBreak ? list : undefined })
   state.paragraphStyle = null
   const sectPr = kid(pPr, 'sectPr')
-  if (sectPr) blocks.push({ node: { type: 'sectionBreak', attrs: { page: readSection(sectPr) } } })
+  if (sectPr) {
+    const attrs: Record<string, unknown> = { page: readSection(sectPr) }
+    // A section without a reference keeps the previous section's; `inheritRegions` fills it.
+    for (const kind of ['header', 'footer'] as const) {
+      const region = readHeaderFooter(state.context, sectPr, `${kind}Reference`)
+      if (region) attrs[kind] = region.node.content?.length ? region.node : null
+    }
+    blocks.push({ node: { type: 'sectionBreak', attrs } })
+  }
   return blocks
 }
 
@@ -372,13 +380,40 @@ export const newInlineState = (context: ReadContext): InlineState => ({
   field: null
 })
 
+/**
+ * Gives each section break the header and footer Word shows in it: a section with no reference
+ * of its own continues the one before (ECMA-376 17.10.5). Returns what the last break had, for
+ * the document's own section.
+ */
+function inheritRegions(content: WriterNode[]): Record<'header' | 'footer', WriterNode | null> {
+  const current: Record<'header' | 'footer', WriterNode | null> = { header: null, footer: null }
+  for (const node of content) {
+    if (node.type !== 'sectionBreak') continue
+    const attrs = { ...node.attrs }
+    for (const kind of ['header', 'footer'] as const) {
+      if (kind in attrs) current[kind] = (attrs[kind] as WriterNode | null) ?? null
+      else attrs[kind] = current[kind]
+    }
+    node.attrs = attrs
+  }
+  return current
+}
+
 /** Reads a Word `.docx` package into the model. */
 export function readDocx(bytes: Uint8Array): WriterDocument {
   const { files, body, context } = openDocx(bytes)
   const content = readBlocks(body, newInlineState(context))
   const sectPr = kid(body, 'sectPr')
+  const inherited = inheritRegions(content)
   const header = readHeaderFooter(context, sectPr, 'headerReference')
   const footer = readHeaderFooter(context, sectPr, 'footerReference')
+  const lastRegion = (
+    kind: 'header' | 'footer',
+    read: { node: WriterNode } | null
+  ): WriterNode | null => {
+    if (read) return read.node.content?.length ? read.node : null
+    return inherited[kind]
+  }
   const settings = parseXML(readText(files, 'word/settings.xml') ?? '')
   const core = parseXML(readText(files, 'docProps/core.xml') ?? '')
   const title = find(core, 'title')?.textContent ?? ''
@@ -386,8 +421,8 @@ export function readDocx(bytes: Uint8Array): WriterDocument {
   return createWriterDocument({
     body: { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] },
     page: readSection(sectPr),
-    header: header?.node.content?.length ? header.node : null,
-    footer: footer?.node.content?.length ? footer.node : null,
+    header: lastRegion('header', header),
+    footer: lastRegion('footer', footer),
     watermark: header?.watermark ? { text: header.watermark } : null,
     comments: readComments(files),
     footnotes: readFootnotes(context),

@@ -1,4 +1,3 @@
-import { sectionPage } from '#core/writer/docx/package'
 import { fontSizePt } from '#core/writer/docx/runs'
 import { footnoteNumbers } from '#core/writer/footnotes'
 import {
@@ -12,6 +11,7 @@ import {
   type WriterDefaults,
   type WriterNode
 } from '#core/writer/model'
+import { sectionPage } from '#core/writer/sections'
 
 /**
  * The document as the PDF lays it out: blocks of styled runs in reading order, list markers and

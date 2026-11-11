@@ -15,6 +15,7 @@ export {
   writeDocx,
   type WriteDocxOptions
 } from './docx'
+export { sectionPage, writerSections, type WriterSection } from './sections'
 export { readGoogleDocument } from './google-docs/read'
 export { googleDocsRequests, type GoogleDocsWriteOptions } from './google-docs/write'
 export {
