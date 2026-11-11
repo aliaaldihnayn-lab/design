@@ -7,7 +7,9 @@ import {
   applyMasterPage as applyMaster,
   arrangePages,
   canvasOf,
+  convertFrameToMaster,
   createMasterPage as createMaster,
+  detachMasterPage,
   formatNumber,
   isMasterPage,
   linkTextFrames,
@@ -198,5 +200,35 @@ export const setPublicationLayoutTool = defineTool({
         number: formatNumber(index + settings.numberStart, settings.numberFormat)
       }))
     }
+  }
+})
+
+export const convertToMasterPageTool = defineTool({
+  name: 'convert_to_master_page',
+  description:
+    "Turn an existing page frame into a master page, as Affinity Publisher's Convert to Master: its layers become the master's, it moves to the masters above the pages, and it can then be applied with apply_master_page. detach: true does the opposite for page_ids: each page's applied master becomes the page's own unlocked layers, no longer following the master.",
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: v.optional(nodeIdInputSchema),
+    page_ids: v.optional(v.array(nodeIdInputSchema)),
+    detach: v.optional(v.boolean(), false)
+  }),
+  execute: (figma, args) => {
+    const graph = figma.graph
+    if (args.detach) {
+      const ids = args.page_ids ?? (args.id ? [args.id] : [])
+      const detached = ids.filter((id) => {
+        const page = graph.getNode(id)
+        return page ? detachMasterPage(graph, page) : false
+      })
+      const first = detached[0] ? graph.getNode(detached[0]) : undefined
+      if (first) refresh(graph, first)
+      return { detached }
+    }
+    const frame = args.id ? graph.getNode(args.id) : undefined
+    if (frame?.type !== 'FRAME') return { error: 'id is not a frame' }
+    const master = convertFrameToMaster(graph, frame)
+    refresh(graph, master)
+    return { id: master.id, name: master.name }
   }
 })

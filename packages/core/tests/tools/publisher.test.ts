@@ -94,4 +94,19 @@ describe('publication layout tools', () => {
     expect(x(pages[2].id)).toBeGreaterThan(x(pages[0].id))
     expect(x(pages[0].id)).toBeGreaterThan(x(pages[1].id))
   })
+
+  test('convert a frame to a master, then detach a page from it', () => {
+    const graph = new SceneGraph()
+    const canvas = graph.getPages()[0].id
+    const page = graph.createNode('FRAME', canvas, { x: 0, y: 0, width: 300, height: 400 })
+    const frame = graph.createNode('FRAME', canvas, { x: 400, y: 0, width: 300, height: 400 })
+    const figma = new FigmaAPI(graph)
+    const converted = tool('convert_to_master_page')(figma, { id: frame.id })
+    expect(graph.getNode(frame.id)?.type).toBe('COMPONENT')
+    tool('apply_master_page')(figma, { master_id: converted.id, page_ids: [page.id] })
+    expect(tool('convert_to_master_page')(figma, { detach: true, page_ids: [page.id] })).toEqual({
+      detached: [page.id]
+    })
+    expect(graph.getNode(graph.getNode(page.id)?.childIds[0] ?? '')?.type).toBe('FRAME')
+  })
 })

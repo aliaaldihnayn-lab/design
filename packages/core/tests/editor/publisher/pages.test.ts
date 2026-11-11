@@ -148,3 +148,24 @@ describe('right-to-left books and spreads', () => {
     expect(node(pages[2])?.x).toBe(spine - 300)
   })
 })
+
+describe('master pages from frames', () => {
+  test('a page frame converts into a master that can be applied, and detaching keeps its layers', () => {
+    const { editor, pages, order } = publication(3)
+    editor.graph.createNode('RECTANGLE', pages[2].id, { name: 'Header', width: 300, height: 40 })
+    const masterId = editor.convertToMasterPage(pages[2].id)
+    expect(masterId).toBe(pages[2].id)
+    expect(editor.listMasterPages()).toEqual([{ id: pages[2].id, name: 'Page 3' }])
+    expect(order()).toEqual(['Page 1', 'Page 2'])
+
+    editor.applyMasterPage(masterId ?? '', [pages[0].id])
+    expect(editor.detachFromMasterPage([pages[0].id])).toBe(1)
+    const page = editor.graph.getNode(pages[0].id)
+    const detached = editor.graph.getNode(page?.childIds[0] ?? '')
+    expect(detached).toMatchObject({ type: 'FRAME', locked: false })
+    expect(editor.graph.getNode(detached?.childIds[0] ?? '')?.name).toBe('Header')
+    expect(editor.publicationPageList()[0].masterId).toBeNull()
+    editor.undo.undo()
+    expect(editor.publicationPageList()[0].masterId).toBe(masterId)
+  })
+})

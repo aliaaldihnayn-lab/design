@@ -81,6 +81,7 @@ import {
 } from '#core/tools/prototype'
 import {
   applyMasterPageTool,
+  convertToMasterPageTool,
   createMasterPageTool,
   insertPageNumberTool,
   linkTextFramesTool,
@@ -215,6 +216,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   insertPageNumberTool,
   linkTextFramesTool,
   setPublicationLayoutTool,
+  convertToMasterPageTool,
   // Prototype
   getPrototype,
   setInteractions,

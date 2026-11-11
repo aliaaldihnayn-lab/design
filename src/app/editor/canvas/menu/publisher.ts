@@ -24,13 +24,25 @@ export function publisherMenuEntries(editor: Editor): MenuEntry[] {
         action: () => editor.applyMasterPage(master.id)
       })
     }
-    if (state.pagesWithMaster > 0)
+    if (state.pagesWithMaster > 0) {
       entries.push({
         label: t.removeMasterPage,
         testId: 'context-remove-master-page',
         action: () => editor.removeMasterPage()
       })
+      entries.push({
+        label: t.detachFromMaster,
+        testId: 'context-detach-from-master',
+        action: () => editor.detachFromMasterPage()
+      })
+    }
   }
+  if (state.frame)
+    entries.push({
+      label: t.convertToMasterPage,
+      testId: 'context-convert-to-master-page',
+      action: () => editor.convertToMasterPage()
+    })
   if (state.pages === 1 || state.master)
     entries.push({
       label: t.insertPageNumber,
