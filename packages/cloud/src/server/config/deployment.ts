@@ -95,6 +95,12 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     billingPortalURL: config.billing?.portal_url,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined,
+    atlassianClientId: config.integrations?.jira
+      ? configuredText(environment, config.integrations.jira.client_id)
+      : undefined,
+    atlassianClientSecret: config.integrations?.jira
+      ? requiredSecret(environment, config.integrations.jira.client_secret)
       : undefined
   }
 }

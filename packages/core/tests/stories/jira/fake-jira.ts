@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { JiraFetch, JiraIssueType } from '@lawha/core/stories'
+import type { JiraCreateField, JiraFetch, JiraIssueType } from '@lawha/core/stories'
 
 /** A call the fake site received, with its parsed JSON body. */
 export interface ReceivedCall {
@@ -25,7 +25,12 @@ const searchSchema = v.object({ jql: v.string() })
  * An in-memory Jira Cloud site answering the REST v3 endpoints the stories call, the way the
  * official API documents them, so tests run the real client over a mocked HTTP layer.
  */
-export function fakeJira(options: { projectKey: string; issueTypes: JiraIssueType[] }) {
+export function fakeJira(options: {
+  projectKey: string
+  issueTypes: JiraIssueType[]
+  /** The fields on each issue type's create screen, by type id; Jira refuses any other. */
+  createFields?: Record<string, JiraCreateField[]>
+}) {
   const calls: ReceivedCall[] = []
   const issues = new Map<string, StoredIssue>()
   let next = 1
@@ -42,6 +47,26 @@ export function fakeJira(options: { projectKey: string; issueTypes: JiraIssueTyp
       return json(400, {
         errorMessages: [],
         errors: { summary: 'You must specify a summary of the issue.' }
+      })
+    }
+    const typeId = v.parse(v.object({ id: v.string() }), fields.issuetype).id
+    const screen = options.createFields?.[typeId]
+    const offScreen = screen
+      ? Object.keys(fields).filter(
+          (name) =>
+            !['summary', 'description', 'project', 'issuetype', 'parent'].includes(name) &&
+            !screen.some((field) => field.fieldId === name)
+        )
+      : []
+    if (offScreen.length > 0) {
+      return json(400, {
+        errorMessages: [],
+        errors: Object.fromEntries(
+          offScreen.map((name) => [
+            name,
+            `Field '${name}' cannot be set. It is not on the appropriate screen, or unknown.`
+          ])
+        )
       })
     }
     const key = `${options.projectKey}-${next++}`
@@ -75,6 +100,16 @@ export function fakeJira(options: { projectKey: string; issueTypes: JiraIssueTyp
     })
   }
 
+  /** An issue type's create screen, as `createmeta` lists its fields. */
+  function createScreen(path: string): Response | null {
+    const match = new RegExp(
+      `^/rest/api/3/issue/createmeta/${options.projectKey}/issuetypes/(\\d+)$`
+    ).exec(path)
+    if (!match) return null
+    const fields = options.createFields?.[match[1]] ?? []
+    return json(200, { fields, maxResults: 200, startAt: 0, total: fields.length })
+  }
+
   const fetch: JiraFetch = (input, init) => Promise.resolve(answer(input, init))
 
   function answer(input: string, init: RequestInit): Response {
@@ -96,6 +131,8 @@ export function fakeJira(options: { projectKey: string; issueTypes: JiraIssueTyp
     ) {
       return json(200, { issueTypes: options.issueTypes, maxResults: 200, startAt: 0, total: 1 })
     }
+    const screen = method === 'GET' ? createScreen(path) : null
+    if (screen) return screen
     if (method === 'POST' && path === '/rest/api/3/issue') return create(url, body)
     const issueMatch = /^\/rest\/api\/3\/issue\/([A-Z][A-Z0-9_]*-\d+)$/.exec(path)
     if (method === 'PUT' && issueMatch) {

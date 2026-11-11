@@ -98,5 +98,19 @@
   "draftNoModel": "下書きには「高速タスク」または「デザインエージェント」のモデルが必要です。",
   "draftChooseModel": "モデルを選択",
   "draftUnreadable": "モデルが読み取れるストーリーを返しませんでした。もう一度お試しください。",
-  "draftFailed": "ストーリーを下書きできませんでした。"
+  "draftFailed": "ストーリーを下書きできませんでした。",
+  "jiraConnectAtlassian": "Atlassian で接続",
+  "jiraOAuthDescription": "Lawha Cloud サーバー経由で Atlassian アカウントにサインインするか、下の API トークンを使用します。",
+  "jiraOAuthOpened": "開いた Atlassian のページで Lawha を許可してから、ここに戻ってください。",
+  "jiraOAuthFailed": "Lawha Cloud サーバー経由で Atlassian に接続できませんでした。",
+  "jiraOrToken": "または API トークンで接続",
+  "jiraConnectedWithAtlassian": "Atlassian アカウントで {site} に接続済み",
+  "jiraChooseProject": "プロジェクトを選択",
+  "jiraSearchProjects": "プロジェクトを検索",
+  "jiraNoProjects": "プロジェクトが見つかりません",
+  "draftEdit": "編集",
+  "draftDoneEditing": "完了",
+  "copyMainComponentStories": {
+    "many": "メインコンポーネントのストーリー {count} 件をコピー"
+  }
 }

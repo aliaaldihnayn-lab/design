@@ -103,5 +103,24 @@
   "draftNoModel": "تحتاج الصياغة إلى نموذج لـ«المهام السريعة» أو «وكيل التصميم».",
   "draftChooseModel": "اختيار نموذج",
   "draftUnreadable": "لم يُرجِع النموذج قصصًا يمكن قراءتها. حاول مرة أخرى.",
-  "draftFailed": "تعذّرت صياغة القصص."
+  "draftFailed": "تعذّرت صياغة القصص.",
+  "jiraConnectAtlassian": "الاتصال بحساب Atlassian",
+  "jiraOAuthDescription": "سجّل الدخول بحساب Atlassian عبر خادم Lawha Cloud، أو استخدم رمز API أدناه.",
+  "jiraOAuthOpened": "اسمح لـ Lawha في صفحة Atlassian التي فُتحت، ثم عُد إلى هنا.",
+  "jiraOAuthFailed": "تعذّر الوصول إلى Atlassian عبر خادم Lawha Cloud.",
+  "jiraOrToken": "أو اتصل برمز API",
+  "jiraConnectedWithAtlassian": "متصل بـ {site} بحساب Atlassian",
+  "jiraChooseProject": "اختر مشروعًا",
+  "jiraSearchProjects": "ابحث في المشاريع",
+  "jiraNoProjects": "لا توجد مشاريع",
+  "draftEdit": "تعديل",
+  "draftDoneEditing": "تم",
+  "copyMainComponentStories": {
+    "zero": "انسخ قصص المكوّن الرئيسي",
+    "one": "انسخ قصة المكوّن الرئيسي",
+    "two": "انسخ قصتَي المكوّن الرئيسي",
+    "few": "انسخ {count} قصص من المكوّن الرئيسي",
+    "many": "انسخ {count} قصة من المكوّن الرئيسي",
+    "other": "انسخ {count} قصة من المكوّن الرئيسي"
+  }
 }

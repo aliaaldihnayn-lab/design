@@ -9,6 +9,7 @@ import {
 } from '@lawha/scene-graph/plugin-data'
 import {
   addStory,
+  copyMainComponentStories,
   createEpic,
   createUserStory,
   removeEpic,
@@ -104,6 +105,11 @@ export function createStoryActions(ctx: EditorContext) {
       editStories('Edit epic', (graph) => updateEpic(graph, epicId, patch)),
     removeEpic: (epicId: string): boolean =>
       editStories('Delete epic', (graph) => removeEpic(graph, epicId)),
+    /** Gives an instance its main component's stories as stories of its own, as one step. */
+    copyMainComponentStories: (instanceId: string): number =>
+      editStories('Copy main component stories', (graph) =>
+        copyMainComponentStories(graph, instanceId)
+      ),
     setStoryJiraProject: (project: StoryJiraProject | undefined): void =>
       editStories('Choose Jira project', (graph) => writeStoryJiraProject(graph, project))
   }

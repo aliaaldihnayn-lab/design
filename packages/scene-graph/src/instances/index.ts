@@ -58,7 +58,8 @@ export function createInstance(
   // The component checked above is the one the instance shows, whatever `overrides` holds.
   const instance = graph.createNode('INSTANCE', parentId, { ...props, ...overrides, componentId })
 
-  cloneChildrenWithMapping(graph, component.id, instance.id)
+  // The main component's stories stay with it; `copyMainComponentStories` copies them on request.
+  cloneChildrenWithMapping(graph, component.id, instance.id, 'deep', 'drop')
 
   return instance
 }
@@ -72,7 +73,7 @@ export function populateInstanceChildren(
   const instance = graph.nodes.get(instanceId)
   const component = graph.nodes.get(componentId)
   if (!instance || !component || instance.type !== 'INSTANCE') return
-  cloneChildrenWithMapping(graph, componentId, instanceId, mode)
+  cloneChildrenWithMapping(graph, componentId, instanceId, mode, 'drop')
 }
 
 /**

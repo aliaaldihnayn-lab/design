@@ -146,7 +146,10 @@ const rawCloudServerConfigSchema = v.object({
   ),
   billingPortalURL: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
-  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32)))
+  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** The Atlassian OAuth 2.0 (3LO) app people connect Jira through; without it, API tokens only. */
+  atlassianClientId: optionalTextSchema,
+  atlassianClientSecret: optionalTextSchema
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>
@@ -196,6 +199,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     )
   }
   requireTogether(config, 'Google', ['googleClientId', 'googleClientSecret'])
+  requireTogether(config, 'Atlassian', ['atlassianClientId', 'atlassianClientSecret'])
   requireTogether(config, 'Apple', [
     'appleClientId',
     'appleTeamId',
@@ -276,7 +280,9 @@ const DEFAULT_SECRET_NAMES = {
   smtpPassword: 'LAWHA_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
   aiSigningKey: 'LAWHA_CLOUD_AI_SIGNING_KEY',
-  internalServiceToken: 'LAWHA_CLOUD_SERVICE_TOKEN'
+  internalServiceToken: 'LAWHA_CLOUD_SERVICE_TOKEN',
+  atlassianClientId: 'ATLASSIAN_CLIENT_ID',
+  atlassianClientSecret: 'ATLASSIAN_CLIENT_SECRET'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -503,6 +509,20 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  integrations: v.optional(
+    v.strictObject({
+      // An OAuth 2.0 (3LO) app from developer.atlassian.com, its callback set to
+      // `<public_url>/api/public/integrations/jira/oauth/callback`.
+      jira: v.optional(
+        v.strictObject({
+          client_id: v.optional(configurableTextSchema, {
+            from_env: DEFAULT_SECRET_NAMES.atlassianClientId
+          }),
+          client_secret: defaultReference(DEFAULT_SECRET_NAMES.atlassianClientSecret)
+        })
+      )
+    })
   )
 })
 

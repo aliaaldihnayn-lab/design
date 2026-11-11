@@ -5,11 +5,14 @@ import { useStoriesMessages } from '@lawha/vue/i18n'
 
 import {
   connectJira,
+  connectJiraWithAtlassian,
   disconnectJira,
   jiraConnected,
   jiraConnectionMode,
+  jiraOAuthAvailable,
   jiraPreferences,
-  type JiraConnectOutcome
+  type JiraConnectOutcome,
+  type JiraOAuthStartOutcome
 } from '@/app/integrations/jira/connection'
 import { useJiraConnectionForm } from '@/app/integrations/jira/settings/form'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -36,6 +39,20 @@ const token = ref('')
 const tokenMissing = ref(false)
 const busy = ref(false)
 const outcome = ref<JiraConnectOutcome | null>(null)
+const oauthOutcome = ref<JiraOAuthStartOutcome | null>(null)
+const viaOAuth = computed(
+  () => jiraConnected.value === true && jiraPreferences.value.auth === 'oauth'
+)
+
+/** Opens Atlassian's consent page; the connection shows once the person comes back. */
+async function connectWithAtlassian() {
+  busy.value = true
+  try {
+    oauthOutcome.value = await connectJiraWithAtlassian()
+  } finally {
+    busy.value = false
+  }
+}
 
 const holds = computed(() =>
   jiraConnectionMode.value === 'cloud' ? t.value.jiraCloudHolds : t.value.jiraDesktopHolds
@@ -99,7 +116,42 @@ const errorId = (field: string, has: unknown) => (has ? `${id}-${field}-error` :
         :heading="t.jiraUnavailable"
       />
 
-      <form class="flex flex-col gap-3" :aria-busy="busy" novalidate @submit.prevent="submit">
+      <div
+        v-if="jiraOAuthAvailable && !viaOAuth"
+        class="flex flex-col gap-2"
+        data-slot="jira-oauth"
+      >
+        <p class="text-[11px] text-muted">{{ t.jiraOAuthDescription }}</p>
+        <div>
+          <AppButton
+            size="sm"
+            :disabled="busy"
+            data-action="jira-connect-atlassian"
+            @click="connectWithAtlassian"
+          >
+            {{ t.jiraConnectAtlassian }}
+          </AppButton>
+        </div>
+        <AppAlert
+          v-if="oauthOutcome === 'opened' && !jiraConnected"
+          tone="info"
+          :heading="t.jiraOAuthOpened"
+        />
+        <AppAlert
+          v-else-if="oauthOutcome === 'failed' || oauthOutcome === 'unavailable'"
+          tone="error"
+          :heading="t.jiraOAuthFailed"
+        />
+        <p class="text-[11px] font-semibold text-surface">{{ t.jiraOrToken }}</p>
+      </div>
+
+      <form
+        v-if="!viaOAuth"
+        class="flex flex-col gap-3"
+        :aria-busy="busy"
+        novalidate
+        @submit.prevent="submit"
+      >
         <fieldset
           :disabled="busy || jiraConnectionMode === 'unavailable'"
           class="flex flex-col gap-3"
@@ -179,8 +231,25 @@ const errorId = (field: string, has: unknown) => (has ? `${id}-${field}-error` :
         </div>
       </form>
 
+      <div v-if="viaOAuth">
+        <AppButton
+          type="button"
+          variant="outline"
+          size="sm"
+          :disabled="busy"
+          data-action="jira-disconnect"
+          @click="disconnect"
+        >
+          {{ t.jiraDisconnect }}
+        </AppButton>
+      </div>
       <AppAlert
-        v-if="jiraConnected"
+        v-if="viaOAuth"
+        tone="success"
+        :heading="t.jiraConnectedWithAtlassian({ site: jiraPreferences.site })"
+      />
+      <AppAlert
+        v-else-if="jiraConnected"
         tone="success"
         :heading="t.jiraConnectedAs({ site: jiraPreferences.site, email: jiraPreferences.email })"
       />

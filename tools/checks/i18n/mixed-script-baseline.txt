@@ -721,6 +721,12 @@ ja:stories.jiraEmailInvalid
 ja:stories.jiraTokenRequired
 ja:stories.jiraCloudHolds
 ja:stories.jiraDesktopHolds
+ja:stories.jiraConnectAtlassian
+ja:stories.jiraOAuthDescription
+ja:stories.jiraOAuthOpened
+ja:stories.jiraOAuthFailed
+ja:stories.jiraOrToken
+ja:stories.jiraConnectedWithAtlassian
 zh-cn:stories.jiraNotConnected
 zh-cn:stories.connectJira
 zh-cn:stories.jiraProject
@@ -743,3 +749,9 @@ zh-cn:stories.jiraEmailInvalid
 zh-cn:stories.jiraTokenRequired
 zh-cn:stories.jiraCloudHolds
 zh-cn:stories.jiraDesktopHolds
+zh-cn:stories.jiraConnectAtlassian
+zh-cn:stories.jiraOAuthDescription
+zh-cn:stories.jiraOAuthOpened
+zh-cn:stories.jiraOAuthFailed
+zh-cn:stories.jiraOrToken
+zh-cn:stories.jiraConnectedWithAtlassian

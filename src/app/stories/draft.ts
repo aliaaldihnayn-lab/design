@@ -10,7 +10,7 @@ import {
   type InteractiveElement,
   type StoryDraft
 } from '@lawha/core/stories'
-import { readEpics } from '@lawha/scene-graph/stories'
+import { readEpics, type UserStory } from '@lawha/scene-graph/stories'
 
 import { createAIModelRuntime, type AIModelRuntime } from '@/app/ai/models'
 import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
@@ -123,6 +123,16 @@ export const useStoryDraft = createGlobalState(() => {
     kept.value = next
   }
 
+  /** Replaces a drafted story with the person's edit of it, before anything is saved. */
+  function edit(index: number, story: UserStory) {
+    const current = draft.value
+    const item = current?.stories[index]
+    if (!current || !item) return
+    const stories = [...current.stories]
+    stories[index] = { ...item, story: structuredClone(story) }
+    draft.value = { ...current, stories }
+  }
+
   function discard() {
     draft.value = null
     failure.value = null
@@ -145,5 +155,17 @@ export const useStoryDraft = createGlobalState(() => {
     return saved
   }
 
-  return { frameId, drafting, failure, draft, kept, reviewing, start, toggle, discard, save }
+  return {
+    frameId,
+    drafting,
+    failure,
+    draft,
+    kept,
+    reviewing,
+    start,
+    toggle,
+    edit,
+    discard,
+    save
+  }
 })

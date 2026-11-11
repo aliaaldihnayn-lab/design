@@ -100,5 +100,21 @@
   "draftNoModel": "Do pisania potrzebny jest model dla „Szybkich zadań” lub „Agenta projektowego”.",
   "draftChooseModel": "Wybierz model",
   "draftUnreadable": "Model nie zwrócił czytelnych historyjek. Spróbuj ponownie.",
-  "draftFailed": "Nie udało się napisać historyjek."
+  "draftFailed": "Nie udało się napisać historyjek.",
+  "jiraConnectAtlassian": "Połącz przez Atlassian",
+  "jiraOAuthDescription": "Zaloguj się kontem Atlassian przez serwer Lawha Cloud albo użyj poniżej tokenu API.",
+  "jiraOAuthOpened": "Zezwól Lawha na otwartej stronie Atlassian, a potem wróć tutaj.",
+  "jiraOAuthFailed": "Nie udało się połączyć z Atlassian przez serwer Lawha Cloud.",
+  "jiraOrToken": "Albo połącz się tokenem API",
+  "jiraConnectedWithAtlassian": "Połączono z {site} kontem Atlassian",
+  "jiraChooseProject": "Wybierz projekt",
+  "jiraSearchProjects": "Szukaj projektów",
+  "jiraNoProjects": "Nie znaleziono projektów",
+  "draftEdit": "Edytuj",
+  "draftDoneEditing": "Gotowe",
+  "copyMainComponentStories": {
+    "one": "Skopiuj historyjkę komponentu głównego",
+    "few": "Skopiuj {count} historyjki komponentu głównego",
+    "many": "Skopiuj {count} historyjek komponentu głównego"
+  }
 }

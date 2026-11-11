@@ -267,3 +267,77 @@ describe('transport', () => {
     ).toThrow(JiraError)
   })
 })
+
+describe('priority', () => {
+  function connectWithScreen(createFields: Parameters<typeof fakeJira>[0]['createFields']) {
+    const jira = fakeJira({ projectKey: 'SHOP', issueTypes: COMPANY_MANAGED_TYPES, createFields })
+    const client = new JiraClient(
+      basicAuthJiraTransport({
+        site: SITE,
+        email: 'sara@example.com',
+        apiToken: 'token',
+        fetch: jira.fetch
+      })
+    )
+    return { jira, client }
+  }
+
+  test('is sent by id when the Story create screen has a priority field', async () => {
+    const { graph, button, story } = screen()
+    updateStory(graph, button.id, story.id, { priority: 'high' })
+    const { jira, client } = connectWithScreen({
+      '10001': [
+        { fieldId: 'summary', name: 'Summary', required: true, allowedValues: undefined },
+        {
+          fieldId: 'priority',
+          name: 'Priority',
+          required: false,
+          allowedValues: [
+            { id: '1', name: 'Highest' },
+            { id: '2', name: 'High' },
+            { id: '3', name: 'Medium' }
+          ]
+        }
+      ]
+    })
+    const result = await pushToJira(graph, client, { site: SITE, projectKey: 'SHOP' })
+    expect(result.items.every((item) => item.action !== 'failed')).toBe(true)
+    const created = [...jira.issues.values()].find(
+      (issue) => issue.fields.summary === 'Pay for the order'
+    )
+    expect(created?.fields.priority).toEqual({ id: '2' })
+  })
+
+  test('is left out when the create screen has no priority, so Jira accepts the story', async () => {
+    const { graph } = screen()
+    const { jira, client } = connectWithScreen({
+      '10001': [{ fieldId: 'summary', name: 'Summary', required: true, allowedValues: undefined }]
+    })
+    const result = await pushToJira(graph, client, { site: SITE, projectKey: 'SHOP' })
+    expect(result.items.filter((item) => item.action === 'failed')).toEqual([])
+    const created = [...jira.issues.values()].find(
+      (issue) => issue.fields.summary === 'Pay for the order'
+    )
+    expect(created?.fields.priority).toBeUndefined()
+  })
+
+  test('is left out when the scheme has no priority of that name', async () => {
+    const { graph, button, story } = screen()
+    updateStory(graph, button.id, story.id, { priority: 'lowest' })
+    const { jira, client } = connectWithScreen({
+      '10001': [
+        {
+          fieldId: 'priority',
+          name: 'Priority',
+          required: false,
+          allowedValues: [{ id: '7', name: 'P1' }]
+        }
+      ]
+    })
+    await pushToJira(graph, client, { site: SITE, projectKey: 'SHOP' })
+    const created = [...jira.issues.values()].find(
+      (issue) => issue.fields.summary === 'Pay for the order'
+    )
+    expect(created?.fields.priority).toBeUndefined()
+  })
+})

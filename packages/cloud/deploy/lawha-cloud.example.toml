@@ -108,6 +108,13 @@ transport = "none"
 # LAWHA_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
 # [internal_api]
 
+# Add this table to let people connect Jira with their Atlassian account (OAuth 2.0, 3LO)
+# instead of an API token. Create an OAuth 2.0 integration at developer.atlassian.com with the
+# Jira scopes read:jira-work, write:jira-work and read:jira-user, and the callback URL
+# <public_url>/api/public/integrations/jira/oauth/callback. The ID and secret default to
+# ATLASSIAN_CLIENT_ID and ATLASSIAN_CLIENT_SECRET.
+# [integrations.jira]
+
 [workers.email]
 batch_size = 50
 interval_ms = 30000
