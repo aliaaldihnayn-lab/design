@@ -10,7 +10,7 @@ function version(id: string, minute: number): DocumentVersion {
   return {
     id,
     revisionId: id,
-    kind: 'auto',
+    kind: 'checkpoint',
     name: null,
     description: null,
     createdAt: at(minute),

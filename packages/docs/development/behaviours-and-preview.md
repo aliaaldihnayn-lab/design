@@ -48,7 +48,7 @@ Prototype interactions run in the same islands. A layer with interactions, or an
 - **Rendering.** The island merges the changed variants into the states it gives `resolvePlayState`, so a change draws exactly as the variant is designed. `transitions.ts` animates the switch in the island's DOM: Smart Animate tweens each layer the two variants share by layer path, and dissolve, move, push, and slide animate the new variant against a still copy of the old one, along the transition's easing or spring.
 - **Overlays.** Open overlay shows its destination frame as a nested island over the root, with the action's background; Close overlay, Back, and a click outside close it.
 - **Keys and timers.** After delay timers start when their variant shows. Keys the preview has shortcuts for, such as Escape, are offered to the islands first through `editor.onLiveKey`.
-- **`.fig`.** Interactions are written as Figma's `prototypeInteractions` (Change to as `SWAP_STATE`) and read back from Figma files, including those on component layers (`packages/core/src/prototype/fig.ts`).
+- **`.fig`.** Interactions are written as Figma's `prototypeInteractions` (Change to as `SWAP_STATE`) and read back from Figma files, including those on component layers (`packages/core/src/prototype/fig/index.ts`).
 
 ## Code export
 

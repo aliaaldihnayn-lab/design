@@ -25,7 +25,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorContext } from '#core/editor/types'
 import { widthAt } from '#core/vector/width'
 
-import { watchLiveBlends } from './blend-sync'
+import { watchLiveBlends } from './blend/sync'
 import { placeOf, recordLayerSwap } from './swap'
 
 /** How near, in screen pixels, a press must be to take hold of a live effect's handle. */

@@ -3,6 +3,8 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
 
+import type { Size } from '@lawha/scene-graph/primitives'
+
 import {
   EMPTY_LAYOUT,
   layoutPages,
@@ -44,10 +46,7 @@ export interface PaginationPage {
 }
 
 /** A section's sheet: its size and margins, in CSS pixels. */
-export interface PaginationSection extends PaginationPage {
-  width: number
-  height: number
-}
+export type PaginationSection = PaginationPage & Size
 
 export interface PaginationOptions {
   /** Each section's sheet in order, the document's own last; null before the page is known. */

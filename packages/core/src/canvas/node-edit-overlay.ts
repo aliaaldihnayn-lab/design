@@ -1,11 +1,6 @@
 import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
 
-import type {
-  VectorVertex,
-  VectorSegment,
-  VectorRegion,
-  SceneGraph
-} from '@lawha/scene-graph'
+import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '@lawha/scene-graph'
 import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import Matrix from '@lawha/scene-graph/matrix'
 import type { Vector } from '@lawha/scene-graph/primitives'

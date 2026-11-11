@@ -1,8 +1,4 @@
-import {
-  figCheckpointRecords,
-  type FigArchiveRecordInfo,
-  type FigRecordPatch
-} from '@lawha/fig'
+import { figCheckpointRecords, type FigArchiveRecordInfo, type FigRecordPatch } from '@lawha/fig'
 import {
   nameImagesForFigma,
   type FigNodeChangeExportRuntime,

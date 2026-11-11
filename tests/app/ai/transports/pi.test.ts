@@ -1,10 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import type {
-  HarnessSidecarMessage,
-  HarnessTurnEvent,
-  HarnessTurnUsage
-} from '@lawha/harness'
+import type { HarnessSidecarMessage, HarnessTurnEvent, HarnessTurnUsage } from '@lawha/harness'
 
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
 

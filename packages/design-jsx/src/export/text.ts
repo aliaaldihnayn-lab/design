@@ -1,11 +1,7 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 
 import { jsx, type SyntaxNode } from '@lawha/emit'
-import type {
-  SceneNode,
-  TextParagraphSpacingField,
-  TextParagraphStyle
-} from '@lawha/scene-graph'
+import type { SceneNode, TextParagraphSpacingField, TextParagraphStyle } from '@lawha/scene-graph'
 import {
   hasParagraphSpacing,
   MAX_LIST_INDENTATION,

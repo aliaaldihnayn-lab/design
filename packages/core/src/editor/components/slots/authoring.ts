@@ -1,8 +1,5 @@
 import type { SceneNode } from '@lawha/scene-graph'
-import {
-  removeComponentProperty,
-  createComponentPropertyId
-} from '@lawha/scene-graph/components'
+import { removeComponentProperty, createComponentPropertyId } from '@lawha/scene-graph/components'
 import {
   canCreateSlot,
   createSlotProperty,

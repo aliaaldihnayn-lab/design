@@ -472,6 +472,12 @@ export interface StyleRun {
   style: CharacterStyleOverride
 }
 
+/** Text with the character styles that differ from its base style, as runs over its characters. */
+export interface StyledText {
+  text: string
+  runs: StyleRun[]
+}
+
 export interface ArcData {
   startingAngle: number
   endingAngle: number

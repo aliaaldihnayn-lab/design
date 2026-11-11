@@ -1,9 +1,4 @@
-import {
-  nodeText,
-  numberAttr,
-  type PageSetup,
-  type WriterDocument
-} from '#core/writer/model'
+import { nodeText, numberAttr, type PageSetup, type WriterDocument } from '#core/writer/model'
 
 import { el, NS, XML_HEADER } from './xml'
 

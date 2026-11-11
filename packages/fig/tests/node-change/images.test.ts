@@ -5,10 +5,7 @@ import { figImageEntries, nameImagesForFigma } from '#fig/node-change/images'
 
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import { computeImageHash } from '@lawha/scene-graph/images'
-import {
-  LAWHA_PLUGIN_DATA,
-  LAWHA_PLUGIN_ID
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 const STILL = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])
 /** A shader still's own name, which is not the SHA-1 of its bytes. */

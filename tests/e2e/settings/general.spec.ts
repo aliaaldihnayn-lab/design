@@ -47,9 +47,7 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await objects.click()
   await pixelGrid.click()
   await expect
-    .poll(() =>
-      page.evaluate(() => window.lawha?.getStore?.().state.snappingPreferences ?? null)
-    )
+    .poll(() => page.evaluate(() => window.lawha?.getStore?.().state.snappingPreferences ?? null))
     .toEqual({ geometry: false, objects: false, pixelGrid: false })
 
   await page.getByTestId('app-settings-done').click()

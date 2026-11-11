@@ -1,11 +1,6 @@
 import { clamp, minBy } from 'es-toolkit'
 
-import type {
-  ConnectorEndpoint,
-  ConnectorMagnet,
-  SceneGraph,
-  SceneNode
-} from '@lawha/scene-graph'
+import type { ConnectorEndpoint, ConnectorMagnet, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { boundEndpoint, freeEndpoint } from '@lawha/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent, getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import Matrix from '@lawha/scene-graph/matrix'

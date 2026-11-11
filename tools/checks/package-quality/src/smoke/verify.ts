@@ -2,10 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import {
-  discoverPublicPackages,
-  orderPackagesByDependencies
-} from '@lawha/package-artifacts-tools'
+import { discoverPublicPackages, orderPackagesByDependencies } from '@lawha/package-artifacts-tools'
 
 import { measurePhase } from '../timing'
 import { verifyArtifactConsumers } from './consumer'

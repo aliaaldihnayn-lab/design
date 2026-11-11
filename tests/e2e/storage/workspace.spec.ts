@@ -219,10 +219,7 @@ test('Delete removes a stored document from the bucket, and a document deleted e
     ['poster', 'Poster'],
     ['flyer', 'Flyer']
   ]) {
-    objects.set(
-      `lawha_storage/canvases/${id}.fig`,
-      readFileSync('tests/fixtures/gold-preview.fig')
-    )
+    objects.set(`lawha_storage/canvases/${id}.fig`, readFileSync('tests/fixtures/gold-preview.fig'))
     objects.set(
       `lawha_storage/canvases/${id}.meta.json`,
       Buffer.from(JSON.stringify({ name, updatedAt: '2026-01-02T03:04:05.000Z' }))

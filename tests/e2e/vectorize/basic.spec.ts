@@ -115,10 +115,7 @@ test('missing key opens Media settings and saves through the credential manager'
   await editor.page.getByTestId('app-settings-done').click()
   await expect(editor.page.getByTestId('app-settings-dialog')).toHaveCount(0)
   expect(
-    await editor.page.evaluate(
-      (id) => window.lawha?.getStore?.().graph.getNode(id)?.type,
-      nodeId
-    )
+    await editor.page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.type, nodeId)
   ).toBe('RECTANGLE')
 })
 
@@ -155,10 +152,7 @@ test('vectorize replaces an image with editable vectors and undo restores it', a
   await editor.canvas.undo()
   await editor.canvas.waitForRender()
   expect(
-    await editor.page.evaluate(
-      (id) => window.lawha?.getStore?.().graph.getNode(id)?.type,
-      nodeId
-    )
+    await editor.page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.type, nodeId)
   ).toBe('RECTANGLE')
   editor.canvas.assertNoErrors()
 })

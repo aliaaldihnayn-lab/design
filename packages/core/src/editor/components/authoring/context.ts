@@ -1,8 +1,4 @@
-import type {
-  ComponentPropertyReferenceField,
-  SceneGraph,
-  SceneNode
-} from '@lawha/scene-graph'
+import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { getNodeEditCapability } from '#core/editor/capabilities'
 

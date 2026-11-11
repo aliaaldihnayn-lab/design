@@ -22,11 +22,39 @@ async function buildApp(page: Page): Promise<AppIds> {
       { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
     ]
     const screen = (name: string, x: number) =>
-      graph.createNode('FRAME', pageId, { name, x, y: 0, width: 390, height: 844, fills: solid(1, 1, 1) })
-    const box = (parentId: string, name: string, x: number, y: number, width: number, height: number) =>
-      graph.createNode('FRAME', parentId, { name, x, y, width, height, fills: solid(0.3, 0.3, 0.9) })
+      graph.createNode('FRAME', pageId, {
+        name,
+        x,
+        y: 0,
+        width: 390,
+        height: 844,
+        fills: solid(1, 1, 1)
+      })
+    const box = (
+      parentId: string,
+      name: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ) =>
+      graph.createNode('FRAME', parentId, {
+        name,
+        x,
+        y,
+        width,
+        height,
+        fills: solid(0.3, 0.3, 0.9)
+      })
     const text = (parentId: string, content: string) =>
-      graph.createNode('TEXT', parentId, { name: content, text: content, x: 0, y: 0, width: 100, height: 20 })
+      graph.createNode('TEXT', parentId, {
+        name: content,
+        text: content,
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 20
+      })
     const login = screen('Sign in', 0)
     const home = screen('Home', 500)
     const profile = screen('Profile', 1000)
@@ -38,7 +66,14 @@ async function buildApp(page: Page): Promise<AppIds> {
     const back = box(profile.id, 'Back', 16, 48, 48, 40)
     text(back.id, 'Back')
     store.select([login.id])
-    return { login: login.id, home: home.id, profile: profile.id, button: button.id, tab: tab.id, back: back.id }
+    return {
+      login: login.id,
+      home: home.id,
+      profile: profile.id,
+      button: button.id,
+      tab: tab.id,
+      back: back.id
+    }
   })
 }
 
@@ -94,7 +129,11 @@ test('an after-delay interaction moves on by itself', async ({ page }) => {
       const value = JSON.stringify([
         {
           trigger: { type: 'after-delay', delay: 400 },
-          action: { type: 'navigate', destination: home, transition: { type: 'dissolve', duration: 100 } }
+          action: {
+            type: 'navigate',
+            destination: home,
+            transition: { type: 'dissolve', duration: 100 }
+          }
         }
       ])
       store.graph.updateNode(login, {

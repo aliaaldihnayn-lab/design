@@ -72,7 +72,9 @@ function loadPDFJS() {
   return pdfjsLoading
 }
 
-type PDFPage = Awaited<ReturnType<Awaited<ReturnType<typeof PDFJS.getDocument>['promise']>['getPage']>>
+type PDFPage = Awaited<
+  ReturnType<Awaited<ReturnType<typeof PDFJS.getDocument>['promise']>['getPage']>
+>
 
 /** A page as SVG, its images encoded as PNG. */
 function pageSVG(

@@ -4,10 +4,7 @@ import {
   shapeWithTextFrameFields,
   shapeWithTextLabel
 } from '@lawha/scene-graph/generated'
-import {
-  fitShapeWithTextHeight,
-  shapeWithTextLabelBox
-} from '@lawha/scene-graph/shape-with-text'
+import { fitShapeWithTextHeight, shapeWithTextLabelBox } from '@lawha/scene-graph/shape-with-text'
 
 import { measureTextForLayout } from './text-measurement'
 

@@ -4,10 +4,7 @@ import { effectScope, nextTick, ref, type EffectScope } from 'vue'
 
 import type { AIWallet } from '@lawha/cloud/contract'
 
-import {
-  useCloudCreditBalance,
-  type CloudBalanceSource
-} from '@/app/ai/providers/lawha/balance'
+import { useCloudCreditBalance, type CloudBalanceSource } from '@/app/ai/providers/lawha/balance'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 function wallet(balance: number | null): AIWallet {

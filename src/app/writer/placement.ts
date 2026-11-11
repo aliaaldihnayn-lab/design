@@ -1,4 +1,4 @@
-import type { Vector } from '@lawha/scene-graph/primitives'
+import type { Rect, Size, Vector } from '@lawha/scene-graph/primitives'
 
 /**
  * Where a visible signature goes on a PDF page: a box the person clicks or drags on the page's
@@ -7,17 +7,9 @@ import type { Vector } from '@lawha/scene-graph/primitives'
  */
 
 /** A box on a page, in fractions of its width and height from the top-left corner. */
-export interface PageBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+export type PageBox = Rect
 
-export interface PageSize {
-  width: number
-  height: number
-}
+export type PageSize = Size
 
 /** The size a signature gets when the person clicks rather than drags, in points. */
 export const STAMP_SIZE = { width: 180, height: 60 } as const

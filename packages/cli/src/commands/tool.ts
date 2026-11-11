@@ -3,12 +3,7 @@ import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 import { defineCommand } from 'citty'
 import * as v from 'valibot'
 
-import {
-  ALL_TOOLS,
-  isToolExposed,
-  toolChangesDocument,
-  type ToolDef
-} from '@lawha/core/tools'
+import { ALL_TOOLS, isToolExposed, toolChangesDocument, type ToolDef } from '@lawha/core/tools'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, dim, entity, fmtList, kv, printError, warn } from '#cli/format'

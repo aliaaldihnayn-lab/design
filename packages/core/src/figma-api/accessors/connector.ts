@@ -1,9 +1,4 @@
-import type {
-  ConnectorEndpoint,
-  ConnectorLineType,
-  SceneNode,
-  StrokeCap
-} from '@lawha/scene-graph'
+import type { ConnectorEndpoint, ConnectorLineType, SceneNode, StrokeCap } from '@lawha/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,

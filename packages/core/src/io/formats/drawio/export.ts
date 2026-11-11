@@ -18,11 +18,7 @@ import {
   curveMidpoint
 } from '@lawha/scene-graph/connectors'
 import { getParentWorldMatrix, getWorldMatrix } from '@lawha/scene-graph/coordinate'
-import {
-  isGeneratedFrame,
-  shapeWithTextLabel,
-  stickySublayers
-} from '@lawha/scene-graph/generated'
+import { isGeneratedFrame, shapeWithTextLabel, stickySublayers } from '@lawha/scene-graph/generated'
 import Matrix from '@lawha/scene-graph/matrix'
 import type { Vector } from '@lawha/scene-graph/primitives'
 

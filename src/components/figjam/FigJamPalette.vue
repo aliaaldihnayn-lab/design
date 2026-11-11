@@ -2,11 +2,7 @@
 import { computed } from 'vue'
 
 import { colorToHex } from '@lawha/scene-graph/color'
-import {
-  FIGJAM_COLOR_NAMES,
-  figJamColor,
-  type FigJamColorName
-} from '@lawha/scene-graph/figjam'
+import { FIGJAM_COLOR_NAMES, figJamColor, type FigJamColorName } from '@lawha/scene-graph/figjam'
 import { useFigJamMessages } from '@lawha/vue/i18n'
 
 import FigJamSwatches from './FigJamSwatches.vue'

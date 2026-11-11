@@ -72,12 +72,7 @@ describe('unsupported engine guidance', () => {
       'Update Chrome to run Lawha',
       'Chrome 105 detected. Lawha needs Chrome 111 or later.'
     ],
-    [
-      'edge',
-      109,
-      'Update Edge to run Lawha',
-      'Edge 109 detected. Lawha needs Edge 111 or later.'
-    ],
+    ['edge', 109, 'Update Edge to run Lawha', 'Edge 109 detected. Lawha needs Edge 111 or later.'],
     [
       'firefox',
       115,

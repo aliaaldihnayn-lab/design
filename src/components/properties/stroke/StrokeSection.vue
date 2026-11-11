@@ -11,10 +11,7 @@ import { MIXED, useNodeProps } from '@lawha/vue/controls/node-props'
 import { useOkHCL } from '@lawha/vue/controls/okhcl'
 import { useStrokeControls } from '@lawha/vue/controls/stroke'
 import { useI18n } from '@lawha/vue/i18n'
-import {
-  BindableValueRoot,
-  type BindableValueActions
-} from '@lawha/vue/primitives/BindableValue'
+import { BindableValueRoot, type BindableValueActions } from '@lawha/vue/primitives/BindableValue'
 
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'

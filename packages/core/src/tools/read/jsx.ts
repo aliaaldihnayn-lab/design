@@ -17,9 +17,7 @@ export const getJSX = defineTool({
     path: v.optional(
       v.pipe(
         v.string(),
-        v.description(
-          'Write JSX to this path instead of returning it (requires LAWHA_MCP_ROOT)'
-        )
+        v.description('Write JSX to this path instead of returning it (requires LAWHA_MCP_ROOT)')
       )
     )
   }),

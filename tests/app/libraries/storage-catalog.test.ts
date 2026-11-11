@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@lawha/scene-graph'
-import {
-  getInstanceOverride,
-  setInstanceOverride
-} from '@lawha/scene-graph/instances/overrides'
+import { getInstanceOverride, setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'

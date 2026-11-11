@@ -221,10 +221,7 @@ test('A suggestion applies to its row only', async () => {
   await expect(panel.getByText('Small text')).toHaveCount(0)
   await expect
     .poll(() =>
-      editor.page.evaluate(
-        (id) => window.lawha?.getStore?.().graph.getNode(id)?.fontSize,
-        noteId
-      )
+      editor.page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.fontSize, noteId)
     )
     .toBe(12)
 })
@@ -397,9 +394,7 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
   await expect(cardMark).toBeVisible()
   await expect(cardMark).toHaveAccessibleName('Contains errors or warnings')
   const markerCount = () =>
-    editor.page.evaluate(
-      () => window.lawha?.getStore?.().state.designIssues?.markers.length ?? 0
-    )
+    editor.page.evaluate(() => window.lawha?.getStore?.().state.designIssues?.markers.length ?? 0)
 
   await editor.page.getByRole('menuitem', { name: 'View' }).click()
   const toggle = editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' })

@@ -5,11 +5,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { VariableTokenFields } from '@lawha/core'
 import type { TokenStylesheetFormat } from '@lawha/dom-css/export'
-import {
-  isLibraryCollection,
-  type VariableType,
-  type VariableValue
-} from '@lawha/scene-graph'
+import { isLibraryCollection, type VariableType, type VariableValue } from '@lawha/scene-graph'
 import {
   formatVariableFormula,
   parseVariableFormula,

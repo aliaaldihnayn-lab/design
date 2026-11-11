@@ -2,10 +2,7 @@
 import type { VNode } from 'vue'
 
 import type { NumberExpressionError } from '@lawha/vue/controls/number-expression'
-import type {
-  NumberFieldEditPolicy,
-  NumberFieldSlotProps
-} from '@lawha/vue/primitives/NumberField'
+import type { NumberFieldEditPolicy, NumberFieldSlotProps } from '@lawha/vue/primitives/NumberField'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type { NumberFieldTheme } from '@/theme/input/number-field'

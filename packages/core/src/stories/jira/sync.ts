@@ -294,7 +294,7 @@ function storyFields(
 }
 
 async function pushStory(context: PushContext, placed: ReportedStory): Promise<void> {
-  const { nodeId, story, path, pageName } = placed
+  const { nodeId, story } = placed
   const parentKey = story.epicId ? context.epicKeys.get(story.epicId) : undefined
   await pushIssue(
     context,

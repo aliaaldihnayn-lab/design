@@ -39,7 +39,10 @@ describe('Span', () => {
       {
         start: 5,
         length: 8,
-        style: { textCase: 'ORIGINAL', hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
+        style: {
+          textCase: 'ORIGINAL',
+          hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
+        }
       }
     ])
   })

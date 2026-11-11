@@ -2,13 +2,7 @@ import { deflateSync, inflateSync } from 'fflate'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import type {
-  GeometryPath,
-  NodeType,
-  SceneGraph,
-  SceneNode,
-  WindingRule
-} from '@lawha/scene-graph'
+import type { GeometryPath, NodeType, SceneGraph, SceneNode, WindingRule } from '@lawha/scene-graph'
 import {
   createInstanceOverrideState,
   deserializeInstanceOverrideState,

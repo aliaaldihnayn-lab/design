@@ -3,7 +3,7 @@ import type { Element } from '@xmldom/xmldom'
 import type { Fill, SceneNode } from '@lawha/scene-graph'
 import { WHITE } from '@lawha/scene-graph/constants'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
-import type { Color } from '@lawha/scene-graph/primitives'
+import type { Color, Rect } from '@lawha/scene-graph/primitives'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -141,13 +141,6 @@ function readChart(ctx: ShapeContext, chartPart: string): ChartData | null {
 }
 
 // ── Drawing ──────────────────────────────────────────────
-
-interface Rect {
-  x: number
-  y: number
-  width: number
-  height: number
-}
 
 function solid(color: Color, opacity = 1): Fill {
   return { type: 'SOLID', color: { ...color }, opacity, visible: true }

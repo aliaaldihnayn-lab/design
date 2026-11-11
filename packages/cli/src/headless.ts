@@ -6,11 +6,7 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { populateAllFigPages, populateFigPage } from '@lawha/core/io/formats/fig'
 import { headlessHTMLReader } from '@lawha/core/io/formats/html/import'
 import { initCanvasKit } from '@lawha/core/io/formats/raster'
-import {
-  computeAllLayouts,
-  installTextMeasurer,
-  sizeAutoResizingText
-} from '@lawha/core/layout'
+import { computeAllLayouts, installTextMeasurer, sizeAutoResizingText } from '@lawha/core/layout'
 import { writeFileAtomic } from '@lawha/core/node/fs'
 import { prepareGraphFonts, type DocumentFontStatus } from '@lawha/core/text'
 import type { SceneGraph } from '@lawha/scene-graph'

@@ -1,11 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type {
-  DerivedTextGlyph,
-  Fill,
-  SceneNode,
-  TextDecorationStyle
-} from '@lawha/scene-graph'
+import type { DerivedTextGlyph, Fill, SceneNode, TextDecorationStyle } from '@lawha/scene-graph'
 import { faceStyleKey } from '@lawha/scene-graph/font-style'
 
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character-style'

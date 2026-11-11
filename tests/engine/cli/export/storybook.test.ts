@@ -73,11 +73,7 @@ test('export CLI replaces stale generated stories and keeps hand-written ones', 
   const dir = await mkdtemp(join(tmpdir(), 'lawha-storybook-cli-'))
   const output = join(dir, 'stories')
   const args = [...STORYBOOK, '--no-design-images', '--output', output]
-  const setup = await runLawhaCLI([
-    'export',
-    await writeComponentFixture(dir, ['Old']),
-    ...args
-  ])
+  const setup = await runLawhaCLI(['export', await writeComponentFixture(dir, ['Old']), ...args])
   expect(setup.exitCode).toBe(0)
   await Bun.write(join(output, 'Mine.stories.ts'), 'export default {}\n')
 
@@ -428,14 +424,7 @@ test('export CLI needs an output choice and one document for --page', async () =
   expect(noOutput.exitCode).toBe(1)
   expect(noOutput.stderr).toContain('2 documents need --beside')
 
-  const page = await runLawhaCLI([
-    'export',
-    pattern,
-    ...storybook,
-    '--beside',
-    '--page',
-    'Library'
-  ])
+  const page = await runLawhaCLI(['export', pattern, ...storybook, '--beside', '--page', 'Library'])
   expect(page.exitCode).toBe(1)
   expect(page.stderr).toContain('--page names a page of one document')
 

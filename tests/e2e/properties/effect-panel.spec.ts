@@ -37,20 +37,14 @@ for (const theme of ['light', 'dark']) {
     await radius.press('Enter')
     await expect
       .poll(() =>
-        page.evaluate(
-          (id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius,
-          id
-        )
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius, id)
       )
       .toBe(20)
     await section.getByRole('heading', { name: 'Effects' }).click()
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
     await expect
       .poll(() =>
-        page.evaluate(
-          (id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius,
-          id
-        )
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius, id)
       )
       .toBe(12)
     await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
@@ -58,9 +52,7 @@ for (const theme of ['light', 'dark']) {
     await expect(section.getByRole('spinbutton', { name: 'B', exact: true })).toBeVisible()
     await section.getByRole('button', { name: 'Remove effect' }).click()
     await expect
-      .poll(() =>
-        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects, id)
-      )
+      .poll(() => page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects, id))
       .toEqual([])
     await expect(section.locator('[data-slot="effect-settings"]')).toHaveCount(0)
   })

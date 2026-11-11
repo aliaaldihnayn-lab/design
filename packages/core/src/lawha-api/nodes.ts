@@ -1,11 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type {
-  LayoutDirection,
-  SceneGraph,
-  SceneNode,
-  TextDirection
-} from '@lawha/scene-graph'
+import type { LayoutDirection, SceneGraph, SceneNode, TextDirection } from '@lawha/scene-graph'
 import {
   getFillOkHCL,
   getStrokeOkHCL,

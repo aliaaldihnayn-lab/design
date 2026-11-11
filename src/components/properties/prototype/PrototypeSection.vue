@@ -20,6 +20,7 @@ import { openPlayer } from '@/app/prototype/player'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
@@ -112,30 +113,32 @@ function present() {
   <PanelSection :label="t.section" data-test-id="prototype-section">
     <div class="flex flex-col gap-1.5">
       <div class="flex gap-1.5">
-        <AppButton
-          color="primary"
-          variant="solid"
-          class="flex-1"
-          data-test-id="prototype-present"
-          :title="t.presentHint"
-          :disabled="busy"
-          @click="present"
-        >
-          <icon-lucide-play class="size-3.5" aria-hidden="true" />
-          <span class="truncate">{{ t.present }}</span>
-        </AppButton>
+        <Tip :label="t.presentHint">
+          <AppButton
+            color="primary"
+            variant="solid"
+            class="flex-1"
+            data-test-id="prototype-present"
+            :disabled="busy"
+            @click="present"
+          >
+            <icon-lucide-play class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ t.present }}</span>
+          </AppButton>
+        </Tip>
       </div>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="prototype-auto"
-        :title="t.autoHint"
-        :disabled="busy"
-        @click="autoLink"
-      >
-        <icon-lucide-workflow class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ t.auto }}</span>
-      </AppButton>
+      <Tip :label="t.autoHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="prototype-auto"
+          :disabled="busy"
+          @click="autoLink"
+        >
+          <icon-lucide-workflow class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ t.auto }}</span>
+        </AppButton>
+      </Tip>
       <AppButton
         variant="outline"
         class="w-full justify-start"

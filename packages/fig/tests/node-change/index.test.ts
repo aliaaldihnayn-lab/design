@@ -19,12 +19,7 @@ import {
 } from '#fig/node-change/index'
 import { fillToKiwiPaint } from '#fig/node-change/paint'
 
-import {
-  getCompiledSchema,
-  initCodec,
-  type NodeChange,
-  type Paint
-} from '@lawha/kiwi/fig/codec'
+import { getCompiledSchema, initCodec, type NodeChange, type Paint } from '@lawha/kiwi/fig/codec'
 import { SceneGraph } from '@lawha/scene-graph'
 import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import TransformMatrix from '@lawha/scene-graph/matrix'

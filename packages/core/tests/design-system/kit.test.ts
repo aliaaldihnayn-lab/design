@@ -431,7 +431,7 @@ describe('interactive kit', () => {
       )
       return dispatchStateKey(showing, screen.id, 'ArrowDown').changes.map((change) => change.to)
     }
-    expect(press(variant('State=Open') ?? '')).toEqual([variant('State=Option 2')])
+    expect(press(variant('State=Open') ?? '')).toEqual([variant('State=Option 2') ?? ''])
     expect(press(variant('State=Option 2') ?? '')).toEqual([])
   })
 })

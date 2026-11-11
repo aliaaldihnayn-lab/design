@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
 
-import {
-  useNumberBindingProvider,
-  type BindingTarget
-} from '@lawha/vue/controls/binding-provider'
+import { useNumberBindingProvider, type BindingTarget } from '@lawha/vue/controls/binding-provider'
 import type { NumberBindingPath } from '@lawha/vue/controls/number-variable-binding'
 import { useI18n } from '@lawha/vue/i18n'
 import { BindableValueRoot } from '@lawha/vue/primitives/BindableValue'

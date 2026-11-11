@@ -5,15 +5,16 @@ import type { GUID } from '@lawha/kiwi/fig'
 import { guidToString } from '@lawha/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
+import type { Action, Interaction, Transition } from '#core/prototype/model'
+import { DIRECTIONS, EASINGS, triggerSchema } from '#core/prototype/schema'
+
 import {
   conditionalFromFig,
   conditionalToFig,
   setVariableFromFig,
   setVariableToFig,
   type FigVariableIds
-} from './fig-variables'
-import type { Action, Interaction, Transition } from './model'
-import { DIRECTIONS, EASINGS, triggerSchema } from './schema'
+} from './variables'
 
 /** A pointer or focus trigger, as `triggerSchema` reads it. */
 const pointerTriggerSchema = v.pipe(

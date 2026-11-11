@@ -3,9 +3,7 @@ import type { InjectionKey } from 'vue'
 
 import type { BindingProvider } from '#vue/controls/binding-provider/types'
 
-export const BINDING_PROVIDER_KEY: InjectionKey<BindingProvider> = Symbol(
-  'lawha-binding-provider'
-)
+export const BINDING_PROVIDER_KEY: InjectionKey<BindingProvider> = Symbol('lawha-binding-provider')
 
 export function provideBindingProvider(provider: BindingProvider) {
   provide(BINDING_PROVIDER_KEY, provider)

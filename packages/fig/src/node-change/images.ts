@@ -1,9 +1,6 @@
 import type { NodeChange, PluginData } from '@lawha/kiwi/fig/codec'
 import { computeImageHash } from '@lawha/scene-graph/images'
-import {
-  LAWHA_PLUGIN_DATA,
-  LAWHA_PLUGIN_ID
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 import { bytesToHex, hexToBytes } from './bytes'
 

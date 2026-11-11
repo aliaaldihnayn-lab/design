@@ -122,9 +122,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       window.lawha?.test?.collab?.updateCursor(420, 260, store.state.currentPageId)
     })
     await expect
-      .poll(() =>
-        host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length)
-      )
+      .poll(() => host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length))
       .toBe(1)
 
     expect(collaborationErrors(guest)).toEqual([])
@@ -134,9 +132,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       .poll(() => host.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))
       .toBe(0)
     await expect
-      .poll(() =>
-        host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length)
-      )
+      .poll(() => host.page.evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length))
       .toBe(0)
 
     const reconnectingGuest = await createPeer(browser, 'Guest', relay.url)

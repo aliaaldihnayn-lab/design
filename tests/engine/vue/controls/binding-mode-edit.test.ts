@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@lawha/core'
 
-import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
+import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import { resolveEffectiveBindingValue } from '#vue/controls/binding-provider/resolution'
 

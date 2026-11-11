@@ -26,10 +26,7 @@ for (const theme of ['light', 'dark']) {
     await section.getByRole('button', { name: 'Align center horizontally', exact: true }).click()
     await expect
       .poll(() =>
-        page.evaluate(
-          (id) => window.lawha?.getStore?.().graph.getNode(id)?.textAlignHorizontal,
-          id
-        )
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.textAlignHorizontal, id)
       )
       .toBe('CENTER')
     await section.getByRole('switch', { name: 'Standard ligatures', exact: true }).click()

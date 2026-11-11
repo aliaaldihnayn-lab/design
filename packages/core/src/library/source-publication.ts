@@ -1,9 +1,5 @@
 import type { SceneGraph, SourceLibraryPublication } from '@lawha/scene-graph'
-import {
-  LAWHA_PLUGIN_DATA,
-  readPluginData,
-  withPluginData
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 
 export function readSourceLibraryPublication(graph: SceneGraph): SourceLibraryPublication | null {
   const root = graph.getNode(graph.rootId)

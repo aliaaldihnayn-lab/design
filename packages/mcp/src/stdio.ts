@@ -49,10 +49,7 @@ const toolPolicy: ToolPolicy = {
       : parseDisabledTools(process.env.LAWHA_MCP_DISABLED_TOOLS),
   // The server enforces its own scope on every call; this keeps the tool list in step with it,
   // and lets the client limit itself further.
-  scope: narrowestScope(
-    discovery?.scope ?? 'document',
-    parseToolScope(process.env.LAWHA_MCP_SCOPE)
-  )
+  scope: narrowestScope(discovery?.scope ?? 'document', parseToolScope(process.env.LAWHA_MCP_SCOPE))
 }
 const mcpRoot = resolveMCPRoot(process.env.LAWHA_MCP_ROOT)
 // Auth token: undefined → auto-discover from discovery file, empty string →

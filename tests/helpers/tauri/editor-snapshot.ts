@@ -6,10 +6,10 @@ export type NativeLayerFixture = {
 
 // Home has an editor store too, but no mounted canvas or text-input session.
 async function ensureNativeEditorReady(): Promise<void> {
-  await browser.waitUntil(
-    async () => browser.execute(() => Boolean(window.lawha?.getStore?.())),
-    { timeout: 30_000, timeoutMsg: 'Lawha store did not initialize' }
-  )
+  await browser.waitUntil(async () => browser.execute(() => Boolean(window.lawha?.getStore?.())), {
+    timeout: 30_000,
+    timeoutMsg: 'Lawha store did not initialize'
+  })
   await browser.execute(() => {
     const store = window.lawha?.getStore?.()
     if (document.querySelector('canvas') && store?.textEditor) return

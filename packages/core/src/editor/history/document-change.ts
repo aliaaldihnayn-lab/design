@@ -10,10 +10,7 @@ import type {
 } from '@lawha/scene-graph'
 import { withLiveComments } from '@lawha/scene-graph/comments'
 import { cloneInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
-import {
-  createSceneMutationImpact,
-  recordSceneMutations
-} from '@lawha/scene-graph/mutation-impact'
+import { createSceneMutationImpact, recordSceneMutations } from '@lawha/scene-graph/mutation-impact'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'

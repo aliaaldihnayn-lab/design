@@ -39,12 +39,12 @@ describe('assertAgentReady', () => {
 
   test('names the missing or mismatched companion', async () => {
     expect(await problem('pi', installed({}, 'lawha-mcp-http'))).toBe('companion-missing')
-    expect(
-      await problem('pi', installed({ '@lawha/harness': '0.12.0' }, 'lawha-harness'))
-    ).toBe('companion-outdated')
-    expect(
-      await problem('acp', installed({ '@lawha/mcp': '0.12.0' }, 'lawha-mcp-http'))
-    ).toBe('mcp-outdated')
+    expect(await problem('pi', installed({ '@lawha/harness': '0.12.0' }, 'lawha-harness'))).toBe(
+      'companion-outdated'
+    )
+    expect(await problem('acp', installed({ '@lawha/mcp': '0.12.0' }, 'lawha-mcp-http'))).toBe(
+      'mcp-outdated'
+    )
   })
 
   test('only Pi needs the Harness companion', async () => {

@@ -108,9 +108,7 @@ for (const flipX of [false, true]) {
         await editor.page.mouse.down()
         await move(end, 8)
         const committedAngle = expectDefined(
-          await editor.page.evaluate(
-            () => window.lawha?.getStore?.().state.rotationPreview?.angle
-          ),
+          await editor.page.evaluate(() => window.lawha?.getStore?.().state.rotationPreview?.angle),
           'preview angle'
         )
         await editor.page.mouse.up()

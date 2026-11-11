@@ -5,10 +5,7 @@ import { fromUint8Array } from 'js-base64'
 
 import { buildLawhaClipboardHTML, parseLawhaClipboard } from '@lawha/core/clipboard'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
-import {
-  getInstanceOverride,
-  setInstanceOverride
-} from '@lawha/scene-graph/instances/overrides'
+import { getInstanceOverride, setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { storeImageBytes } from '#tests/helpers/scene'

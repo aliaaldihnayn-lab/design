@@ -1,8 +1,4 @@
-import {
-  LAWHA_PLUGIN_DATA,
-  readPluginData,
-  withPluginData
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 import {
   cachedStatusWorkflow,
   shownStatusState,

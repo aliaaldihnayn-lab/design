@@ -14,12 +14,7 @@ export {
   type NetworkNearestResult
 } from './curve-math'
 
-import type {
-  VectorNetwork,
-  VectorRegion,
-  VectorSegment,
-  VectorVertex
-} from '@lawha/scene-graph'
+import type { VectorNetwork, VectorRegion, VectorSegment, VectorVertex } from '@lawha/scene-graph'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 function finishSplitSegment(

@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import {
-  useComponentProperties,
-  useExposedInstances
-} from '@lawha/vue/controls/component-props'
+import { useComponentProperties, useExposedInstances } from '@lawha/vue/controls/component-props'
 import { useSlotProperties } from '@lawha/vue/controls/slots'
 import { useI18n } from '@lawha/vue/i18n'
 

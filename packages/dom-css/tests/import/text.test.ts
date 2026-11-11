@@ -154,22 +154,33 @@ describe('rich text import', () => {
     const [text] = await texts(
       '<p>Read <a href="https://github.com/aliaaldihnayn-lab/design#readme">the <b>docs</b></a> now</p>'
     )
-    const link = { type: 'URL' as const, value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
+    const link = {
+      type: 'URL' as const,
+      value: 'https://github.com/aliaaldihnayn-lab/design#readme'
+    }
     expect(text?.styleRuns).toEqual([
       { start: 5, length: 4, style: { hyperlink: link } },
       { start: 9, length: 4, style: { hyperlink: link, fontWeight: 700 } }
     ])
-    const [alone] = await texts('<a href="https://github.com/aliaaldihnayn-lab/design#readme">Home</a>')
+    const [alone] = await texts(
+      '<a href="https://github.com/aliaaldihnayn-lab/design#readme">Home</a>'
+    )
     expect(alone?.styleRuns).toEqual([
       {
         start: 0,
         length: 4,
-        style: { hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
+        style: {
+          hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
+        }
       }
     ])
-    const [rich] = await texts('<a href="https://github.com/aliaaldihnayn-lab/design#readme">Go <b>home</b></a>')
+    const [rich] = await texts(
+      '<a href="https://github.com/aliaaldihnayn-lab/design#readme">Go <b>home</b></a>'
+    )
     expect(
-      rich?.styleRuns.every((run) => run.style.hyperlink?.value === 'https://github.com/aliaaldihnayn-lab/design#readme')
+      rich?.styleRuns.every(
+        (run) => run.style.hyperlink?.value === 'https://github.com/aliaaldihnayn-lab/design#readme'
+      )
     ).toBe(true)
     expect(rich?.styleRuns.reduce((sum, run) => sum + run.length, 0)).toBe(rich?.text.length)
   })
@@ -195,7 +206,12 @@ describe('rich text import', () => {
       {
         start: 0,
         length: 4,
-        style: { hyperlink: { type: 'URL' as const, value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
+        style: {
+          hyperlink: {
+            type: 'URL' as const,
+            value: 'https://github.com/aliaaldihnayn-lab/design#readme'
+          }
+        }
       },
       { start: 5, length: 4, style: { textCase: 'UPPER' as const } }
     ]

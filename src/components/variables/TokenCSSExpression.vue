@@ -3,11 +3,7 @@ import { computedAsync } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import {
-  cssExpressionProblem,
-  loadTokenValidator,
-  tokenNumberToCSS
-} from '@lawha/dom-css/export'
+import { cssExpressionProblem, loadTokenValidator, tokenNumberToCSS } from '@lawha/dom-css/export'
 import type { TokenUnit } from '@lawha/scene-graph'
 import { useI18n } from '@lawha/vue/i18n'
 

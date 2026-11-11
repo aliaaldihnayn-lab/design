@@ -3,10 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { readModeConditions, readVariableToken } from '#fig/node-change/index'
 
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
-import {
-  LAWHA_PLUGIN_DATA,
-  LAWHA_PLUGIN_ID
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 function record(key: string, value: string): NodeChange {
   return { pluginData: [{ pluginID: LAWHA_PLUGIN_ID, key, value }] }
@@ -14,9 +11,7 @@ function record(key: string, value: string): NodeChange {
 
 describe('token plugin data', () => {
   test('a malformed or wrongly shaped entry reads as no token data', () => {
-    expect(
-      readVariableToken(record(LAWHA_PLUGIN_DATA.token.key, '{not json'), { m: 8 })
-    ).toEqual({
+    expect(readVariableToken(record(LAWHA_PLUGIN_DATA.token.key, '{not json'), { m: 8 })).toEqual({
       unit: undefined,
       expressions: undefined
     })
@@ -26,12 +21,10 @@ describe('token plugin data', () => {
       unit: undefined,
       expressions: undefined
     })
-    expect(
-      readModeConditions(record(LAWHA_PLUGIN_DATA.modeConditions.key, '{"m":42}'))
-    ).toEqual({})
-    expect(
-      readModeConditions(record(LAWHA_PLUGIN_DATA.modeConditions.key, '{"m":"  "}'))
-    ).toEqual({})
+    expect(readModeConditions(record(LAWHA_PLUGIN_DATA.modeConditions.key, '{"m":42}'))).toEqual({})
+    expect(readModeConditions(record(LAWHA_PLUGIN_DATA.modeConditions.key, '{"m":"  "}'))).toEqual(
+      {}
+    )
   })
 
   test('keep expressions only for modes whose value still matches', () => {

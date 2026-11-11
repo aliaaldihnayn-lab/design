@@ -18,10 +18,7 @@ import type {
   TextDirection
 } from '@lawha/scene-graph'
 import type { FigJamTextSize, FigJamTypeface } from '@lawha/scene-graph/figjam'
-import {
-  SHAPE_WITH_TEXT_TYPES,
-  type ShapeWithTextType
-} from '@lawha/scene-graph/shape-with-text'
+import { SHAPE_WITH_TEXT_TYPES, type ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
 
 /**
  * A Figma enum as design JSX spells it. Reading and writing come from one table, so whatever the

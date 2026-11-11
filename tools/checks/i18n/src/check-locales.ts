@@ -145,7 +145,9 @@ for (const [locale, dir] of expectedLocaleDirs) {
     const index = readFileSync(join(localeDir, REQUIRED_INDEX_FILE), 'utf8')
     for (const namespace of namespaces) {
       if (!index.includes(`from './${localeFileName(namespace)}.json'`)) {
-        report(`${locale}: ${REQUIRED_INDEX_FILE} does not import ${localeFileName(namespace)}.json`)
+        report(
+          `${locale}: ${REQUIRED_INDEX_FILE} does not import ${localeFileName(namespace)}.json`
+        )
       }
     }
   }

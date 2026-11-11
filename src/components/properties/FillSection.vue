@@ -7,10 +7,7 @@ import { useColorBindingProvider } from '@lawha/vue/controls/binding-provider'
 import { useFillControls } from '@lawha/vue/controls/fill'
 import { useOkHCL } from '@lawha/vue/controls/okhcl'
 import { useI18n } from '@lawha/vue/i18n'
-import {
-  BindableValueRoot,
-  type BindableValueActions
-} from '@lawha/vue/primitives/BindableValue'
+import { BindableValueRoot, type BindableValueActions } from '@lawha/vue/primitives/BindableValue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import FillPicker from '@/components/fill-picker/FillPicker.vue'

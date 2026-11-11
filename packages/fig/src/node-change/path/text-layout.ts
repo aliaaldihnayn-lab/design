@@ -1,9 +1,4 @@
-import type {
-  DerivedTextGlyph,
-  GeometryPath,
-  SceneNode,
-  TextPathData
-} from '@lawha/scene-graph'
+import type { DerivedTextGlyph, GeometryPath, SceneNode, TextPathData } from '@lawha/scene-graph'
 import { transformGeometryPaths } from '@lawha/scene-graph/copy'
 import { geometryBlobBounds } from '@lawha/scene-graph/geometry'
 

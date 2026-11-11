@@ -18,10 +18,7 @@ export function layerTypeDriver(page: () => Page) {
 
     type() {
       if (!id) throw new Error('Build the scene first')
-      return page().evaluate(
-        (nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.type,
-        id
-      )
+      return page().evaluate((nodeId) => window.lawha?.getStore?.().graph.getNode(nodeId)?.type, id)
     }
   }
 }

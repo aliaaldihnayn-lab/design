@@ -1,3 +1,5 @@
+import type { HorizontalExtent } from '@lawha/scene-graph/primitives'
+
 import type { PageSetup } from '#core/writer/model'
 
 import type { FlowBlock, ParagraphBlock, RunStyle, TableBlock, TableCell } from './flow'
@@ -30,10 +32,7 @@ const CELL_PADDING_Y = 2
 const BORDER = 0.5
 const MARKER_GAP = 6
 
-interface Frame {
-  left: number
-  right: number
-}
+type Frame = HorizontalExtent
 
 export interface PaginateSection {
   page: PageSetup

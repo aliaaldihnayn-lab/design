@@ -5,13 +5,7 @@
  * come from the App chrome collection, which follows the app's dark or light theme; sizes were
  * measured from 2× screenshots of the header, menu bar, and panel.
  */
-import {
-  Frame,
-  Text,
-  type BaseProps,
-  type DesignVariable,
-  type TreeNode
-} from '@lawha/design-jsx'
+import { Frame, Text, type BaseProps, type DesignVariable, type TreeNode } from '@lawha/design-jsx'
 
 import { Icon, type IconProps } from './elements'
 import type { Theme } from './theme'

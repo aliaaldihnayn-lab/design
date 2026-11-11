@@ -284,8 +284,7 @@ const noDirectLawhaBrowserStore = {
         if (!isLawhaMember(node.object)) return
         context.report({
           node,
-          message:
-            'Use window.lawha.getStore() instead of accessing window.lawha.store directly.'
+          message: 'Use window.lawha.getStore() instead of accessing window.lawha.store directly.'
         })
       }
     }

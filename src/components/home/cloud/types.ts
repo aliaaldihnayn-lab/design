@@ -1,6 +1,5 @@
-import type { StoredKind } from '@/components/home/document/kinds'
-
 import type { HomeLocationView } from '@/app/home/locations'
+import type { StoredKind } from '@/components/home/document/kinds'
 
 /** A place the home tab lists documents from. */
 export type HomeLocation = HomeLocationView

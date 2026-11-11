@@ -12,11 +12,7 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@lawha/scene-graph'
-import {
-  MAX_LIST_INDENTATION,
-  PLAIN_PARAGRAPH,
-  trimParagraphStyles
-} from '@lawha/scene-graph/text'
+import { MAX_LIST_INDENTATION, PLAIN_PARAGRAPH, trimParagraphStyles } from '@lawha/scene-graph/text'
 
 /** The style of the text Markdown is written into, which headings and code are relative to. */
 export type MarkdownBase = Pick<SceneNode, 'fontSize' | 'fontWeight'>

@@ -7,9 +7,7 @@ import { DOM_CSS_COLORS, simpleCardDocument } from '#tests/helpers/dom-css'
 
 describe('@lawha/dom-css', () => {
   it('serializes DesignDOM as HTML', () => {
-    expect(serializeHTML(simpleCardDocument)).toBe(
-      '<div class="card" data-id="node-1">Lawha</div>'
-    )
+    expect(serializeHTML(simpleCardDocument)).toBe('<div class="card" data-id="node-1">Lawha</div>')
   })
 
   it('serializes inline styles as Tailwind classes when requested', () => {

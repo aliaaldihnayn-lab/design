@@ -7,9 +7,8 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 import { blendStepProps, canTakePathEffect, outlineCentre } from '#core/canvas/path-effects'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { shapeBuilderSourcePath } from '#core/canvas/shape-builder'
-
-import { wrapNodes } from './container-wrap'
-import { ungroupNode } from './group/ungroup'
+import { wrapNodes } from '#core/editor/structure/container-wrap'
+import { ungroupNode } from '#core/editor/structure/group/ungroup'
 
 /** How a live blend spaces its steps. */
 export interface BlendSpacing {

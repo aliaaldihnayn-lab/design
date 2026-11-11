@@ -57,10 +57,7 @@ for (const theme of ['light', 'dark']) {
     await dialog.getByRole('button', { name: 'Round cap', exact: true }).click()
     await expect
       .poll(() =>
-        page.evaluate(
-          (id) => window.lawha?.getStore?.().graph.getNode(id)?.strokeCap,
-          ids.line
-        )
+        page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.strokeCap, ids.line)
       )
       .toBe('ROUND')
     await expect

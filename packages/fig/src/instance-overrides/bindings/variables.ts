@@ -7,10 +7,7 @@ import { linearVariableExpression } from '#fig/node-change/variable/expression'
 
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import type { SceneNode } from '@lawha/scene-graph'
-import {
-  bindingOverrideField,
-  setInstanceOverride
-} from '@lawha/scene-graph/instances/overrides'
+import { bindingOverrideField, setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
 
 import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'

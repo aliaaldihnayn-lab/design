@@ -142,9 +142,9 @@ test('keeps the run and its preview on their page while the user views another',
     await expect(chat.assistantMessage()).toContainText('Rendered.')
     expect((await documentState(chat.page, pages.current)).children).toHaveLength(1)
     expect((await documentState(chat.page, pages.added)).children).toHaveLength(0)
-    expect(
-      await chat.page.evaluate(() => window.lawha?.getStore?.().state.currentPageId)
-    ).toBe(pages.added)
+    expect(await chat.page.evaluate(() => window.lawha?.getStore?.().state.currentPageId)).toBe(
+      pages.added
+    )
   } finally {
     await stream.evaluate((s) => s.dispose())
     await stream.dispose()

@@ -40,7 +40,7 @@ import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/stor
 import {
   storageErrorMessageDefaults,
   storageErrorMessages
-} from '#vue/i18n/messages/storage-errors'
+} from '#vue/i18n/messages/storage/errors'
 import { storiesMessageDefaults, storiesMessages } from '#vue/i18n/messages/stories'
 import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/updates'

@@ -4,7 +4,7 @@ import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-dat
 import { groupFitOptions } from '#core/canvas/boolean'
 import type { EditorContext } from '#core/editor/types'
 
-import { liveBlendOf, regenerateBlend } from './blend'
+import { liveBlendOf, regenerateBlend } from '.'
 
 /** Changes to a blend's end or spine that leave its steps as they were, such as a rename. */
 const IGNORED_FIELDS = new Set<keyof SceneNode>(['name', 'locked', 'pluginData', 'expanded'])

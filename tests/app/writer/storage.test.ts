@@ -10,8 +10,8 @@ import {
   type StorageAdapter
 } from '@/app/integrations/storage'
 import { saveWriterDocument } from '@/app/writer/document'
-import { openStoredWriterDocument, startStoredWriterDocument } from '@/app/writer/storage'
 import { updateWriterDocument, writerDocument, writerSource } from '@/app/writer/session'
+import { openStoredWriterDocument, startStoredWriterDocument } from '@/app/writer/storage'
 
 /** A provider keeping revisions in memory, refusing a save over a revision that moved on. */
 function memoryProvider() {

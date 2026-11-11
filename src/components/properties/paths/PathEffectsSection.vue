@@ -234,17 +234,18 @@ function applyWarp() {
             />
           </PanelFieldGroup>
         </PanelGrid>
-        <AppButton
-          variant="outline"
-          class="w-full justify-start"
-          data-test-id="make-mesh"
-          :title="paths.makeMeshHint"
-          :disabled="busy"
-          @click="makeMesh"
-        >
-          <IconGrid3x3 class="size-3.5" aria-hidden="true" />
-          <span class="truncate">{{ paths.makeMesh }}</span>
-        </AppButton>
+        <Tip :label="paths.makeMeshHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-mesh"
+            :disabled="busy"
+            @click="makeMesh"
+          >
+            <IconGrid3x3 class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makeMesh }}</span>
+          </AppButton>
+        </Tip>
       </template>
 
       <PanelGrid :columns="2" class="mt-2">

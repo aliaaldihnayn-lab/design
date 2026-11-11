@@ -426,9 +426,10 @@ describe('print PDF colour conversion', () => {
       [0.9, 0.75, 0.1],
       [0.12, 0.34, 0.56]
     ] as const) {
-      const exact = expectDefined(profileColor(parsed, ...rgb))
+      const [red, green, blue] = rgb
+      const exact = expectDefined(profileColor(parsed, red, green, blue))
       profile
-        .toCMYK(...rgb)
+        .toCMYK(red, green, blue)
         .forEach((ink, i) => expect(Math.abs(ink - exact[i])).toBeLessThan(0.01))
     }
   })

@@ -14,9 +14,7 @@ test('toolbar arrows move focus without selecting a tool', async ({ page }) => {
   const previousTool = await page.evaluate(() => window.lawha?.getStore?.().state.activeTool)
   await first.press('ArrowRight')
   await expect(buttons.nth(1)).toBeFocused()
-  expect(await page.evaluate(() => window.lawha?.getStore?.().state.activeTool)).toBe(
-    previousTool
-  )
+  expect(await page.evaluate(() => window.lawha?.getStore?.().state.activeTool)).toBe(previousTool)
   await buttons.nth(1).press('End')
   await expect(buttons.last()).toBeFocused()
   await buttons.last().press('Home')

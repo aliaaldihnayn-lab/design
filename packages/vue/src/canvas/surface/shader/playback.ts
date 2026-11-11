@@ -10,11 +10,7 @@ import {
 } from '@lawha/core'
 import type { SkiaRenderer } from '@lawha/core/canvas'
 import type { Rect } from '@lawha/scene-graph/primitives'
-import {
-  readShaderPaints,
-  shaderOfPaint,
-  type ShaderPreset
-} from '@lawha/scene-graph/shaders'
+import { readShaderPaints, shaderOfPaint, type ShaderPreset } from '@lawha/scene-graph/shaders'
 
 import { shaderFrames } from '#vue/canvas/surface/shader/frames'
 import { canDrawShaders } from '#vue/canvas/surface/shader/rasterizer'

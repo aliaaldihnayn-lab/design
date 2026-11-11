@@ -17,9 +17,7 @@ export async function mockFontsource(page: Page, fixtures: readonly FontsourceFi
   async function handle(route: Route) {
     const url = new URL(route.request().url())
     if (url.hostname === 'cdn.jsdelivr.net') {
-      const fixture = entries.get(
-        url.pathname.slice('/fontsource/fonts/lawha-fixture-'.length, -4)
-      )
+      const fixture = entries.get(url.pathname.slice('/fontsource/fonts/lawha-fixture-'.length, -4))
       if (!fixture) throw new Error('Unknown fixture font')
       counts.downloads++
       await route.fulfill({

@@ -41,9 +41,7 @@ function sharedPluginDataKey(entry: PluginDataEntry, namespace: string): string 
 }
 
 export function getPluginData(node: SceneNode, key: string): string {
-  return (
-    node.pluginData.find((entry) => isLawhaPluginData(entry) && entry.key === key)?.value ?? ''
-  )
+  return node.pluginData.find((entry) => isLawhaPluginData(entry) && entry.key === key)?.value ?? ''
 }
 
 export function setPluginData(

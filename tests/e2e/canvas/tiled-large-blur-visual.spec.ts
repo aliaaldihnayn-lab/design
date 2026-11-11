@@ -84,9 +84,7 @@ async function replayReversal() {
 
 test('large blur remains seamless after tiled mutation and zoom reversal', async () => {
   test.setTimeout(120_000)
-  await editor.page.evaluate(() =>
-    window.lawha?.openFile?.('/tests/fixtures/gold-preview.fig')
-  )
+  await editor.page.evaluate(() => window.lawha?.openFile?.('/tests/fixtures/gold-preview.fig'))
   await editor.page.waitForFunction(() => {
     const store = window.lawha?.getStore?.()
     return (

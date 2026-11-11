@@ -7,6 +7,7 @@ import { usePathMessages } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -145,24 +146,26 @@ function openWidthTool() {
       </AppButton>
     </template>
     <PanelGrid :columns="2">
-      <AppButton
-        variant="outline"
-        data-test-id="expand-live-effect"
-        :title="paths.expandHint"
-        :disabled="busy"
-        @click="expand"
-      >
-        <span class="truncate">{{ paths.expand }}</span>
-      </AppButton>
-      <AppButton
-        variant="outline"
-        data-test-id="release-live-effect"
-        :title="paths.releaseHint"
-        :disabled="busy"
-        @click="release"
-      >
-        <span class="truncate">{{ paths.release }}</span>
-      </AppButton>
+      <Tip :label="paths.expandHint">
+        <AppButton
+          variant="outline"
+          data-test-id="expand-live-effect"
+          :disabled="busy"
+          @click="expand"
+        >
+          <span class="truncate">{{ paths.expand }}</span>
+        </AppButton>
+      </Tip>
+      <Tip :label="paths.releaseHint">
+        <AppButton
+          variant="outline"
+          data-test-id="release-live-effect"
+          :disabled="busy"
+          @click="release"
+        >
+          <span class="truncate">{{ paths.release }}</span>
+        </AppButton>
+      </Tip>
     </PanelGrid>
   </div>
 </template>

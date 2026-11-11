@@ -1,11 +1,7 @@
 import { computed } from 'vue'
 
 import { readIcon } from '@lawha/scene-graph/icons'
-import {
-  canCreateSlot as canBecomeSlot,
-  slotOwner,
-  slotPropertyId
-} from '@lawha/scene-graph/slots'
+import { canCreateSlot as canBecomeSlot, slotOwner, slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'

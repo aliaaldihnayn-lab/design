@@ -3,10 +3,7 @@ import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigge
 import { computed, ref, watch } from 'vue'
 
 import type { ComponentPropertyType } from '@lawha/scene-graph'
-import type {
-  ComponentBinding,
-  ComponentBindingGroup
-} from '@lawha/vue/controls/component-props'
+import type { ComponentBinding, ComponentBindingGroup } from '@lawha/vue/controls/component-props'
 import { useI18n } from '@lawha/vue/i18n'
 import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 

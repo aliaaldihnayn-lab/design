@@ -23,17 +23,13 @@ test('automatic line height survives focus and can be restored with undo', async
   await expect(input).toHaveValue('36')
   await input.press('Escape')
   await expect
-    .poll(() =>
-      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
-    )
+    .poll(() => page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id))
     .toBeNull()
   await input.focus()
   await input.fill('32')
   await input.press('Enter')
   await expect
-    .poll(() =>
-      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
-    )
+    .poll(() => page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id))
     .toEqual({ value: 32, unit: 'PIXELS' })
   await page.getByRole('combobox', { name: 'Line height mode' }).click()
   await page.getByRole('option', { name: 'Auto', exact: true }).click()
@@ -41,9 +37,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await page.getByRole('heading', { name: 'Typography', exact: true }).click()
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
   await expect
-    .poll(() =>
-      page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id)
-    )
+    .poll(() => page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id))
     .toEqual({ value: 32, unit: 'PIXELS' })
   await field.getByRole('button', { name: 'Apply variable' }).click()
   await page.getByRole('button', { name: 'Create number variable from 32', exact: true }).click()

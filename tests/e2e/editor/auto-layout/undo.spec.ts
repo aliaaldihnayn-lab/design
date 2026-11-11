@@ -53,10 +53,7 @@ test('layout guide live numeric edits form one Undo record', async ({ page }) =>
     return id
   })
   const value = () =>
-    page.evaluate(
-      (id) => window.lawha?.getStore?.().graph.getNode(id)?.layoutGrids[0].count,
-      id
-    )
+    page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.layoutGrids[0].count, id)
   const field = page.getByRole('spinbutton', { name: 'Count', exact: true })
   await field.dblclick()
   await field.fill('12')

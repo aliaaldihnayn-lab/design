@@ -1,7 +1,4 @@
-import {
-  DEFAULT_FIG_COMPRESSION,
-  type FigCompression
-} from '@lawha/scene-graph/fig-compression'
+import { DEFAULT_FIG_COMPRESSION, type FigCompression } from '@lawha/scene-graph/fig-compression'
 import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
 
 import { figCompressionOf } from '#core/io/formats/fig/compression'

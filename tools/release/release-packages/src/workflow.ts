@@ -13,10 +13,7 @@ import {
   runCommand,
   type WorkspacePackage
 } from '@lawha/package-artifacts-tools'
-import {
-  inspectTarball,
-  validatePackedTarballs
-} from '@lawha/package-artifacts-tools/tarball'
+import { inspectTarball, validatePackedTarballs } from '@lawha/package-artifacts-tools/tarball'
 import { verifyArtifactConsumers } from '@lawha/package-quality-tools/consumer'
 
 import { NPM_RELEASE_POLICY } from './policy'

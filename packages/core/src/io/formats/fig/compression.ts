@@ -1,8 +1,5 @@
 import type { SceneGraph } from '@lawha/scene-graph'
-import {
-  DEFAULT_FIG_COMPRESSION,
-  type FigCompression
-} from '@lawha/scene-graph/fig-compression'
+import { DEFAULT_FIG_COMPRESSION, type FigCompression } from '@lawha/scene-graph/fig-compression'
 import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 
 /**
@@ -18,10 +15,8 @@ export const FIG_COMPRESSION_LEVELS = {
 /** The compression the document asks its `.fig` to be written with. */
 export function figCompressionOf(graph: SceneGraph): FigCompression {
   return (
-    readPluginData(
-      graph.getNode(graph.rootId)?.pluginData,
-      LAWHA_PLUGIN_DATA.figCompression
-    ) ?? DEFAULT_FIG_COMPRESSION
+    readPluginData(graph.getNode(graph.rootId)?.pluginData, LAWHA_PLUGIN_DATA.figCompression) ??
+    DEFAULT_FIG_COMPRESSION
   )
 }
 

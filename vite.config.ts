@@ -52,9 +52,7 @@ export default defineConfig(async ({ command, mode }) => {
     define: {
       __LAWHA_APP_VERSION__: JSON.stringify(packageJson.version),
       __LAWHA_CLOUD_SITE__: JSON.stringify(cloudSite),
-      __LAWHA_OFFICIAL_CLOUD_URL__: JSON.stringify(
-        env.VITE_LAWHA_OFFICIAL_CLOUD_URL ?? null
-      ),
+      __LAWHA_OFFICIAL_CLOUD_URL__: JSON.stringify(env.VITE_LAWHA_OFFICIAL_CLOUD_URL ?? null),
       __LAWHA_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(
         automation ? localAutomationToken(command) : null
       ),

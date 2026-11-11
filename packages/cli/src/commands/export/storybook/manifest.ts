@@ -16,8 +16,7 @@ const OWN_FILE = /^[^/]+\.(stories\.ts|vue|tsx|module\.css)$/
 /** A variant's design image, in its story's `<Name>.design/` folder. */
 const DESIGN_IMAGE = /^[^/]+\.design\/[^/]+\.png$/
 /** A document's shared files in `lawha/<document>/`: its fonts and design tokens. */
-const SHARED_FILE =
-  /^lawha\/[^/]+\/(fonts\.css|tokens\.css|fonts\/[^/]+\.(woff2|woff|otf|ttf))$/
+const SHARED_FILE = /^lawha\/[^/]+\/(fonts\.css|tokens\.css|fonts\/[^/]+\.(woff2|woff|otf|ttf))$/
 
 /**
  * A file the export writes: a story, a generated component and its stylesheet, a design image,

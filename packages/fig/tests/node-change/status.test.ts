@@ -5,10 +5,7 @@ import { extractNodeStatus, serializeNodeStatus } from '#fig/node-change/status'
 
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
-import {
-  LAWHA_PLUGIN_DATA,
-  LAWHA_PLUGIN_ID
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 function written(status: string): NodeChange {
   let id = 0
@@ -49,9 +46,7 @@ describe('section status in .fig records', () => {
   test("Figma's status reads without plugin data, and a malformed entry is ignored", () => {
     const nc: NodeChange = {
       sectionStatusInfo: { status: 'BUILD' },
-      pluginData: [
-        { pluginID: LAWHA_PLUGIN_ID, key: LAWHA_PLUGIN_DATA.status.key, value: '{' }
-      ]
+      pluginData: [{ pluginID: LAWHA_PLUGIN_ID, key: LAWHA_PLUGIN_DATA.status.key, value: '{' }]
     }
     expect(extractNodeStatus(nc)).toBe('ready-for-dev')
   })

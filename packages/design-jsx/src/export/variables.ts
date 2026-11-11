@@ -1,12 +1,7 @@
 import { camelCase, compact, groupBy, isEqual, mapValues, sortBy } from 'es-toolkit'
 
 import { jsx } from '@lawha/emit'
-import type {
-  SceneGraph,
-  Variable,
-  VariableCollection,
-  VariableValue
-} from '@lawha/scene-graph'
+import type { SceneGraph, Variable, VariableCollection, VariableValue } from '@lawha/scene-graph'
 import { modesDefaultFirst } from '@lawha/scene-graph/variables'
 
 import { DESIGN_JSX_ELEMENTS } from '../elements'

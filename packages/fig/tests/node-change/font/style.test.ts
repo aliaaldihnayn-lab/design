@@ -1,10 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import {
-  EMPTY_EXPORT_RUNTIME,
-  nodeChangeToProps,
-  sceneNodeToKiwi
-} from '@lawha/fig/node-change'
+import { EMPTY_EXPORT_RUNTIME, nodeChangeToProps, sceneNodeToKiwi } from '@lawha/fig/node-change'
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 

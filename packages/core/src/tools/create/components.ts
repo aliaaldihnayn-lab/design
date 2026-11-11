@@ -97,9 +97,7 @@ export const exposeInstanceSwap = defineTool({
     if (candidates.length !== candidate_ids.length)
       return { error: 'One or more candidate IDs were not found' }
     try {
-      return nodeSummary(
-        new LawhaAPI(figma).exposeInstanceSwap(slots, candidates, property_name)
-      )
+      return nodeSummary(new LawhaAPI(figma).exposeInstanceSwap(slots, candidates, property_name))
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }

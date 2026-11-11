@@ -51,9 +51,7 @@ describe('Design JSX sandbox output', () => {
   })
 
   test('rejects empty output and malformed elements before rendering', () => {
-    expect(() => validateDesignJSXOutput(undefined, limits)).toThrow(
-      'must return an Lawha element'
-    )
+    expect(() => validateDesignJSXOutput(undefined, limits)).toThrow('must return an Lawha element')
     expect(() => validateDesignJSXOutput([], limits)).toThrow('must return an Lawha element')
     expect(() => convertDesignJSXRoots([{ type: 'frame', props: {}, children: null }])).toThrow(
       'must return an Lawha element'

@@ -146,9 +146,9 @@ test('reloading a room tab rejoins it, and leaving keeps an unsaved copy', async
     await expect(guest.page.getByTestId('left-room-notice')).toBeVisible()
     expect(await roomStatus(guest)).toBeNull()
     expect(await layerName(guest.page, nodeId)).toBe('Kept card')
-    expect(
-      await guest.page.evaluate(() => window.lawha?.getStore?.().hasUnsavedChanges())
-    ).toBe(true)
+    expect(await guest.page.evaluate(() => window.lawha?.getStore?.().hasUnsavedChanges())).toBe(
+      true
+    )
     await expect(guest.page).not.toHaveURL(/\/rooms\//)
     await expect
       .poll(() => host?.page.evaluate(() => window.lawha?.test?.collab?.peerCount()))

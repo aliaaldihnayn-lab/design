@@ -9,10 +9,7 @@ import {
 
 import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import { clampExportScale } from '@lawha/scene-graph/export-scale'
-import {
-  LAWHA_PLUGIN_DATA,
-  LAWHA_PLUGIN_ID
-} from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 function withPluginValue(key: string, value: string, extra: NodeChange = {}): NodeChange {
   return { ...extra, pluginData: [{ pluginID: LAWHA_PLUGIN_ID, key, value }] }
@@ -22,9 +19,7 @@ describe('Lawha plugin data readers', () => {
   test('textPathBox requires finite numbers and a positive size', () => {
     const box = { x: 1, y: 2, width: 30, height: 40 }
     expect(
-      extractTextPathBox(
-        withPluginValue(LAWHA_PLUGIN_DATA.textPathBox.key, JSON.stringify(box))
-      )
+      extractTextPathBox(withPluginValue(LAWHA_PLUGIN_DATA.textPathBox.key, JSON.stringify(box)))
     ).toEqual(box)
     for (const value of [
       '{not json',
@@ -47,9 +42,7 @@ describe('Lawha plugin data readers', () => {
     })
     for (const malformed of ['{not json', '["VariableID:1:2"]', '"VariableID:1:2"']) {
       expect(
-        extractBoundVariables(
-          withPluginValue(LAWHA_PLUGIN_DATA.boundVariables.key, malformed)
-        )
+        extractBoundVariables(withPluginValue(LAWHA_PLUGIN_DATA.boundVariables.key, malformed))
       ).toEqual({})
     }
   })
@@ -75,9 +68,7 @@ describe('Lawha plugin data readers', () => {
       ])
     ]) {
       expect(
-        extractExportSettings(
-          withPluginValue(LAWHA_PLUGIN_DATA.exportSettings.key, value, native)
-        )
+        extractExportSettings(withPluginValue(LAWHA_PLUGIN_DATA.exportSettings.key, value, native))
       ).toEqual([{ scale: 1, format: 'svg' }])
     }
   })

@@ -143,10 +143,7 @@ try {
     }, input.initialViewport)
   }
   await page.evaluate(() => window.lawha?.test?.navigation?.waitForSettlement())
-  await page.evaluate(
-    (name) => window.lawha?.test?.navigation?.startRecording(name),
-    input.name
-  )
+  await page.evaluate((name) => window.lawha?.test?.navigation?.startRecording(name), input.name)
 
   const trace = traceEnabled ? await startChromiumTrace(page, { cpuProfile }) : null
   if (mutationNodeId && mutationOpacity !== null) {

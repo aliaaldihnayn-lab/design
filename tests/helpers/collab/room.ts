@@ -128,10 +128,7 @@ export async function createPeer(
     const page = await context.newPage()
     await page.goto(relayURLFor(path, relayURL))
     await page.waitForFunction(() => window.lawha?.test?.collab !== undefined)
-    await page.evaluate(
-      (localName) => window.lawha?.test?.collab?.setLocalName(localName),
-      name
-    )
+    await page.evaluate((localName) => window.lawha?.test?.collab?.setLocalName(localName), name)
     const canvas = new CanvasHelper(page)
     if (path === '/') await canvas.waitForInit()
     canvas.errors.length = 0

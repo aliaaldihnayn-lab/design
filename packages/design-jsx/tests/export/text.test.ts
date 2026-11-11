@@ -24,12 +24,17 @@ describe('rich text export', () => {
         {
           start: 5,
           length: 4,
-          style: { textCase: 'UPPER', hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
+          style: {
+            textCase: 'UPPER',
+            hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
+          }
         },
         { start: 0, length: 4, style: { hyperlink: { type: 'NODE', value: '1:2' } } }
       ]
     })
-    expect(code).toContain('Read <Span textCase="upper" href="https://github.com/aliaaldihnayn-lab/design#readme">docs</Span>')
+    expect(code).toContain(
+      'Read <Span textCase="upper" href="https://github.com/aliaaldihnayn-lab/design#readme">docs</Span>'
+    )
   })
 
   test('writes styled characters as spans with only what differs', () => {

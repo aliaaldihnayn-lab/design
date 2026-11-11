@@ -125,9 +125,9 @@ for (const [property, label] of [
       await page.mouse.move(x + 24, y, { steps: 4 })
       await expect(field).not.toHaveAttribute('aria-valuenow', String(before))
       expect(await sceneVersion(page)).toBe(version)
-      expect(
-        await page.evaluate(() => window.lawha?.getStore?.().isInteractiveEditing())
-      ).toBe(true)
+      expect(await page.evaluate(() => window.lawha?.getStore?.().isInteractiveEditing())).toBe(
+        true
+      )
     } finally {
       await page.mouse.up()
     }
@@ -148,9 +148,7 @@ for (const [property, label] of [
     await settle(page)
     expect((await crop(page)).equals(committedPixels)).toBe(true)
     const cancelledVersion = await sceneVersion(page)
-    expect(await page.evaluate(() => window.lawha?.getStore?.().isInteractiveEditing())).toBe(
-      false
-    )
+    expect(await page.evaluate(() => window.lawha?.getStore?.().isInteractiveEditing())).toBe(false)
 
     expectTiledSubmission(await takeRecording(page), cancelledVersion)
     canvas.assertNoErrors()

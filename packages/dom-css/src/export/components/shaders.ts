@@ -3,11 +3,7 @@ import type { StateElement } from '#dom-css/behaviours/states/types'
 import { es, jsx } from '@lawha/emit'
 import type { SceneGraph } from '@lawha/scene-graph'
 import { findLayerByPath } from '@lawha/scene-graph/behaviours'
-import {
-  shaderOfPaint,
-  type ShaderComponent,
-  type ShaderPreset
-} from '@lawha/scene-graph/shaders'
+import { shaderOfPaint, type ShaderComponent, type ShaderPreset } from '@lawha/scene-graph/shaders'
 
 import { isPositioned } from '../projection'
 import type { ComponentElement, ComponentNode } from './model'

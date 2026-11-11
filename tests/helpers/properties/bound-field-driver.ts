@@ -92,8 +92,7 @@ export function boundFieldDriver(page: () => Page) {
     setText(text: string) {
       const { state, mode } = built()
       return page().evaluate(
-        (args) =>
-          window.lawha?.getStore?.().updateVariableValue(args.state, args.mode, args.text),
+        (args) => window.lawha?.getStore?.().updateVariableValue(args.state, args.mode, args.text),
         { state, mode, text }
       )
     },
@@ -101,8 +100,7 @@ export function boundFieldDriver(page: () => Page) {
     setSize(size: number) {
       const { size: id, mode } = built()
       return page().evaluate(
-        (args) =>
-          window.lawha?.getStore?.().updateVariableValue(args.id, args.mode, args.size),
+        (args) => window.lawha?.getStore?.().updateVariableValue(args.id, args.mode, args.size),
         { id, mode, size }
       )
     },

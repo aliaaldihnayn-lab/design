@@ -1,6 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode, StyleRun, StyledText } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 
 /** One frame's share of a story: its text, the white space dropped before it, and where it starts. */
@@ -12,10 +12,7 @@ export interface FlowedFrame {
 }
 
 /** A story's whole text with its character styles, as runs over the story's characters. */
-export interface Story {
-  text: string
-  runs: StyleRun[]
-}
+export type Story = StyledText
 
 /** The parts of `runs` that fall in `[start, end)`, moved to start at 0. */
 export function sliceRuns(runs: readonly StyleRun[], start: number, end: number): StyleRun[] {

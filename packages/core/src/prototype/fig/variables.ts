@@ -3,8 +3,8 @@ import * as v from 'valibot'
 import type { GUID } from '@lawha/kiwi/fig'
 import type { SceneGraph } from '@lawha/scene-graph'
 
-import type { Action } from './model'
-import type { Condition, PlayValue } from './variables'
+import type { Action } from '#core/prototype/model'
+import type { Condition, PlayValue } from '#core/prototype/variables'
 
 /**
  * Prototype variables in Figma's own form, as a `.fig` record keeps them: Set variable is a

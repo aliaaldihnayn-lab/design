@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { CollapsibleRoot, CollapsibleContent, CollapsibleTrigger } from 'reka-ui'
 
-import type {
-  ComponentBinding,
-  ComponentBindingGroup
-} from '@lawha/vue/controls/component-props'
+import type { ComponentBinding, ComponentBindingGroup } from '@lawha/vue/controls/component-props'
 import { usePanelMessages } from '@lawha/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'

@@ -76,17 +76,15 @@ for (const field of [
   test(`${field.name} scrubbing stays a live preview until release`, async () => {
     const input = editor.page.getByRole('spinbutton', { name: field.name, exact: true })
     const box = expectDefined(await input.boundingBox(), 'field bounds')
-    const version = await editor.page.evaluate(
-      () => window.lawha?.getStore?.().state.sceneVersion
-    )
+    const version = await editor.page.evaluate(() => window.lawha?.getStore?.().state.sceneVersion)
     await editor.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await editor.page.mouse.down()
     try {
       await editor.page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2, { steps: 4 })
       await expect(input).toHaveAttribute('aria-valuenow', String(field.initial + 20))
-      expect(
-        await editor.page.evaluate(() => window.lawha?.getStore?.().state.sceneVersion)
-      ).toBe(version)
+      expect(await editor.page.evaluate(() => window.lawha?.getStore?.().state.sceneVersion)).toBe(
+        version
+      )
     } finally {
       await editor.page.mouse.up()
     }

@@ -3,8 +3,8 @@ import { ref } from 'vue'
 
 import { createEditor } from '@lawha/core'
 
-import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createLawhaBindingProvider } from '#vue/controls/binding-provider/lawha'
+import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.vue'
 
 const editor = createEditor()

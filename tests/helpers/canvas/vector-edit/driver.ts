@@ -23,9 +23,7 @@ export function vectorEditDriver(page: () => Page) {
 
     /** The layer whose path is open for editing, if any. */
     editedNode() {
-      return page().evaluate(
-        () => window.lawha?.getStore?.().state.nodeEditState?.nodeId ?? null
-      )
+      return page().evaluate(() => window.lawha?.getStore?.().state.nodeEditState?.nodeId ?? null)
     },
 
     closeEdit() {

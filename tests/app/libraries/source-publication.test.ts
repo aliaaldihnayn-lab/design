@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
-import {
-  readSourceLibraryPublication,
-  writeSourceLibraryPublication
-} from '@lawha/core/library'
+import { readSourceLibraryPublication, writeSourceLibraryPublication } from '@lawha/core/library'
 import { initCodec } from '@lawha/kiwi/fig/codec'
 import { SceneGraph } from '@lawha/scene-graph'
 

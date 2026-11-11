@@ -3,9 +3,7 @@ import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup('/?test&no-chrome&no-rulers')
 
 test('renders imported .pen variable colors and fonts like literal values', async () => {
-  await editor.page.evaluate(() =>
-    window.lawha?.openFile?.('/tests/fixtures/pen-variables.pen')
-  )
+  await editor.page.evaluate(() => window.lawha?.openFile?.('/tests/fixtures/pen-variables.pen'))
   await editor.canvas.waitForInit()
   expect(
     await editor.page.evaluate(() => {

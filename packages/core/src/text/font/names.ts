@@ -1,11 +1,7 @@
 import { uniqBy } from 'es-toolkit/array'
 
 import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
-import {
-  parseFontStyle,
-  standardStyleName,
-  styleSpelling
-} from '@lawha/scene-graph/font-style'
+import { parseFontStyle, standardStyleName, styleSpelling } from '@lawha/scene-graph/font-style'
 import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
 
 import type { FamilyFace } from '#core/text/font/faces'

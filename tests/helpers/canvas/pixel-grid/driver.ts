@@ -26,9 +26,7 @@ export function pixelGridDriver(page: () => Page) {
     },
 
     snapsToPixelGrid() {
-      return page().evaluate(
-        () => window.lawha?.getStore?.().state.snappingPreferences.pixelGrid
-      )
+      return page().evaluate(() => window.lawha?.getStore?.().state.snappingPreferences.pixelGrid)
     }
   }
 }

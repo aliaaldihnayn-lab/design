@@ -5,10 +5,7 @@ import { dirname, join } from 'node:path'
 import { isEqual } from 'es-toolkit'
 
 import { CommandError, parseNpmPack, runCommand } from '@lawha/package-artifacts-tools'
-import {
-  inspectTarball,
-  type TarballDiagnostic
-} from '@lawha/package-artifacts-tools/tarball'
+import { inspectTarball, type TarballDiagnostic } from '@lawha/package-artifacts-tools/tarball'
 
 import { installPackedPackages } from './install'
 import { evaluateRuntime, type RuntimeName } from './runtime'

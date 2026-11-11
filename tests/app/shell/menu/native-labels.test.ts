@@ -14,7 +14,7 @@ describe('desktop menu labels', () => {
       quitLawha: 'إنهاء لوحة',
       file: 'ملف'
     }
-    const labels = nativeMenuLabels(translated)
+    const labels = nativeMenuLabels(translated as typeof english)
     expect(labels['dev-tools']).toBe('أدوات المطوّر')
     expect(labels.about).toBe('حول لوحة')
     expect(labels.quit).toBe('إنهاء لوحة')

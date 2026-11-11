@@ -37,8 +37,7 @@ beforeEach(() => {
   spyOn(globalThis, 'fetch').mockImplementation(
     fetchStub(async (input) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
-      if (url.pathname === '/.well-known/lawha')
-        return Response.json(cloudDiscoveryFixture(ORIGIN))
+      if (url.pathname === '/.well-known/lawha') return Response.json(cloudDiscoveryFixture(ORIGIN))
       const answer = answers[url.pathname]
       if (!answer) return Response.json({ error: { code: 'not_found' } }, { status: 404 })
       return Response.json(answer.body ?? {}, { status: answer.status })

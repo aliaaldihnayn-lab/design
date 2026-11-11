@@ -3,10 +3,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode, VectorNetwork } from '@lawha/scene-graph'
 import { parsePluginVectorPath, parseSVGPathData } from '@lawha/scene-graph/parse-path'
 import type { Rect } from '@lawha/scene-graph/primitives'
-import {
-  mergeVectorNetworks,
-  transformVectorNetwork
-} from '@lawha/scene-graph/vector-network'
+import { mergeVectorNetworks, transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { normalizeStyleProps } from '.'
 import { designJSXProp } from '../definitions'

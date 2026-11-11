@@ -148,7 +148,9 @@ describe('text export', () => {
         {
           start: 9,
           length: 4,
-          style: { hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' } }
+          style: {
+            hyperlink: { type: 'URL', value: 'https://github.com/aliaaldihnayn-lab/design#readme' }
+          }
         },
         {
           start: 14,

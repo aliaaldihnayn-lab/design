@@ -1,11 +1,7 @@
 import { pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
-import {
-  layoutSizing,
-  layoutSizingUpdates,
-  type LayoutSizingAxis
-} from '@lawha/scene-graph/layout'
+import { layoutSizing, layoutSizingUpdates, type LayoutSizingAxis } from '@lawha/scene-graph/layout'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
 const SIZING_FIELDS = [

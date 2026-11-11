@@ -128,7 +128,7 @@ describe('Cloud history upload queue', () => {
   })
 
   test('sends an edit changed during its send again, as it is now', async () => {
-    let release: (() => void) | null = null
+    const gate: { release?: () => void } = {}
     const sent: DocumentHistoryChangeInput[][] = []
     const queue = createCloudHistoryQueue({
       targetOf: () => ({
@@ -136,7 +136,7 @@ describe('Cloud history upload queue', () => {
           sent.push(changes)
           if (sent.length > 1) return Promise.resolve()
           return new Promise<void>((resolve) => {
-            release = resolve
+            gate.release = resolve
           })
         }
       }),
@@ -146,7 +146,7 @@ describe('Cloud history upload queue', () => {
     queue.add(binding, change('a'))
     const first = queue.flush()
     queue.add(binding, change('a', 'Move again'))
-    release?.()
+    gate.release?.()
     await first
     await queue.flush()
     expect(sent.map((batch) => batch.map((input) => input.summary.label))).toEqual([

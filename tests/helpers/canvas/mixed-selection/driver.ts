@@ -29,10 +29,7 @@ export function mixedSelectionDriver(page: () => Page) {
     },
 
     select(...layers: MixedLayer[]) {
-      return page().evaluate(
-        (select) => window.lawha?.getStore?.().select(select),
-        idsOf(layers)
-      )
+      return page().evaluate((select) => window.lawha?.getStore?.().select(select), idsOf(layers))
     },
 
     /** One field of each layer, in the order asked. */

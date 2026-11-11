@@ -43,9 +43,8 @@ export function readNodeChangePluginData<T>(
   field: PluginDataField<T>
 ): T | undefined {
   return field.decode(
-    nc.pluginData?.find(
-      (entry) => entry.pluginID === LAWHA_PLUGIN_ID && entry.key === field.key
-    )?.value
+    nc.pluginData?.find((entry) => entry.pluginID === LAWHA_PLUGIN_ID && entry.key === field.key)
+      ?.value
   )
 }
 

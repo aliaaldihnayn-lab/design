@@ -1,12 +1,6 @@
 import * as v from 'valibot'
 
-import type {
-  BlendMode,
-  Fill,
-  FillType,
-  GradientStop,
-  GradientTransform
-} from '@lawha/scene-graph'
+import type { BlendMode, Fill, FillType, GradientStop, GradientTransform } from '@lawha/scene-graph'
 import { colorToFill, parseColor } from '@lawha/scene-graph/color'
 import { TRANSPARENT } from '@lawha/scene-graph/constants'
 import {

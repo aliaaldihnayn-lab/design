@@ -67,13 +67,7 @@ export async function verifyRuntimeScenarios(
 
 export async function verifyPackageBinaries(consumerDirectory: string): Promise<void> {
   const binaryDirectory = join(consumerDirectory, 'node_modules', '.bin')
-  const binaries = [
-    'lawha',
-    'lawha-mcp',
-    'lawha-mcp-http',
-    'lawha-cloud',
-    'lawha-ai-relay'
-  ]
+  const binaries = ['lawha', 'lawha-mcp', 'lawha-mcp-http', 'lawha-cloud', 'lawha-ai-relay']
   for (const runtime of RUNTIMES) {
     for (const binary of binaries) {
       await runCommand({

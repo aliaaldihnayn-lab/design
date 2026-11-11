@@ -26,10 +26,7 @@ describe('local Cloud development configuration', () => {
     expect(config).toMatchObject({
       deployment: 'self-hosted',
       publicURL: 'https://feature.cloud.lawha.localhost',
-      trustedOrigins: [
-        'https://feature.lawha.localhost',
-        'https://feature.cloud.lawha.localhost'
-      ],
+      trustedOrigins: ['https://feature.lawha.localhost', 'https://feature.cloud.lawha.localhost'],
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: true,
       passkeysEnabled: true,

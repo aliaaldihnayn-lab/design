@@ -1,3 +1,5 @@
+import type { Size } from '@lawha/scene-graph/primitives'
+
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 
 export type DocumentSourceIdentity = Readonly<{
@@ -22,4 +24,4 @@ export type DocumentSourceAccess = {
   setLastWriteTime: (time: number) => void
 }
 
-export type ViewportSize = { width: number; height: number }
+export type ViewportSize = Size

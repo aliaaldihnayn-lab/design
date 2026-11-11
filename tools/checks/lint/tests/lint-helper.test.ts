@@ -10,9 +10,7 @@ test('rejects parser failures instead of treating them as valid examples', async
 })
 
 test('rejects invalid rule configuration', async () => {
-  await expect(
-    lint('export const value = 1', { 'lawha/missing-rule': 'error' })
-  ).rejects.toThrow()
+  await expect(lint('export const value = 1', { 'lawha/missing-rule': 'error' })).rejects.toThrow()
 })
 
 test('isolates concurrent fixtures and retains expected rule errors', async () => {

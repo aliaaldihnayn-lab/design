@@ -2,11 +2,7 @@
 import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import {
-  useAutomationMessages,
-  useCommonMessages,
-  useSettingsMessages
-} from '@lawha/vue/i18n'
+import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@lawha/vue/i18n'
 
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import { useMCPConnectionForm } from '@/app/integrations/mcp/settings/form'

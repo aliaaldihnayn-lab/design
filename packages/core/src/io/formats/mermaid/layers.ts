@@ -7,11 +7,7 @@ import type {
   Flowchart
 } from '@lawha/mermaid'
 import type { Fill, SceneGraph, SceneNode, Stroke, StrokeCap } from '@lawha/scene-graph'
-import {
-  connectorSublayers,
-  createConnector,
-  freeEndpoint
-} from '@lawha/scene-graph/connectors'
+import { connectorSublayers, createConnector, freeEndpoint } from '@lawha/scene-graph/connectors'
 import { BLACK } from '@lawha/scene-graph/constants'
 import { createShapeWithText, shapeWithTextLabel } from '@lawha/scene-graph/generated'
 import type { Color } from '@lawha/scene-graph/primitives'

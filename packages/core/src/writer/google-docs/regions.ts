@@ -1,4 +1,5 @@
 import type { WriterDocument, WriterNode } from '#core/writer/model'
+
 import type { GoogleDocument, GoogleDocsRequest, GoogleStructuralElement } from './types'
 import { type GoogleDocsWriteOptions, regionChunkRequests } from './write'
 
