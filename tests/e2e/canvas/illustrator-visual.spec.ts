@@ -14,6 +14,11 @@ const TEAL = { r: 0.08, g: 0.73, b: 0.73 }
 const INK = { r: 0.1, g: 0.12, b: 0.2 }
 
 async function expectCanvas(name: string) {
+  // A tool call shows where the agent worked for a moment; the snapshot waits until it is gone.
+  await expect.poll(() => illustrator.presenceCount(), { timeout: 15_000 }).toBe(0)
+  await illustrator.endFlashes()
+  // Following an agent frames the view while it works; the frame goes once it has finished.
+  await expect(editor.page.getByTestId('follow-frame')).toHaveCount(0, { timeout: 15_000 })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
   const buffer = await editor.canvas.screenshotCanvasRegion(640, 420)

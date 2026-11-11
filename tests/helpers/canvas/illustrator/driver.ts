@@ -124,6 +124,26 @@ export function illustratorDriver(page: () => Page) {
       )
     },
 
+    /**
+     * Ends the flash a tool call puts on the layers it changed, which a snapshot would catch at a
+     * random moment, and a flash on a layer the tool replaced never ends on its own.
+     */
+    endFlashes() {
+      return page().evaluate(() => {
+        const store = window.lawha?.getStore?.()
+        const renderer = store?.renderer
+        if (!store || !renderer) return
+        store.aiClearAll()
+        renderer.feedback.flashes.length = 0
+        store.requestRender()
+      })
+    },
+
+    /** How many presence outlines a tool call left on the canvas; they fade on their own. */
+    presenceCount() {
+      return page().evaluate(() => window.lawha?.getStore?.().state.presenceCursors.length ?? 0)
+    },
+
     select(ids: string[]) {
       return page().evaluate((ids) => {
         const store = window.lawha?.getStore?.()
