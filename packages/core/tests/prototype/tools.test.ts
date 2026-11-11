@@ -19,6 +19,20 @@ function must<T>(value: T | null | undefined): T {
   return value
 }
 
+/** A tool result's fields, or a failure that shows what came back instead. */
+function fields(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error(`Expected an object: ${JSON.stringify(value)}`)
+  }
+  return Object.fromEntries(Object.entries(value))
+}
+
+function idOf(value: unknown): string {
+  const id = fields(value).id
+  if (typeof id !== 'string') throw new Error(`Expected an id: ${JSON.stringify(value)}`)
+  return id
+}
+
 /** A dropdown frame with a trigger and a menu, on a page with a screen to hold it. */
 function dropdownFrame() {
   const figma = new FigmaAPI(new SceneGraph())
@@ -51,17 +65,15 @@ describe('interactive component tools', () => {
         ]
       })
     )
-    if (typeof result !== 'object' || !('variants' in result))
-      throw new Error(JSON.stringify(result))
-    expect(result.variants.map((variant: { name: string }) => variant.name)).toEqual([
-      'State=Closed',
-      'State=Open'
-    ])
+    const variants = fields(result).variants
+    if (!Array.isArray(variants)) throw new Error(JSON.stringify(result))
+    const setId = idOf(result)
+    expect(variants.map((variant) => fields(variant).name)).toEqual(['State=Closed', 'State=Open'])
 
     const graph = figma.graph
     const pageId = figma.currentPage.id
-    const closed = must(graph.getChildren(result.id).find((node) => node.name === 'State=Closed'))
-    const open = must(graph.getChildren(result.id).find((node) => node.name === 'State=Open'))
+    const closed = must(graph.getChildren(setId).find((node) => node.name === 'State=Closed'))
+    const open = must(graph.getChildren(setId).find((node) => node.name === 'State=Open'))
     const screen = graph.createNode('FRAME', pageId, {
       name: 'Screen',
       x: 600,
@@ -88,16 +100,16 @@ describe('interactive component tools', () => {
     const made = must(
       await tool('create_interactive_component')(figma, { id: frame.id, states: ['Off', 'On'] })
     )
-    if (typeof made !== 'object' || !('id' in made)) throw new Error('no set')
+    const setId = idOf(made)
     const add = tool('add_state_interaction')
     expect(
-      await add(figma, { set_id: made.id, from: 'Maybe', trigger: { type: 'click' }, to: 'On' })
+      await add(figma, { set_id: setId, from: 'Maybe', trigger: { type: 'click' }, to: 'On' })
     ).toEqual({
       error: 'Dropdown has no state Maybe'
     })
     expect(
       await add(figma, {
-        set_id: made.id,
+        set_id: setId,
         from: 'Off',
         layer: 'Knob',
         trigger: { type: 'click' },
@@ -107,9 +119,9 @@ describe('interactive component tools', () => {
       error: 'State=Off has no layer Knob'
     })
     expect(
-      await add(figma, { set_id: made.id, from: 'Off', trigger: { type: 'hover' }, to: 'On' })
+      await add(figma, { set_id: setId, from: 'Off', trigger: { type: 'hover' }, to: 'On' })
     ).toEqual({
-      set_id: made.id,
+      set_id: setId,
       from: 'Off',
       to: 'On'
     })
@@ -123,11 +135,11 @@ describe('interactive component tools', () => {
         states: ['Disabled', 'Default']
       })
     )
-    if (typeof made !== 'object' || !('id' in made)) throw new Error('no set')
+    const setId = idOf(made)
     const graph = figma.graph
     const collection = graph.createCollection('Prototype')
     const agreed = graph.createVariable('agreed', 'BOOLEAN', collection.id, false)
-    const disabled = must(graph.getChildren(made.id).find((node) => node.name === 'State=Disabled'))
+    const disabled = must(graph.getChildren(setId).find((node) => node.name === 'State=Disabled'))
     const screen = graph.createNode('FRAME', figma.currentPage.id, {
       name: 'Screen',
       x: 600,
@@ -160,9 +172,7 @@ describe('interactive component tools', () => {
     const result = must(
       await tool('insert_kit_component')(figma, { kind: 'switch', x: 100, y: 100, centered: true })
     )
-    if (typeof result !== 'object' || !('id' in result) || typeof result.id !== 'string')
-      throw new Error('no id')
-    const instance = must(figma.graph.getNode(result.id))
+    const instance = must(figma.graph.getNode(idOf(result)))
     expect(instance.type).toBe('INSTANCE')
     expect(instance.x + instance.width / 2).toBe(100)
   })

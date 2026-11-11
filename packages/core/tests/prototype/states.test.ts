@@ -268,12 +268,10 @@ describe('.fig interactive components', () => {
     const bytes = await exportFigFile(graph)
     const read = await parseFigFile(bytes.buffer as ArrayBuffer)
     const byName = (name: string, parent?: string) =>
-      read
-        .getAllNodes()
-        .find(
-          (node) =>
-            node.name === name && (!parent || read.getNode(node.parentId ?? '')?.name === parent)
-        )
+      [...read.getAllNodes()].find(
+        (node) =>
+          node.name === name && (!parent || read.getNode(node.parentId ?? '')?.name === parent)
+      )
     const trigger = byName('Trigger', 'State=Closed')
     const open = byName('State=Open', set.name)
     const closed = byName('State=Closed', set.name)
@@ -326,8 +324,8 @@ describe('.fig interactive components', () => {
       { trigger: { type: 'focus' }, action: { type: 'back' } }
     ])
     const read = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-    const readA = read.getAllNodes().find((node) => node.name === 'A')
-    const readB = read.getAllNodes().find((node) => node.name === 'B')
+    const readA = [...read.getAllNodes()].find((node) => node.name === 'A')
+    const readB = [...read.getAllNodes()].find((node) => node.name === 'B')
     if (!readA || !readB) throw new Error('frames missing')
     expect(figInteractionsOf(read, readA)).toEqual([
       {

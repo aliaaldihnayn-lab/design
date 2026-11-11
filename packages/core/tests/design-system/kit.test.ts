@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
 import { CalendarDate } from '@internationalized/date'
 
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
@@ -73,7 +74,7 @@ describe('interactive kit', () => {
     expect(page).toBeDefined()
     const again = await buildKitComponent(graph, 'select', { today: TODAY })
     expect(again.created).toBe(false)
-    expect(again.id).toBe(built.find((item) => item.kind === 'select')?.id)
+    expect(again.id).toBe(expectDefined(built.find((item) => item.kind === 'select')).id)
   })
 
   test('the button keeps every state as a variant of one set', async () => {
