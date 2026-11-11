@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "暗号化した PDF を保存",
   "openEncrypted": "開く",
   "wrongPassword": "パスワードが正しくありません。",
-  "stampBottomRight": "表示、最終ページの右下",
-  "stampBottomLeft": "表示、最終ページの左下",
   "stampHidden": "非表示",
-  "deleteFootnote": "脚注を削除"
+  "deleteFootnote": "脚注を削除",
+  "stampPlaced": "表示（配置した位置）",
+  "placeSignature": "ページをクリックまたはドラッグして署名を配置",
+  "previousPage": "前のページ",
+  "nextPage": "次のページ",
+  "pageOf": "{count} ページ中 {page} ページ",
+  "signatureField": "署名フィールド {name}"
 }

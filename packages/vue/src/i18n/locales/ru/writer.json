@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "Сохранить зашифрованный PDF",
   "openEncrypted": "Открыть",
   "wrongPassword": "Неверный пароль.",
-  "stampBottomRight": "Видимая, внизу справа на последней странице",
-  "stampBottomLeft": "Видимая, внизу слева на последней странице",
   "stampHidden": "Невидимая",
-  "deleteFootnote": "Удалить сноску"
+  "deleteFootnote": "Удалить сноску",
+  "stampPlaced": "Видимая, там, где вы её разместите",
+  "placeSignature": "Щёлкните или проведите по странице, чтобы разместить подпись",
+  "previousPage": "Предыдущая страница",
+  "nextPage": "Следующая страница",
+  "pageOf": "Страница {page} из {count}",
+  "signatureField": "Поле подписи {name}"
 }

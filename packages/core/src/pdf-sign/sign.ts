@@ -7,6 +7,7 @@ import {
   PDFName,
   PDFNumber,
   PDFString,
+  type PDFRef,
   popGraphicsState,
   pushGraphicsState
 } from '@cantoo/pdf-lib'
@@ -18,6 +19,7 @@ import {
   type CertificateSummary,
   type SigningCredentials
 } from './credentials'
+import { findField, markAcroForm, snapshotOf, uniqueFieldName } from './fields'
 
 /**
  * Signs a PDF the way Adobe Acrobat validates: a signature field whose dictionary is
@@ -31,7 +33,7 @@ const SIGNATURE_BYTES = 16_384
 const BYTE_RANGE_PLACEHOLDER = '**********'
 
 export interface SignatureAppearance {
-  /** Zero-based page index; the last page by default. */
+  /** Zero-based page index, any page of the file; the last page by default. */
   page?: number
   /** x, y, width, height in PDF points from the page's bottom-left corner. */
   rect: [number, number, number, number]
@@ -48,6 +50,10 @@ export interface SignPDFOptions {
   date?: Date
   /** Without one the signature is invisible, listed only in the reader's signature panel. */
   appearance?: SignatureAppearance
+  /**
+   * The empty signature field to sign, by name, as one placed for this signer; a new field is
+   * added when left out or when the PDF has no empty field of that name.
+   */
   fieldName?: string
 }
 
@@ -59,10 +65,8 @@ const latin1 = (bytes: Uint8Array) => {
   return out
 }
 
-async function addSignatureField(target: PDFDocument, options: SignPDFOptions): Promise<void> {
+function signatureDictionary(target: PDFDocument, options: SignPDFOptions): PDFRef {
   const context = target.context
-  const pages = target.getPages()
-  const page = pages[Math.min(options.appearance?.page ?? pages.length - 1, pages.length - 1)]
   const placeholder = PDFName.of(BYTE_RANGE_PLACEHOLDER)
   const byteRange = PDFArray.withContext(context)
   byteRange.push(PDFNumber.of(0))
@@ -84,8 +88,46 @@ async function addSignatureField(target: PDFDocument, options: SignPDFOptions): 
   if (options.contactInfo) {
     signature.set(PDFName.of('ContactInfo'), PDFHexString.fromText(options.contactInfo))
   }
-  const signatureRef = context.register(signature)
+  return context.register(signature)
+}
 
+/** The visible signature drawn into the field's rectangle, as its normal appearance. */
+async function appearanceStream(
+  target: PDFDocument,
+  png: Uint8Array,
+  width: number,
+  height: number
+): Promise<PDFRef> {
+  const image = await target.embedPng(png)
+  const stream = target.context.formXObject(
+    [
+      pushGraphicsState(),
+      concatTransformationMatrix(width, 0, 0, height, 0, 0),
+      drawObject('Img'),
+      popGraphicsState()
+    ],
+    { BBox: [0, 0, width, height], Resources: { XObject: { Img: image.ref } } }
+  )
+  return target.context.register(stream)
+}
+
+async function addSignatureField(target: PDFDocument, options: SignPDFOptions): Promise<void> {
+  const context = target.context
+  const signatureRef = signatureDictionary(target, options)
+  const existing = options.fieldName ? findField(target, options.fieldName) : null
+  if (existing && !existing.field.signed) {
+    existing.widget.set(PDFName.of('V'), signatureRef)
+    const [, , width, height] = existing.field.rect
+    if (options.appearance?.png && width > 0 && height > 0) {
+      const ap = await appearanceStream(target, options.appearance.png, width, height)
+      existing.widget.set(PDFName.of('AP'), context.obj({ N: ap }))
+    }
+    snapshotOf(target).markObjForSave(existing.widget)
+    markAcroForm(target)
+    return
+  }
+  const pages = target.getPages()
+  const page = pages[Math.min(options.appearance?.page ?? pages.length - 1, pages.length - 1)]
   const [x, y, width, height] = options.appearance?.rect ?? [0, 0, 0, 0]
   const widget = context.obj({
     Type: 'Annot',
@@ -93,46 +135,42 @@ async function addSignatureField(target: PDFDocument, options: SignPDFOptions): 
     FT: 'Sig',
     Rect: [x, y, x + width, y + height],
     V: signatureRef,
-    T: PDFHexString.fromText(options.fieldName ?? `Signature${Date.now()}`),
+    T: PDFHexString.fromText(options.fieldName ?? uniqueFieldName(target)),
     F: 4,
     P: page.ref
   })
   if (options.appearance?.png && width > 0 && height > 0) {
-    const image = await target.embedPng(options.appearance.png)
-    const stream = context.formXObject(
-      [
-        pushGraphicsState(),
-        concatTransformationMatrix(width, 0, 0, height, 0, 0),
-        drawObject('Img'),
-        popGraphicsState()
-      ],
-      { BBox: [0, 0, width, height], Resources: { XObject: { Img: image.ref } } }
-    )
-    widget.set(PDFName.of('AP'), context.obj({ N: context.register(stream) }))
+    const ap = await appearanceStream(target, options.appearance.png, width, height)
+    widget.set(PDFName.of('AP'), context.obj({ N: ap }))
   }
   const widgetRef = context.register(widget)
   page.node.addAnnot(widgetRef)
-  const acroForm = target.catalog.getOrCreateAcroForm()
+  snapshotOf(target).markRefForSave(page.ref)
+  const acroForm = markAcroForm(target)
   acroForm.addField(widgetRef)
-  acroForm.dict.set(PDFName.of('SigFlags'), PDFNumber.of(3))
 }
 
-/** Signs `pdf` with the credentials; returns the signed file. */
+/**
+ * Signs `pdf` with the credentials; returns the signed file. The signature is an incremental
+ * update appended to the file as it was, so signatures already in it stay valid: each signer
+ * of a document with several signature fields signs the previous signer's file.
+ */
 export async function signPDF(
   pdf: Uint8Array,
   credentials: SigningCredentials,
   options: SignPDFOptions = {}
 ): Promise<Uint8Array> {
-  const loaded = await PDFDocument.load(pdf, { updateMetadata: false })
+  const loaded = await PDFDocument.load(pdf, { updateMetadata: false, forIncrementalUpdate: true })
   await addSignatureField(loaded, options)
-  const bytes = await loaded.save({ useObjectStreams: false })
+  const bytes = await loaded.commit({ useObjectStreams: false })
   const text = latin1(bytes)
 
   const rangeText = `/ByteRange [ 0 /${BYTE_RANGE_PLACEHOLDER} /${BYTE_RANGE_PLACEHOLDER} /${BYTE_RANGE_PLACEHOLDER} ]`
-  const rangeAt = text.indexOf(rangeText)
-  const contentsAt = text.indexOf(`<${'0'.repeat(SIGNATURE_BYTES * 2)}>`)
-  if (rangeAt === -1 || contentsAt === -1)
+  const rangeAt = text.lastIndexOf(rangeText)
+  const contentsAt = text.lastIndexOf(`<${'0'.repeat(SIGNATURE_BYTES * 2)}>`)
+  if (rangeAt === -1 || contentsAt === -1 || rangeAt < pdf.length || contentsAt < pdf.length) {
     throw new Error('Could not place the signature in the PDF')
+  }
   const contentsEnd = contentsAt + SIGNATURE_BYTES * 2 + 2
   const ranges = [0, contentsAt, contentsEnd, bytes.length - contentsEnd]
   const filled = `/ByteRange [${ranges.join(' ')}]`.padEnd(rangeText.length, ' ')

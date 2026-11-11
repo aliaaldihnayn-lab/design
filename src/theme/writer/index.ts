@@ -66,6 +66,11 @@ export default {
     sideHeader:
       'flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold',
     card: 'flex flex-col gap-1 rounded-md border border-border bg-panel-secondary p-2 data-[resolved]:opacity-60',
+    signPage:
+      'relative w-full cursor-crosshair touch-none overflow-hidden rounded border border-border bg-white',
+    signBox: 'pointer-events-none absolute rounded-sm border-2 border-accent bg-accent/15',
+    signField:
+      'absolute rounded-sm border-2 border-dashed border-chart-1 bg-chart-1/10 data-[selected]:border-solid data-[selected]:bg-chart-1/25',
     findBar:
       'flex flex-wrap items-center gap-1.5 border-b border-border bg-panel px-2 py-1.5 text-xs',
     form: 'flex flex-col gap-2 text-xs',

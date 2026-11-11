@@ -159,8 +159,6 @@ export const writerMessageDefaults = {
   reason: 'Reason',
   location: 'Location',
   signAndSave: 'Sign and save',
-  stampBottomRight: 'Visible, bottom right of the last page',
-  stampBottomLeft: 'Visible, bottom left of the last page',
   stampHidden: 'Invisible',
   signed: 'Signed PDF saved',
   signFailed: params('Could not sign the PDF: {error}'),
@@ -221,7 +219,13 @@ export const writerMessageDefaults = {
   saveEncryptedPDF: 'Save encrypted PDF',
   openEncrypted: 'Open',
   wrongPassword: 'The password is not correct.',
-  deleteFootnote: 'Delete footnote'
+  deleteFootnote: 'Delete footnote',
+  stampPlaced: 'Visible, where you place it',
+  placeSignature: 'Click or drag on the page to place the signature',
+  previousPage: 'Previous page',
+  nextPage: 'Next page',
+  pageOf: params('Page {page} of {count}'),
+  signatureField: params('Signature field {name}')
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

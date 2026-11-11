@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "Enregistrer un PDF chiffré",
   "openEncrypted": "Ouvrir",
   "wrongPassword": "Le mot de passe est incorrect.",
-  "stampBottomRight": "Visible, en bas à droite de la dernière page",
-  "stampBottomLeft": "Visible, en bas à gauche de la dernière page",
   "stampHidden": "Invisible",
-  "deleteFootnote": "Supprimer la note de bas de page"
+  "deleteFootnote": "Supprimer la note de bas de page",
+  "stampPlaced": "Visible, là où vous la placez",
+  "placeSignature": "Cliquez ou faites glisser sur la page pour placer la signature",
+  "previousPage": "Page précédente",
+  "nextPage": "Page suivante",
+  "pageOf": "Page {page} sur {count}",
+  "signatureField": "Champ de signature {name}"
 }

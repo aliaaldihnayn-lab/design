@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "حفظ PDF مشفّر",
   "openEncrypted": "فتح",
   "wrongPassword": "كلمة المرور غير صحيحة.",
-  "stampBottomRight": "ظاهر، أسفل يمين الصفحة الأخيرة",
-  "stampBottomLeft": "ظاهر، أسفل يسار الصفحة الأخيرة",
   "stampHidden": "مخفي",
-  "deleteFootnote": "حذف الحاشية"
+  "deleteFootnote": "حذف الحاشية",
+  "stampPlaced": "ظاهر، في الموضع الذي تختاره",
+  "placeSignature": "انقر على الصفحة أو اسحب عليها لوضع التوقيع",
+  "previousPage": "الصفحة السابقة",
+  "nextPage": "الصفحة التالية",
+  "pageOf": "الصفحة {page} من {count}",
+  "signatureField": "حقل التوقيع {name}"
 }

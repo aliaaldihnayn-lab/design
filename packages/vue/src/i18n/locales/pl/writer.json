@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "Zapisz zaszyfrowany PDF",
   "openEncrypted": "Otwórz",
   "wrongPassword": "Hasło jest nieprawidłowe.",
-  "stampBottomRight": "Widoczny, prawy dolny róg ostatniej strony",
-  "stampBottomLeft": "Widoczny, lewy dolny róg ostatniej strony",
   "stampHidden": "Niewidoczny",
-  "deleteFootnote": "Usuń przypis"
+  "deleteFootnote": "Usuń przypis",
+  "stampPlaced": "Widoczny, tam gdzie go umieścisz",
+  "placeSignature": "Kliknij lub przeciągnij na stronie, aby umieścić podpis",
+  "previousPage": "Poprzednia strona",
+  "nextPage": "Następna strona",
+  "pageOf": "Strona {page} z {count}",
+  "signatureField": "Pole podpisu {name}"
 }

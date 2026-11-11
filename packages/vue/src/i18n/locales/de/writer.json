@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "Verschlüsseltes PDF speichern",
   "openEncrypted": "Öffnen",
   "wrongPassword": "Das Kennwort ist nicht korrekt.",
-  "stampBottomRight": "Sichtbar, unten rechts auf der letzten Seite",
-  "stampBottomLeft": "Sichtbar, unten links auf der letzten Seite",
   "stampHidden": "Unsichtbar",
-  "deleteFootnote": "Fußnote löschen"
+  "deleteFootnote": "Fußnote löschen",
+  "stampPlaced": "Sichtbar, wo Sie es platzieren",
+  "placeSignature": "Auf die Seite klicken oder ziehen, um die Signatur zu platzieren",
+  "previousPage": "Vorherige Seite",
+  "nextPage": "Nächste Seite",
+  "pageOf": "Seite {page} von {count}",
+  "signatureField": "Signaturfeld {name}"
 }

@@ -72,14 +72,41 @@ function loadPDFJS() {
   return pdfjsLoading
 }
 
-export async function readPDFDocument(
-  bytes: Uint8Array,
-  options: PDFReadOptions = {}
-): Promise<SceneGraph> {
-  const pdfjs = await loadPDFJS()
-  const ck = options.canvasKit ?? (await getCanvasKit())
-  const codec = createCanvasKitRasterCodec(ck)
-  const doc = await pdfjs.getDocument({
+type PDFPage = Awaited<ReturnType<Awaited<ReturnType<typeof PDFJS.getDocument>['promise']>['getPage']>>
+
+/** A page as SVG, its images encoded as PNG. */
+function pageSVG(
+  page: PDFPage,
+  ops: PDFOps,
+  codec: ReturnType<typeof createCanvasKitRasterCodec>
+): Promise<string> {
+  return pdfPageToSVG(page, {
+    ops,
+    image: (name) =>
+      new Promise<PDFImage | null>((resolve) => {
+        const store = name.startsWith('g_') ? page.commonObjs : page.objs
+        store.get(name, (image: DecodedImage | null) => {
+          const rgba = image ? toRGBA(image) : null
+          const png =
+            rgba && image
+              ? codec.encodePNG({ width: image.width, height: image.height, data: rgba })
+              : null
+          resolve(
+            png && image
+              ? {
+                  width: image.width,
+                  height: image.height,
+                  href: `data:image/png;base64,${fromUint8Array(png)}`
+                }
+              : null
+          )
+        })
+      })
+  })
+}
+
+function openPDF(pdfjs: typeof PDFJS, bytes: Uint8Array) {
+  return pdfjs.getDocument({
     data: bytes.slice(),
     useWorkerFetch: false,
     isEvalSupported: false,
@@ -87,6 +114,47 @@ export async function readPDFDocument(
     isOffscreenCanvasSupported: false,
     verbosity: 0
   }).promise
+}
+
+/** A page drawn as SVG, in PDF points, as previews show it. */
+export interface PDFPagePreview {
+  svg: string
+  width: number
+  height: number
+}
+
+/** The pages of a PDF as SVG, up to `maxPages`, such as to place a signature on one. */
+export async function previewPDFPages(
+  bytes: Uint8Array,
+  options: { canvasKit?: CanvasKit; maxPages?: number } = {}
+): Promise<PDFPagePreview[]> {
+  const pdfjs = await loadPDFJS()
+  const codec = createCanvasKitRasterCodec(options.canvasKit ?? (await getCanvasKit()))
+  const doc = await openPDF(pdfjs, bytes)
+  const ops: PDFOps = { ...pdfjs.OPS }
+  const previews: PDFPagePreview[] = []
+  try {
+    const count = Math.min(doc.numPages, options.maxPages ?? 50)
+    for (let index = 1; index <= count; index++) {
+      const page = await doc.getPage(index)
+      const { width, height } = page.getViewport({ scale: 1 })
+      previews.push({ svg: await pageSVG(page, ops, codec), width, height })
+      page.cleanup()
+    }
+  } finally {
+    await doc.destroy()
+  }
+  return previews
+}
+
+export async function readPDFDocument(
+  bytes: Uint8Array,
+  options: PDFReadOptions = {}
+): Promise<SceneGraph> {
+  const pdfjs = await loadPDFJS()
+  const ck = options.canvasKit ?? (await getCanvasKit())
+  const codec = createCanvasKitRasterCodec(ck)
+  const doc = await openPDF(pdfjs, bytes)
 
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
@@ -96,29 +164,7 @@ export async function readPDFDocument(
   try {
     for (let index = 1; index <= count; index++) {
       const page = await doc.getPage(index)
-      const svg = await pdfPageToSVG(page, {
-        ops,
-        image: (name) =>
-          new Promise<PDFImage | null>((resolve) => {
-            const store = name.startsWith('g_') ? page.commonObjs : page.objs
-            store.get(name, (image: DecodedImage | null) => {
-              const rgba = image ? toRGBA(image) : null
-              const png =
-                rgba && image
-                  ? codec.encodePNG({ width: image.width, height: image.height, data: rgba })
-                  : null
-              resolve(
-                png && image
-                  ? {
-                      width: image.width,
-                      height: image.height,
-                      href: `data:image/png;base64,${fromUint8Array(png)}`
-                    }
-                  : null
-              )
-            })
-          })
-      })
+      const svg = await pageSVG(page, ops, codec)
       const label = count > 1 ? `${options.name ?? 'PDF'} — ${index}` : (options.name ?? 'PDF')
       const frame = createSVGNodes(graph, pageId, svg, { name: label, x, y: 0, keepEmpty: true })
       x += (frame?.width ?? page.getViewport({ scale: 1 }).width) + PAGE_GAP

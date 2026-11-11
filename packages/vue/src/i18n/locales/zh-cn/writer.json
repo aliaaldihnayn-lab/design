@@ -210,8 +210,12 @@
   "saveEncryptedPDF": "保存加密的 PDF",
   "openEncrypted": "打开",
   "wrongPassword": "密码不正确。",
-  "stampBottomRight": "可见，位于最后一页右下角",
-  "stampBottomLeft": "可见，位于最后一页左下角",
   "stampHidden": "不可见",
-  "deleteFootnote": "删除脚注"
+  "deleteFootnote": "删除脚注",
+  "stampPlaced": "可见，放在你指定的位置",
+  "placeSignature": "在页面上点击或拖动以放置签名",
+  "previousPage": "上一页",
+  "nextPage": "下一页",
+  "pageOf": "第 {page} 页，共 {count} 页",
+  "signatureField": "签名字段 {name}"
 }
