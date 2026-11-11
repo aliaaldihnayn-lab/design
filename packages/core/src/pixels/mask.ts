@@ -1,3 +1,4 @@
+import { coveredCellBounds } from '@lawha/scene-graph/geometry'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
 /**
@@ -136,21 +137,7 @@ export function featherMask(mask: PixelMask, radius: number): PixelMask {
 /** The smallest rectangle of grid pixels holding every selected pixel, or null when none is. */
 export function maskBounds(mask: PixelMask): Rect | null {
   const { width, height, data } = mask
-  let minX = width
-  let minY = height
-  let maxX = -1
-  let maxY = -1
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (data[y * width + x] === 0) continue
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-    }
-  }
-  if (maxX < 0) return null
-  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 }
+  return coveredCellBounds(width, height, (index) => data[index] !== 0)
 }
 
 /** Which way an edge between two pixels faces: 0 when both are on the same side of it. */

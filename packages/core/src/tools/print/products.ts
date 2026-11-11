@@ -64,6 +64,11 @@ function panelsAcross(
   return dieLine(pieces)
 }
 
+/** A sheet folded once down the middle: the back and the front, side by side. */
+function foldedInHalf(size: Required<PrintSize>): DieLine {
+  return panelsAcross(['back', 'front'], [size.width / 2, size.width / 2], size.height)
+}
+
 /**
  * Reverse tuck end carton, the common retail box. Panels run glue · back · side · front · side;
  * the top lid hinges on the back, the bottom lid on the front, dust flaps on the sides.
@@ -372,7 +377,7 @@ export const PRINT_PRODUCTS = {
     bleed: 3,
     safe: 5,
     artwork: 'sheet',
-    build: (s) => panelsAcross(['back', 'front'], [s.width / 2, s.width / 2], s.height)
+    build: foldedInHalf
   },
   'brochure-trifold-a4': {
     category: 'brochure',
@@ -398,7 +403,7 @@ export const PRINT_PRODUCTS = {
     bleed: 3,
     safe: 5,
     artwork: 'sheet',
-    build: (s) => panelsAcross(['back', 'front'], [s.width / 2, s.width / 2], s.height)
+    build: foldedInHalf
   },
   'door-hanger': {
     category: 'card',

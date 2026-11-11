@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit'
+
 /**
  * The word-processing document model shared by Lawha's document editor, its Word and Google
  * Docs converters, and the AI tools. Content is ProseMirror JSON, in the node and mark names of
@@ -233,4 +235,20 @@ export function documentStatistics(body: WriterNode): WriterStatistics {
     charactersNoSpaces: texts.join('').replace(/\s/gu, '').length,
     paragraphs
   }
+}
+
+/** Joins neighbouring text nodes that carry the same marks, as the editor keeps them. */
+export function mergeText(nodes: WriterNode[]): WriterNode[] {
+  const out: WriterNode[] = []
+  for (const node of nodes) {
+    const last = out.at(-1)
+    if (
+      last?.type === 'text' &&
+      node.type === 'text' &&
+      isEqual(last.marks ?? [], node.marks ?? [])
+    ) {
+      out[out.length - 1] = { ...last, text: (last.text ?? '') + (node.text ?? '') }
+    } else out.push(node)
+  }
+  return out
 }

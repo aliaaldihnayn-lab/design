@@ -32,6 +32,18 @@ export interface PixelSession {
   selection: { nodeId: string; mask: PixelMask } | null
 }
 
+/** The selection there is on `node`, if it is on the grid `surface` has. */
+export function sessionMask(
+  session: PixelSession,
+  node: SceneNode,
+  surface: PixelSurface
+): PixelMask | null {
+  const { selection } = session
+  if (selection?.nodeId !== node.id) return null
+  const { mask } = selection
+  return mask.width === surface.width && mask.height === surface.height ? mask : null
+}
+
 /** What the selection actions borrow from the pixel tools. */
 export interface PixelSelectionDeps {
   session: PixelSession
@@ -128,14 +140,6 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
     return codec ? loadPixelSurface(ctx.graph, codec, node) : null
   }
 
-  /** The selection there is on `node`, if it is on the grid `surface` has. */
-  function currentMask(node: SceneNode, surface: PixelSurface): PixelMask | null {
-    const { selection } = session
-    if (selection?.nodeId !== node.id) return null
-    const { mask } = selection
-    return mask.width === surface.width && mask.height === surface.height ? mask : null
-  }
-
   /** Starts a rectangle or ellipse selection on the layer under a canvas point. */
   function pixelSelectBegin(
     kind: PixelMarquee['kind'],
@@ -196,7 +200,7 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
       current.kind === 'ellipse'
         ? ellipseMask(surface.width, surface.height, rect)
         : rectMask(surface.width, surface.height, rect)
-    setSelection(node.id, combineMasks(currentMask(node, surface), shape, current.mode))
+    setSelection(node.id, combineMasks(sessionMask(session, node, surface), shape, current.mode))
     return true
   }
 
@@ -214,7 +218,7 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
     const shown = compositeOver(surface.base, surface.paint)
     const region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
     if (!maskBounds(region)) return false
-    setSelection(node.id, combineMasks(currentMask(node, surface), region, mode))
+    setSelection(node.id, combineMasks(sessionMask(session, node, surface), region, mode))
     return true
   }
 

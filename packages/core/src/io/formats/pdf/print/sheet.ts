@@ -1,5 +1,6 @@
 import type { SceneGraph } from '@lawha/scene-graph'
 import { colorToHex } from '@lawha/scene-graph/color'
+import { computeBounds } from '@lawha/scene-graph/geometry'
 
 import type { PDFPageComposer } from '#core/io/formats/pdf/export'
 
@@ -34,17 +35,9 @@ function trimBox(graph: SceneGraph, nodeIds: readonly string[]): Box | null {
     const node = graph.getNode(id)
     if (!node?.visible) return []
     const at = graph.getAbsolutePosition(id)
-    return [{ x: at.x, y: at.y, right: at.x + node.width, bottom: at.y + node.height }]
+    return [{ x: at.x, y: at.y, width: node.width, height: node.height }]
   })
-  if (boxes.length === 0) return null
-  const x = Math.min(...boxes.map((box) => box.x))
-  const y = Math.min(...boxes.map((box) => box.y))
-  return {
-    x,
-    y,
-    width: Math.max(...boxes.map((box) => box.right)) - x,
-    height: Math.max(...boxes.map((box) => box.bottom)) - y
-  }
+  return boxes.length === 0 ? null : computeBounds(boxes)
 }
 
 function hex(color: { r: number; g: number; b: number }): string {

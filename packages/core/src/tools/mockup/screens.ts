@@ -1,7 +1,8 @@
 import * as v from 'valibot'
 
 import { nextFreeX } from '#core/tools/mockup/fit'
-import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
+import { copyGapInputSchema } from '#core/tools/mockup/schema'
+import { defineTool, nodeSummary, requireNode } from '#core/tools/schema'
 
 /** Common viewport sizes, in CSS pixels. */
 export const SCREEN_SIZES = {
@@ -33,10 +34,7 @@ export const resizeForScreens = defineTool({
         v.description('Screen ids; default mobile, tablet-portrait, desktop')
       )
     ),
-    gap: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Space between copies'))),
-      100
-    )
+    gap: copyGapInputSchema
   }),
   execute: (figma, args) => {
     const source = requireNode(figma, args.id)

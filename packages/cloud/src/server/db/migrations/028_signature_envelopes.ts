@@ -1,7 +1,6 @@
-import { CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
 import type { Kysely } from 'kysely'
 
-import { addCheckConstraint, replaceCheckConstraint } from './helpers'
+import { addCheckConstraint, replaceCheckConstraint, withCreatedAt } from './helpers'
 
 const emailKinds = [
   'document-invitation',
@@ -39,9 +38,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('original_sha256', 'text', (column) => column.notNull())
     .addColumn('final_pdf', 'bytea')
     .addColumn('final_sha256', 'text')
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withCreatedAt)
     .addColumn('completed_at', 'timestamptz')
     .execute()
   await addCheckConstraint(
@@ -95,9 +92,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('kind', 'text', (column) => column.notNull())
     .addColumn('ip_address', 'text')
     .addColumn('user_agent', 'text')
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withCreatedAt)
     .execute()
   await database.schema
     .createIndex('signature_event_envelope_index')

@@ -5,6 +5,7 @@ import { buildLists } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
+  mergeText,
   type PageSetup,
   type WriterComment,
   type WriterDocument,
@@ -24,7 +25,7 @@ import {
   type ListInfo,
   type ReadContext
 } from './context'
-import { mergeText, readInlines, type InlineState } from './inline'
+import { readInlines, type InlineState } from './inline'
 import { attrOf, find, kid, kids, parseXML, toggleOf, valOf } from './xml'
 
 const TWIPS_PER_PX = 15

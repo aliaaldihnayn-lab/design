@@ -1,9 +1,8 @@
-import { isEqual } from 'es-toolkit'
-
 import { buildLists } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
+  mergeText,
   ptToTwips,
   type PageSetup,
   type WriterDocument,
@@ -92,21 +91,6 @@ interface ReadState {
 
 function withMarks(node: WriterNode, marks: WriterMark[]): WriterNode {
   return marks.length ? { ...node, marks } : node
-}
-
-function mergeText(nodes: WriterNode[]): WriterNode[] {
-  const out: WriterNode[] = []
-  for (const node of nodes) {
-    const last = out.at(-1)
-    if (
-      last?.type === 'text' &&
-      node.type === 'text' &&
-      isEqual(last.marks ?? [], node.marks ?? [])
-    ) {
-      out[out.length - 1] = { ...last, text: (last.text ?? '') + (node.text ?? '') }
-    } else out.push(node)
-  }
-  return out
 }
 
 function inlineImage(id: string | undefined, state: ReadState): WriterNode | null {

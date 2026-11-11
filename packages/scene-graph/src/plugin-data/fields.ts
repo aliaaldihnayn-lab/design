@@ -7,6 +7,7 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import { FIG_COMPRESSIONS } from '../fig-compression'
 import { iconSchema, iconTintSchema } from '../icons/schema'
+import { curvePointSchema, imageLevelsSchema, MAX_CURVE_POINTS } from '../paints/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
 import { nodeStatusSchema, statusWorkflowSchema } from '../statuses/schema'
@@ -160,24 +161,8 @@ const imageAdjustmentsSchema = v.record(
     noise: adjustmentValueSchema,
     vignette: adjustmentValueSchema,
     invert: v.optional(v.boolean()),
-    levels: v.optional(
-      v.object({
-        black: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-        white: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-        gamma: v.pipe(v.number(), v.minValue(0.1), v.maxValue(10))
-      })
-    ),
-    curve: v.optional(
-      v.pipe(
-        v.array(
-          v.object({
-            x: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-            y: v.pipe(v.number(), v.minValue(0), v.maxValue(1))
-          })
-        ),
-        v.maxLength(32)
-      )
-    )
+    levels: v.optional(imageLevelsSchema),
+    curve: v.optional(v.pipe(v.array(curvePointSchema), v.maxLength(MAX_CURVE_POINTS)))
   })
 )
 

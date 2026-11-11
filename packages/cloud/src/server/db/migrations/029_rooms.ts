@@ -1,7 +1,13 @@
 import { checkColumnIn, CURRENT_TIMESTAMP, EMPTY_JSON_OBJECT } from '#cloud/server/db/expressions'
 import { sql, type Kysely } from 'kysely'
 
-import { addCurrentTimestampColumns, addInvitationColumns, replaceCheckConstraint } from './helpers'
+import {
+  addCurrentTimestampColumns,
+  addInvitationColumns,
+  replaceCheckConstraint,
+  withCreatedAt,
+  withTimestamps
+} from './helpers'
 
 const emailKinds = [
   'document-invitation',
@@ -39,12 +45,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('name', 'text', (column) => column.notNull())
     .addColumn('access_mode', 'text', (column) => column.notNull())
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
-    .addColumn('updated_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withTimestamps)
     .addColumn('archived_at', 'timestamptz')
     .addCheckConstraint(
       'room_access_mode_check',
@@ -72,9 +73,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('user_id', 'text', (column) => column.notNull())
     .addColumn('role', 'text', (column) => column.notNull())
     .addColumn('added_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withCreatedAt)
     .addPrimaryKeyConstraint('room_member_primary', ['room_id', 'user_id'])
     .addCheckConstraint(
       'room_member_role_check',
@@ -147,9 +146,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('subject_user_id', 'text')
     .addColumn('subject_email', 'text')
     .addColumn('metadata', 'jsonb', (column) => column.notNull().defaultTo(EMPTY_JSON_OBJECT))
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withCreatedAt)
     .execute()
   await database.schema
     .createIndex('room_audit_event_room_index')

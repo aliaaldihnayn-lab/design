@@ -1,5 +1,6 @@
-import { CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
 import type { Kysely } from 'kysely'
+
+import { withTimestamps } from './helpers'
 
 /**
  * The Jira Cloud site each person connected for their user stories: the site and email in the
@@ -14,12 +15,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('site', 'text', (column) => column.notNull())
     .addColumn('email', 'text', (column) => column.notNull())
     .addColumn('api_token_encrypted', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
-    .addColumn('updated_at', 'timestamptz', (column) =>
-      column.notNull().defaultTo(CURRENT_TIMESTAMP)
-    )
+    .$call(withTimestamps)
     .execute()
 }
 

@@ -1,5 +1,5 @@
 import type { Element } from '@xmldom/xmldom'
-import { compact, isEqual } from 'es-toolkit'
+import { compact } from 'es-toolkit'
 
 import { detectDirection, type WriterMark, type WriterNode } from '#core/writer/model'
 
@@ -252,19 +252,4 @@ export function readContentControl(
     return [{ type: 'formField', attrs: { kind, name, value, checked: false } }]
   }
   return content ? readInlines(content, state, extra) : []
-}
-
-export function mergeText(nodes: WriterNode[]): WriterNode[] {
-  const out: WriterNode[] = []
-  for (const node of nodes) {
-    const last = out.at(-1)
-    if (
-      last?.type === 'text' &&
-      node.type === 'text' &&
-      isEqual(last.marks ?? [], node.marks ?? [])
-    ) {
-      out[out.length - 1] = { ...last, text: (last.text ?? '') + (node.text ?? '') }
-    } else out.push(node)
-  }
-  return out
 }

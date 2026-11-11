@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { IMAGE_ADJUSTMENT_KEYS, type ImageAdjustments } from '@lawha/scene-graph'
+import { curvePointSchema, imageLevelsSchema, MAX_CURVE_POINTS } from '@lawha/scene-graph/paints'
 
 import { cleanAdjustments } from '#core/canvas/image-adjust'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
@@ -36,23 +37,9 @@ export const setImageAdjustments = defineTool({
     noise: amountSchema,
     vignette: amountSchema,
     invert: v.optional(v.boolean()),
-    levels: v.optional(
-      v.strictObject({
-        black: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-        white: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-        gamma: v.pipe(v.number(), v.minValue(0.1), v.maxValue(10))
-      })
-    ),
+    levels: v.optional(v.strictObject(imageLevelsSchema.entries)),
     curve: v.optional(
-      v.pipe(
-        v.array(
-          v.strictObject({
-            x: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-            y: v.pipe(v.number(), v.minValue(0), v.maxValue(1))
-          })
-        ),
-        v.maxLength(32)
-      )
+      v.pipe(v.array(v.strictObject(curvePointSchema.entries)), v.maxLength(MAX_CURVE_POINTS))
     ),
     reset: v.optional(v.boolean(), false)
   }),

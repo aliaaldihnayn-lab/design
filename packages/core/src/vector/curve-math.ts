@@ -96,6 +96,23 @@ export function splitCubicAt(
   }
 }
 
+/** The point `t` of the way from `a` to `b`. */
+export function lerpPoint(a: Vector, b: Vector, t: number): Vector {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+}
+
+/**
+ * The length of a cubic's control polygon, an upper bound on its arc length, for spacing
+ * samples along it.
+ */
+export function controlPolygonLength(p0: Vector, p1: Vector, p2: Vector, p3: Vector): number {
+  return (
+    Math.hypot(p1.x - p0.x, p1.y - p0.y) +
+    Math.hypot(p2.x - p1.x, p2.y - p1.y) +
+    Math.hypot(p3.x - p2.x, p3.y - p2.y)
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Segment ↔ absolute control points conversion
 // ---------------------------------------------------------------------------

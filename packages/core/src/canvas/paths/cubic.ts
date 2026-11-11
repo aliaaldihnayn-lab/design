@@ -2,6 +2,7 @@ import type { CanvasKit, Path } from 'canvaskit-wasm'
 
 import type { Vector } from '@lawha/scene-graph/primitives'
 
+import { lerpPoint } from '#core/vector/curve-math'
 import type { CubicContour } from '#core/vector/warp'
 
 /** Control points of the cubic closest to a conic with weight `w`, exact for a parabola. */
@@ -30,7 +31,7 @@ export function pathToCubics(ck: CanvasKit, path: Path): CubicContour[] {
       i += 3
     } else if (verb === ck.LINE_VERB) {
       const end = point(i + 1)
-      current?.segments.push([lerp(at, end, 1 / 3), lerp(at, end, 2 / 3), end])
+      current?.segments.push([lerpPoint(at, end, 1 / 3), lerpPoint(at, end, 2 / 3), end])
       at = end
       i += 3
     } else if (verb === ck.QUAD_VERB) {
@@ -59,10 +60,6 @@ export function pathToCubics(ck: CanvasKit, path: Path): CubicContour[] {
     }
   }
   return contours.filter((contour) => contour.segments.length > 0)
-}
-
-function lerp(a: Vector, b: Vector, t: number): Vector {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
 }
 
 /** Runs of cubics as a path with `fillType`. */

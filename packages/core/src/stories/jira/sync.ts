@@ -166,70 +166,81 @@ function linkPatch(site: string, key: string) {
   return { jiraKey: key, jiraUrl: jiraIssueURL(site, key) }
 }
 
-async function pushEpic(context: PushContext, epic: Epic): Promise<void> {
-  const { client, options, types, result, epicKeys } = context
-  const item = { kind: 'epic' as const, id: epic.id, title: epic.title }
-  const fields = {
-    summary: summary(epic.title, 'Untitled epic'),
-    description: epicDescription(epic)
-  }
+interface IssuePush {
+  /** The issue the item is already linked to, which the push updates. */
+  key?: string
+  /** The issue type a new issue gets, missing when the project has none of the kind. */
+  type?: { id: string } | null
+  typeName: string
+  fields: Record<string, unknown>
+  /** The document change that links the item to the issue the push created. */
+  link: (patch: ReturnType<typeof linkPatch>) => JiraLinkUpdate
+  /** Called with the item's issue key once it has one. */
+  keyed?: (key: string) => void
+}
+
+/** Updates the item's linked issue, or creates one and links the item to it. */
+async function pushIssue(
+  context: PushContext,
+  item: Omit<JiraSyncItem, 'action' | 'key'>,
+  push: IssuePush
+): Promise<void> {
+  const { client, options, result } = context
   try {
-    if (epic.jiraKey) {
-      await client.updateIssue(epic.jiraKey, fields)
-      epicKeys.set(epic.id, epic.jiraKey)
-      result.items.push({ ...item, key: epic.jiraKey, action: 'updated' })
+    if (push.key) {
+      await client.updateIssue(push.key, push.fields)
+      push.keyed?.(push.key)
+      result.items.push({ ...item, key: push.key, action: 'updated' })
       return
     }
-    if (!types.epic) throw new Error(`Project ${options.projectKey} has no Epic issue type`)
+    if (!push.type)
+      throw new Error(`Project ${options.projectKey} has no ${push.typeName} issue type`)
     const created = await client.createIssue({
-      ...fields,
+      ...push.fields,
       project: { key: options.projectKey },
-      issuetype: { id: types.epic.id }
+      issuetype: { id: push.type.id }
     })
-    epicKeys.set(epic.id, created.key)
-    result.updates.push({
-      kind: 'epic',
-      epicId: epic.id,
-      patch: linkPatch(options.site, created.key)
-    })
+    push.keyed?.(created.key)
+    result.updates.push(push.link(linkPatch(options.site, created.key)))
     result.items.push({ ...item, key: created.key, action: 'created' })
   } catch (error) {
     result.items.push({ ...item, action: 'failed', error: errorText(error) })
   }
 }
 
-async function pushStory(context: PushContext, placed: ReportedStory): Promise<void> {
-  const { client, options, types, result, epicKeys } = context
-  const { nodeId, story, path, pageName } = placed
-  const item = { kind: 'story' as const, id: story.id, nodeId, title: story.title }
-  const parentKey = story.epicId ? epicKeys.get(story.epicId) : undefined
-  const fields: Record<string, unknown> = {
-    summary: summary(story.title, storyStatement(story.narrative) || 'Untitled story'),
-    description: storyDescription(story, { path, pageName }),
-    ...(parentKey ? { parent: { key: parentKey } } : {})
-  }
-  try {
-    if (story.jiraKey) {
-      await client.updateIssue(story.jiraKey, fields)
-      result.items.push({ ...item, key: story.jiraKey, action: 'updated' })
-      return
+async function pushEpic(context: PushContext, epic: Epic): Promise<void> {
+  await pushIssue(
+    context,
+    { kind: 'epic', id: epic.id, title: epic.title },
+    {
+      key: epic.jiraKey,
+      type: context.types.epic,
+      typeName: 'Epic',
+      fields: { summary: summary(epic.title, 'Untitled epic'), description: epicDescription(epic) },
+      link: (patch) => ({ kind: 'epic', epicId: epic.id, patch }),
+      keyed: (key) => context.epicKeys.set(epic.id, key)
     }
-    if (!types.story) throw new Error(`Project ${options.projectKey} has no Story issue type`)
-    const created = await client.createIssue({
-      ...fields,
-      project: { key: options.projectKey },
-      issuetype: { id: types.story.id }
-    })
-    result.updates.push({
-      kind: 'story',
-      nodeId,
-      storyId: story.id,
-      patch: linkPatch(options.site, created.key)
-    })
-    result.items.push({ ...item, key: created.key, action: 'created' })
-  } catch (error) {
-    result.items.push({ ...item, action: 'failed', error: errorText(error) })
-  }
+  )
+}
+
+async function pushStory(context: PushContext, placed: ReportedStory): Promise<void> {
+  const { nodeId, story, path, pageName } = placed
+  const parentKey = story.epicId ? context.epicKeys.get(story.epicId) : undefined
+  await pushIssue(
+    context,
+    { kind: 'story', id: story.id, nodeId, title: story.title },
+    {
+      key: story.jiraKey,
+      type: context.types.story,
+      typeName: 'Story',
+      fields: {
+        summary: summary(story.title, storyStatement(story.narrative) || 'Untitled story'),
+        description: storyDescription(story, { path, pageName }),
+        ...(parentKey ? { parent: { key: parentKey } } : {})
+      },
+      link: (patch) => ({ kind: 'story', nodeId, storyId: story.id, patch })
+    }
+  )
 }
 
 /** Reads back the status of every issue the push wrote, as updates after its links. */

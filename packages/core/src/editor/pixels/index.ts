@@ -28,7 +28,7 @@ import {
   paintedLayerChanges,
   type PixelSurface
 } from './layer'
-import { createPixelSelectionActions, type PixelSession } from './select'
+import { createPixelSelectionActions, sessionMask, type PixelSession } from './select'
 import { DEFAULT_PIXEL_TOOL_SETTINGS, type PixelOverlay, type PixelToolSettings } from './types'
 
 /** The tools that paint along a drag. */
@@ -98,6 +98,8 @@ export function createPixelActions(
   let stroke: StrokeSession | null = null
   /** The pixel selection the tools keep to, on one layer's grid. */
   const session: PixelSession = { selection: null }
+  /** The session again, under a name the stroke sessions below do not shadow. */
+  const shared = session
   /** The grid scale of the layer painted last, so the brush cursor matches its pixels. */
   let lastScale: { nodeId: string; scale: number } | null = null
   let cloneSource: CloneSource | null = null
@@ -137,11 +139,14 @@ export function createPixelActions(
     return hit
   }
 
-  function selectionMask(node: SceneNode, surface: PixelSurface): PixelMask | null {
-    const { selection } = session
-    if (selection?.nodeId !== node.id) return null
-    const { mask } = selection
-    return mask.width === surface.width && mask.height === surface.height ? mask : null
+  /** The paintable layer under a canvas point, its pixels, and the point on their grid. */
+  function surfaceAt(cx: number, cy: number) {
+    const node = pixelTargetAt(cx, cy)
+    const raster = codec()
+    if (!node || !raster) return null
+    const surface = loadPixelSurface(ctx.graph, raster, node)
+    const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
+    return surface && at ? { node, surface, at } : null
   }
 
   function showLive(session: StrokeSession, pixels: PixelSurface['paint'] | null) {
@@ -166,12 +171,9 @@ export function createPixelActions(
   /** Starts a stroke at a canvas point; false when nothing there can be painted on. */
   function pixelStrokeBegin(tool: PixelStrokeTool, cx: number, cy: number): boolean {
     pixelStrokeCancel()
-    const node = pixelTargetAt(cx, cy)
-    const raster = codec()
-    if (!node || !raster) return false
-    const surface = loadPixelSurface(ctx.graph, raster, node)
-    const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
-    if (!surface || !at) return false
+    const target = surfaceAt(cx, cy)
+    if (!target) return false
+    const { node, surface, at } = target
     const cloning = tool === 'CLONE_STAMP' || tool === 'HEALING_BRUSH'
     const sampling = cloning ? cloneSampling(node, surface, { x: cx, y: cy }) : null
     if (cloning && !sampling) return false
@@ -187,6 +189,7 @@ export function createPixelActions(
       preview.cancel()
       return false
     }
+    const mask = sessionMask(shared, node, surface)
     const session: StrokeSession = {
       tool,
       nodeId: node.id,
@@ -195,7 +198,7 @@ export function createPixelActions(
       coverage: createStrokeCoverage(surface.paint),
       tip: { size: settings.size, hardness: settings.hardness, opacity: settings.opacity },
       color: settings.color,
-      mask: selectionMask(node, surface),
+      mask,
       last: at,
       carry: 0,
       changed: false,
@@ -328,16 +331,13 @@ export function createPixelActions(
    * paint layer, within the selection when there is one. False when nothing was filled.
    */
   function pixelFillAt(cx: number, cy: number): boolean {
-    const node = pixelTargetAt(cx, cy)
-    const raster = codec()
-    if (!node || !raster) return false
-    const surface = loadPixelSurface(ctx.graph, raster, node)
-    const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
-    if (!surface || !at) return false
+    const target = surfaceAt(cx, cy)
+    if (!target) return false
+    const { node, surface, at } = target
     const { tolerance, contiguous, color, opacity } = ctx.state.pixelTools
     const shown = compositeOver(surface.base, surface.paint)
     let region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
-    const mask = selectionMask(node, surface)
+    const mask = sessionMask(session, node, surface)
     if (mask) region = combineMasks(mask, region, 'intersect')
     if (fillRegion(surface.paint, region, color, opacity) === 0) return false
     return commitSurface(node, surface, 'Fill')
@@ -348,12 +348,9 @@ export function createPixelActions(
    * colour picker sets the primary colour. Null where no paintable layer is.
    */
   function pixelPickColorAt(cx: number, cy: number): Color | null {
-    const node = pixelTargetAt(cx, cy)
-    const raster = codec()
-    if (!node || !raster) return null
-    const surface = loadPixelSurface(ctx.graph, raster, node)
-    const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
-    if (!surface || !at) return null
+    const target = surfaceAt(cx, cy)
+    if (!target) return null
+    const { surface, at } = target
     const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
     if (!color || color.a === 0) return null
     const opaque = { ...color, a: 1 }

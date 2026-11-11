@@ -186,6 +186,14 @@ const COMBOBOX: ListOptions = {
     `<Frame name="Trigger" flex="col" gap={4} w="fill"><Instance of={field} name="Field" w="fill" /><Frame name="Caption" flex="row" w="fill">${label(theme, 'Value', theme.labels.choose, { size: 12, color: theme.muted })}</Frame></Frame>`
 }
 
+/** The combobox's field as one variant of its Filled property. */
+function comboboxField(theme: KitTheme, filled: boolean): string {
+  return `<Component name="Filled=${filled}" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={8} px={12} py={10} w={260} items="center" rounded={8} bg=${theme.surface} stroke=${theme.border}>
+      ${glyph('search', theme.muted, { layer: 'Icon' })}
+      <TextField.Input name="Value" grow={1} size={14} font="${theme.font}" color=${theme.text} ${theme.rtl ? 'dir="rtl"' : ''}>{${JSON.stringify(theme.labels.search)}}</TextField.Input>
+    </Component>`
+}
+
 const combobox: KitDefinition = {
   kind: 'combobox',
   name: 'Kit/Combobox',
@@ -193,14 +201,8 @@ const combobox: KitDefinition = {
   jsx: (theme) => `const field = ref()
 return <Frame name="Kit combobox" flex="col" gap={24}>
   <TextField.Root ref={field} name="Kit/Combobox field" filled={{ property: "Filled", on: "true", off: "false" }}>
-    <Component name="Filled=false" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={8} px={12} py={10} w={260} items="center" rounded={8} bg=${theme.surface} stroke=${theme.border}>
-      ${glyph('search', theme.muted, { layer: 'Icon' })}
-      <TextField.Input name="Value" grow={1} size={14} font="${theme.font}" color=${theme.text} ${theme.rtl ? 'dir="rtl"' : ''}>{${JSON.stringify(theme.labels.search)}}</TextField.Input>
-    </Component>
-    <Component name="Filled=true" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={8} px={12} py={10} w={260} items="center" rounded={8} bg=${theme.surface} stroke=${theme.border}>
-      ${glyph('search', theme.muted, { layer: 'Icon' })}
-      <TextField.Input name="Value" grow={1} size={14} font="${theme.font}" color=${theme.text} ${theme.rtl ? 'dir="rtl"' : ''}>{${JSON.stringify(theme.labels.search)}}</TextField.Input>
-    </Component>
+    ${comboboxField(theme, false)}
+    ${comboboxField(theme, true)}
   </TextField.Root>
   ${listJSX(COMBOBOX)(theme)}
 </Frame>`,

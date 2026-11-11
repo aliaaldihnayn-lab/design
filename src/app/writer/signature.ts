@@ -4,6 +4,8 @@
  * document as an image the person can resize.
  */
 
+import { coveredCellBounds } from '@lawha/scene-graph/geometry'
+
 export interface InkBounds {
   x: number
   y: number
@@ -18,21 +20,7 @@ export function inkBounds(
   height: number,
   threshold = 8
 ): InkBounds | null {
-  let minX = width
-  let minY = height
-  let maxX = -1
-  let maxY = -1
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      if (data[(y * width + x) * 4 + 3] <= threshold) continue
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-    }
-  }
-  if (maxX < 0) return null
-  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 }
+  return coveredCellBounds(width, height, (index) => data[index * 4 + 3] > threshold)
 }
 
 /** The size a signature is placed at: as drawn, no wider than `maxWidth` CSS pixels. */

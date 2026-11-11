@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'
 import { DEVICE_IDS, DEVICES, type DevicePreset } from '#core/tools/mockup/presets'
-import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
+import { defineTool, nodeSummary, pagePositionInputs, requireNode } from '#core/tools/schema'
 
 type RGB = { r: number; g: number; b: number }
 
@@ -133,12 +133,7 @@ export const createDeviceMockup = defineTool({
       v.pipe(v.picklist(['dark', 'light']), v.description('Device body colour')),
       'dark'
     ),
-    x: v.optional(
-      toolNumber(
-        v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
-      )
-    ),
-    y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0'))))
+    ...pagePositionInputs
   }),
   execute: (figma, args) => {
     const source = requireNode(figma, args.id)

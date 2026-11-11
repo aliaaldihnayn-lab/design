@@ -183,6 +183,16 @@ export const positionInputs = {
   y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
 }
 
+/** Where a new top-level layer goes on the page; by default right of what is there. */
+export const pagePositionInputs = {
+  x: v.optional(
+    toolNumber(
+      v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
+    )
+  ),
+  y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0'))))
+}
+
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */
 export function toolNumber(schema: v.GenericSchema<number, number> = v.number()) {
   // JSON Schema numbers are finite. Express that with representable bounds as well as at runtime.

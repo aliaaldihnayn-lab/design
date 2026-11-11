@@ -160,6 +160,24 @@ function shapeProperties(shape: Element): Element | undefined {
   return child(shape, 'spPr')
 }
 
+/**
+ * Where a shape or picture sits, from its own transform or the first one the placeholders it
+ * inherits from give, with those placeholders and its own shape properties.
+ */
+function placedShape(
+  ctx: ShapeContext,
+  element: Element,
+  info: PlaceholderInfo | null,
+  space: Space
+) {
+  const inherited = inheritedShapes(ctx, info)
+  const spPr = shapeProperties(element)
+  const xfrm = [spPr, ...inherited.map(shapeProperties)]
+    .map((el) => child(el, 'xfrm'))
+    .find((el) => el !== undefined)
+  return { inherited, spPr, box: readBox(xfrm, space) }
+}
+
 // ── Geometry ─────────────────────────────────────────────
 
 function presetPath(preset: string, w: number, h: number): string | null {
@@ -354,12 +372,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
   const cNvPr = child(nv, 'cNvPr')
   const info = placeholderOf(shape)
   if (info && !ctx.drawPlaceholders) return
-  const inherited = inheritedShapes(ctx, info)
-  const spPr = shapeProperties(shape)
-  const xfrm = [spPr, ...inherited.map(shapeProperties)]
-    .map((el) => child(el, 'xfrm'))
-    .find((el) => el !== undefined)
-  const box = readBox(xfrm, space)
+  const { inherited, spPr, box } = placedShape(ctx, shape, info, space)
   if (!box) {
     skip(ctx, 'shape without position')
     return
@@ -474,12 +487,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
 function addPicture(ctx: ShapeContext, parentId: string, picture: Element, space: Space): void {
   const cNvPr = descend(picture, 'nvPicPr', 'cNvPr')
   const info = placeholderOf(picture)
-  const inherited = inheritedShapes(ctx, info)
-  const spPr = shapeProperties(picture)
-  const xfrm = [spPr, ...inherited.map(shapeProperties)]
-    .map((el) => child(el, 'xfrm'))
-    .find((el) => el !== undefined)
-  const box = readBox(xfrm, space)
+  const { inherited, spPr, box } = placedShape(ctx, picture, info, space)
   if (!box) {
     skip(ctx, 'picture without position')
     return
