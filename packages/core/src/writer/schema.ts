@@ -49,7 +49,17 @@ export const writerDocumentSchema = v.object({
   footnotes: v.array(v.object({ id: v.string(), content: v.array(writerNodeSchema) })),
   trackChanges: v.boolean(),
   watermark: v.nullable(v.object({ text: v.string(), color: v.optional(v.string()) })),
-  title: v.string()
+  title: v.string(),
+  defaults: v.optional(
+    v.nullable(
+      v.object({
+        fontFamily: v.optional(v.string()),
+        fontFamilyComplex: v.optional(v.string()),
+        fontSize: v.optional(v.number()),
+        fontSizeComplex: v.optional(v.number())
+      })
+    )
+  )
 })
 
 const googleDimensionSchema = v.object({

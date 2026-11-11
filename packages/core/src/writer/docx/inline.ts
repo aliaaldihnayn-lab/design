@@ -6,58 +6,80 @@ import { detectDirection, type WriterMark, type WriterNode } from '#core/writer/
 import { resolvePath, type ReadContext } from './context'
 import { imageDataURL } from './images'
 import { HIGHLIGHT_COLORS } from './runs'
-import { attrOf, find, kid, kids, toggleOf, valOf } from './xml'
+import { effectiveRun, readRunProperties, type RunProperties } from './styles'
+import { attrOf, find, kid, kids, valOf } from './xml'
 
 const EMU_PER_PX = 9525
 
-const HEX = /^[0-9a-f]{6}$/i
-
-/** On/off and vertical-alignment marks of a run. */
-function toggleMarks(rPr: Element, rtl: boolean): WriterMark[] {
-  const pick = (latin: boolean | null, complex: boolean | null) =>
+/** On/off and vertical-alignment marks of a run; complex-script values for right-to-left text. */
+function toggleMarks(props: RunProperties, rtl: boolean): WriterMark[] {
+  const pick = (latin: boolean | undefined, complex: boolean | undefined) =>
     rtl ? (complex ?? latin) : (latin ?? complex)
   const marks: WriterMark[] = []
-  if (pick(toggleOf(rPr, 'b'), toggleOf(rPr, 'bCs'))) marks.push({ type: 'bold' })
-  if (pick(toggleOf(rPr, 'i'), toggleOf(rPr, 'iCs'))) marks.push({ type: 'italic' })
-  if (kid(rPr, 'u') && valOf(rPr, 'u') !== 'none') marks.push({ type: 'underline' })
-  if (toggleOf(rPr, 'strike') || toggleOf(rPr, 'dstrike')) marks.push({ type: 'strike' })
-  const vertAlign = valOf(rPr, 'vertAlign')
-  if (vertAlign === 'superscript' || vertAlign === 'subscript') marks.push({ type: vertAlign })
+  if (pick(props.bold, props.boldComplex)) marks.push({ type: 'bold' })
+  if (pick(props.italic, props.italicComplex)) marks.push({ type: 'italic' })
+  if (props.underline) marks.push({ type: 'underline' })
+  if (props.strike) marks.push({ type: 'strike' })
+  if (props.vertAlign === 'superscript' || props.vertAlign === 'subscript') {
+    marks.push({ type: props.vertAlign })
+  }
   return marks
 }
 
-function backgroundColor(rPr: Element): string | null {
-  const highlight = valOf(rPr, 'highlight')
-  if (highlight && HIGHLIGHT_COLORS[highlight]) return HIGHLIGHT_COLORS[highlight]
-  const fill = attrOf(kid(rPr, 'shd'), 'fill')
-  return fill && HEX.test(fill) ? `#${fill.toLowerCase()}` : null
+function backgroundColor(props: RunProperties): string | null {
+  if (props.highlight && HIGHLIGHT_COLORS[props.highlight]) return HIGHLIGHT_COLORS[props.highlight]
+  return props.shading ? `#${props.shading}` : null
 }
 
 /** Font, size, and colours of a run as one `textStyle` mark's attributes. */
-function textStyle(rPr: Element, rtl: boolean): Record<string, string> {
-  const pick = (latin: string | null, complex: string | null) =>
-    rtl ? (complex ?? latin) : (latin ?? complex)
-  const fonts = kid(rPr, 'rFonts')
+function textStyle(props: RunProperties, rtl: boolean): Record<string, string> {
   const style: Record<string, string> = {}
-  const font = pick(attrOf(fonts, 'ascii') ?? attrOf(fonts, 'hAnsi'), attrOf(fonts, 'cs'))
+  const font = rtl ? (props.fontComplex ?? props.font) : (props.font ?? props.fontComplex)
   if (font) style.fontFamily = font
-  const size = Number(pick(valOf(rPr, 'sz'), valOf(rPr, 'szCs')))
-  if (size > 0) style.fontSize = `${size / 2}pt`
-  const color = valOf(rPr, 'color')
-  if (color && HEX.test(color)) style.color = `#${color.toLowerCase()}`
-  const background = backgroundColor(rPr)
+  const size = rtl ? (props.sizeComplex ?? props.size) : (props.size ?? props.sizeComplex)
+  if (size) style.fontSize = `${size / 2}pt`
+  if (props.color) style.color = `#${props.color}`
+  const background = backgroundColor(props)
   if (background) style.backgroundColor = background
   return style
 }
 
-/** Run formatting as marks; complex-script values win for right-to-left text, as Word draws it. */
-export function runMarks(rPr: Element | null, sample: string): WriterMark[] {
-  if (!rPr) return []
+/**
+ * Run formatting as marks: what the run's properties in effect set beyond the document's
+ * defaults, which the model keeps once as `defaults` rather than on every run.
+ */
+export function runMarks(
+  props: RunProperties,
+  sample: string,
+  defaults: RunProperties = {}
+): WriterMark[] {
   const rtl = detectDirection(sample) === 'rtl'
-  const marks = toggleMarks(rPr, rtl)
-  const style = textStyle(rPr, rtl)
+  const marks = toggleMarks(props, rtl)
+  const base = textStyle(defaults, rtl)
+  const style = Object.fromEntries(
+    Object.entries(textStyle(props, rtl)).filter(([key, value]) => base[key] !== value)
+  )
   if (Object.keys(style).length) marks.push({ type: 'textStyle', attrs: style })
   return marks
+}
+
+/** Character styles of links and note references, whose look the editor gives them itself. */
+const ROLE_CHARACTER_STYLES = new Set([
+  'hyperlink',
+  'followedhyperlink',
+  'footnote reference',
+  'endnote reference',
+  'annotation reference'
+])
+
+/** The marks of a run element in its paragraph, its styles resolved. */
+function elementMarks(rPr: Element | null, state: InlineState, sample: string): WriterMark[] {
+  const sheet = state.context.styles
+  const own = readRunProperties(rPr)
+  const characterStyle = valOf(rPr, 'rStyle')
+  const role = ROLE_CHARACTER_STYLES.has(sheet.names.get(characterStyle ?? '') ?? '')
+  const props = effectiveRun(sheet, state.paragraphStyle ?? null, role ? null : characterStyle, own)
+  return runMarks(props, sample, sheet.defaultRun)
 }
 
 /** Inline content of a paragraph, plus where page breaks fall in it. */
@@ -68,6 +90,8 @@ export interface InlineState {
   comments: string[]
   /** Inside a complex field: its instruction, and whether its result is being skipped. */
   field: { instruction: string; skip: boolean; separated: boolean } | null
+  /** The style of the paragraph being read, whose run properties its runs inherit. */
+  paragraphStyle?: string | null
 }
 
 function lineBreak(child: Element, state: InlineState): InlineItem[] {
@@ -81,7 +105,7 @@ function fieldCharacter(child: Element, rPr: Element | null, state: InlineState)
   if (type === 'begin') state.field = { instruction: '', skip: false, separated: false }
   if (type === 'end') state.field = null
   if (type !== 'separate' || !state.field) return []
-  const field = fieldNode(state.field.instruction, rPr)
+  const field = fieldNode(state.field.instruction, rPr, state)
   state.field.skip = field !== null
   state.field.separated = true
   return field ? [field] : []
@@ -97,7 +121,7 @@ export function readRun(run: Element, state: InlineState, extra: WriterMark[]): 
   const pushText = (value: string) => {
     if (!value) return
     if (state.field?.skip) return
-    const marks = [...runMarks(rPr, value), ...extra, ...commentMarks]
+    const marks = [...elementMarks(rPr, state, value), ...extra, ...commentMarks]
     const node: WriterNode = { type: 'text', text: value }
     out.push(marks.length ? { ...node, marks } : node)
   }
@@ -139,9 +163,13 @@ const PAGE_FIELDS: Record<string, string | undefined> = {
   NUMPAGES: 'pageCount'
 }
 
-export function fieldNode(instruction: string, rPr: Element | null): WriterNode | null {
+export function fieldNode(
+  instruction: string,
+  rPr: Element | null,
+  state: InlineState
+): WriterNode | null {
   const name = instruction.trim().split(/\s+/)[0].toUpperCase()
-  const marks = runMarks(rPr, '1')
+  const marks = elementMarks(rPr, state, '1')
   const base = PAGE_FIELDS[name]
   if (!base) return null
   return marks.length ? { type: base, marks } : { type: base }
@@ -211,7 +239,7 @@ export function readInlines(
         state.comments = state.comments.filter((open) => open !== `c${attrOf(child, 'id') ?? ''}`)
         break
       case 'fldSimple': {
-        const field = fieldNode(attrOf(child, 'instr') ?? '', kid(find(child, 'r'), 'rPr'))
+        const field = fieldNode(attrOf(child, 'instr') ?? '', kid(find(child, 'r'), 'rPr'), state)
         if (field) out.push(field)
         else out.push(...readInlines(child, state, extra))
         break

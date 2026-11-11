@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+ xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+ xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+ xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
+ office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.text">
+ <office:font-face-decls>
+  <style:font-face style:name="Amiri" svg:font-family="Amiri"/>
+  <style:font-face style:name="Liberation Serif" svg:font-family="'Liberation Serif'"/>
+ </office:font-face-decls>
+ <office:styles>
+  <style:default-style style:family="paragraph">
+   <style:paragraph-properties style:writing-mode="rl-tb"/>
+   <style:text-properties style:font-name="Liberation Serif" fo:font-size="12pt" style:font-name-complex="Amiri" style:font-size-complex="14pt"/>
+  </style:default-style>
+  <style:style style:name="Standard" style:family="paragraph" style:class="text"/>
+  <style:style style:name="Quote" style:family="paragraph" style:parent-style-name="Standard">
+   <style:paragraph-properties fo:margin-left="1cm" fo:margin-right="1cm"/>
+   <style:text-properties fo:font-style="italic" style:font-style-complex="italic" fo:color="#1f497d"/>
+  </style:style>
+ </office:styles>
+ <office:automatic-styles>
+  <style:style style:name="PLand" style:family="paragraph" style:parent-style-name="Standard" style:master-page-name="Landscape"/>
+  <style:style style:name="fr1" style:family="graphic">
+   <style:graphic-properties style:wrap="none" style:vertical-pos="top" style:horizontal-pos="center" fo:border="0.06pt solid #000000"/>
+  </style:style>
+  <style:page-layout style:name="pmPortrait">
+   <style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" fo:margin-top="2cm" fo:margin-bottom="2cm" fo:margin-left="2cm" fo:margin-right="2cm" style:writing-mode="rl-tb"/>
+   <style:header-style><style:header-footer-properties fo:min-height="0cm" fo:margin-bottom="0.5cm"/></style:header-style>
+  </style:page-layout>
+  <style:page-layout style:name="pmLandscape">
+   <style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm" style:print-orientation="landscape" fo:margin-top="1.5cm" fo:margin-bottom="1.5cm" fo:margin-left="2.5cm" fo:margin-right="2.5cm" style:writing-mode="rl-tb"/>
+  </style:page-layout>
+ </office:automatic-styles>
+ <office:master-styles>
+  <style:master-page style:name="Standard" style:page-layout-name="pmPortrait">
+   <style:header><text:p text:style-name="Standard">ترويسة العقد — صفحة <text:page-number text:select-page="current">1</text:page-number></text:p></style:header>
+  </style:master-page>
+  <style:master-page style:name="Landscape" style:page-layout-name="pmLandscape"/>
+ </office:master-styles>
+ <office:body>
+  <office:text>
+   <text:p text:style-name="Standard">بسم الله الرحمن الرحيم. هذا عقد بين الطرفين.</text:p>
+   <text:p text:style-name="Quote">اقتباس بخط مائل وملون من نمط الفقرة.</text:p>
+   <text:p text:style-name="Standard"><draw:frame draw:style-name="fr1" draw:name="Box1" text:anchor-type="paragraph" svg:width="8cm" svg:height="2cm"><draw:text-box><text:p text:style-name="Standard">نص داخل مربع نص</text:p></draw:text-box></draw:frame>فقرة تحمل مربع نص.</text:p>
+   <text:p text:style-name="PLand">الملحق بالعرض.</text:p>
+   <text:p text:style-name="Standard">جدول الملحق في صفحة أفقية.</text:p>
+  </office:text>
+ </office:body>
+</office:document>

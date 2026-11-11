@@ -1,9 +1,14 @@
 import { escapeText } from 'entities'
 
-import { detectDirection, type WriterComment, type WriterDocument } from '#core/writer/model'
+import {
+  detectDirection,
+  type WriterComment,
+  type WriterDefaults,
+  type WriterDocument
+} from '#core/writer/model'
 
 import { contentTypeFor } from './images'
-import type { ListDefinition } from './write'
+import type { ListDefinition } from './package'
 import { DOCUMENT_NAMESPACES, el, NS, XML_HEADER } from './xml'
 
 const OVERRIDES: Record<string, string> = {
@@ -58,7 +63,20 @@ function paragraphStyle(id: string, name: string, pPr: string, rPr: string, extr
   )
 }
 
-export function stylesXML(): string {
+/** `w:docDefaults` run fonts and size, the document's own when it has them. */
+function defaultRunXML(defaults: WriterDefaults | null | undefined): string {
+  const latin = defaults?.fontFamily ?? 'Calibri'
+  const complex = defaults?.fontFamilyComplex ?? (defaults?.fontFamily ? latin : 'Arial')
+  const size = Math.round((defaults?.fontSize ?? 11) * 2)
+  const sizeComplex = Math.round((defaults?.fontSizeComplex ?? defaults?.fontSize ?? 11) * 2)
+  return (
+    el('w:rFonts', { 'w:ascii': latin, 'w:hAnsi': latin, 'w:eastAsia': latin, 'w:cs': complex }) +
+    el('w:sz', { 'w:val': size }) +
+    el('w:szCs', { 'w:val': sizeComplex })
+  )
+}
+
+export function stylesXML(defaults?: WriterDefaults | null): string {
   const headings = HEADING_SIZES.map((size, index) =>
     paragraphStyle(
       `Heading${index + 1}`,
@@ -81,8 +99,8 @@ export function stylesXML(): string {
   return (
     `${XML_HEADER}<w:styles xmlns:w="${NS.w}">` +
     '<w:docDefaults><w:rPrDefault><w:rPr>' +
-    '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Arial"/>' +
-    '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/>' +
+    defaultRunXML(defaults) +
+    '<w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/>' +
     '</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' +
     headings +
@@ -125,7 +143,7 @@ const ORDERED_FORMATS = ['decimal', 'lowerLetter', 'lowerRoman']
 
 export function numberingXML(lists: readonly ListDefinition[]): string {
   const abstracts = lists
-    .map((list, index) => {
+    .map((list) => {
       const levels = Array.from({ length: 9 }, (_, level) => {
         const indent = 720 * (level + 1)
         const format = list.ordered ? ORDERED_FORMATS[level % 3] : 'bullet'
@@ -137,12 +155,13 @@ export function numberingXML(lists: readonly ListDefinition[]): string {
           '</w:lvl>'
         )
       }).join('')
-      return `<w:abstractNum w:abstractNumId="${index}"><w:multiLevelType w:val="hybridMultilevel"/>${levels}</w:abstractNum>`
+      return `<w:abstractNum w:abstractNumId="${list.abstractId}"><w:multiLevelType w:val="hybridMultilevel"/>${levels}</w:abstractNum>`
     })
     .join('')
   const nums = lists
     .map(
-      (list, index) => `<w:num w:numId="${list.numId}"><w:abstractNumId w:val="${index}"/></w:num>`
+      (list) =>
+        `<w:num w:numId="${list.numId}"><w:abstractNumId w:val="${list.abstractId}"/></w:num>`
     )
     .join('')
   return `${XML_HEADER}<w:numbering xmlns:w="${NS.w}">${abstracts}${nums}</w:numbering>`

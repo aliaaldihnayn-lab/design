@@ -17,6 +17,7 @@ const content = [
   '[&_td_p]:my-0 [&_th_p]:my-0 [&_.selectedCell]:bg-accent/15 [&_.column-resize-handle]:absolute [&_.column-resize-handle]:-end-px [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-accent [&_td]:relative [&_th]:relative',
   '[&_img]:inline [&_img]:max-w-full [&_.ProseMirror-selectednode]:outline-2 [&_.ProseMirror-selectednode]:outline-accent',
   '[&_.writer-page-break]:my-[12pt] [&_.writer-page-break]:h-0 [&_.writer-page-break]:border-t-2 [&_.writer-page-break]:border-dashed [&_.writer-page-break]:border-black/30',
+  '[&_.writer-section-break]:my-[12pt] [&_.writer-section-break]:h-1 [&_.writer-section-break]:border-y [&_.writer-section-break]:border-dashed [&_.writer-section-break]:border-black/30',
   '[&_.writer-page-field]:rounded-sm [&_.writer-page-field]:bg-black/10 [&_.writer-page-field]:px-0.5',
   '[&_.writer-comment]:bg-warning/30 [&_.writer-comment]:border-b-2 [&_.writer-comment]:border-warning',
   '[&_.writer-insertion]:text-chart-1 [&_.writer-insertion]:underline [&_.writer-deletion]:text-error-fill [&_.writer-deletion]:line-through',

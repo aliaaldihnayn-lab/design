@@ -1,10 +1,13 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 
 import { getSchema } from '@tiptap/core'
 
 import { createWriterDocument, readDocx, writeDocx, type WriterNode } from '@lawha/core/writer'
 
 import { writerExtensions } from '@/app/writer/editor/extensions'
+
+import { testPath } from '#tests/helpers/paths'
 
 const schema = getSchema(writerExtensions())
 
@@ -58,5 +61,21 @@ describe('writer editor schema', () => {
     const node = schema.nodeFromJSON(roundTripped)
     node.check()
     expect(node.textContent).toContain('عنوان')
+  })
+
+  test('keeps the section breaks of Word files with several page setups', () => {
+    const source = readFileSync(testPath('fixtures/writer/libreoffice-sections.docx'))
+    const read = readDocx(new Uint8Array(source)).body
+    const node = schema.nodeFromJSON(read)
+    node.check()
+    const breaks = (node.toJSON().content as WriterNode[]).filter(
+      (child) => child.type === 'sectionBreak'
+    )
+    expect(breaks.map((child) => child.attrs?.page)).toEqual(
+      (read.content ?? [])
+        .filter((child) => child.type === 'sectionBreak')
+        .map((child) => child.attrs?.page)
+    )
+    expect(breaks).toHaveLength(1)
   })
 })

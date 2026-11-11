@@ -1,4 +1,7 @@
 import { Mark, mergeAttributes, Node } from '@tiptap/core'
+import * as v from 'valibot'
+
+import { pageSetupSchema } from '@lawha/core/writer'
 
 /**
  * Document-editor nodes and marks Tiptap does not ship, named as `@lawha/core/writer` names
@@ -45,6 +48,40 @@ export const PageBreak = Node.create({
             .run()
     }
   }
+})
+
+/**
+ * The end of a section: the blocks before it lay out on its page setup (`page`, in twips), the
+ * blocks after it start a new page on the next section's. Word files with several page sizes or
+ * orientations keep them through it.
+ */
+export const SectionBreak = Node.create({
+  name: 'sectionBreak',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  addAttributes: () => ({
+    page: {
+      default: null,
+      parseHTML: (element) => {
+        const parsed = v.safeParse(
+          v.pipe(v.string(), v.parseJson(), pageSetupSchema),
+          element.getAttribute('data-page') ?? ''
+        )
+        return parsed.success ? parsed.output : null
+      },
+      renderHTML: (attrs) => ({ 'data-page': JSON.stringify(attrs.page) })
+    }
+  }),
+  parseHTML: () => [{ tag: 'div[data-section-break]' }],
+  renderHTML: ({ HTMLAttributes }) => [
+    'div',
+    mergeAttributes(HTMLAttributes, {
+      'data-section-break': '',
+      role: 'separator',
+      class: 'writer-section-break'
+    })
+  ]
 })
 
 function pageField(name: 'pageNumber' | 'pageCount') {

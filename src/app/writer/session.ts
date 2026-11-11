@@ -12,7 +12,13 @@ import {
 
 /** Where the open document came from, so Save writes back to the same place. */
 export type WriterSource =
-  | { kind: 'file'; handle: FileSystemFileHandle | null; path: string | null }
+  | {
+      kind: 'file'
+      handle: FileSystemFileHandle | null
+      path: string | null
+      /** The Word package last opened or saved, which saving patches rather than rebuilds. */
+      package?: Uint8Array | null
+    }
   | { kind: 'google'; documentId: string; revisionId: string | null }
 
 /**

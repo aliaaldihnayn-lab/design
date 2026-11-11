@@ -54,3 +54,10 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "2014 - 2022 Knut Sveidqvist"
 SPDX-License-Identifier = "MIT"
+
+# Word documents from python-docx's test files, written by Microsoft Word for the round-trip tests.
+[[annotations]]
+path = ["tests/fixtures/writer/word-*.docx"]
+precedence = "override"
+SPDX-FileCopyrightText = "2013 Steve Canny and python-docx contributors"
+SPDX-License-Identifier = "MIT"

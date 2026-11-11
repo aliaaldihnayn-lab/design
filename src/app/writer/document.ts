@@ -72,7 +72,7 @@ export function openWordBytes(
 ): WriterFileOutcome {
   try {
     const document = readDocx(bytes)
-    loadWriterDocument(document, stem(name), { kind: 'file', ...target })
+    loadWriterDocument(document, stem(name), { kind: 'file', ...target, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
@@ -107,21 +107,27 @@ export async function openWordDocument(): Promise<WriterFileOutcome> {
   }
 }
 
+/** The document as Word bytes, patched into the package it came from when there is one. */
 function currentBytes(): Uint8Array {
-  return writeDocx({
-    ...writerDocument.value,
-    title: writerName.value || writerDocument.value.title
-  })
+  const source = writerSource.value
+  return writeDocx(
+    { ...writerDocument.value, title: writerName.value || writerDocument.value.title },
+    { source: source?.kind === 'file' ? source.package : null }
+  )
 }
 
 /** Saves as a new file; the document then saves there. */
 export async function saveWriterDocumentAs(): Promise<WriterFileOutcome> {
   try {
-    const saved = await saveFileAs(currentBytes(), writerName.value || 'Document', DOCX)
+    const bytes = currentBytes()
+    const saved = await saveFileAs(bytes, writerName.value || 'Document', DOCX)
     if (!saved) return { status: 'cancelled' }
     if (saved.inPlace) {
-      markWriterSaved({ kind: 'file', handle: saved.handle, path: saved.path }, stem(saved.name))
-    } else markWriterSaved({ kind: 'file', handle: null, path: null })
+      markWriterSaved(
+        { kind: 'file', handle: saved.handle, path: saved.path, package: bytes },
+        stem(saved.name)
+      )
+    } else markWriterSaved({ kind: 'file', handle: null, path: null, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
@@ -136,9 +142,10 @@ export async function saveWriterDocument(
   if (source?.kind === 'google') return saveGoogleDocument(source, client)
   if (source?.kind !== 'file' || (!source.handle && !source.path)) return saveWriterDocumentAs()
   try {
-    const written = await saveInPlace(source, currentBytes())
+    const bytes = currentBytes()
+    const written = await saveInPlace(source, bytes)
     if (!written) return await saveWriterDocumentAs()
-    markWriterSaved(source)
+    markWriterSaved({ ...source, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
