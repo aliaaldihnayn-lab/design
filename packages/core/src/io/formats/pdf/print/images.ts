@@ -1,6 +1,6 @@
 import { deflateSync, inflateSync } from 'fflate'
 
-import { rgbToCMYK } from './color'
+import { rgbToCMYK, type ToCMYK } from './color'
 import { dictValue, removeDictKey, setDictValue, type PDFObject } from './file'
 
 /** Decoded RGBA pixels of an encoded image (JPEG), for images PDF stores as DCT data. */
@@ -58,10 +58,10 @@ function unpredict(data: Uint8Array, columns: number, colors: number): Uint8Arra
   return out
 }
 
-function rgbBytesToCMYK(rgb: Uint8Array, pixels: number, step: number): Uint8Array {
+function rgbBytesToCMYK(rgb: Uint8Array, pixels: number, step: number, toCMYK: ToCMYK): Uint8Array {
   const out = new Uint8Array(pixels * 4)
   for (let p = 0; p < pixels; p++) {
-    const cmyk = rgbToCMYK(rgb[p * step] / 255, rgb[p * step + 1] / 255, rgb[p * step + 2] / 255)
+    const cmyk = toCMYK(rgb[p * step] / 255, rgb[p * step + 1] / 255, rgb[p * step + 2] / 255)
     for (let c = 0; c < 4; c++) out[p * 4 + c] = Math.round(cmyk[c] * 255)
   }
   return out
@@ -77,27 +77,32 @@ function cmykImage(dict: string, cmyk: Uint8Array): PDFObject {
 }
 
 /** An indexed image's RGB palette, written as hex, as a CMYK one. */
-function cmykPalette(space: string): string | null {
+function cmykPalette(space: string, toCMYK: ToCMYK): string | null {
   const match = /^\[\s*\/Indexed\s+\/DeviceRGB\s+(\d+)\s*<([0-9A-Fa-f\s]*)>\s*\]$/.exec(space)
   if (!match) return null
   const hex = match[2].replace(/\s+/g, '')
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0; i < bytes.length; i++) bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)
-  const cmyk = rgbBytesToCMYK(bytes, Math.floor(bytes.length / 3), 3)
+  const cmyk = rgbBytesToCMYK(bytes, Math.floor(bytes.length / 3), 3, toCMYK)
   const out = [...cmyk].map((v) => v.toString(16).padStart(2, '0')).join('')
   return `[/Indexed /DeviceCMYK ${match[1]} <${out.toUpperCase()}>]`
 }
 
 /**
  * An RGB image XObject as a CMYK one, or null when it is not RGB or cannot be read: 8-bit Flate
- * data (with or without PNG predictors), indexed palettes, and DCT data `decode` reads.
+ * data (with or without PNG predictors), indexed palettes, and DCT data `decode` reads, each
+ * pixel through `toCMYK`.
  */
-export function convertImage(object: PDFObject, decode?: PDFImageDecoder): PDFObject | null {
+export function convertImage(
+  object: PDFObject,
+  decode?: PDFImageDecoder,
+  toCMYK: ToCMYK = rgbToCMYK
+): PDFObject | null {
   const { dict, stream } = object
   if (!stream) return null
   const space = dictValue(dict, 'ColorSpace') ?? ''
   if (space.startsWith('[') && space.includes('/Indexed')) {
-    const palette = cmykPalette(space)
+    const palette = cmykPalette(space, toCMYK)
     return palette ? { dict: setDictValue(dict, 'ColorSpace', palette), stream } : null
   }
   if (space !== '/DeviceRGB') return null
@@ -107,12 +112,12 @@ export function convertImage(object: PDFObject, decode?: PDFImageDecoder): PDFOb
   if (filter === '/DCTDecode') {
     const decoded = decode?.(stream)
     if (!decoded) return null
-    return cmykImage(dict, rgbBytesToCMYK(decoded.data, decoded.width * decoded.height, 4))
+    return cmykImage(dict, rgbBytesToCMYK(decoded.data, decoded.width * decoded.height, 4, toCMYK))
   }
   if (dictValue(dict, 'BitsPerComponent') !== '8') return null
   const data = flateSamples(dict, stream, width)
   if (!data || data.length < width * height * 3) return null
-  return cmykImage(dict, rgbBytesToCMYK(data, width * height, 3))
+  return cmykImage(dict, rgbBytesToCMYK(data, width * height, 3, toCMYK))
 }
 
 /** An 8-bit image's samples, its Flate filter and PNG predictor undone. */

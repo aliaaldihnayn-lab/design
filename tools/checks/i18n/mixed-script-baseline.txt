@@ -743,3 +743,15 @@ zh-cn:stories.jiraEmailInvalid
 zh-cn:stories.jiraTokenRequired
 zh-cn:stories.jiraCloudHolds
 zh-cn:stories.jiraDesktopHolds
+ja:panels.printImageNotConverted
+ja:panels.printTransparency
+ja:panels.printRGBRemaining
+ja:panels.printTransparencyFlattened
+ja:panels.printNoPressProfile
+ja:panels.printProfileUnreadable
+zh-cn:panels.printImageNotConverted
+zh-cn:panels.printTransparency
+zh-cn:panels.printRGBRemaining
+zh-cn:panels.printTransparencyFlattened
+zh-cn:panels.printNoPressProfile
+zh-cn:panels.printProfileUnreadable

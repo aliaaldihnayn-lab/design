@@ -5,15 +5,26 @@ import { BLACK } from '@lawha/scene-graph/constants'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
+import { addGraphicFrame } from './graphic-frame'
 import {
   imageFill,
   readEffects,
   readFills,
   readStrokes,
   styleRefColor,
-  visibleSolid,
-  type PaintContext
+  visibleSolid
 } from './paint'
+import {
+  ANGLE_UNIT,
+  HAIRLINE_PX,
+  normalizeAngle,
+  placement,
+  readBox,
+  skip,
+  type Box,
+  type ShapeContext,
+  type Space
+} from './space'
 import {
   EMU_PER_PX,
   levelStyle,
@@ -23,94 +34,6 @@ import {
   type TextStyle
 } from './text'
 import { attr, boolAttr, child, children, descend, numAttr } from './xml'
-
-/** Maps a part's EMU coordinates into a parent layer's pixels: `(emu − origin) · scale / 9525`. */
-export interface Space {
-  originX: number
-  originY: number
-  scaleX: number
-  scaleY: number
-}
-
-export const SLIDE_SPACE: Space = { originX: 0, originY: 0, scaleX: 1, scaleY: 1 }
-
-/** The placeholder shapes a slide's placeholders inherit from: its layout's, then its master's. */
-export interface Placeholders {
-  layout: Element[]
-  master: Element[]
-  masterRoot: Element | null
-  /** The presentation's `p:defaultTextStyle`, for text outside placeholders. */
-  defaultText: Element | undefined
-}
-
-export interface ShapeContext extends PaintContext {
-  placeholders: Placeholders
-  /** Whether placeholders are drawn: a layout's or master's are only prompts. */
-  drawPlaceholders: boolean
-  skipped: Map<string, number>
-}
-
-interface Box {
-  x: number
-  y: number
-  width: number
-  height: number
-  /** OOXML turn, degrees clockwise, applied after the flips. */
-  rotation: number
-  flipH: boolean
-  flipV: boolean
-}
-
-const ANGLE_UNIT = 60000
-/** Lines at most a pixel across are straight: pptxgenjs gives an empty extent 0.01 in. */
-const HAIRLINE_PX = 1.01
-
-/** EMU to pixels, snapping the rounding slack of inch-based writers to whole pixels. */
-function px(emu: number): number {
-  const value = emu / EMU_PER_PX
-  const whole = Math.round(value)
-  return Math.abs(value - whole) < 0.05 ? whole : Math.round(value * 100) / 100
-}
-
-function normalizeAngle(degrees: number): number {
-  let angle = degrees % 360
-  if (angle > 180) angle -= 360
-  if (angle <= -180) angle += 360
-  return Math.round(angle * 1000) / 1000
-}
-
-function readBox(xfrm: Element | undefined, space: Space): Box | null {
-  const off = child(xfrm, 'off')
-  const ext = child(xfrm, 'ext')
-  if (!off || !ext) return null
-  return {
-    x: px(((numAttr(off, 'x') ?? 0) - space.originX) * space.scaleX),
-    y: px(((numAttr(off, 'y') ?? 0) - space.originY) * space.scaleY),
-    width: px((numAttr(ext, 'cx') ?? 0) * space.scaleX),
-    height: px((numAttr(ext, 'cy') ?? 0) * space.scaleY),
-    rotation: (numAttr(xfrm, 'rot') ?? 0) / ANGLE_UNIT,
-    flipH: boolAttr(xfrm, 'flipH') ?? false,
-    flipV: boolAttr(xfrm, 'flipV') ?? false
-  }
-}
-
-/**
- * A box as a layer's placement. OOXML flips a shape inside its box and then turns it; a layer
- * turns first and then flips, so a single flip turns the other way and two flips are a half turn.
- */
-function placement(box: Box): Pick<SceneNode, 'rotation' | 'flipX' | 'flipY'> {
-  if (box.flipH && box.flipV) {
-    return { rotation: normalizeAngle(box.rotation + 180), flipX: false, flipY: false }
-  }
-  if (box.flipH || box.flipV) {
-    return { rotation: normalizeAngle(-box.rotation), flipX: box.flipH, flipY: box.flipV }
-  }
-  return { rotation: normalizeAngle(box.rotation), flipX: false, flipY: false }
-}
-
-function skip(ctx: ShapeContext, reason: string) {
-  ctx.skipped.set(reason, (ctx.skipped.get(reason) ?? 0) + 1)
-}
 
 // ── Placeholders ─────────────────────────────────────────
 
@@ -341,6 +264,20 @@ function textInherited(
     )
 }
 
+/**
+ * Shadows the text itself casts (`a:rPr/a:effectLst`: inner and outer shadows on the letters),
+ * from the first run that sets them; a text layer has one set of effects for all its runs.
+ */
+function textEffects(ctx: ShapeContext, txBody: Element | undefined) {
+  for (const paragraph of children(txBody, 'p')) {
+    for (const run of children(paragraph, 'r')) {
+      const effects = readEffects(ctx, child(run, 'rPr'))
+      if (effects.length > 0) return effects
+    }
+  }
+  return []
+}
+
 function isLine(preset: string | null | undefined, kind: string): boolean {
   return (
     preset === 'line' ||
@@ -428,7 +365,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
       ...textNodeProps(body, fontColor),
       name,
       visible,
-      effects,
+      effects: [...effects, ...textEffects(ctx, txBody)],
       x: Math.round((cx - textBox.width / 2) * 100) / 100,
       y: Math.round((cy - textBox.height / 2) * 100) / 100,
       ...textBox,
@@ -465,6 +402,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
   ctx.graph.createNode('TEXT', group.id, {
     ...textNodeProps(body, fontColor),
     name: `${name} text`,
+    effects: textEffects(ctx, txBody),
     x: Math.round(left * 100) / 100,
     y: Math.round(top * 100) / 100,
     ...textBox
@@ -563,7 +501,7 @@ export function walkShapes(ctx: ShapeContext, parentId: string, tree: Element, s
         break
       }
       case 'graphicFrame':
-        skip(ctx, 'table or chart')
+        addGraphicFrame(ctx, parentId, el, space, walkShapes)
         break
       default:
         break

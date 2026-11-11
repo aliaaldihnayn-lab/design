@@ -1,17 +1,21 @@
-import { readPsd, type Layer, type Psd } from 'ag-psd'
+import { readPsd, type Layer, type PatternInfo, type Psd } from 'ag-psd'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
 import { BLACK } from '@lawha/scene-graph/constants'
 import { computeImageHash } from '@lawha/scene-graph/images'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 import type { Vector } from '@lawha/scene-graph/primitives'
+import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { parsePDFFontName } from '#core/io/formats/pdf/import/font-name'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 import { psdColor } from './color'
-import { layerStyle, psdBlendMode, type LayerStyle } from './effects'
+import { layerStyle, psdBlendMode, type LayerStyle, type PatternFill } from './effects'
+import { pixelOutline } from './outline'
 import { preparePSDRuntime } from './runtime'
 import { addShapeLayer, isEditableShapeLayer } from './shapes'
 
@@ -19,8 +23,10 @@ import { addShapeLayer, isEditableShapeLayer } from './shapes'
  * Photoshop and Affinity `.psd`/`.psb` files as editable layers: one frame the size of the
  * canvas, groups as frames without a fill, pixel layers as images at their exact position,
  * text layers as live text and shape and fill layers as shapes (with their pixels hidden
- * underneath, so nothing is lost if a font or a shape cannot be redrawn), layer styles (shadows,
- * glows, strokes, overlays) as effects, and layer opacity, visibility and blend modes kept.
+ * underneath, so nothing is lost if a font or a shape cannot be redrawn), boolean shapes as
+ * boolean groups, pattern fills as tiled images, layer styles (shadows, glows, bevels, satin,
+ * strokes, overlays) as effects and fills, and layer opacity, visibility and blend modes kept.
+ * On a pixel layer, strokes and overlays follow the drawn pixels, on an outline traced from them.
  */
 export interface PSDReadOptions {
   canvasKit?: CanvasKit
@@ -33,6 +39,7 @@ interface Context {
   encode: (pixels: ImageDataLike) => Uint8Array | null
   /** The document's light angle, which layer styles that use global light take. */
   globalAngle: number
+  patternFill: PatternFill
 }
 
 interface ImageDataLike {
@@ -139,14 +146,14 @@ function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) 
     return
   }
   const pixels = layer.imageData
-  const style = layerStyle(layer.effects, ctx.globalAngle)
+  const style = layerStyle(layer.effects, ctx.globalAngle, ctx.patternFill)
   if (layer.text) {
     // The rendered text stays underneath, hidden, as the exact look if a font is missing.
     if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
     addText(ctx, parentId, layer, origin, style)
     return
   }
-  if (isEditableShapeLayer(layer)) {
+  if (isEditableShapeLayer(layer, ctx.patternFill)) {
     // So does a shape's, in case it cannot be redrawn exactly (a boolean of paths, say).
     if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
     const shape = addShapeLayer(
@@ -154,7 +161,8 @@ function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) 
       parentId,
       layer,
       { ...common(layer), effects: style.effects },
-      ctx.canvas
+      ctx.canvas,
+      ctx.patternFill
     )
     if (shape) {
       ctx.graph.updateNode(shape.id, {
@@ -166,9 +174,55 @@ function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) 
       return
     }
   }
-  // Pixels cast shadows and glows from what they draw. A stroke or overlay would outline or
-  // cover their whole box rather than what they draw, so a pixel layer goes without those.
-  if (pixels) addPixels(ctx, parentId, layer, pixels, origin, !layer.hidden, style.effects)
+  if (!pixels) return
+  const styled = style.overlays.length > 0 || style.strokes.length > 0
+  if (styled && addStyledPixels(ctx, parentId, layer, pixels, origin, style)) return
+  // Pixels cast shadows and glows from what they draw.
+  addPixels(ctx, parentId, layer, pixels, origin, !layer.hidden, style.effects)
+}
+
+/**
+ * A pixel layer whose style strokes or covers it: its pixels, and above them an outline vector
+ * traced from what they draw, which carries the overlays as fills, the strokes as strokes and
+ * the layer's effects, so all of them follow the drawn pixels rather than the layer's box.
+ */
+function addStyledPixels(
+  ctx: Context,
+  parentId: string,
+  layer: Layer,
+  pixels: ImageDataLike,
+  origin: Vector,
+  style: LayerStyle
+): boolean {
+  const rgba = toRGBA8(pixels.data)
+  const d = pixelOutline(rgba, pixels.width, pixels.height)
+  const network = d ? parseSVGPath(d, 'EVENODD') : null
+  if (!network || network.segments.length === 0) return false
+  const fill = imageFill(ctx, pixels)
+  if (!fill) return false
+  const box = bounds(layer)
+  const size = { width: pixels.width, height: pixels.height }
+  const group = ctx.graph.createNode('GROUP', parentId, {
+    ...common(layer),
+    x: box.x - origin.x,
+    y: box.y - origin.y,
+    ...size
+  })
+  const name = layer.name ?? 'Layer'
+  ctx.graph.createNode('RECTANGLE', group.id, { name, ...size, fills: [fill] })
+  const outline = computeAccurateBounds(network)
+  ctx.graph.createNode('VECTOR', group.id, {
+    name: `${name} (style)`,
+    x: outline.x,
+    y: outline.y,
+    width: Math.max(outline.width, 0.01),
+    height: Math.max(outline.height, 0.01),
+    vectorNetwork: transformVectorNetwork([1, 0, -outline.x, 0, 1, -outline.y, 0, 0, 1], network),
+    fills: style.overlays,
+    strokes: style.strokes,
+    effects: style.effects
+  })
+  return true
 }
 
 function addPixels(
@@ -197,6 +251,46 @@ function addPixels(
   })
 }
 
+/** The patterns the document and its layers define, by id. */
+function collectPatterns(psd: Psd): Map<string, PatternInfo> {
+  const patterns = new Map<string, PatternInfo>()
+  const visit = (layer: Layer) => {
+    for (const pattern of layer.patterns ?? []) patterns.set(pattern.id, pattern)
+    for (const child of layer.children ?? []) visit(child)
+  }
+  visit(psd)
+  return patterns
+}
+
+/** Pattern overlays and fills as a tiled image of the pattern's pixels, each encoded once. */
+function createPatternFill(ctx: Context, patterns: Map<string, PatternInfo>): PatternFill {
+  const encoded = new Map<string, string | null>()
+  return (pattern, scale, opacity) => {
+    const info = pattern ? patterns.get(pattern.id) : undefined
+    if (!info) return null
+    let hash = encoded.get(info.id)
+    if (hash === undefined) {
+      const { w, h } = info.bounds
+      const fill =
+        w > 0 && h > 0 && info.data.length >= w * h * 4
+          ? imageFill(ctx, { width: w, height: h, data: info.data })
+          : null
+      hash = fill?.imageHash ?? null
+      encoded.set(info.id, hash)
+    }
+    if (!hash) return null
+    return {
+      type: 'IMAGE',
+      imageHash: hash,
+      imageScaleMode: 'TILE',
+      scale: scale > 0 ? scale : 1,
+      color: { ...BLACK },
+      opacity,
+      visible: true
+    }
+  }
+}
+
 export async function readPSDDocument(
   bytes: Uint8Array,
   options: PSDReadOptions = {}
@@ -220,8 +314,10 @@ export async function readPSDDocument(
         height: pixels.height,
         data: toRGBA8(pixels.data)
       }),
-    globalAngle: psd.imageResources?.globalAngle ?? 120
+    globalAngle: psd.imageResources?.globalAngle ?? 120,
+    patternFill: () => null
   }
+  ctx.patternFill = createPatternFill(ctx, collectPatterns(psd))
   const frame = graph.createNode('FRAME', page.id, {
     name: options.name ?? 'Photoshop document',
     x: 0,

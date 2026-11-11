@@ -17,6 +17,53 @@ export function rgbToCMYK(r: number, g: number, b: number): CMYK {
   return [ink(r), ink(g), ink(b), clamp(k, 0, 1)]
 }
 
+/** A device RGB colour (each 0–1) as CMYK, by a press profile or the device formula. */
+export type ToCMYK = (r: number, g: number, b: number) => CMYK
+
+/**
+ * The conversion vector paint goes through: pure neutrals, black text above all, print in black
+ * ink alone, as prepress converts them, so no plate misregistration fringes them; other colours
+ * through `toCMYK`.
+ */
+export function vectorCMYK(toCMYK: ToCMYK): ToCMYK {
+  return (r, g, b) => {
+    const neutral = Math.abs(r - g) < 1e-6 && Math.abs(g - b) < 1e-6
+    return neutral ? [0, 0, 0, clamp(1 - r, 0, 1)] : toCMYK(r, g, b)
+  }
+}
+
+/** FOGRA39's total area coverage: the four inks may add up to 330% at most. */
+export const DEFAULT_INK_LIMIT = 3.3
+
+/**
+ * A colour within `limit` total ink: grey component replacement first moves the part of cyan,
+ * magenta and yellow that only makes grey into black, which prints the same with less ink, and
+ * under colour removal then takes what is still over the limit evenly from the three colours.
+ */
+export function limitInk(cmyk: CMYK, limit: number): CMYK {
+  const [c, m, y, k] = cmyk
+  const excess = c + m + y + k - limit
+  if (excess <= 1e-6) return cmyk
+  // Replacing r of each colour with r of black saves 2r of ink.
+  const replaced = Math.max(0, Math.min(c, m, y, 1 - k, excess / 2))
+  let [c2, m2, y2] = [c - replaced, m - replaced, y - replaced]
+  const k2 = k + replaced
+  const over = c2 + m2 + y2 + k2 - limit
+  if (over > 1e-6) {
+    const colours = c2 + m2 + y2
+    const keep = colours > 0 ? Math.max(0, (colours - over) / colours) : 0
+    c2 *= keep
+    m2 *= keep
+    y2 *= keep
+  }
+  return [c2, m2, y2, k2]
+}
+
+/** A conversion whose every colour stays within `limit` total ink. */
+export function inkLimited(toCMYK: ToCMYK, limit: number): ToCMYK {
+  return (r, g, b) => limitInk(toCMYK(r, g, b), limit)
+}
+
 /** A colour printed in an ink of its own, such as a Pantone colour or a cutter's CutContour. */
 export interface PDFSpotColor {
   /** The ink's name, as the press or cutter knows it. */
@@ -65,8 +112,8 @@ export function matchSpot(spots: readonly PDFSpotColor[], r: number, g: number, 
   )
 }
 
-export function spotCMYK(spot: PDFSpotColor): CMYK {
-  return spot.cmyk ?? rgbToCMYK(spot.color.r, spot.color.g, spot.color.b)
+export function spotCMYK(spot: PDFSpotColor, toCMYK: ToCMYK = rgbToCMYK): CMYK {
+  return spot.cmyk ?? toCMYK(spot.color.r, spot.color.g, spot.color.b)
 }
 
 /** A PDF name with the characters a name cannot hold written as `#xx`. */

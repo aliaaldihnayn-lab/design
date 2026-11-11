@@ -1,6 +1,9 @@
 import type {
   BlendMode as PSDBlendMode,
+  EffectPattern,
+  LayerEffectBevel,
   LayerEffectInnerGlow,
+  LayerEffectSatin,
   LayerEffectShadow,
   LayerEffectsInfo,
   LayerEffectsOuterGlow,
@@ -8,12 +11,14 @@ import type {
 } from 'ag-psd'
 
 import type { BlendMode, Effect, Fill, Stroke } from '@lawha/scene-graph'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { psdColor, psdGradientFill } from './color'
 
 /**
  * Photoshop layer styles as editable effects: drop and inner shadows, outer and inner glows (as
- * shadows without offset), strokes, and colour and gradient overlays as fills on top.
+ * shadows without offset), bevel and emboss (a highlight and a shadow, inner or outer), satin
+ * (an offset inner shadow), strokes, and colour, gradient and pattern overlays as fills on top.
  */
 export interface LayerStyle {
   effects: Effect[]
@@ -21,6 +26,13 @@ export interface LayerStyle {
   /** Paints laid over the layer's own, top last. */
   overlays: Fill[]
 }
+
+/** A tiled image fill of a pattern the document defines, or null when it has none by that id. */
+export type PatternFill = (
+  pattern: EffectPattern | undefined,
+  scale: number,
+  opacity: number
+) => Fill | null
 
 const BLEND_MODES: Partial<Record<PSDBlendMode, BlendMode>> = {
   normal: 'NORMAL',
@@ -100,6 +112,87 @@ function glow(
   }
 }
 
+/** Where the light falls from, as the offset a shadow it casts takes for `distance`. */
+function lightOffset(angleDegrees: number, distance: number) {
+  const angle = (angleDegrees * Math.PI) / 180
+  return {
+    x: Math.round(-Math.cos(angle) * distance * 100) / 100,
+    y: Math.round(Math.sin(angle) * distance * 100) / 100
+  }
+}
+
+function withBlend(effect: Effect, mode: string | undefined): Effect {
+  const blendMode = psdBlendMode(mode)
+  return blendMode && blendMode !== 'NORMAL' ? { ...effect, blendMode } : effect
+}
+
+/**
+ * Bevel and emboss as a lit edge and a shaded edge: inner shadows for an inner bevel, emboss or
+ * pillow, drop shadows for an outer bevel, offset toward and away from the light.
+ */
+function bevel(effect: LayerEffectBevel, globalAngle: number, scale: number): Effect[] {
+  const size = px(effect.size) * scale
+  const blur = size + px(effect.soften) * scale
+  const angle = effect.useGlobalLight ? globalAngle : (effect.angle ?? globalAngle)
+  // Depth (strength, in percent) sets how far the edges reach in.
+  const depth = Math.max(1, (size / 2) * Math.min((effect.strength ?? 100) / 100, 2))
+  const away = lightOffset(angle, depth)
+  const toward = { x: -away.x, y: -away.y }
+  const up = effect.direction !== 'down'
+  const outer = effect.style === 'outer bevel'
+  const type: Effect['type'] = outer ? 'DROP_SHADOW' : 'INNER_SHADOW'
+  // An inner shadow shows on the side its offset points from; a drop shadow on the side it
+  // points to.
+  const lit = outer === up ? toward : away
+  const shaded = outer === up ? away : toward
+  const edge = (
+    color: Color,
+    opacity: number | undefined,
+    offset: Vector,
+    mode: string | undefined
+  ) =>
+    withBlend(
+      {
+        type,
+        color: { ...color, a: opacity ?? 0.75 },
+        offset,
+        radius: blur,
+        spread: 0,
+        visible: true
+      },
+      mode
+    )
+  return [
+    edge(
+      psdColor(effect.highlightColor ?? { r: 255, g: 255, b: 255 }),
+      effect.highlightOpacity,
+      lit,
+      effect.highlightBlendMode ?? 'screen'
+    ),
+    edge(
+      psdColor(effect.shadowColor),
+      effect.shadowOpacity,
+      shaded,
+      effect.shadowBlendMode ?? 'multiply'
+    )
+  ]
+}
+
+/** Satin as an inner shadow offset along its angle, which shades the inside like its folds. */
+function satin(effect: LayerEffectSatin, scale: number): Effect {
+  return withBlend(
+    {
+      type: 'INNER_SHADOW',
+      color: { ...psdColor(effect.color), a: effect.opacity ?? 0.5 },
+      offset: lightOffset(effect.angle ?? 19, px(effect.distance) * scale),
+      radius: px(effect.size) * scale,
+      spread: 0,
+      visible: true
+    },
+    effect.blendMode ?? 'multiply'
+  )
+}
+
 const STROKE_ALIGN = { inside: 'INSIDE', center: 'CENTER', outside: 'OUTSIDE' } as const
 
 function strokes(info: LayerEffectsInfo, scale: number): Stroke[] {
@@ -121,8 +214,18 @@ function strokes(info: LayerEffectsInfo, scale: number): Stroke[] {
   return out
 }
 
-function overlays(info: LayerEffectsInfo): Fill[] {
-  const out: Fill[] = []
+function patternOverlay(info: LayerEffectsInfo, patternFill: PatternFill | undefined): Fill[] {
+  const pattern = info.patternOverlay
+  if (!isOn(pattern) || !pattern || !patternFill) return []
+  const fill = patternFill(pattern.pattern, (pattern.scale ?? 100) / 100, pattern.opacity ?? 1)
+  if (!fill) return []
+  const blendMode = psdBlendMode(pattern.blendMode)
+  return [blendMode && blendMode !== 'NORMAL' ? { ...fill, blendMode } : fill]
+}
+
+function overlays(info: LayerEffectsInfo, patternFill: PatternFill | undefined): Fill[] {
+  // Photoshop stacks the overlays pattern, then gradient, then colour on top.
+  const out: Fill[] = patternOverlay(info, patternFill)
   for (const effect of info.gradientOverlay ?? []) {
     if (!isOn(effect) || !effect.gradient) continue
     const fill = psdGradientFill(effect.gradient, effect.type, effect.angle, effect.opacity ?? 1)
@@ -145,7 +248,11 @@ function overlays(info: LayerEffectsInfo): Fill[] {
 }
 
 /** A layer's style, or nothing when it has none or its effects are turned off. */
-export function layerStyle(info: LayerEffectsInfo | undefined, globalAngle: number): LayerStyle {
+export function layerStyle(
+  info: LayerEffectsInfo | undefined,
+  globalAngle: number,
+  patternFill?: PatternFill
+): LayerStyle {
   if (!info || info.disabled) return { effects: [], strokes: [], overlays: [] }
   const scale = info.scale ?? 1
   const effects: Effect[] = []
@@ -159,5 +266,11 @@ export function layerStyle(info: LayerEffectsInfo | undefined, globalAngle: numb
   }
   if (isOn(info.innerGlow) && info.innerGlow)
     effects.push(glow('INNER_SHADOW', info.innerGlow, scale))
-  return { effects, strokes: strokes(info, scale), overlays: overlays(info) }
+  if (isOn(info.satin) && info.satin) effects.push(satin(info.satin, scale))
+  if (isOn(info.bevel) && info.bevel) effects.push(...bevel(info.bevel, globalAngle, scale))
+  return {
+    effects,
+    strokes: strokes(info, scale),
+    overlays: overlays(info, patternFill)
+  }
 }

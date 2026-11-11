@@ -1,4 +1,4 @@
-import { formatNumber, matchSpot, rgbToCMYK, type PDFSpotColor } from './color'
+import { formatNumber, matchSpot, rgbToCMYK, type PDFSpotColor, type ToCMYK } from './color'
 
 /**
  * Content-stream colour rewriting: DeviceRGB and DeviceGray colour operators become DeviceCMYK,
@@ -32,7 +32,8 @@ function rewriteColor(
   operator: string,
   numbers: number[],
   spots: readonly PDFSpotColor[],
-  used: Set<number>
+  used: Set<number>,
+  toCMYK: ToCMYK
 ): string | null {
   const stroke = operator === 'RG' || operator === 'G'
   if ((operator === 'rg' || operator === 'RG') && numbers.length === 3) {
@@ -43,7 +44,7 @@ function rewriteColor(
       const name = spotResourceName(spot)
       return stroke ? `/${name} CS 1 SCN` : `/${name} cs 1 scn`
     }
-    return cmykOperator(rgbToCMYK(r, g, b), stroke)
+    return cmykOperator(toCMYK(r, g, b), stroke)
   }
   if ((operator === 'g' || operator === 'G') && numbers.length === 1) {
     return cmykOperator([0, 0, 0, 1 - numbers[0]], stroke)
@@ -51,7 +52,12 @@ function rewriteColor(
   return null
 }
 
-export function rewriteContent(text: string, spots: readonly PDFSpotColor[]): ContentRewrite {
+/** `toCMYK` converts RGB colours; the device formula without a press profile. */
+export function rewriteContent(
+  text: string,
+  spots: readonly PDFSpotColor[],
+  toCMYK: ToCMYK = rgbToCMYK
+): ContentRewrite {
   const out: string[] = []
   const spotsUsed = new Set<number>()
   const fontsUsed = new Set<string>()
@@ -84,7 +90,8 @@ export function rewriteContent(text: string, spots: readonly PDFSpotColor[]): Co
         token,
         operands.map((operand) => operand.value),
         spots,
-        spotsUsed
+        spotsUsed,
+        toCMYK
       )
       if (token === 'Tf' && lastName) fontsUsed.add(lastName)
       if (replaced !== null && operands.length > 0) {

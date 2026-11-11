@@ -1,4 +1,7 @@
 import type * as HappyDOM from 'happy-dom'
+import { isValid, toUint8Array } from 'js-base64'
+
+import { imageSize } from '@lawha/scene-graph/images'
 
 import { IS_BROWSER } from '#core/constants'
 
@@ -23,15 +26,51 @@ interface SVG2PDFGlobals {
   document?: unknown
   CSSStyleSheet?: unknown
   CSSStyleRule?: unknown
+  Image?: unknown
 }
 
-const SVG2PDF_GLOBALS = ['document', 'CSSStyleSheet', 'CSSStyleRule'] as const
+const SVG2PDF_GLOBALS = ['document', 'CSSStyleSheet', 'CSSStyleRule', 'Image'] as const
+
+const DATA_URI = /^data:image\/[\w.+-]+;base64,(.*)$/s
+
+/**
+ * The `Image` svg2pdf measures an embedded image with: it sets `src` to the image's data URI and
+ * reads `width` and `height` once `onload` fires. happy-dom decodes no images, so its header
+ * gives the size; anything else fails as an image that cannot load does.
+ */
+class DataImage {
+  width = 0
+  height = 0
+  onload: (() => void) | null = null
+  onerror: ((error: Error) => void) | null = null
+  private source = ''
+
+  get src(): string {
+    return this.source
+  }
+
+  set src(value: string) {
+    this.source = value
+    const base64 = DATA_URI.exec(value)?.[1]?.replace(/\s/g, '')
+    const size = base64 && isValid(base64) ? imageSize(toUint8Array(base64)) : null
+    queueMicrotask(() => {
+      if (size) {
+        this.width = size.width
+        this.height = size.height
+        this.onload?.()
+      } else {
+        this.onerror?.(new Error('Unreadable image'))
+      }
+    })
+  }
+}
 
 type SVG2PDFGlobal = (typeof SVG2PDF_GLOBALS)[number]
 
 function removeGlobal(scope: SVG2PDFGlobals, name: SVG2PDFGlobal): void {
   if (name === 'document') delete scope.document
   else if (name === 'CSSStyleSheet') delete scope.CSSStyleSheet
+  else if (name === 'Image') delete scope.Image
   else delete scope.CSSStyleRule
 }
 
@@ -74,7 +113,8 @@ async function withHappyDOM<T>(draw: (parse: SVGPageParser) => Promise<T>): Prom
   const values: Required<SVG2PDFGlobals> = {
     document: dom.document,
     CSSStyleSheet: dom.CSSStyleSheet,
-    CSSStyleRule: dom.CSSStyleRule
+    CSSStyleRule: dom.CSSStyleRule,
+    Image: DataImage
   }
   // Each global replaced, with its descriptor before, so an accessor a host defines comes back as
   // one and a global that could not be replaced is left as it was.

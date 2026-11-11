@@ -106,7 +106,17 @@ export interface ExportResult {
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
   /** What the file could not keep as asked, such as why a print PDF is not PDF/X. */
-  warnings?: string[]
+  warnings?: ExportWarning[]
+}
+
+/** A warning an export gives, by code for front ends to translate, with an English message. */
+export interface ExportWarning {
+  code: string
+  /** What the warning is about, such as a font's name or a count. */
+  subject?: string
+  message: string
+  /** Whether it keeps the file from meeting the standard it was asked for, such as PDF/X. */
+  blocking?: boolean
 }
 
 export interface HTMLExportOptions {

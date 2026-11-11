@@ -7,6 +7,7 @@ import type { Editor, EditorState } from '@lawha/core'
 import {
   findPageId,
   type ExportRequest,
+  type ExportWarning,
   type IOFormatAdapter,
   type IORegistry
 } from '@lawha/core/io'
@@ -27,6 +28,8 @@ export interface ExportedFile {
   format: string
   ext: string
   mime: string
+  /** What the export could not keep as asked, such as why a print PDF is not PDF/X. */
+  warnings?: ExportWarning[]
 }
 
 // Layer/page names flow into zip entry keys; flatten them to a single safe

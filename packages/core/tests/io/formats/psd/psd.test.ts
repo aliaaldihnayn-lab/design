@@ -372,6 +372,212 @@ describe('opening PSD layer styles and shape layers', () => {
   })
 })
 
+/** A 4 × 4 pixel tile: red on its top half, blue below. */
+function tile() {
+  const data = new Uint8Array(4 * 4 * 4)
+  for (let i = 0; i < 16; i++) data.set(i < 8 ? [255, 0, 0, 255] : [0, 0, 255, 255], i * 4)
+  return { name: 'Stripes', id: 'stripes-1', x: 0, y: 0, bounds: { x: 0, y: 0, w: 4, h: 4 }, data }
+}
+
+/** A disc of `size` pixels, opaque inside and clear around, as drawn pixels are. */
+function disc(size: number) {
+  const data = new Uint8ClampedArray(size * size * 4)
+  const r = size / 2
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++)
+      if ((x + 0.5 - r) ** 2 + (y + 0.5 - r) ** 2 <= r * r)
+        data.set([0, 128, 0, 255], (y * size + x) * 4)
+  return { width: size, height: size, data }
+}
+
+/** Bevel, satin and pattern styles, a pattern fill, a boolean shape, and a styled pixel layer. */
+function moreStylesPSD(): Uint8Array {
+  return writePsdUint8Array(
+    {
+      width: 200,
+      height: 100,
+      imageResources: { globalAngle: 90 },
+      patterns: [tile()],
+      children: [
+        {
+          name: 'Pattern fill',
+          vectorFill: { type: 'pattern', name: 'Stripes', id: 'stripes-1', scale: 50 }
+        },
+        {
+          name: 'Ring',
+          left: 10,
+          top: 10,
+          right: 70,
+          bottom: 70,
+          vectorFill: { type: 'color', color: { r: 0, g: 0, b: 0 } },
+          vectorMask: {
+            paths: [
+              {
+                open: false,
+                fillRule: 'non-zero',
+                operation: 'combine',
+                knots: rectKnots(10, 10, 70, 70)
+              },
+              {
+                open: false,
+                fillRule: 'non-zero',
+                operation: 'subtract',
+                knots: rectKnots(25, 25, 55, 55)
+              },
+              {
+                open: false,
+                fillRule: 'non-zero',
+                operation: 'subtract',
+                knots: rectKnots(60, 60, 65, 65)
+              },
+              {
+                open: false,
+                fillRule: 'non-zero',
+                operation: 'intersect',
+                knots: rectKnots(10, 10, 40, 70)
+              }
+            ]
+          }
+        },
+        {
+          name: 'Badge',
+          left: 100,
+          top: 20,
+          right: 140,
+          bottom: 60,
+          imageData: disc(40),
+          effects: {
+            bevel: {
+              enabled: true,
+              style: 'inner bevel',
+              size: px(6),
+              strength: 100,
+              useGlobalLight: true,
+              highlightColor: { r: 255, g: 255, b: 255 },
+              highlightOpacity: 0.75,
+              highlightBlendMode: 'screen',
+              shadowColor: { r: 0, g: 0, b: 0 },
+              shadowOpacity: 0.5,
+              shadowBlendMode: 'multiply'
+            },
+            satin: {
+              enabled: true,
+              size: px(8),
+              distance: px(4),
+              angle: 0,
+              color: { r: 0, g: 0, b: 0 },
+              opacity: 0.4,
+              blendMode: 'multiply'
+            },
+            patternOverlay: {
+              enabled: true,
+              pattern: { name: 'Stripes', id: 'stripes-1' },
+              scale: 200,
+              opacity: 0.6
+            },
+            solidFill: [{ enabled: true, color: { r: 255, g: 255, b: 0 }, opacity: 0.5 }],
+            stroke: [
+              {
+                enabled: true,
+                size: px(3),
+                position: 'outside',
+                fillType: 'color',
+                color: { r: 255, g: 0, b: 0 },
+                opacity: 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    { generateThumbnail: false }
+  )
+}
+
+describe('opening PSD bevels, satin, patterns, boolean shapes and styled pixels', () => {
+  async function layers() {
+    const graph = await read(moreStylesPSD())
+    const frame = expectDefined(graph.getNode(graph.getPages()[0].childIds[0]))
+    const all = frame.childIds.map((id) => expectDefined(graph.getNode(id)))
+    const named = (name: string) =>
+      expectDefined(
+        all.find((node) => node.name === name && node.visible),
+        name
+      )
+    return { graph, named }
+  }
+
+  test('a pattern fill layer is a tiled image of the pattern at its scale', async () => {
+    const { graph, named } = await layers()
+    const fill = expectDefined(named('Pattern fill').fills[0])
+    expect(fill).toMatchObject({ type: 'IMAGE', imageScaleMode: 'TILE', scale: 0.5 })
+    const ck = await getCanvasKit()
+    const image = expectDefined(
+      ck.MakeImageFromEncoded(expectDefined(graph.images.get(expectDefined(fill.imageHash))))
+    )
+    expect([image.width(), image.height()]).toEqual([4, 4])
+    image.delete()
+  })
+
+  test('paths that subtract and intersect are an editable boolean group of their paths', async () => {
+    const { graph, named } = await layers()
+    const ring = named('Ring')
+    // ((outer − hole − notch) ∩ left half): the subtracts share one group, the intersect wraps it.
+    expect(ring).toMatchObject({ type: 'BOOLEAN_OPERATION', booleanOperation: 'INTERSECT' })
+    expect(ring.fills[0]?.color).toMatchObject({ r: 0, g: 0, b: 0 })
+    const [subtract, half] = graph.getChildren(ring.id)
+    expect(subtract).toMatchObject({ type: 'BOOLEAN_OPERATION', booleanOperation: 'SUBTRACT' })
+    expect(half.type).toBe('VECTOR')
+    const paths = graph.getChildren(subtract.id)
+    expect(paths.map((path) => path.type)).toEqual(['VECTOR', 'VECTOR', 'VECTOR'])
+    // Each operand keeps its place on the canvas.
+    const hole = graph.getAbsoluteBounds(paths[1].id)
+    expect([hole.x, hole.y, hole.width, hole.height]).toEqual([25, 25, 30, 30])
+    const notch = graph.getAbsoluteBounds(paths[2].id)
+    expect([notch.x, notch.y, notch.width, notch.height]).toEqual([60, 60, 5, 5])
+    expect(graph.getAbsoluteBounds(paths[0].id).width).toBe(60)
+  })
+
+  test('bevel and emboss is a lit and a shaded inner edge; satin an offset inner shadow', async () => {
+    const { graph, named } = await layers()
+    // The styles ride on the outline traced from the badge's pixels.
+    const effects = graph.getChildren(named('Badge').id)[1].effects
+    const inner = effects.filter((effect) => effect.type === 'INNER_SHADOW')
+    const lit = expectDefined(inner.find((effect) => effect.blendMode === 'SCREEN'))
+    const shaded = expectDefined(
+      inner.find((effect) => effect.blendMode === 'MULTIPLY' && effect.color.a === 0.5)
+    )
+    // The light comes from straight above (global light 90°): lit along the top, shaded below.
+    expect(lit.color).toMatchObject({ r: 1, g: 1, b: 1, a: 0.75 })
+    expect(lit.offset.y).toBeGreaterThan(0)
+    expect(shaded.offset.y).toBeLessThan(0)
+    expect(lit.radius).toBe(6)
+    const satin = expectDefined(inner.find((effect) => effect.color.a === 0.4))
+    expect(satin).toMatchObject({ radius: 8, blendMode: 'MULTIPLY' })
+    expect(satin.offset.x).toBeCloseTo(-4, 6)
+  })
+
+  test("a pixel layer's overlays and stroke follow its drawn pixels, not its box", async () => {
+    const { graph, named } = await layers()
+    const badge = named('Badge')
+    expect(badge).toMatchObject({ type: 'GROUP', x: 100, y: 20, width: 40, height: 40 })
+    const [pixels, outline] = graph.getChildren(badge.id)
+    expect(pixels.fills[0]?.type).toBe('IMAGE')
+    // An outline traced round the disc, not its 40 × 40 box, inside the pixels' bounds.
+    expect(outline.type).toBe('VECTOR')
+    expect(outline.width).toBeGreaterThan(36)
+    expect(outline.width).toBeLessThan(41)
+    expect(outline.vectorNetwork?.segments.some((segment) => segment.tangentStart.x !== 0)).toBe(
+      true
+    )
+    expect(outline.fills.map((fill) => fill.type)).toEqual(['IMAGE', 'SOLID'])
+    expect(outline.fills[0]).toMatchObject({ imageScaleMode: 'TILE', scale: 2, opacity: 0.6 })
+    expect(outline.fills[1]).toMatchObject({ opacity: 0.5, color: { r: 1, g: 1, b: 0 } })
+    expect(outline.strokes).toMatchObject([{ align: 'OUTSIDE', weight: 3, color: { r: 1 } }])
+    expect(outline.effects.some((effect) => effect.type === 'INNER_SHADOW')).toBe(true)
+  })
+})
+
 describe('exporting PSD', () => {
   test('each layer of the frame becomes a named Photoshop layer at its place', async () => {
     const graph = new SceneGraph()

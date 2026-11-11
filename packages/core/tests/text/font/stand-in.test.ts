@@ -1,13 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { documentFontStatus, FontManager, fontTableView, sfntFont } from '@lawha/core/text'
 import { SceneGraph } from '@lawha/scene-graph'
 
-import {
-  documentFontStatus,
-  FontManager,
-  fontTableView,
-  sfntFont
-} from '@lawha/core/text'
 import { FONT_STAND_INS, standInFont } from '#core/text/font/stand-in'
 
 const FIGMA_HAND = FONT_STAND_INS['Figma Hand']
@@ -55,7 +50,26 @@ describe('stand-in fonts', () => {
     const pageId = graph.getPages()[0]?.id ?? graph.rootId
     graph.createNode('TEXT', pageId, { fontFamily: 'Figma Hand', fontWeight: 400, text: 'Hi' })
     const [face] = documentFontStatus(graph, pageId, manager).issues
-    expect(face).toMatchObject({ family: 'Figma Hand', status: 'substituted', substituteFamily: 'Caveat' })
+    expect(face).toMatchObject({
+      family: 'Figma Hand',
+      status: 'substituted',
+      substituteFamily: 'Caveat'
+    })
+  })
+
+  test('Office fonts are drawn by Inter at their widths when their open twin cannot be fetched', async () => {
+    const manager = offlineManager()
+    for (const family of ['Calibri', 'Cambria', 'Arial', 'Times New Roman', 'Aptos']) {
+      const font = await manager.loadFont(family, 'Regular')
+      if (!font) throw new Error(`No stand-in for ${family}`)
+      expect(manager.loadedFontSource(family, 'Regular')).toBe('stand-in')
+    }
+    const calibri = await manager.loadFont('Calibri', 'Regular')
+    // Inter's 2048-unit em drawn at 0.88, Calibri's narrower letters.
+    expect(fontTableView(calibri ?? new ArrayBuffer(0), 'head')?.getUint16(18)).toBe(
+      Math.round(2048 / 0.88)
+    )
+    expect(FONT_STAND_INS.Calibri.metricCompatible).toBe('Carlito')
   })
 
   test('other missing families have no stand-in', async () => {
@@ -78,7 +92,9 @@ describe('stand-in fonts', () => {
     const manager = offlineManager()
     await manager.loadFont('Figma Hand', 'Regular')
     const installed = await bundledCaveat()
-    manager.setHostFontLoader((family) => Promise.resolve(family === 'Figma Hand' ? installed : null))
+    manager.setHostFontLoader((family) =>
+      Promise.resolve(family === 'Figma Hand' ? installed : null)
+    )
     await manager.loadFont('Figma Hand', 'Regular')
     expect(manager.loadedFontSource('Figma Hand', 'Regular')).toBe('local')
   })

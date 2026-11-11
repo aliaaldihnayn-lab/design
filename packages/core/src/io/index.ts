@@ -39,6 +39,7 @@ export type {
   ExportRequest,
   ExportAsset,
   ExportResult,
+  ExportWarning,
   HTMLExportOptions,
   IOContext,
   FigWriteOptions,

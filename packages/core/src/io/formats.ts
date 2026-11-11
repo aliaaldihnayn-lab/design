@@ -486,12 +486,16 @@ export const pdfPrintFormat: IOFormatAdapter<'pdf-print'> = {
       ...options
     })
     if (!result) throw new Error('Nothing to export')
+    const warnings = [
+      ...result.issues.map((issue) => ({ ...issue, blocking: true })),
+      ...result.notes
+    ]
     return {
       format: 'pdf-print',
       mimeType: 'application/pdf',
       extension: 'pdf',
       data: result.data,
-      ...(result.issues.length > 0 ? { warnings: result.issues } : {})
+      ...(warnings.length > 0 ? { warnings } : {})
     }
   }
 }

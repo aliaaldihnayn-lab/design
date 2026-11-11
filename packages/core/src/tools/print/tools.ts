@@ -6,6 +6,7 @@ import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import { DIELINE_SPOTS } from '#core/io/formats/pdf/print/color'
+import { BLEED_GUIDE_NAME } from '#core/io/formats/pdf/print/sheet'
 import { nextFreeX, placeCopy } from '#core/tools/mockup/fit'
 import { defineTool, nodeSummary, requireNode, toolNumber } from '#core/tools/schema'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -25,7 +26,7 @@ import { printProductInputSchema, printSizeInputSchema } from './schema'
 export const DIELINE_STYLE = {
   cut: { ...DIELINE_SPOTS.cut, dash: [] },
   crease: { ...DIELINE_SPOTS.crease, dash: [6, 4] },
-  bleed: { name: 'Bleed', color: { r: 0.9, g: 0.1, b: 0.1 }, dash: [3, 3] },
+  bleed: { name: BLEED_GUIDE_NAME, color: { r: 0.9, g: 0.1, b: 0.1 }, dash: [3, 3] },
   safe: { name: 'Safe area', color: { r: 0.1, g: 0.65, b: 0.25 }, dash: [3, 3] }
 } as const
 

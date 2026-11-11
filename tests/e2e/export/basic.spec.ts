@@ -112,7 +112,7 @@ test('format selector changes to JPG', async () => {
   await formatTrigger.click()
 
   for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX', 'draw.io']) {
-    await expect(page.locator('[role="option"]').filter({ hasText: label })).toBeVisible()
+    await expect(page.getByRole('option', { name: label, exact: true })).toBeVisible()
   }
 
   const jpgOption = page.locator('[role="option"]').filter({ hasText: 'JPG' })
@@ -160,7 +160,7 @@ test('format selector works with multiple export rows', async () => {
 
   const secondRowFormat = exportItems().nth(1).getByRole('combobox', { name: 'Export format' })
   await secondRowFormat.click()
-  await page.locator('[role="option"]').filter({ hasText: 'PDF' }).click()
+  await page.getByRole('option', { name: 'PDF', exact: true }).click()
   await canvas.waitForRender()
 
   expect(await selectedExportSettings()).toEqual([
@@ -237,6 +237,25 @@ test('a draw.io export setting downloads a draw.io file', async () => {
   await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
   const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
   expect(download.suggestedFilename()).toBe('Export rect 1.drawio')
+  canvas.assertNoErrors()
+})
+
+test('a print PDF export lists what it changed for press', async () => {
+  await createExportableRect([{ scale: 1, format: 'pdf-print' }])
+  await page.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    const id = store?.state.selectedIds.values().next().value
+    if (!store || !id) throw new Error('Nothing selected')
+    store.graph.updateNode(id, { opacity: 0.5 })
+  })
+  await forceBlobDownload()
+
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.pdf')
+  const warnings = propertySection(page, 'Export').getByRole('alert')
+  await expect(warnings).toBeVisible()
+  // The half-transparent rectangle was flattened, so the file stays PDF/X-1a.
+  await expect(warnings.getByRole('listitem')).toHaveCount(1)
   canvas.assertNoErrors()
 })
 
