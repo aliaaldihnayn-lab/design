@@ -117,3 +117,9 @@ export {
   type PlayVariables,
   type PropertyBinding
 } from './variables'
+export {
+  geometryKeyframe,
+  geometryStyle,
+  overlayOrigin,
+  type GeometryStyle
+} from './smart-geometry'

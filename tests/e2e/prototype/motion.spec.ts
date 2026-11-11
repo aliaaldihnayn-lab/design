@@ -106,7 +106,7 @@ async function build(page: Page): Promise<Ids> {
   })
 }
 
-test('Smart Animate moves the matched card from its place to the next screen’s', async ({
+test('Smart Animate resizes the matched card by its geometry, keeping its corners', async ({
   page
 }) => {
   const ids = await build(page)
@@ -116,21 +116,88 @@ test('Smart Animate moves the matched card from its place to the next screen’s
   await page.locator(`[data-hotspot="${ids.card}"]`).click()
   const smart = page.getByTestId('prototype-smart-animate')
   await expect(smart).toBeVisible()
-  // One matched layer: its image on each screen, over the two screen backgrounds.
-  await expect(smart.locator('[data-smart-out]')).toHaveCount(1)
-  await expect(smart.locator('[data-smart-in]')).toHaveCount(1)
+  // The card is a box, so it is drawn and tweened itself rather than as stretched images.
+  const box = smart.locator('[data-smart-box]')
+  await expect(box).toHaveCount(1)
+  await expect(smart.locator('[data-smart-out]')).toHaveCount(0)
   await page.waitForTimeout(500)
-  const stage = page.getByTestId('prototype-stage')
-  await stage.screenshot({ path: test.info().outputPath('smart-animate-mid.png') })
-  const transform = await smart
-    .locator('[data-smart-out]')
-    .evaluate((el) => getComputedStyle(el).transform)
-  // Part way through, the card is scaled up between its two sizes.
-  const scaleX = Number(/matrix\(([^,]+)/.exec(transform)?.[1])
-  expect(scaleX).toBeGreaterThan(1.2)
-  expect(scaleX).toBeLessThan(3.25)
+  await page
+    .getByTestId('prototype-stage')
+    .screenshot({ path: test.info().outputPath('smart-animate-mid.png') })
+  const mid = await box.evaluate((el) => {
+    const style = getComputedStyle(el)
+    return {
+      width: el.getBoundingClientRect().width,
+      radius: style.borderTopLeftRadius,
+      transform: style.transform
+    }
+  })
+  const scale = await page.evaluate(() => {
+    const stage = document.querySelector('[data-test-id="prototype-stage"]')
+    return stage ? stage.getBoundingClientRect().width / 390 : 1
+  })
+  // Part way through, it is between its two widths, with its corners still 12 units round.
+  expect(mid.width).toBeGreaterThan(120 * scale * 1.2)
+  expect(mid.width).toBeLessThan(390 * scale)
+  expect(Number.parseFloat(mid.radius)).toBeCloseTo(12 * scale, 0)
+  expect(mid.transform).toBe('none')
   await expect(smart).toHaveCount(0)
   await expect(name).toHaveText('B')
+})
+
+test('an overlay opens and closes with Smart Animate from the layers it shares', async ({
+  page
+}) => {
+  const ids = await build(page)
+  await page.evaluate(
+    ({ card, b }) => {
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
+      const transition = {
+        type: 'smart-animate',
+        direction: 'left',
+        duration: 1200,
+        easing: 'linear'
+      }
+      store.graph.updateNode(card, {
+        pluginData: [
+          {
+            pluginId: 'lawha',
+            key: 'prototype.interactions',
+            value: JSON.stringify([
+              {
+                trigger: { type: 'click' },
+                action: {
+                  type: 'overlay',
+                  destination: b,
+                  position: 'bottom',
+                  closeOnOutside: true,
+                  transition
+                }
+              }
+            ])
+          }
+        ]
+      })
+      store.graph.updateNode(b, { height: 600 })
+    },
+    { card: ids.card, b: ids.b }
+  )
+  await page.getByTestId('prototype-present').click()
+  await page.locator(`[data-hotspot="${ids.card}"]`).click()
+  const smart = page.getByTestId('prototype-smart-animate')
+  await expect(smart).toBeVisible()
+  await expect(smart.locator('[data-smart-box]')).toHaveCount(1)
+  await expect(page.locator(`[data-overlay="${ids.b}"]`)).toBeHidden()
+  await expect(smart).toHaveCount(0)
+  await expect(page.locator(`[data-overlay="${ids.b}"]`)).toBeVisible()
+
+  // Escape closes it the same way back.
+  await page.keyboard.press('Escape')
+  await expect(smart).toBeVisible()
+  await expect(smart.locator('[data-smart-box]')).toHaveCount(1)
+  await expect(smart).toHaveCount(0)
+  await expect(page.locator(`[data-overlay="${ids.b}"]`)).toHaveCount(0)
 })
 
 test('a scrolling frame scrolls its content and its hotspots scroll with it', async ({ page }) => {

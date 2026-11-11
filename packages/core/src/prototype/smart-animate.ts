@@ -5,6 +5,7 @@ import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 import { extractPageContext, findPageId } from '#core/io/subgraph'
 
 import type { Transition } from './model'
+import { geometryStyle, type GeometryStyle } from './smart-geometry'
 
 /** A layer's place on its screen and how it draws, the values Smart Animate tweens. */
 export interface LayerState extends Rect {
@@ -20,6 +21,8 @@ export interface SmartPair {
   to: string
   fromState: LayerState
   toState: LayerState
+  /** Both ends as geometry, when the layer is a box the player tweens without its image. */
+  geometry: { from: GeometryStyle; to: GeometryStyle } | null
 }
 
 export interface SmartAnimatePlan {
@@ -70,13 +73,16 @@ function stateOf(graph: SceneGraph, node: SceneNode, origin: Vector): LayerState
 export function smartAnimatePlan(
   graph: SceneGraph,
   fromScreenId: string,
-  toScreenId: string
+  toScreenId: string,
+  /** Where the incoming screen sits relative to the outgoing one, as an overlay does. */
+  toOffset: Vector = { x: 0, y: 0 }
 ): SmartAnimatePlan {
   const fromScreen = graph.getNode(fromScreenId)
   const toScreen = graph.getNode(toScreenId)
   if (!fromScreen || !toScreen) return { pairs: [], removed: [], added: [] }
   const fromOrigin = getAbsolutePosition(fromScreen, graph)
-  const toOrigin = getAbsolutePosition(toScreen, graph)
+  const toAt = getAbsolutePosition(toScreen, graph)
+  const toOrigin = { x: toAt.x - toOffset.x, y: toAt.y - toOffset.y }
   const from = layerPaths(graph, fromScreenId)
   const to = layerPaths(graph, toScreenId)
   const pairs: SmartPair[] = []
@@ -92,10 +98,19 @@ export function smartAnimatePlan(
       from: match.id,
       to: node.id,
       fromState: stateOf(graph, match, fromOrigin),
-      toState: stateOf(graph, node, toOrigin)
+      toState: stateOf(graph, node, toOrigin),
+      geometry: null
     })
   }
   const matched = new Set(pairs.map((pair) => pair.from))
+  const matchedTo = new Set(pairs.map((pair) => pair.to))
+  for (const pair of pairs) {
+    const fromNode = graph.getNode(pair.from)
+    const toNode = graph.getNode(pair.to)
+    const a = fromNode ? geometryStyle(graph, fromNode, pair.fromState, matched) : null
+    const b = toNode ? geometryStyle(graph, toNode, pair.toState, matchedTo) : null
+    pair.geometry = a && b ? { from: a, to: b } : null
+  }
   const removed = [...from.values()].filter((node) => !matched.has(node.id)).map((n) => n.id)
   return { pairs, removed, added }
 }

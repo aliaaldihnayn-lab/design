@@ -6,9 +6,11 @@ import {
   scrollRegions,
   smartAnimateGraph,
   smartAnimatePlan,
+  type GeometryStyle,
   type ScrollRegion
 } from '@lawha/core/prototype'
 import type { SceneGraph } from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -78,10 +80,14 @@ export function renderScreen(store: EditorStore, screenId: string, scale: number
   }
 }
 
-/** One moving layer: its image on each screen and the CSS matrices that swap their places. */
+/**
+ * One moving layer: its image on each screen and the CSS matrices that swap their places, or,
+ * for a box, its geometry at each end, which the player tweens without images.
+ */
 export interface SmartLayer {
   from: string
   to: string
+  geometry: { from: GeometryStyle; to: GeometryStyle } | null
   /** Carries the outgoing image onto the incoming layer's place (screen units). */
   forward: [number, number, number, number]
   /** Carries the incoming image back to where the layer starts. */
@@ -91,6 +97,9 @@ export interface SmartLayer {
 export interface SmartFrames {
   from: string
   to: string
+  /** Where each screen's images sit, in the outgoing screen's units. */
+  fromBox: Rect
+  toBox: Rect
   layers: SmartLayer[]
 }
 
@@ -103,10 +112,19 @@ export function renderSmartAnimate(
   store: EditorStore,
   fromScreen: string,
   toScreen: string,
-  scale: number
+  scale: number,
+  /** Where the incoming screen sits over the outgoing one, as an overlay does. */
+  toOffset: Vector = { x: 0, y: 0 }
 ): SmartFrames {
   const graph = store.graph
-  const pairs = smartAnimatePlan(graph, fromScreen, toScreen).pairs.slice(0, MAX_SMART_LAYERS)
+  const pairs = smartAnimatePlan(graph, fromScreen, toScreen, toOffset).pairs.slice(
+    0,
+    MAX_SMART_LAYERS
+  )
+  const size = (id: string) => {
+    const node = graph.getNode(id)
+    return { width: node?.width ?? 0, height: node?.height ?? 0 }
+  }
   const fromIds = pairs.map((p) => p.from)
   const toIds = pairs.map((p) => p.to)
   return {
@@ -122,23 +140,35 @@ export function renderSmartAnimate(
       toScreen,
       scale
     ),
+    fromBox: { x: 0, y: 0, ...size(fromScreen) },
+    toBox: { ...toOffset, ...size(toScreen) },
     layers: pairs.map((pair) => ({
-      from: draw(
-        store,
-        smartAnimateGraph(graph, fromScreen, { kind: 'layer', node: pair.from, hide: fromIds }),
-        fromScreen,
-        scale
-      ),
-      to: draw(
-        store,
-        smartAnimateGraph(graph, toScreen, { kind: 'layer', node: pair.to, hide: toIds }),
-        toScreen,
-        scale
-      ),
+      geometry: pair.geometry,
+      from: pair.geometry
+        ? ''
+        : draw(
+            store,
+            smartAnimateGraph(graph, fromScreen, { kind: 'layer', node: pair.from, hide: fromIds }),
+            fromScreen,
+            scale
+          ),
+      to: pair.geometry
+        ? ''
+        : draw(
+            store,
+            smartAnimateGraph(graph, toScreen, { kind: 'layer', node: pair.to, hide: toIds }),
+            toScreen,
+            scale
+          ),
       forward: rectMapping(pair.fromState, pair.toState),
-      backward: rectMapping(pair.toState, pair.fromState)
+      // The incoming image sits in the incoming screen's box, so its mapping starts there.
+      backward: rectMapping(shift(pair.toState, toOffset), shift(pair.fromState, toOffset))
     }))
   }
+}
+
+function shift(rect: Rect, by: Vector): Rect {
+  return { x: rect.x - by.x, y: rect.y - by.y, width: rect.width, height: rect.height }
 }
 
 export function revokeSmartFrames(frames: SmartFrames | null): void {
