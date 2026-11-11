@@ -39,7 +39,10 @@ const bottomStyle = computed(() => ({
       <span :class="ui.watermarkText()">{{ watermark }}</span>
     </div>
     <div :style="topStyle"><slot name="header" /></div>
-    <EditorContent :editor="editor" :class="[ui.body(), ui.content()]" />
+    <div :class="ui.body()">
+      <EditorContent :editor="editor" :class="ui.content()" />
+      <slot name="footnotes" />
+    </div>
     <div :style="bottomStyle" class="flex flex-col justify-end"><slot name="footer" /></div>
   </div>
 </template>

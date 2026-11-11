@@ -212,5 +212,6 @@
   "wrongPassword": "Hasło jest nieprawidłowe.",
   "stampBottomRight": "Widoczny, prawy dolny róg ostatniej strony",
   "stampBottomLeft": "Widoczny, lewy dolny róg ostatniej strony",
-  "stampHidden": "Niewidoczny"
+  "stampHidden": "Niewidoczny",
+  "deleteFootnote": "Usuń przypis"
 }

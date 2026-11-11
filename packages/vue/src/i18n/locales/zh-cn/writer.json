@@ -212,5 +212,6 @@
   "wrongPassword": "密码不正确。",
   "stampBottomRight": "可见，位于最后一页右下角",
   "stampBottomLeft": "可见，位于最后一页左下角",
-  "stampHidden": "不可见"
+  "stampHidden": "不可见",
+  "deleteFootnote": "删除脚注"
 }

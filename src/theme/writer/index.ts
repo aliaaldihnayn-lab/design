@@ -51,6 +51,12 @@ export default {
     regionLabel:
       'pointer-events-none absolute -top-4 start-0 hidden text-[10px] text-black/50 group-focus-within/region:block',
     body: 'flex-1',
+    footnotes:
+      'mt-[12pt] text-[9pt] before:mb-[4pt] before:block before:w-1/3 before:border-t before:border-black/60',
+    footnote: 'group/note flex items-start gap-1',
+    footnoteNumber: 'mt-px min-w-[1.5em] shrink-0 text-[8pt] leading-[1.4] text-chart-1',
+    footnoteText: 'min-w-0 flex-1 text-[9pt] [&_p]:mb-0',
+    footnoteRemove: 'opacity-0 group-hover/note:opacity-100 group-focus-within/note:opacity-100',
     watermark:
       'pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none',
     watermarkText: '-rotate-45 text-[72pt] font-bold whitespace-nowrap text-black/10',

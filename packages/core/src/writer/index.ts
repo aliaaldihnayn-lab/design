@@ -29,4 +29,12 @@ export {
   type BlockSpec,
   type BlockSummary
 } from './edit'
+export {
+  footnoteNumbers,
+  footnoteOrder,
+  numberedFootnotes,
+  removeFootnote,
+  setFootnoteContent,
+  type NumberedFootnote
+} from './footnotes'
 export { WRITER_TEMPLATE_IDS, writerTemplate, type WriterTemplateId } from './templates'

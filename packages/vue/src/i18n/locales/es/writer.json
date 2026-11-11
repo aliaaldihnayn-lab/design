@@ -212,5 +212,6 @@
   "wrongPassword": "La contraseña no es correcta.",
   "stampBottomRight": "Visible, abajo a la derecha de la última página",
   "stampBottomLeft": "Visible, abajo a la izquierda de la última página",
-  "stampHidden": "Invisible"
+  "stampHidden": "Invisible",
+  "deleteFootnote": "Eliminar nota al pie"
 }

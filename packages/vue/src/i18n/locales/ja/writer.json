@@ -212,5 +212,6 @@
   "wrongPassword": "パスワードが正しくありません。",
   "stampBottomRight": "表示、最終ページの右下",
   "stampBottomLeft": "表示、最終ページの左下",
-  "stampHidden": "非表示"
+  "stampHidden": "非表示",
+  "deleteFootnote": "脚注を削除"
 }

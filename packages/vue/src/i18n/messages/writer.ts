@@ -220,7 +220,8 @@ export const writerMessageDefaults = {
   saveEncryptedDocx: 'Save encrypted Word document',
   saveEncryptedPDF: 'Save encrypted PDF',
   openEncrypted: 'Open',
-  wrongPassword: 'The password is not correct.'
+  wrongPassword: 'The password is not correct.',
+  deleteFootnote: 'Delete footnote'
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

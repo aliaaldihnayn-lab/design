@@ -212,5 +212,6 @@
   "wrongPassword": "Неверный пароль.",
   "stampBottomRight": "Видимая, внизу справа на последней странице",
   "stampBottomLeft": "Видимая, внизу слева на последней странице",
-  "stampHidden": "Невидимая"
+  "stampHidden": "Невидимая",
+  "deleteFootnote": "Удалить сноску"
 }

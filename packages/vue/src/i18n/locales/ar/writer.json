@@ -212,5 +212,6 @@
   "wrongPassword": "كلمة المرور غير صحيحة.",
   "stampBottomRight": "ظاهر، أسفل يمين الصفحة الأخيرة",
   "stampBottomLeft": "ظاهر، أسفل يسار الصفحة الأخيرة",
-  "stampHidden": "مخفي"
+  "stampHidden": "مخفي",
+  "deleteFootnote": "حذف الحاشية"
 }

@@ -212,5 +212,6 @@
   "wrongPassword": "Le mot de passe est incorrect.",
   "stampBottomRight": "Visible, en bas à droite de la dernière page",
   "stampBottomLeft": "Visible, en bas à gauche de la dernière page",
-  "stampHidden": "Invisible"
+  "stampHidden": "Invisible",
+  "deleteFootnote": "Supprimer la note de bas de page"
 }

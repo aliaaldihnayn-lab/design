@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import {
   documentStatistics,
   nodeText,
+  numberedFootnotes,
   writerTemplate,
   type WriterTemplateId
 } from '@lawha/core/writer'
@@ -40,6 +41,7 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
 import WriterFindBar from '@/components/writer/WriterFindBar.vue'
+import WriterFootnotes from '@/components/writer/WriterFootnotes.vue'
 import WriterGoogleDocs from '@/components/writer/WriterGoogleDocs.vue'
 import WriterNewMenu from '@/components/writer/WriterNewMenu.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
@@ -139,9 +141,9 @@ async function printDocument() {
       {
         bodyHTML: instance.getHTML(),
         fontsStylesheet: WRITER_FONTS_STYLESHEET,
-        footnotes: writerDocument.value.footnotes.map((note) =>
-          note.content.map(nodeText).join(' ')
-        )
+        footnotes: numberedFootnotes(writerDocument.value)
+          .filter((note) => note.number !== null)
+          .map((note) => note.content.map(nodeText).join(' '))
       }
     )
   )
@@ -313,6 +315,7 @@ onBeforeUnmount(() => editor.value?.destroy())
           :watermark="writerDocument.watermark?.text"
         >
           <template #header><WriterRegion kind="header" /></template>
+          <template #footnotes><WriterFootnotes :editor="editor" /></template>
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>
       </div>
