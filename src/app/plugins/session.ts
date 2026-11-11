@@ -12,8 +12,10 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import type { EditorStore } from '@/app/editor/active-store'
 import { pluginClientStorage } from '@/app/plugins/library'
 
-/** The plugin running now and its window; one plugin runs at a time, as in Figma. */
+/** A plugin running now and its window. Plugins run side by side, each in its own interpreter. */
 export interface RunningPlugin {
+  /** Stable for the run, for keying its window. */
+  key: number
   bundle: PluginBundle
   session: PluginSession
   /** Set once the plugin calls `figma.showUI`. */
@@ -22,20 +24,37 @@ export interface RunningPlugin {
   outbox: unknown[]
 }
 
-export const runningPlugin = shallowRef<RunningPlugin | null>(null)
+/** Running plugins, in the order they started; one instance per plugin id, as in Figma. */
+export const runningPlugins = shallowRef<RunningPlugin[]>([])
 
-/** Callbacks the window component registers to receive what the plugin sends it. */
-let deliver: ((message: unknown) => void) | null = null
+let nextKey = 1
 
-export function connectPluginWindow(receive: ((message: unknown) => void) | null): void {
-  deliver = receive
-  const current = runningPlugin.value
-  if (!receive || !current) return
+/** Each plugin window's receiver for what its plugin sends it, by session. */
+const receivers = new WeakMap<PluginSession, (message: unknown) => void>()
+
+/** Connects a plugin's window frame, delivering the messages that waited for it. */
+export function connectPluginWindow(
+  session: PluginSession,
+  receive: ((message: unknown) => void) | null
+): void {
+  if (!receive) {
+    receivers.delete(session)
+    return
+  }
+  receivers.set(session, receive)
+  const current = runningPlugins.value.find((plugin) => plugin.session === session)
+  if (!current) return
   for (const message of current.outbox.splice(0)) receive(message)
 }
 
-function update(patch: Partial<RunningPlugin>): void {
-  if (runningPlugin.value) runningPlugin.value = { ...runningPlugin.value, ...patch }
+function update(session: PluginSession, patch: (plugin: RunningPlugin) => Partial<RunningPlugin>) {
+  runningPlugins.value = runningPlugins.value.map((plugin) =>
+    plugin.session === session ? { ...plugin, ...patch(plugin) } : plugin
+  )
+}
+
+function current(session: PluginSession): RunningPlugin | undefined {
+  return runningPlugins.value.find((plugin) => plugin.session === session)
 }
 
 function selectionFromStore(figma: FigmaAPI, store: EditorStore): void {
@@ -59,36 +78,45 @@ export function runPlugin(
   command: string,
   report: PluginRunReport
 ): PluginSession {
-  runningPlugin.value?.session.close()
+  // Running a plugin again restarts it; other plugins keep running.
+  for (const plugin of runningPlugins.value)
+    if (plugin.bundle.manifest.id === bundle.manifest.id) plugin.session.close()
   const figma = makeFigmaFromStore(store)
   const name = bundle.manifest.name
+  // The session is assigned before the plugin's code runs, which starts after `startPlugin`.
+  let self: PluginSession | null = null
+  const withWindow = (
+    patch: (window: NonNullable<RunningPlugin['window']>) => RunningPlugin['window']
+  ) => {
+    if (!self) return
+    update(self, (plugin) => ({ window: plugin.window ? patch(plugin.window) : null }))
+  }
   const session = startPlugin({
     figma,
     bundle,
     command,
     host: {
       showUI(html, options) {
-        update({ window: { html, options, visible: options.visible }, outbox: [] })
+        if (self)
+          update(self, () => ({ window: { html, options, visible: options.visible }, outbox: [] }))
       },
       postToUI(message) {
-        if (deliver) deliver(message)
-        else runningPlugin.value?.outbox.push(message)
+        if (!self) return
+        const receive = receivers.get(self)
+        if (receive) receive(message)
+        else current(self)?.outbox.push(message)
       },
       setUIVisible(visible) {
-        const window = runningPlugin.value?.window
-        if (window) update({ window: { ...window, visible } })
+        withWindow((window) => ({ ...window, visible }))
       },
       resizeUI(width, height) {
-        const window = runningPlugin.value?.window
-        if (window) update({ window: { ...window, options: { ...window.options, width, height } } })
+        withWindow((window) => ({ ...window, options: { ...window.options, width, height } }))
       },
       repositionUI(x, y) {
-        const window = runningPlugin.value?.window
-        if (window)
-          update({ window: { ...window, options: { ...window.options, position: { x, y } } } })
+        withWindow((window) => ({ ...window, options: { ...window.options, position: { x, y } } }))
       },
       closeUI() {
-        update({ window: null })
+        if (self) update(self, () => ({ window: null }))
       },
       notify(message, options) {
         report.notify(message, options.error === true)
@@ -111,15 +139,21 @@ export function runPlugin(
         )
     }
   })
-  runningPlugin.value = { bundle, session, window: null, outbox: [] }
+  self = session
+  runningPlugins.value = [
+    ...runningPlugins.value,
+    { key: nextKey++, bundle, session, window: null, outbox: [] }
+  ]
   void session.done.then((exit) => {
-    if (runningPlugin.value?.session === session) runningPlugin.value = null
+    receivers.delete(session)
+    runningPlugins.value = runningPlugins.value.filter((plugin) => plugin.session !== session)
     if (exit.error) report.failed(name, exit.error)
     return undefined
   })
   return session
 }
 
-export function closeRunningPlugin(): void {
-  runningPlugin.value?.session.close()
+/** Closes one running plugin, as its window's close button does. */
+export function closeRunningPlugin(session: PluginSession): void {
+  session.close()
 }

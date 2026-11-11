@@ -124,6 +124,8 @@ const strictTestFilePlacement = createFileRule(
         : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
     }
     if (sourceRel.startsWith('tests/helpers/')) return null
+    // Fixtures are inputs, such as a sample plugin's `code.js`, not tests.
+    if (sourceRel.startsWith('tests/fixtures/')) return null
     return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
   }
 )
