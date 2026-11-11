@@ -33,3 +33,27 @@ export function flattenSceneNodes(
   if (!vectorProps) throw new Error('Cannot flatten empty node path')
   return graph.createNode('VECTOR', parentId, vectorProps)
 }
+
+/**
+ * Figma's `figma.flatten`: one vector of `nodes` in `parentId`, at `index` when given, with the
+ * sources removed.
+ */
+export function flattenIntoVector(
+  graph: SceneGraph,
+  renderer: SkiaRenderer | null,
+  nodeIds: readonly string[],
+  parentId: string,
+  index?: number
+): SceneNode {
+  if (nodeIds.length === 0) throw new Error('Need at least 1 node to flatten')
+  const sourceNodes: SceneNode[] = []
+  for (const id of nodeIds) {
+    const raw = graph.getNode(id)
+    if (!raw) throw new Error('Node not found')
+    sourceNodes.push(raw)
+  }
+  const vector = flattenSceneNodes(graph, renderer, sourceNodes, parentId)
+  if (index != null) graph.insertChildAt(vector.id, parentId, index)
+  for (const id of nodeIds) graph.deleteNode(id)
+  return vector
+}
