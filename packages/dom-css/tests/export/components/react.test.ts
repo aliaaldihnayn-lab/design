@@ -9,6 +9,7 @@ import {
   numberFieldComponent,
   plainBadgeSet,
   progressComponent,
+  rangeSliderComponent,
   sliderComponent,
   textareaComponent,
   textFieldSet,
@@ -223,6 +224,14 @@ describe('generated React form controls', () => {
     // Radix places its range from the value, already on the server.
     expect(render(component)).toContain('right:40%')
     expect(render(component, { defaultValue: [25] })).toContain('right:75%')
+  })
+
+  test('a range slider starts both of its thumbs where the design draws them', async () => {
+    const { component } = await generate(rangeSliderComponent())
+    const html = render(component)
+    expect(html.match(/role="slider"/g)?.length).toBe(2)
+    expect(html).toContain('left:20%')
+    expect(html).toContain('right:20%')
   })
 
   test("a progress bar's indicator reaches the value's share of its range", async () => {
