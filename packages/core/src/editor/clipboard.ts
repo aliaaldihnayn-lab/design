@@ -10,6 +10,7 @@ import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 import { parseLawhaClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
+import { releaseDeletedFrames } from '#core/publisher'
 
 import { createClipboardAssetActions } from './clipboard/assets'
 import type { ClipboardSnapshot } from './clipboard/copy'
@@ -31,6 +32,7 @@ import {
   type ClipboardPlacement
 } from './clipboard/placement'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
+import { recordEdit } from './history/edit'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
 import type { EditorContext } from './types'
 
@@ -368,7 +370,12 @@ export function createClipboardActions(ctx: EditorContext) {
    */
   function deleteNodes(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
     // One undo step for the delete and any slot it claims.
-    ctx.undo.runBatch('Delete', () => deleteLayers(nodeIds, nextSelection))
+    ctx.undo.runBatch('Delete', () => {
+      const ids = [...nodeIds].filter(deletable)
+      // Threaded text frames give their text back to their story's other frames first.
+      recordEdit(ctx, { label: 'Delete' }, () => releaseDeletedFrames(ctx.graph, ids))
+      deleteLayers(ids, nextSelection)
+    })
   }
 
   /** Whether a delete removes this layer: one that is unlocked and may leave its parent. */

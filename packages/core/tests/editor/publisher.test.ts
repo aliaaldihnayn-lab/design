@@ -142,4 +142,142 @@ describe('threaded text frames', () => {
       readPluginData(editor.graph.getNode(a.id)?.pluginData, LAWHA_PLUGIN_DATA.textThread)
     ).toBeUndefined()
   })
+
+  test('mixed styles travel with their words from frame to frame', async () => {
+    const { editor, canvas } = publication()
+    const bold = { fontWeight: 700 }
+    const red = {
+      fills: [
+        { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+      ]
+    }
+    const story = 'aaaa bbbb cccc dddd eeee ffff'
+    const a = editor.graph.createNode('TEXT', canvas, {
+      y: 600,
+      width: 100,
+      height: 40,
+      text: story,
+      textAutoResize: 'NONE',
+      // "bbbb" bold, "eeee ffff" red.
+      styleRuns: [
+        { start: 5, length: 4, style: bold },
+        { start: 20, length: 9, style: red }
+      ]
+    })
+    const b = editor.graph.createNode('TEXT', canvas, {
+      x: 200,
+      y: 600,
+      width: 100,
+      height: 40,
+      text: ''
+    })
+    const previous = getTextMeasurer()
+    setTextMeasurer(measure)
+    try {
+      editor.linkTextFrames(a.id, b.id)
+      expect(editor.graph.getNode(a.id)).toMatchObject({
+        text: 'aaaa bbbb cccc dddd',
+        styleRuns: [{ start: 5, length: 4, style: bold }]
+      })
+      expect(editor.graph.getNode(b.id)).toMatchObject({
+        text: 'eeee ffff',
+        styleRuns: [{ start: 0, length: 9, style: red }]
+      })
+      // Shortening the first frame pulls the red words back, still red.
+      editor.graph.updateNode(a.id, {
+        text: 'aaaa bbbb',
+        styleRuns: [{ start: 5, length: 4, style: bold }]
+      })
+      await flush()
+      expect(editor.graph.getNode(a.id)).toMatchObject({
+        text: 'aaaa bbbb eeee ffff',
+        styleRuns: [
+          { start: 5, length: 4, style: bold },
+          { start: 10, length: 9, style: red }
+        ]
+      })
+    } finally {
+      setTextMeasurer(previous)
+    }
+  })
+
+  test('deleting a frame flows its text into the frames left, and undo brings it back', async () => {
+    const { editor, canvas } = publication()
+    const frame = (x: number, text: string) =>
+      editor.graph.createNode('TEXT', canvas, {
+        x,
+        y: 600,
+        width: 100,
+        height: 40,
+        text,
+        textAutoResize: 'NONE'
+      })
+    const a = frame(0, 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj')
+    const b = frame(200, '')
+    const c = frame(400, '')
+    const previous = getTextMeasurer()
+    setTextMeasurer(measure)
+    try {
+      editor.select([a.id, b.id, c.id])
+      editor.linkTextFrames()
+      expect(editor.graph.getNode(b.id)?.text).toBe('eeee ffff gggg hhhh')
+      expect(editor.graph.getNode(c.id)?.text).toBe('iiii jjjj')
+
+      editor.select([b.id])
+      editor.deleteSelected()
+      await flush()
+      expect(editor.graph.getNode(b.id)).toBeUndefined()
+      expect(editor.graph.getNode(a.id)?.text).toBe('aaaa bbbb cccc dddd')
+      expect(editor.graph.getNode(c.id)?.text).toBe('eeee ffff gggg hhhh iiii jjjj')
+      expect(
+        readPluginData(editor.graph.getNode(c.id)?.pluginData, LAWHA_PLUGIN_DATA.textThread)
+      ).toMatchObject({ story: a.id, order: 1 })
+
+      editor.undo.undo()
+      await flush()
+      expect(editor.graph.getNode(a.id)?.text).toBe('aaaa bbbb cccc dddd')
+      expect(editor.graph.getNode(b.id)?.text).toBe('eeee ffff gggg hhhh')
+      expect(editor.graph.getNode(c.id)?.text).toBe('iiii jjjj')
+    } finally {
+      setTextMeasurer(previous)
+    }
+  })
+
+  test('deleting the first frame hands the story to the next', async () => {
+    const { editor, canvas } = publication()
+    const a = editor.graph.createNode('TEXT', canvas, {
+      y: 600,
+      width: 100,
+      height: 40,
+      text: 'aaaa bbbb cccc dddd eeee',
+      textAutoResize: 'NONE'
+    })
+    const b = editor.graph.createNode('TEXT', canvas, {
+      x: 200,
+      y: 600,
+      width: 100,
+      height: 40,
+      text: ''
+    })
+    const c = editor.graph.createNode('TEXT', canvas, {
+      x: 400,
+      y: 600,
+      width: 100,
+      height: 40,
+      text: ''
+    })
+    const previous = getTextMeasurer()
+    setTextMeasurer(measure)
+    try {
+      editor.select([a.id, b.id, c.id])
+      editor.linkTextFrames()
+      editor.select([a.id])
+      editor.deleteSelected()
+      await flush()
+      expect(editor.graph.getNode(b.id)?.text).toBe('aaaa bbbb cccc dddd')
+      expect(editor.graph.getNode(c.id)?.text).toBe('eeee')
+    } finally {
+      setTextMeasurer(previous)
+    }
+  })
 })

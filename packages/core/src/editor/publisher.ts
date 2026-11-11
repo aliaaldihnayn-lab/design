@@ -31,6 +31,7 @@ const PAGE_NUMBER_FONT_SIZE = 12
 /** Fields a write to which can move text between threaded frames. */
 const REFLOW_FIELDS = new Set<string>([
   'text',
+  'styleRuns',
   'width',
   'height',
   'fontSize',

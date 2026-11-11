@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride
@@ -31,10 +31,14 @@ export {
   flowText,
   linkTextFrames,
   reflowThread,
+  releaseDeletedFrames,
+  sliceRuns,
   threadFrames,
   threadOf,
   unlinkTextFrame,
-  type FlowedFrame
+  type FlowedFrame,
+  type FrameFits,
+  type Story
 } from './threads'
 
 /** Where a new master page goes: above the pages, clear of everything on the canvas. */
@@ -166,9 +170,9 @@ export function refreshPageNumbers(graph: SceneGraph, canvasId: string): string[
 }
 
 /** Whether `text` fits `frame` at the frame's width and height, measured as layout measures. */
-export function textFitsFrame(frame: SceneNode, text: string): boolean {
+export function textFitsFrame(frame: SceneNode, text: string, runs: StyleRun[] = []): boolean {
   const size = measureTextForLayout(
-    { ...frame, text, styleRuns: [], textAutoResize: 'HEIGHT' },
+    { ...frame, text, styleRuns: runs, textAutoResize: 'HEIGHT' },
     frame.width
   )
   return size.height <= frame.height + 0.5
