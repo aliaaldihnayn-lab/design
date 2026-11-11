@@ -7,7 +7,7 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph, type Fill } from '@lawha/scene-graph'
 import { EXPORT_FORMAT_IDS } from '@lawha/scene-graph/export-format'
 
-import { artworkBleed, DIELINE_SPOTS, rgbToCMYK } from '#core/io/formats/pdf/print'
+import { artworkBleed, DIELINE_SPOTS, limitInk, rgbToCMYK } from '#core/io/formats/pdf/print'
 import { rewriteContent } from '#core/io/formats/pdf/print/content'
 import { convertToPrintPDF } from '#core/io/formats/pdf/print/convert'
 import { latin1, latin1Bytes, parsePDF } from '#core/io/formats/pdf/print/file'
@@ -441,5 +441,39 @@ describe('print PDF colour conversion', () => {
       parseICCProfile(expectDefined((await loadPressProfile('FOGRA39')).profile).bytes)
     )
     expect(createProfileTransform({ ...parsed, colorSpace: 'RGB ' })).toBeNull()
+  })
+
+  test('ink over the limit goes to black first, then comes off the colours', () => {
+    const sum = (cmyk: readonly number[]) => cmyk.reduce((a, b) => a + b, 0)
+    // 80% grey component moves into black: 3.6 becomes 3.0 without touching the hue.
+    const replaced = limitInk([0.9, 0.8, 0.8, 1.1 - 0.1], 3.3)
+    expect(sum(replaced)).toBeCloseTo(3.3, 6)
+    expect(replaced[3]).toBeGreaterThan(0.99)
+    // Black already full: the colours give up the rest evenly.
+    const removed = limitInk([0.9, 0.9, 0.9, 1], 2.5)
+    expect(sum(removed)).toBeCloseTo(2.5, 6)
+    expect(removed[0]).toBeCloseTo(removed[1], 6)
+    expect(limitInk([0.2, 0.3, 0, 0], 3.3)).toEqual([0.2, 0.3, 0, 0])
+  })
+
+  test('a print export keeps every colour within the ink limit it is given', async () => {
+    const { graph, frame } = card()
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 120,
+      y: 60,
+      width: 30,
+      height: 30,
+      fills: [solid(0.05, 0.02, 0.08)]
+    })
+    const data = (await exportPrint(graph, [frame.id], { inkLimit: 2.4 })).data as Uint8Array
+    const fills = [...latin1(data).matchAll(/([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) k\b/g)].map((m) =>
+      m.slice(1, 5).reduce((a, b) => a + Number(b), 0)
+    )
+    expect(fills.length).toBeGreaterThan(0)
+    expect(Math.max(...fills)).toBeLessThanOrEqual(2.401)
+    // The rich dark colour was over the limit before.
+    const loaded = expectDefined((await loadPressProfile('FOGRA39')).profile)
+    const before = loaded.toCMYK(0.05, 0.02, 0.08).reduce((a, b) => a + b, 0)
+    expect(before).toBeGreaterThan(2.4)
   })
 })

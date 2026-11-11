@@ -9,8 +9,11 @@ import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
 import { extractExportGraph } from '#core/io/subgraph'
 
 import {
+  DEFAULT_INK_LIMIT,
   DIELINE_SPOTS,
+  inkLimited,
   PDF_OUTPUT_INTENTS,
+  rgbToCMYK,
   REGISTRATION_SPOT,
   type PDFOutputIntentId,
   type PDFSpotColor
@@ -23,6 +26,8 @@ import { printIssue, type PrintIssue } from './issues'
 import { composePrintSheet, markMargin, pageArtworkBleed } from './sheet'
 
 export {
+  DEFAULT_INK_LIMIT,
+  limitInk,
   DIELINE_SPOTS,
   PDF_OUTPUT_INTENTS,
   rgbToCMYK,
@@ -49,6 +54,8 @@ export interface PDFPrintOptions {
   outputProfile?: Uint8Array
   /** How colours outside the press gamut are brought in; perceptual by default. */
   renderingIntent?: ICCRenderingIntent
+  /** Most total ink, 1–4 (100–400%), colours may print with; 3.3 (FOGRA39's 330%) by default. */
+  inkLimit?: number
   /** PDF/X-1a (default) flattens transparency into images; PDF/X-4 keeps it live. */
   standard?: PDFXStandard
   /** Inks printed apart: layers painted in their colour print as that ink. Die-line inks always. */
@@ -147,7 +154,10 @@ export async function exportPrintPDF(
     ],
     outputIntent,
     outputProfile: loaded.profile?.bytes,
-    toCMYK: loaded.profile?.toCMYK,
+    toCMYK: inkLimited(
+      loaded.profile?.toCMYK ?? rgbToCMYK,
+      Math.min(4, Math.max(1, options.inkLimit ?? DEFAULT_INK_LIMIT))
+    ),
     standard,
     bleedInset: margin,
     trimInset: pageBleed.map((bleed) => margin + bleed),

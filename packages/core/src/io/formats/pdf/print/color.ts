@@ -32,6 +32,38 @@ export function vectorCMYK(toCMYK: ToCMYK): ToCMYK {
   }
 }
 
+/** FOGRA39's total area coverage: the four inks may add up to 330% at most. */
+export const DEFAULT_INK_LIMIT = 3.3
+
+/**
+ * A colour within `limit` total ink: grey component replacement first moves the part of cyan,
+ * magenta and yellow that only makes grey into black, which prints the same with less ink, and
+ * under colour removal then takes what is still over the limit evenly from the three colours.
+ */
+export function limitInk(cmyk: CMYK, limit: number): CMYK {
+  const [c, m, y, k] = cmyk
+  const excess = c + m + y + k - limit
+  if (excess <= 1e-6) return cmyk
+  // Replacing r of each colour with r of black saves 2r of ink.
+  const replaced = Math.max(0, Math.min(c, m, y, 1 - k, excess / 2))
+  let [c2, m2, y2] = [c - replaced, m - replaced, y - replaced]
+  const k2 = k + replaced
+  const over = c2 + m2 + y2 + k2 - limit
+  if (over > 1e-6) {
+    const colours = c2 + m2 + y2
+    const keep = colours > 0 ? Math.max(0, (colours - over) / colours) : 0
+    c2 *= keep
+    m2 *= keep
+    y2 *= keep
+  }
+  return [c2, m2, y2, k2]
+}
+
+/** A conversion whose every colour stays within `limit` total ink. */
+export function inkLimited(toCMYK: ToCMYK, limit: number): ToCMYK {
+  return (r, g, b) => limitInk(toCMYK(r, g, b), limit)
+}
+
 /** A colour printed in an ink of its own, such as a Pantone colour or a cutter's CutContour. */
 export interface PDFSpotColor {
   /** The ink's name, as the press or cutter knows it. */
