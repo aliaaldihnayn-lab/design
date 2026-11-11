@@ -37,5 +37,6 @@
   "maskFromSelection": "قناع من التحديد",
   "invertMask": "عكس القناع",
   "feather": "تنعيم الحواف",
-  "cloneSourceHint": "انقر مع Alt لتحديد المصدر"
+  "cloneSourceHint": "انقر مع Alt لتحديد المصدر",
+  "sampleAllLayers": "أخذ العيّنة من كل الطبقات"
 }

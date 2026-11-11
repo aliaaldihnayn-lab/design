@@ -42,7 +42,8 @@ export const photoMessageDefaults = {
   maskFromSelection: 'Mask from selection',
   invertMask: 'Invert mask',
   feather: 'Feather',
-  cloneSourceHint: 'Alt-click to set the source'
+  cloneSourceHint: 'Alt-click to set the source',
+  sampleAllLayers: 'Sample all layers'
 } as const
 
 export const photoMessages = i18n('photo', photoMessageDefaults)

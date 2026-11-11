@@ -3,6 +3,8 @@ import type { Color, Vector } from '@lawha/scene-graph/primitives'
 import { BLACK } from '#core/constants'
 import type { SelectionMode } from '#core/pixels/mask'
 
+import type { PixelSampleScope } from './sample'
+
 /** The brush, fill, and selection settings the pixel tools share, as their context bar sets them. */
 export interface PixelToolSettings {
   /** What the brush and the fill bucket paint, and what the colour picker sets. */
@@ -19,6 +21,11 @@ export interface PixelToolSettings {
   contiguous: boolean
   /** How a new selection joins the one there is. */
   selectionMode: SelectionMode
+  /**
+   * What the fill bucket, magic wand, colour picker, and clone tools read: the layer as drawn by
+   * itself, or every layer the canvas shows there.
+   */
+  sampleScope: PixelSampleScope
   /** How far a mask made from the selection is softened, in the layer's pixels. */
   feather: number
 }
@@ -53,5 +60,6 @@ export const DEFAULT_PIXEL_TOOL_SETTINGS: PixelToolSettings = {
   tolerance: 0.15,
   contiguous: true,
   selectionMode: 'replace',
-  feather: 0
+  feather: 0,
+  sampleScope: 'layer'
 }

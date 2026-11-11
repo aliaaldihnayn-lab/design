@@ -37,5 +37,6 @@
   "maskFromSelection": "Máscara desde la selección",
   "invertMask": "Invertir máscara",
   "feather": "Calado",
-  "cloneSourceHint": "Alt+clic para fijar el origen"
+  "cloneSourceHint": "Alt+clic para fijar el origen",
+  "sampleAllLayers": "Muestrear todas las capas"
 }

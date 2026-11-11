@@ -30,6 +30,14 @@ const SELECTIONS: ReadonlySet<Tool> = new Set<Tool>([
   'MAGIC_WAND'
 ])
 const COLORED: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'FILL_BUCKET', 'COLOR_PICKER'])
+/** The tools that read what the canvas shows, from the layer alone or from every layer. */
+const SAMPLING: ReadonlySet<Tool> = new Set<Tool>([
+  'FILL_BUCKET',
+  'MAGIC_WAND',
+  'COLOR_PICKER',
+  'CLONE_STAMP',
+  'HEALING_BRUSH'
+])
 
 const shown = computed(
   () =>
@@ -116,6 +124,10 @@ function setContiguous(value: boolean) {
   store.setPixelTools({ contiguous: value })
 }
 
+function setSampleAll(value: boolean) {
+  store.setPixelTools({ sampleScope: value ? 'all' : 'layer' })
+}
+
 function setInvertMask(value: boolean) {
   invertMask.value = value
 }
@@ -172,6 +184,18 @@ function maskFromSelection() {
         @update:model-value="setContiguous"
       />
       {{ t.contiguous }}
+    </label>
+    <label
+      v-if="SAMPLING.has(tool)"
+      class="flex items-center gap-1.5 text-muted"
+      data-test-id="pixel-sample-all"
+    >
+      <AppCheckbox
+        :model-value="settings.sampleScope === 'all'"
+        :ariaLabel="t.sampleAllLayers"
+        @update:model-value="setSampleAll"
+      />
+      {{ t.sampleAllLayers }}
     </label>
     <span v-if="CLONING.has(tool)" class="text-muted" data-test-id="pixel-clone-hint">
       {{ t.cloneSourceHint }}

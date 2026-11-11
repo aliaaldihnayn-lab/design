@@ -7,8 +7,8 @@ import { recordEdit } from '#core/editor/history/edit'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 import { storeImage } from '#core/figma-api/images'
-import type { RasterCodec } from '#core/io/formats/raster'
-import { blankImage, compositeOver } from '#core/pixels/composite'
+import type { RasterCodec, RGBAImage } from '#core/io/formats/raster'
+import { blankImage } from '#core/pixels/composite'
 import { selectSimilar } from '#core/pixels/fill'
 import {
   combineMasks,
@@ -37,6 +37,8 @@ export interface PixelSelectionDeps {
   session: PixelSession
   codec: () => RasterCodec | null
   targetAt: (cx: number, cy: number) => SceneNode | null
+  /** What the layer shows on its pixel grid, as the magic wand samples it. */
+  shownPixels: (node: SceneNode, surface: PixelSurface) => RGBAImage
   overlay: () => NonNullable<EditorContext['state']['pixelOverlay']>
 }
 
@@ -211,8 +213,7 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
     const at = node && surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!node || !surface || !at) return false
     const { tolerance, contiguous } = ctx.state.pixelTools
-    const shown = compositeOver(surface.base, surface.paint)
-    const region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
+    const region = selectSimilar(deps.shownPixels(node, surface), at.x, at.y, tolerance, contiguous)
     if (!maskBounds(region)) return false
     setSelection(node.id, combineMasks(currentMask(node, surface), region, mode))
     return true

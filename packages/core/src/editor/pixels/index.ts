@@ -5,7 +5,11 @@ import { randomHex } from '@lawha/scene-graph/random'
 import type { NodePreview } from '#core/editor/node-preview'
 import type { EditorContext, Tool } from '#core/editor/types'
 import { storeImage } from '#core/figma-api/images'
-import { createCanvasKitRasterCodec, type RasterCodec } from '#core/io/formats/raster'
+import {
+  createCanvasKitRasterCodec,
+  type RasterCodec,
+  type RGBAImage
+} from '#core/io/formats/raster'
 import {
   createStrokeCoverage,
   dabSpacing,
@@ -34,6 +38,7 @@ import {
   paintedLayerChanges,
   type PixelSurface
 } from './layer'
+import { renderLayerGrid } from './sample'
 import { createPixelSelectionActions, type PixelSession } from './select'
 import { DEFAULT_PIXEL_TOOL_SETTINGS, type PixelOverlay, type PixelToolSettings } from './types'
 
@@ -113,6 +118,22 @@ export function createPixelActions(
   function codec(): RasterCodec | null {
     const ck = ctx.getCk()
     return ck ? createCanvasKitRasterCodec(ck) : null
+  }
+
+  /**
+   * What the layer shows on its pixel grid, as the canvas draws it (gradients, adjustments,
+   * effects), from the layer alone or from every layer on the page, as the tools' sample setting
+   * says. Without a renderer, its solid and image fills with the paint over them.
+   */
+  function shownPixels(node: SceneNode, surface: PixelSurface): RGBAImage {
+    const ck = ctx.getCk()
+    const scope = ctx.state.pixelTools.sampleScope
+    for (const renderer of ck ? ctx.getRenderers() : []) {
+      const rendered = ck && renderLayerGrid(ck, renderer, ctx.graph, node, surface, scope)
+      if (rendered) return rendered
+      break
+    }
+    return compositeOver(surface.base, surface.paint)
   }
 
   function overlay(): PixelOverlay {
@@ -256,7 +277,7 @@ export function createPixelActions(
     })
     if (!from || !to) return null
     return {
-      source: compositeOver(surface.base, surface.paint),
+      source: shownPixels(node, surface),
       offset: { x: to.x - from.x, y: to.y - from.y }
     }
   }
@@ -348,8 +369,7 @@ export function createPixelActions(
     const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!surface || !at) return false
     const { tolerance, contiguous, color, opacity } = ctx.state.pixelTools
-    const shown = compositeOver(surface.base, surface.paint)
-    let region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
+    let region = selectSimilar(shownPixels(node, surface), at.x, at.y, tolerance, contiguous)
     const mask = selectionMask(node, surface)
     if (mask) region = combineMasks(mask, region, 'intersect')
     if (fillRegion(surface.paint, region, color, opacity) === 0) return false
@@ -367,7 +387,7 @@ export function createPixelActions(
     const surface = loadPixelSurface(ctx.graph, raster, node)
     const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!surface || !at) return null
-    const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
+    const color = pixelColor(shownPixels(node, surface), at.x, at.y)
     if (!color || color.a === 0) return null
     const opaque = { ...color, a: 1 }
     setPixelTools({ color: opaque })
@@ -410,6 +430,7 @@ export function createPixelActions(
     session,
     codec,
     targetAt: pixelTargetAt,
+    shownPixels,
     overlay
   })
 
@@ -430,3 +451,4 @@ export function createPixelActions(
 
 export { DEFAULT_PIXEL_TOOL_SETTINGS }
 export type { PixelOverlay, PixelToolSettings }
+export type { PixelSampleScope } from './sample'
