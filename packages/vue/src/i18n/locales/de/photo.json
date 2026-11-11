@@ -37,5 +37,7 @@
   "maskFromSelection": "Maske aus Auswahl",
   "invertMask": "Maske umkehren",
   "feather": "Weiche Kante",
-  "cloneSourceHint": "Alt-Klick legt die Quelle fest"
+  "cloneSourceHint": "Alt-Klick legt die Quelle fest",
+  "sampleAllLayers": "Alle Ebenen aufnehmen",
+  "smoothResize": "Beim Skalieren glätten"
 }

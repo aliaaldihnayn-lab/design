@@ -1,10 +1,31 @@
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { isEqual } from 'es-toolkit'
+
+import type { SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 
-/** One frame's share of a story: its text, and the white space dropped before it. */
+/** One frame's share of a story: its text, the white space dropped before it, and where it starts. */
 export interface FlowedFrame {
   text: string
   lead: string
+  /** Where the frame's text starts in the story. */
+  start: number
+}
+
+/** A story's whole text with its character styles, as runs over the story's characters. */
+export interface Story {
+  text: string
+  runs: StyleRun[]
+}
+
+/** The parts of `runs` that fall in `[start, end)`, moved to start at 0. */
+export function sliceRuns(runs: readonly StyleRun[], start: number, end: number): StyleRun[] {
+  const out: StyleRun[] = []
+  for (const run of runs) {
+    const from = Math.max(start, run.start)
+    const to = Math.min(end, run.start + run.length)
+    if (to > from) out.push({ start: from - start, length: to - from, style: run.style })
+  }
+  return out
 }
 
 /** The places a story may break into the next frame: after each run of white space. */
@@ -51,23 +72,26 @@ function fittingEnd(text: string, fits: (shown: string) => boolean): number {
 export function flowText(
   story: string,
   count: number,
-  fits: (frame: number, text: string) => boolean
+  fits: (frame: number, text: string, start: number) => boolean
 ): FlowedFrame[] {
   const frames: FlowedFrame[] = []
   let rest = story
   let lead = ''
+  let start = 0
   for (let frame = 0; frame < count; frame++) {
     if (frame === count - 1) {
-      frames.push({ text: rest, lead })
+      frames.push({ text: rest, lead, start })
       break
     }
-    const end = fittingEnd(rest, (text) => fits(frame, text))
+    const at = start
+    const end = fittingEnd(rest, (text) => fits(frame, text, at))
     const text = rest.slice(0, end).trimEnd()
     const after = rest.slice(text.length)
     const space = /^\s*/.exec(after)?.[0] ?? ''
-    frames.push({ text, lead })
+    frames.push({ text, lead, start })
     lead = space
     rest = after.slice(space.length)
+    start += text.length + space.length
   }
   return frames
 }
@@ -89,35 +113,55 @@ export function threadOf(node: SceneNode) {
     : undefined
 }
 
-/** The story's whole text, read back from its frames. */
-export function composeStory(frames: readonly SceneNode[]): string {
-  return frames
-    .map((frame, index) => (index > 0 ? (threadOf(frame)?.lead ?? '') : '') + frame.text)
-    .join('')
+/**
+ * The story's whole text, read back from its frames, with each frame's character styles moved to
+ * where its text sits in the story. The white space between frames takes no style of its own.
+ */
+export function composeStory(frames: readonly SceneNode[]): Story {
+  let text = ''
+  const runs: StyleRun[] = []
+  frames.forEach((frame, index) => {
+    if (index > 0) text += threadOf(frame)?.lead ?? ''
+    const offset = text.length
+    for (const run of sliceRuns(frame.styleRuns, 0, frame.text.length)) {
+      runs.push({ ...run, start: run.start + offset })
+    }
+    text += frame.text
+  })
+  return { text, runs }
 }
 
+/** Whether a frame can hold `text` styled by `runs`, as a story's frames are measured. */
+export type FrameFits = (frame: SceneNode, text: string, runs: StyleRun[]) => boolean
+
 /**
- * Pours the story through its frames again, writing only frames whose text or lead changed.
- * Threaded frames take their first frame's style for all their text. Returns the frames written.
+ * Pours the story through its frames again, writing only frames whose text, styles, or lead
+ * changed. Character styles travel with their characters from frame to frame, over each frame's
+ * own base style, so bold, italic, colour, and size changes survive the flow. Returns the
+ * frames written.
  */
-export function reflowThread(
-  graph: SceneGraph,
-  story: string,
-  fits: (frame: SceneNode, text: string) => boolean
-): string[] {
+export function reflowThread(graph: SceneGraph, story: string, fits: FrameFits): string[] {
   const frames = threadFrames(graph, story)
   if (frames.length === 0) return []
-  const flowed = flowText(composeStory(frames), frames.length, (index, text) =>
-    fits(frames[index], text)
+  const whole = composeStory(frames)
+  const flowed = flowText(whole.text, frames.length, (index, text, start) =>
+    fits(frames[index], text, sliceRuns(whole.runs, start, start + text.length))
   )
   const written: string[] = []
   frames.forEach((frame, order) => {
-    const { text, lead } = flowed[order]
+    const { text, lead, start } = flowed[order]
+    const runs = sliceRuns(whole.runs, start, start + text.length)
     const thread = threadOf(frame)
-    if (frame.text === text && thread?.lead === lead && thread.order === order) return
+    if (
+      frame.text === text &&
+      isEqual(sliceRuns(frame.styleRuns, 0, frame.text.length), runs) &&
+      thread?.lead === lead &&
+      thread.order === order
+    )
+      return
     graph.updateNode(frame.id, {
       text,
-      styleRuns: [],
+      styleRuns: runs,
       pluginData: withPluginData(frame.pluginData, LAWHA_PLUGIN_DATA.textThread, {
         story,
         order,
@@ -190,7 +234,8 @@ export function unlinkTextFrame(graph: SceneGraph, frame: SceneNode): void {
   remaining.forEach((node, order) => {
     const current = graph.getNode(node.id) ?? node
     const single = remaining.length === 1
-    const content: Partial<SceneNode> = order === 0 ? { text: story, styleRuns: [] } : { text: '' }
+    const content: Partial<SceneNode> =
+      order === 0 ? { text: story.text, styleRuns: story.runs } : { text: '', styleRuns: [] }
     graph.updateNode(node.id, {
       ...content,
       pluginData: withPluginData(
@@ -200,4 +245,34 @@ export function unlinkTextFrame(graph: SceneGraph, frame: SceneNode): void {
       )
     })
   })
+}
+
+/**
+ * Before the layers `rootIds` are deleted, takes every threaded frame among them or inside them
+ * out of its story, giving its text back to the story's frames that stay, so deleting a frame
+ * reflows its text into the rest instead of losing it, as in Affinity Publisher. A story whose
+ * frames all go keeps nothing. Returns the frames that stay and now hold their story's text.
+ */
+export function releaseDeletedFrames(graph: SceneGraph, rootIds: Iterable<string>): string[] {
+  const going = new Set<string>()
+  const stack = [...rootIds]
+  while (stack.length > 0) {
+    const id = stack.pop()
+    const node = id === undefined ? undefined : graph.getNode(id)
+    if (!node) continue
+    going.add(node.id)
+    stack.push(...node.childIds)
+  }
+  const heads = new Set<string>()
+  for (const id of going) {
+    const node = graph.getNode(id)
+    const thread = node && threadOf(node)
+    if (!node || !thread) continue
+    const frames = threadFrames(graph, thread.story)
+    if (frames.every((frame) => going.has(frame.id))) continue
+    unlinkTextFrame(graph, node)
+    const head = frames.find((frame) => !going.has(frame.id))
+    if (head) heads.add(head.id)
+  }
+  return [...heads].filter((id) => graph.getNode(id) && !going.has(id))
 }

@@ -37,5 +37,7 @@
   "maskFromSelection": "Maska z zaznaczenia",
   "invertMask": "Odwróć maskę",
   "feather": "Wtapianie",
-  "cloneSourceHint": "Alt+klik ustawia źródło"
+  "cloneSourceHint": "Alt+klik ustawia źródło",
+  "sampleAllLayers": "Próbkuj wszystkie warstwy",
+  "smoothResize": "Wygładzaj przy zmianie rozmiaru"
 }

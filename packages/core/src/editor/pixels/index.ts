@@ -1,11 +1,17 @@
 import type { SceneNode } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 import type { Color, Vector } from '@lawha/scene-graph/primitives'
 import { randomHex } from '@lawha/scene-graph/random'
 
+import { recordEdit } from '#core/editor/history/edit'
 import type { NodePreview } from '#core/editor/node-preview'
 import type { EditorContext, Tool } from '#core/editor/types'
 import { storeImage } from '#core/figma-api/images'
-import { createCanvasKitRasterCodec, type RasterCodec } from '#core/io/formats/raster'
+import {
+  createCanvasKitRasterCodec,
+  type RasterCodec,
+  type RGBAImage
+} from '#core/io/formats/raster'
 import {
   createStrokeCoverage,
   dabSpacing,
@@ -15,9 +21,15 @@ import {
   type BrushTip,
   type StrokeCoverage
 } from '#core/pixels/brush'
-import { cloneDab, healDab, type CloneSampling } from '#core/pixels/clone'
-import { compositeOver } from '#core/pixels/composite'
+import { cloneDab, type CloneSampling } from '#core/pixels/clone'
+import { compositeOver, type PaintResample } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
+import {
+  createHealingStroke,
+  finishHealingStroke,
+  healDab,
+  type HealingStroke
+} from '#core/pixels/heal'
 import { combineMasks, type PixelMask } from '#core/pixels/mask'
 
 import {
@@ -25,9 +37,12 @@ import {
   gridScale,
   isPaintable,
   loadPixelSurface,
+  paintFillIndex,
+  paintGrid,
   paintedLayerChanges,
   type PixelSurface
 } from './layer'
+import { renderLayerGrid } from './sample'
 import { createPixelSelectionActions, type PixelSession } from './select'
 import { DEFAULT_PIXEL_TOOL_SETTINGS, type PixelOverlay, type PixelToolSettings } from './types'
 
@@ -73,6 +88,8 @@ interface StrokeSession {
   original: Pick<SceneNode, 'fills' | 'pluginData'>
   /** What the clone stamp and healing brush copy, and from how far away. */
   sampling: CloneSampling | null
+  /** The healing brush's solved region, which settles into one patch as the stroke ends. */
+  healing: HealingStroke | null
 }
 
 const STROKE_LABELS: Record<PixelStrokeTool, string> = {
@@ -98,13 +115,27 @@ export function createPixelActions(
   let stroke: StrokeSession | null = null
   /** The pixel selection the tools keep to, on one layer's grid. */
   const session: PixelSession = { selection: null }
-  /** The grid scale of the layer painted last, so the brush cursor matches its pixels. */
-  let lastScale: { nodeId: string; scale: number } | null = null
   let cloneSource: CloneSource | null = null
 
   function codec(): RasterCodec | null {
     const ck = ctx.getCk()
     return ck ? createCanvasKitRasterCodec(ck) : null
+  }
+
+  /**
+   * What the layer shows on its pixel grid, as the canvas draws it (gradients, adjustments,
+   * effects), from the layer alone or from every layer on the page, as the tools' sample setting
+   * says. Without a renderer, its solid and image fills with the paint over them.
+   */
+  function shownPixels(node: SceneNode, surface: PixelSurface): RGBAImage {
+    const ck = ctx.getCk()
+    const scope = ctx.state.pixelTools.sampleScope
+    for (const renderer of ck ? ctx.getRenderers() : []) {
+      const rendered = ck && renderLayerGrid(ck, renderer, ctx.graph, node, surface, scope)
+      if (rendered) return rendered
+      break
+    }
+    return compositeOver(surface.base, surface.paint)
   }
 
   function overlay(): PixelOverlay {
@@ -157,8 +188,8 @@ export function createPixelActions(
     if (session.tool === 'ERASER') eraseDab(surface.paint, before, coverage, at, tip, mask)
     else if (sampling && session.tool === 'CLONE_STAMP')
       cloneDab(surface.paint, before, coverage, at, tip, sampling, mask)
-    else if (sampling && session.tool === 'HEALING_BRUSH')
-      healDab(surface.paint, before, coverage, at, tip, sampling, mask)
+    else if (session.healing)
+      healDab(surface.paint, before, coverage, at, tip, session.healing, mask)
     else paintDab(surface.paint, before, coverage, at, tip, session.color, mask)
     session.changed = true
   }
@@ -181,7 +212,7 @@ export function createPixelActions(
     const preview = beginNodePreview(STROKE_LABELS[tool])
     try {
       preview.update(node.id, {
-        fills: paintedLayerChanges(original, surface.paintIndex, liveHash).fills
+        fills: paintedLayerChanges(original, surface, liveHash).fills
       })
     } catch {
       preview.cancel()
@@ -202,10 +233,10 @@ export function createPixelActions(
       preview,
       liveHash,
       original,
-      sampling
+      sampling,
+      healing: sampling && tool === 'HEALING_BRUSH' ? createHealingStroke(sampling) : null
     }
     stroke = session
-    lastScale = { nodeId: node.id, scale: gridScale(node, surface) }
     dab(session, at)
     showLive(session, surface.paint)
     return true
@@ -247,7 +278,7 @@ export function createPixelActions(
     })
     if (!from || !to) return null
     return {
-      source: compositeOver(surface.base, surface.paint),
+      source: shownPixels(node, surface),
       offset: { x: to.x - from.x, y: to.y - from.y }
     }
   }
@@ -288,6 +319,10 @@ export function createPixelActions(
   function pixelStrokeEnd(): boolean {
     const session = stroke
     if (!session) return false
+    if (session.healing && session.changed) {
+      const { surface, before, coverage, healing } = session
+      finishHealingStroke(surface.paint, before, coverage, healing)
+    }
     const png = session.changed ? codec()?.encodePNG(session.surface.paint) : null
     if (!png) {
       pixelStrokeCancel()
@@ -297,7 +332,7 @@ export function createPixelActions(
     try {
       session.preview.update(
         session.nodeId,
-        paintedLayerChanges(session.original, session.surface.paintIndex, hash)
+        paintedLayerChanges(session.original, session.surface, hash)
       )
       session.preview.commit()
     } finally {
@@ -313,7 +348,7 @@ export function createPixelActions(
     const hash = storeImage(ctx.graph, png)
     const preview = beginNodePreview(label)
     try {
-      preview.update(node.id, paintedLayerChanges(node, surface.paintIndex, hash))
+      preview.update(node.id, paintedLayerChanges(node, surface, hash))
       preview.commit()
     } catch {
       preview.cancel()
@@ -335,8 +370,7 @@ export function createPixelActions(
     const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!surface || !at) return false
     const { tolerance, contiguous, color, opacity } = ctx.state.pixelTools
-    const shown = compositeOver(surface.base, surface.paint)
-    let region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
+    let region = selectSimilar(shownPixels(node, surface), at.x, at.y, tolerance, contiguous)
     const mask = selectionMask(node, surface)
     if (mask) region = combineMasks(mask, region, 'intersect')
     if (fillRegion(surface.paint, region, color, opacity) === 0) return false
@@ -354,25 +388,72 @@ export function createPixelActions(
     const surface = loadPixelSurface(ctx.graph, raster, node)
     const at = surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!surface || !at) return null
-    const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
+    const color = pixelColor(shownPixels(node, surface), at.x, at.y)
     if (!color || color.a === 0) return null
     const opaque = { ...color, a: 1 }
     setPixelTools({ color: opaque })
     return opaque
   }
 
-  /** Shows the brush's outline under the pointer while a brush tool is active. */
+  /**
+   * The layer a brush would paint on at a canvas point, without selecting it: the one a stroke
+   * there would pick.
+   */
+  function hoverTarget(cx: number, cy: number): SceneNode | null {
+    const graph = ctx.graph
+    const selected = session.selection?.nodeId ?? [...ctx.state.selectedIds].at(0)
+    const node = selected && ctx.state.selectedIds.size <= 1 ? graph.getNode(selected) : undefined
+    if (isPaintable(node)) return node
+    const hit = graph.hitTestDeep(cx, cy, ctx.state.currentPageId, 0)
+    return hit && isPaintable(hit) ? hit : null
+  }
+
+  /**
+   * Shows the brush's outline under the pointer while a brush tool is active, sized to the
+   * pixels of the layer it would paint on, whether or not anything was painted there yet.
+   */
   function pixelHover(cx: number, cy: number) {
     if (!BRUSH_CURSOR_TOOLS.has(ctx.state.activeTool)) {
       if (ctx.state.pixelOverlay?.brush) overlay().brush = null
       return
     }
-    const [selected] = ctx.state.selectedIds
-    const scale = lastScale?.nodeId === selected ? lastScale.scale : 1
+    const target = hoverTarget(cx, cy)
+    const raster = target && codec()
+    const grid = target && raster ? paintGrid(ctx.graph, raster, target) : null
+    const scale = target && grid ? gridScale(target, grid) : 1
     overlay().brush = { x: cx, y: cy, radius: ctx.state.pixelTools.size / 2 / scale }
     if (ctx.state.activeTool === 'CLONE_STAMP' || ctx.state.activeTool === 'HEALING_BRUSH')
       showCloneSource(cx, cy)
     ctx.requestRepaint()
+  }
+
+  /** How the selected layer's paint follows it when resized, or null when it has none. */
+  function pixelPaintResample(): PaintResample | null {
+    const [id] = ctx.state.selectedIds
+    const node = id ? ctx.graph.getNode(id) : undefined
+    if (!node || paintFillIndex(node) < 0) return null
+    return readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)?.resample ?? 'nearest'
+  }
+
+  /**
+   * Sets how the selected layer's paint follows it to a new size: pixel for pixel (`nearest`),
+   * so painted pixels grow into crisp blocks, or resampled smoothly. One undo step.
+   */
+  function setPixelPaintResample(resample: PaintResample): boolean {
+    const [id] = ctx.state.selectedIds
+    const node = id ? ctx.graph.getNode(id) : undefined
+    const marker = node && readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)
+    if (!node || !marker || paintFillIndex(node) < 0 || marker.resample === resample) return false
+    recordEdit(ctx, { label: 'Paint resampling' }, () => {
+      ctx.graph.updateNode(node.id, {
+        pluginData: withPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer, {
+          ...marker,
+          resample
+        })
+      })
+    })
+    ctx.requestRender()
+    return true
   }
 
   function pixelHoverEnd() {
@@ -397,6 +478,7 @@ export function createPixelActions(
     session,
     codec,
     targetAt: pixelTargetAt,
+    shownPixels,
     overlay
   })
 
@@ -411,7 +493,9 @@ export function createPixelActions(
     pixelSetCloneSource,
     pixelPickColorAt,
     pixelHover,
-    pixelHoverEnd
+    pixelHoverEnd,
+    pixelPaintResample,
+    setPixelPaintResample
   }
 }
 

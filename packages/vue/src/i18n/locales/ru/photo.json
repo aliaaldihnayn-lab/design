@@ -37,5 +37,7 @@
   "maskFromSelection": "Маска из выделения",
   "invertMask": "Инвертировать маску",
   "feather": "Растушёвка",
-  "cloneSourceHint": "Alt-щелчок задаёт источник"
+  "cloneSourceHint": "Alt-щелчок задаёт источник",
+  "sampleAllLayers": "Образец со всех слоёв",
+  "smoothResize": "Сглаживать при изменении размера"
 }

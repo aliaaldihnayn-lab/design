@@ -85,3 +85,32 @@ export function isTransparent(image: RGBAImage): boolean {
   for (let o = 3; o < image.data.length; o += 4) if (image.data[o] !== 0) return false
   return true
 }
+
+/** How a paint layer's pixels follow its layer to a new size. */
+export type PaintResample = 'nearest' | 'smooth'
+
+/**
+ * `source` resampled to `width` × `height`. `nearest` copies whole pixels when enlarging, so a
+ * painted pixel becomes a crisp block rather than a blur, and averages when shrinking; `smooth`
+ * interpolates bilinearly both ways.
+ */
+export function resampleImage(
+  source: RGBAImage,
+  width: number,
+  height: number,
+  mode: PaintResample
+): RGBAImage {
+  if (source.width === width && source.height === height) return cloneImage(source)
+  const enlarging = width >= source.width && height >= source.height
+  if (mode === 'smooth' || !enlarging) return placeImage(source, width, height, 'STRETCH')
+  const out = blankImage(width, height)
+  for (let y = 0; y < height; y++) {
+    const sy = Math.min(source.height - 1, Math.floor(((y + 0.5) * source.height) / height))
+    for (let x = 0; x < width; x++) {
+      const sx = Math.min(source.width - 1, Math.floor(((x + 0.5) * source.width) / width))
+      const from = (sy * source.width + sx) * 4
+      out.data.set(source.data.subarray(from, from + 4), (y * width + x) * 4)
+    }
+  }
+  return out
+}

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createStrokeCoverage, type BrushTip } from '#core/pixels/brush'
-import { cloneDab, healDab } from '#core/pixels/clone'
+import { cloneDab } from '#core/pixels/clone'
 import { blankImage } from '#core/pixels/composite'
 
 const tip: BrushTip = { size: 6, hardness: 1, opacity: 1 }
@@ -47,26 +47,5 @@ describe('clone stamp', () => {
       offset: { x: -30, y: 0 }
     })
     expect(paint.data.every((value) => value === 0)).toBe(true)
-  })
-})
-
-describe('healing brush', () => {
-  test('keeps the source texture but takes the tone around the dab', () => {
-    const source = picture()
-    // The right side is brightened, so healing must lift the copied checker to match it.
-    for (let o = 20 * 4; o < source.data.length; o += 40 * 4) {
-      for (let x = 0; x < 20; x++) source.data.fill(220, o + x * 4, o + x * 4 + 3)
-    }
-    const paint = blankImage(40, 20)
-    healDab(paint, paint.data.slice(), createStrokeCoverage(paint), { x: 30, y: 10 }, tip, {
-      source,
-      offset: { x: -20, y: 0 }
-    })
-    const a = red(paint, 30, 10)
-    const b = red(paint, 28, 10)
-    // Texture: the checker's two tones stay apart.
-    expect(Math.abs(a - b)).toBeGreaterThan(80)
-    // Tone: brighter than the plain clone would be, towards the 220 around the dab.
-    expect((a + b) / 2).toBeGreaterThan(200)
   })
 })

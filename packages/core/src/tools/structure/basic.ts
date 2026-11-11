@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { canvasOf, reflowStories } from '#core/publisher'
 import {
   toolNumber,
   nodeIdInputSchema,
@@ -12,7 +13,8 @@ import {
 export const deleteNode = defineTool({
   name: 'delete_node',
 
-  description: 'Delete a node by ID.',
+  description:
+    'Delete a node by ID. A threaded text frame (or a layer holding one) gives its text back to the frames left in its story, which flow it on.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.pipe(v.string(), v.description('Node ID to delete'))
@@ -20,7 +22,10 @@ export const deleteNode = defineTool({
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
+    const raw = figma.graph.getNode(id)
+    const canvas = raw ? canvasOf(figma.graph, raw) : undefined
     node.remove()
+    if (canvas) reflowStories(figma.graph, canvas.id)
     return { deleted: id }
   }
 })

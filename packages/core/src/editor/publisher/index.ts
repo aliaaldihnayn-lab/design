@@ -22,6 +22,8 @@ import {
   unlinkTextFrame as unlinkFrame
 } from '#core/publisher'
 
+import { createPublicationPageActions } from './pages'
+
 /** An A4 page at 96 pixels to the inch, for a master made with no page selected. */
 const A4 = { width: 794, height: 1123 }
 /** How far above the page's bottom edge a page number sits, as a share of the page's height. */
@@ -31,6 +33,7 @@ const PAGE_NUMBER_FONT_SIZE = 12
 /** Fields a write to which can move text between threaded frames. */
 const REFLOW_FIELDS = new Set<string>([
   'text',
+  'styleRuns',
   'width',
   'height',
   'fontSize',
@@ -255,11 +258,15 @@ export function createPublisherActions(ctx: EditorContext) {
       master: nodes.length === 1 && isMasterPage(nodes[0]),
       texts: nodes.every((node) => node.type === 'TEXT') ? nodes.length : 0,
       threaded: nodes.filter((node) => threadOf(node)).length,
+      frame: nodes.length === 1 && nodes[0].type === 'FRAME',
       masters: listMasterPages()
     }
   }
 
+  const pageActions = createPublicationPageActions(ctx, edit)
+
   return {
+    ...pageActions,
     publicationSelection,
     refreshPublication,
     createMasterPage,

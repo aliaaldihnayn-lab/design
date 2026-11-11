@@ -6,7 +6,14 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 import { TRANSPARENT } from '#core/constants'
 import { createSceneGeometry } from '#core/geometry'
 import type { RasterCodec, RGBAImage } from '#core/io/formats/raster'
-import { blankImage, compositeOver, placeImage, type ImagePlacement } from '#core/pixels/composite'
+import {
+  blankImage,
+  compositeOver,
+  placeImage,
+  resampleImage,
+  type ImagePlacement,
+  type PaintResample
+} from '#core/pixels/composite'
 
 /** Layers the pixel tools paint on: shapes and frames, whose fills can hold a paint layer. */
 const PAINTABLE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
@@ -30,7 +37,7 @@ export function isPaintable(node: SceneNode | undefined): node is SceneNode {
 
 /** The index of the fill holding the layer's paint, or -1 when nothing was painted on it yet. */
 export function paintFillIndex(node: SceneNode): number {
-  const marker = readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)
+  const marker = paintMarker(node)
   if (!marker) return -1
   return node.fills.findIndex((fill) => fill.type === 'IMAGE' && fill.imageHash === marker.hash)
 }
@@ -47,7 +54,14 @@ export interface PixelSurface {
   paint: RGBAImage
   /** The fill the paint goes back into; -1 adds one on top. */
   paintIndex: number
+  /** Grid pixels to one unit of the layer, which the paint keeps when the layer is resized. */
+  density: number
+  /** How the paint follows the layer to a new size. */
+  resample: PaintResample
 }
+
+/** What a paint layer's marker says about the grid it was painted on. */
+export type PaintGridSettings = Pick<PixelSurface, 'paintIndex' | 'density' | 'resample'>
 
 function placementOf(fill: Fill): ImagePlacement {
   if (fill.imageScaleMode === 'FIT') return 'FIT'
@@ -55,11 +69,15 @@ function placementOf(fill: Fill): ImagePlacement {
   return 'FILL'
 }
 
-/** The grid a new paint layer gets: as fine as the photo under it, within the limits. */
-function gridSize(node: SceneNode, photo: RGBAImage | null) {
-  const density = photo
+/** How fine a new paint layer is: as fine as the photo under it, within the limits. */
+function photoDensity(node: SceneNode, photo: { width: number; height: number } | null) {
+  return photo
     ? Math.min(PAINT_MAX_DENSITY, Math.max(1, photo.width / node.width, photo.height / node.height))
     : 1
+}
+
+/** The grid a layer gets at `density` pixels to its unit, within the longest-edge limit. */
+function gridAt(node: SceneNode, density: number) {
   let width = Math.max(1, Math.round(node.width * density))
   let height = Math.max(1, Math.round(node.height * density))
   const over = Math.max(width, height) / PAINT_MAX_EDGE
@@ -118,40 +136,99 @@ function composeFills(
   return base
 }
 
+/** The paint layer's marker, if the layer has been painted on. */
+function paintMarker(node: SceneNode) {
+  return readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)
+}
+
+/** The width and height of an image the graph holds, read from its PNG header when it has one. */
+function storedImageSize(
+  graph: SceneGraph,
+  codec: RasterCodec,
+  hash: string
+): { width: number; height: number } | null {
+  const bytes = graph.images.get(hash)
+  if (!bytes) return null
+  const cached = imageSizes.get(bytes)
+  if (cached) return cached
+  const isPNG = bytes.length > 24 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[12] === 0x49
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const decoded = isPNG ? null : codec.decode(bytes)
+  const size = isPNG
+    ? { width: view.getUint32(16), height: view.getUint32(20) }
+    : decoded && { width: decoded.width, height: decoded.height }
+  if (size) imageSizes.set(bytes, size)
+  return size
+}
+
+/** Image sizes by their bytes, so the brush cursor can size itself on every pointer move. */
+const imageSizes = new WeakMap<Uint8Array, { width: number; height: number }>()
+
+/**
+ * The pixel grid the tools work on for a layer: the grid it was painted on, carried to its
+ * current size at the same density when it has been resized since, or for a layer not painted
+ * yet, the grid a first stroke would make, as fine as the photo under it.
+ */
+export function paintGrid(
+  graph: SceneGraph,
+  codec: RasterCodec,
+  node: SceneNode
+): { width: number; height: number; density: number } | null {
+  if (!isPaintable(node)) return null
+  const marker = paintMarker(node)
+  const index = paintFillIndex(node)
+  const painted = index >= 0 && marker ? storedImageSize(graph, codec, marker.hash) : null
+  if (marker?.density) return { ...gridAt(node, marker.density), density: marker.density }
+  // Painted before densities were kept: the grid stays the image's own.
+  if (painted) return { ...painted, density: painted.width / node.width }
+  const under = index >= 0 ? node.fills.slice(0, index) : node.fills
+  const photo = under.findLast((fill) => fill.type === 'IMAGE' && fill.visible && fill.imageHash)
+  const size = photo?.imageHash ? storedImageSize(graph, codec, photo.imageHash) : null
+  const density = photoDensity(node, size)
+  return { ...gridAt(node, density), density }
+}
+
 /**
  * Reads the layer's pixels for painting. Solid and image fills under the paint layer make the
- * base the fill bucket, magic wand, and colour picker read; gradients and other paints are left
- * out of it.
+ * base the tools fall back to without a renderer; gradients and other paints are left out of it.
+ * A paint layer whose layer was resized since is resampled to the layer's new size at the density
+ * it was painted at, as its marker's resample mode says, so painting stays at the same resolution.
  */
 export function loadPixelSurface(
   graph: SceneGraph,
   codec: RasterCodec,
   node: SceneNode
 ): PixelSurface | null {
-  if (!isPaintable(node)) return null
+  const grid = paintGrid(graph, codec, node)
+  if (!grid) return null
+  const marker = paintMarker(node)
   const paintIndex = paintFillIndex(node)
   const paintHash = paintIndex >= 0 ? node.fills[paintIndex].imageHash : undefined
   const paintBytes = paintHash ? graph.images.get(paintHash) : undefined
   const painted = paintBytes ? codec.decode(paintBytes) : null
   const under = paintIndex >= 0 ? node.fills.slice(0, paintIndex) : node.fills
   const decoded = decodeImageFills(graph, codec, under)
-  const { width, height } = painted ?? gridSize(node, [...decoded.values()].at(-1) ?? null)
+  const { width, height } = grid
+  const resample = marker?.resample ?? 'nearest'
   return {
     nodeId: node.id,
     width,
     height,
     base: composeFills(under, decoded, width, height),
-    paint: painted ?? blankImage(width, height),
-    paintIndex
+    paint: painted ? resampleImage(painted, width, height, resample) : blankImage(width, height),
+    paintIndex,
+    density: width / node.width,
+    resample
   }
 }
 
 /** The layer's fills and plugin data with the paint layer's image set to `hash`. */
 export function paintedLayerChanges(
   node: Pick<SceneNode, 'fills' | 'pluginData'>,
-  paintIndex: number,
+  surface: PaintGridSettings,
   hash: string
 ): Pick<SceneNode, 'fills' | 'pluginData'> {
+  const { paintIndex, density, resample } = surface
   const paint: Fill = {
     type: 'IMAGE',
     imageHash: hash,
@@ -170,7 +247,11 @@ export function paintedLayerChanges(
       : [...node.fills, paint]
   return {
     fills,
-    pluginData: withPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer, { hash })
+    pluginData: withPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer, {
+      hash,
+      density,
+      resample
+    })
   }
 }
 

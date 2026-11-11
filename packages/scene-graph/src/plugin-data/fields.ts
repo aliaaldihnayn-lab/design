@@ -181,11 +181,30 @@ const imageAdjustmentsSchema = v.record(
   })
 )
 
-const paintLayerSchema = v.object({ hash: v.pipe(v.string(), v.minLength(1)) })
+const paintLayerSchema = v.object({
+  hash: v.pipe(v.string(), v.minLength(1)),
+  /** Paint pixels to one unit of the layer, which a resized layer's paint keeps. */
+  density: v.optional(v.pipe(v.number(), v.gtValue(0), v.maxValue(64))),
+  /** How the paint is resampled when the layer is resized: pixel for pixel, or smoothly. */
+  resample: v.optional(v.picklist(['nearest', 'smooth']))
+})
 
 const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
 
 const pageNumberSchema = v.object({ template: v.pipe(v.string(), v.maxLength(200)) })
+
+const pagePlacementSchema = v.object({ x: v.number(), y: v.number() })
+
+const publicationSchema = v.object({
+  /** The number the first page shows. */
+  numberStart: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100_000))),
+  /** The digits page numbers are written in. */
+  numberFormat: v.optional(v.picklist(['western', 'arabic-indic', 'roman', 'roman-upper'])),
+  /** Which way the pages read: right to left for Arabic and Hebrew books. */
+  direction: v.optional(v.picklist(['ltr', 'rtl'])),
+  /** Whether pages face each other in spreads, the first page on its own. */
+  spreads: v.optional(v.boolean())
+})
 
 const textThreadSchema = v.object({
   story: v.pipe(v.string(), v.minLength(1)),
@@ -225,6 +244,16 @@ export const LAWHA_PLUGIN_DATA = {
    * bottom of the page frame), as Affinity Publisher's master pages.
    */
   masterPage: jsonPluginDataField('masterPage', 'content', masterPageSchema),
+  /**
+   * A canvas page laid out as a publication: where page numbers start and how they are written,
+   * which way the pages read, and whether they face each other in spreads.
+   */
+  publication: jsonPluginDataField('publication', 'content', publicationSchema),
+  /**
+   * Where the Pages panel last laid a page out; a page moved away from it by hand keeps its own
+   * place when the panel lays the pages out again.
+   */
+  pagePlacement: jsonPluginDataField('pagePlacement', 'content', pagePlacementSchema),
   /** A text that shows its page's number: `{page}` and `{pages}` in the template are filled in. */
   pageNumber: jsonPluginDataField('pageNumber', 'content', pageNumberSchema),
   /**

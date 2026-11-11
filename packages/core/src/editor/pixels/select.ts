@@ -1,5 +1,6 @@
 import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { IDENTITY_GRADIENT_TRANSFORM } from '@lawha/scene-graph/gradient'
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { TRANSPARENT } from '#core/constants'
@@ -7,8 +8,8 @@ import { recordEdit } from '#core/editor/history/edit'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 import { storeImage } from '#core/figma-api/images'
-import type { RasterCodec } from '#core/io/formats/raster'
-import { blankImage, compositeOver } from '#core/pixels/composite'
+import type { RasterCodec, RGBAImage } from '#core/io/formats/raster'
+import { blankImage } from '#core/pixels/composite'
 import { selectSimilar } from '#core/pixels/fill'
 import {
   combineMasks,
@@ -19,11 +20,13 @@ import {
   maskBounds,
   maskOutline,
   rectMask,
+  transformedShapeMask,
   type PixelMask,
   type SelectionMode
 } from '#core/pixels/mask'
 
 import { canvasToGrid, loadPixelSurface, type PixelSurface } from './layer'
+import { canvasToGridMatrix } from './sample'
 import type { PixelMarquee } from './types'
 
 /** What the pixel tools share across actions. */
@@ -37,6 +40,8 @@ export interface PixelSelectionDeps {
   session: PixelSession
   codec: () => RasterCodec | null
   targetAt: (cx: number, cy: number) => SceneNode | null
+  /** What the layer shows on its pixel grid, as the magic wand samples it. */
+  shownPixels: (node: SceneNode, surface: PixelSurface) => RGBAImage
   overlay: () => NonNullable<EditorContext['state']['pixelOverlay']>
 }
 
@@ -103,6 +108,44 @@ export function maskImage(mask: PixelMask) {
   const image = blankImage(mask.width, mask.height)
   for (let i = 0; i < mask.data.length; i++) image.data.set([255, 255, 255, mask.data[i]], i * 4)
   return image
+}
+
+/** Whether a matrix only scales and moves, keeping a canvas rectangle a grid rectangle. */
+function isAxisAligned(matrix: Mat3): boolean {
+  return Math.abs(matrix[1]) < 1e-9 && Math.abs(matrix[3]) < 1e-9
+}
+
+/**
+ * The selection a marquee dragged on the canvas makes on a layer's grid. A rotated or skewed
+ * layer takes the marquee through its full transform, so the selection is the marquee's exact
+ * shape over the layer, turned as the layer is, not the box between two mapped corners.
+ */
+export function marqueeMask(
+  kind: PixelMarquee['kind'],
+  marquee: Pick<PixelMarquee, 'from' | 'to'>,
+  grid: { width: number; height: number },
+  toGrid: Mat3
+): PixelMask {
+  const { from, to } = marquee
+  const rect = {
+    x: Math.min(from.x, to.x),
+    y: Math.min(from.y, to.y),
+    width: Math.abs(to.x - from.x),
+    height: Math.abs(to.y - from.y)
+  }
+  if (!isAxisAligned(toGrid)) {
+    return transformedShapeMask(grid.width, grid.height, kind, rect, toGrid)
+  }
+  const [a, b] = [from, to].map((point) => Matrix.mapPoint(toGrid, point))
+  const box = {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(b.x - a.x),
+    height: Math.abs(b.y - a.y)
+  }
+  return kind === 'ellipse'
+    ? ellipseMask(grid.width, grid.height, box)
+    : rectMask(grid.width, grid.height, box)
 }
 
 export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelectionDeps) {
@@ -183,19 +226,9 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
       return false
     }
     const surface = surfaceOf(node)
-    const a = surface && canvasToGrid(ctx.graph, node, surface, marquee.from)
-    const b = surface && canvasToGrid(ctx.graph, node, surface, marquee.to)
-    if (!surface || !a || !b) return false
-    const rect = {
-      x: Math.min(a.x, b.x),
-      y: Math.min(a.y, b.y),
-      width: Math.abs(b.x - a.x),
-      height: Math.abs(b.y - a.y)
-    }
-    const shape =
-      current.kind === 'ellipse'
-        ? ellipseMask(surface.width, surface.height, rect)
-        : rectMask(surface.width, surface.height, rect)
+    const toGrid = surface && canvasToGridMatrix(ctx.graph, node, surface)
+    if (!surface || !toGrid) return false
+    const shape = marqueeMask(current.kind, marquee, surface, toGrid)
     setSelection(node.id, combineMasks(currentMask(node, surface), shape, current.mode))
     return true
   }
@@ -211,8 +244,7 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
     const at = node && surface && canvasToGrid(ctx.graph, node, surface, { x: cx, y: cy })
     if (!node || !surface || !at) return false
     const { tolerance, contiguous } = ctx.state.pixelTools
-    const shown = compositeOver(surface.base, surface.paint)
-    const region = selectSimilar(shown, at.x, at.y, tolerance, contiguous)
+    const region = selectSimilar(deps.shownPixels(node, surface), at.x, at.y, tolerance, contiguous)
     if (!maskBounds(region)) return false
     setSelection(node.id, combineMasks(currentMask(node, surface), region, mode))
     return true

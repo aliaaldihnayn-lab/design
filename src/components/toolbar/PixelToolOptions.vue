@@ -30,6 +30,14 @@ const SELECTIONS: ReadonlySet<Tool> = new Set<Tool>([
   'MAGIC_WAND'
 ])
 const COLORED: ReadonlySet<Tool> = new Set<Tool>(['BRUSH', 'FILL_BUCKET', 'COLOR_PICKER'])
+/** The tools that read what the canvas shows, from the layer alone or from every layer. */
+const SAMPLING: ReadonlySet<Tool> = new Set<Tool>([
+  'FILL_BUCKET',
+  'MAGIC_WAND',
+  'COLOR_PICKER',
+  'CLONE_STAMP',
+  'HEALING_BRUSH'
+])
 
 const shown = computed(
   () =>
@@ -40,6 +48,12 @@ const shown = computed(
 )
 /** Whether pixels are selected, which the selection's outline on the canvas shows. */
 const hasSelection = computed(() => !!store.state.pixelOverlay?.outline)
+/** How the selected layer's paint follows it when resized; null when it has no paint. */
+const paintResample = computed(() => {
+  void store.state.sceneVersion
+  void store.state.selectedIds
+  return store.pixelPaintResample()
+})
 /** Whether a mask made from the selection hides the selection rather than the rest. */
 const invertMask = ref(false)
 
@@ -116,6 +130,14 @@ function setContiguous(value: boolean) {
   store.setPixelTools({ contiguous: value })
 }
 
+function setSmoothResize(value: boolean) {
+  store.setPixelPaintResample(value ? 'smooth' : 'nearest')
+}
+
+function setSampleAll(value: boolean) {
+  store.setPixelTools({ sampleScope: value ? 'all' : 'layer' })
+}
+
 function setInvertMask(value: boolean) {
   invertMask.value = value
 }
@@ -172,6 +194,30 @@ function maskFromSelection() {
         @update:model-value="setContiguous"
       />
       {{ t.contiguous }}
+    </label>
+    <label
+      v-if="BRUSHES.has(tool) && paintResample"
+      class="flex items-center gap-1.5 text-muted"
+      data-test-id="pixel-smooth-resize"
+    >
+      <AppCheckbox
+        :model-value="paintResample === 'smooth'"
+        :ariaLabel="t.smoothResize"
+        @update:model-value="setSmoothResize"
+      />
+      {{ t.smoothResize }}
+    </label>
+    <label
+      v-if="SAMPLING.has(tool)"
+      class="flex items-center gap-1.5 text-muted"
+      data-test-id="pixel-sample-all"
+    >
+      <AppCheckbox
+        :model-value="settings.sampleScope === 'all'"
+        :ariaLabel="t.sampleAllLayers"
+        @update:model-value="setSampleAll"
+      />
+      {{ t.sampleAllLayers }}
     </label>
     <span v-if="CLONING.has(tool)" class="text-muted" data-test-id="pixel-clone-hint">
       {{ t.cloneSourceHint }}

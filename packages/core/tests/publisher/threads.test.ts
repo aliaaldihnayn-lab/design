@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { composeStory, flowText } from '#core/publisher/threads'
+import { composeStory, flowText, sliceRuns } from '#core/publisher/threads'
 
 /** A frame that holds `chars` characters. */
 const holds = (chars: number[]) => (frame: number, text: string) => text.length <= chars[frame]
@@ -9,9 +9,9 @@ describe('flowing a story through frames', () => {
   test('each frame takes whole words that fit; the last takes the rest', () => {
     const frames = flowText('one two three four five', 3, holds([8, 10, 3]))
     expect(frames).toEqual([
-      { text: 'one two', lead: '' },
-      { text: 'three four', lead: ' ' },
-      { text: 'five', lead: ' ' }
+      { text: 'one two', lead: '', start: 0 },
+      { text: 'three four', lead: ' ', start: 8 },
+      { text: 'five', lead: ' ', start: 19 }
     ])
   })
 
@@ -29,13 +29,23 @@ describe('flowing a story through frames', () => {
 
   test('frames after the story ends are empty', () => {
     expect(flowText('short', 3, holds([50, 50, 50]))).toEqual([
-      { text: 'short', lead: '' },
-      { text: '', lead: '' },
-      { text: '', lead: '' }
+      { text: 'short', lead: '', start: 0 },
+      { text: '', lead: '', start: 5 },
+      { text: '', lead: '', start: 5 }
     ])
   })
 
   test('composeStory reads nothing from an empty list', () => {
-    expect(composeStory([])).toBe('')
+    expect(composeStory([])).toEqual({ text: '', runs: [] })
+  })
+})
+
+describe('style runs across a story', () => {
+  test('sliceRuns clips runs to a range and moves them to its start', () => {
+    const bold = { fontWeight: 700 }
+    expect(sliceRuns([{ start: 2, length: 6, style: bold }], 4, 10)).toEqual([
+      { start: 0, length: 4, style: bold }
+    ])
+    expect(sliceRuns([{ start: 2, length: 2, style: bold }], 4, 10)).toEqual([])
   })
 })

@@ -18,9 +18,10 @@ import {
   strokeDabs,
   type BrushTip
 } from '#core/pixels/brush'
-import { cloneDab, healDab } from '#core/pixels/clone'
+import { cloneDab } from '#core/pixels/clone'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
+import { createHealingStroke, finishHealingStroke, healDab } from '#core/pixels/heal'
 import {
   ellipseMask,
   featherMask,
@@ -55,6 +56,30 @@ export function toGrid(node: SceneNode, surface: PixelSurface, point: Vector): V
   }
 }
 
+const sampleSchema = v.optional(
+  v.pipe(
+    v.picklist(['layer', 'all']),
+    v.description('Read the layer as drawn by itself (layer) or with every layer on the page (all)')
+  ),
+  'layer'
+)
+
+/**
+ * What the layer shows on its pixel grid as the renderer draws it (gradients, adjustments,
+ * effects), from the layer alone or every layer; its solid and image fills without a renderer.
+ */
+async function shownForTool(
+  figma: FigmaAPI,
+  node: SceneNode,
+  surface: PixelSurface,
+  scope: 'layer' | 'all'
+) {
+  const rendered = figma.renderLayerGrid
+    ? await figma.renderLayerGrid(node.id, surface, scope)
+    : null
+  return rendered ?? compositeOver(surface.base, surface.paint)
+}
+
 /** Saves the paint layer back onto the layer. */
 export function savePaint(
   figma: FigmaAPI,
@@ -65,7 +90,7 @@ export function savePaint(
   const png = codec.encodePNG(surface.paint)
   if (!png) return { error: 'Could not encode the paint layer' }
   const hash = storeImage(figma.graph, png)
-  figma.graph.updateNode(node.id, paintedLayerChanges(node, surface.paintIndex, hash))
+  figma.graph.updateNode(node.id, paintedLayerChanges(node, surface, hash))
   return null
 }
 
@@ -116,8 +141,8 @@ export const paintPixels = defineTool({
 export const fillPixels = defineTool({
   name: 'fill_pixels',
   description:
-    "Fill bucket: fill the area of pixels like the one at (x, y), as the layer shows them, with a colour, into the layer's paint layer (non-destructive). x and y are in the layer's own coordinates; tolerance 0–1 (default 0.15); contiguous false fills every like pixel in the layer.",
-  execution: { kind: 'sync', mutation: 'document' },
+    "Fill bucket: fill the area of pixels like the one at (x, y), as the layer shows them, with a colour, into the layer's paint layer (non-destructive). x and y are in the layer's own coordinates; tolerance 0–1 (default 0.15); contiguous false fills every like pixel in the layer. sample all reads every layer on the page there, not the layer alone.",
+  execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     x: toolNumber(),
@@ -125,14 +150,15 @@ export const fillPixels = defineTool({
     color: v.pipe(v.string(), v.description('Fill colour (hex)')),
     tolerance: unitSchema,
     contiguous: v.optional(v.boolean(), true),
-    opacity: unitSchema
+    opacity: unitSchema,
+    sample: sampleSchema
   }),
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface, codec } = loaded
     const at = toGrid(node, surface, args)
-    const shown = compositeOver(surface.base, surface.paint)
+    const shown = await shownForTool(figma, node, surface, args.sample)
     const region = selectSimilar(shown, at.x, at.y, args.tolerance ?? 0.15, args.contiguous)
     const filled = fillRegion(surface.paint, region, parseColor(args.color), args.opacity ?? 1)
     if (filled === 0) return { error: 'That point is outside the layer' }
@@ -145,15 +171,20 @@ export const fillPixels = defineTool({
 export const samplePixelColor = defineTool({
   name: 'sample_pixel_color',
   description:
-    'Colour picker: the colour a shape or frame shows at (x, y) in its own coordinates, from its solid and image fills and paint layer, as hex with alpha 0–1.',
-  execution: { kind: 'sync', mutation: 'none' },
-  input: v.strictObject({ id: nodeIdInputSchema, x: toolNumber(), y: toolNumber() }),
-  execute: (figma, args) => {
+    'Colour picker: the colour a shape or frame shows at (x, y) in its own coordinates, as the canvas draws it (gradients, image adjustments, effects, paint), as hex with alpha 0–1. sample all reads every layer on the page there.',
+  execution: { kind: 'async', mutation: 'none' },
+  input: v.strictObject({
+    id: nodeIdInputSchema,
+    x: toolNumber(),
+    y: toolNumber(),
+    sample: sampleSchema
+  }),
+  execute: async (figma, args) => {
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface } = loaded
     const at = toGrid(node, surface, args)
-    const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
+    const color = pixelColor(await shownForTool(figma, node, surface, args.sample), at.x, at.y)
     if (!color) return { error: 'That point is outside the layer' }
     return { hex: colorToHex(color), alpha: color.a }
   }
@@ -218,7 +249,7 @@ export const maskFromSelection = defineTool({
 export const clonePixels = defineTool({
   name: 'clone_pixels',
   description:
-    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but takes the tone around each dab, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
+    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but solves it into its surroundings (Poisson seamless cloning), so the patch takes the tone and shading around it with no seam, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -246,8 +277,11 @@ export const clonePixels = defineTool({
     }
     const before = surface.paint.data.slice()
     const coverage = createStrokeCoverage(surface.paint)
+    const healing = args.heal ? createHealingStroke(sampling) : null
     const dab = (at: Vector) =>
-      (args.heal ? healDab : cloneDab)(surface.paint, before, coverage, at, tip, sampling)
+      healing
+        ? healDab(surface.paint, before, coverage, at, tip, healing)
+        : cloneDab(surface.paint, before, coverage, at, tip, sampling)
     let carry = 0
     dab(points[0])
     for (let i = 1; i < points.length; i++) {
@@ -255,6 +289,7 @@ export const clonePixels = defineTool({
       for (const centre of stroke.dabs) dab(centre)
       carry = stroke.carry
     }
+    if (healing) finishHealingStroke(surface.paint, before, coverage, healing)
     const failure = savePaint(figma, node, surface, codec)
     if (failure) return failure
     return { id: node.id }

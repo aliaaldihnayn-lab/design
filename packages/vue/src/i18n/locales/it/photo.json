@@ -37,5 +37,7 @@
   "maskFromSelection": "Maschera dalla selezione",
   "invertMask": "Inverti maschera",
   "feather": "Sfumatura",
-  "cloneSourceHint": "Alt-clic per impostare l'origine"
+  "cloneSourceHint": "Alt-clic per impostare l'origine",
+  "sampleAllLayers": "Campiona tutti i livelli",
+  "smoothResize": "Ammorbidisci al ridimensionamento"
 }

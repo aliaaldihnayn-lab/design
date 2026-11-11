@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode, StyleRun } from '@lawha/scene-graph'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride
@@ -14,27 +14,42 @@ import {
   isMasterPage,
   masterPages,
   publicationPages,
+  publicationSettings,
   topLevelAncestor
 } from './pages'
 import { reflowThread, threadOf } from './threads'
 
 export {
   appliedMaster,
+  arrangePages,
   canvasOf,
+  DEFAULT_PUBLICATION_SETTINGS,
+  formatNumber,
   formatPageNumber,
   isMasterPage,
   masterPages,
-  publicationPages
+  PAGE_GAP,
+  pagesAnchor,
+  publicationPages,
+  publicationSettings,
+  spreadLayout,
+  type PageNumberFormat,
+  type PublicationSettings,
+  type SpreadSide
 } from './pages'
 export {
   composeStory,
   flowText,
   linkTextFrames,
   reflowThread,
+  releaseDeletedFrames,
+  sliceRuns,
   threadFrames,
   threadOf,
   unlinkTextFrame,
-  type FlowedFrame
+  type FlowedFrame,
+  type FrameFits,
+  type Story
 } from './threads'
 
 /** Where a new master page goes: above the pages, clear of everything on the canvas. */
@@ -50,6 +65,54 @@ function nextMasterName(graph: SceneGraph, canvasId: string): string {
   return `Master ${taken.size + 1}`
 }
 
+/** Where the next master page goes: in the row of masters above the pages. */
+function nextMasterPlace(graph: SceneGraph, canvasId: string, size: { height: number }) {
+  const pages = publicationPages(graph, canvasId)
+  const top = Math.min(0, ...pages.map((page) => page.y))
+  const left = Math.min(0, ...pages.map((page) => page.x))
+  const existing = masterPages(graph, canvasId)
+  const x = left + existing.reduce((sum, master) => sum + master.width + MASTER_GAP / 2, 0)
+  return { x, y: top - size.height - MASTER_GAP }
+}
+
+/**
+ * Turns an existing page frame into a master page, its layers kept as the master's, as Affinity
+ * Publisher's Convert to Master: it leaves the pages for the row of masters above them, and can
+ * then be applied to any page. A master applied to it stays, nested. Returns the master.
+ */
+export function convertFrameToMaster(graph: SceneGraph, frame: SceneNode): SceneNode {
+  if (frame.type !== 'FRAME') throw new Error('Only a frame becomes a master page')
+  const canvas = canvasOf(graph, frame)
+  if (!canvas) throw new Error('The frame is on no page')
+  if (frame.parentId !== canvas.id) graph.reparentNode(frame.id, canvas.id)
+  const place = nextMasterPlace(graph, canvas.id, frame)
+  const taken = new Set(masterPages(graph, canvas.id).map((master) => master.name))
+  graph.updateNode(frame.id, {
+    type: 'COMPONENT',
+    ...place,
+    name: taken.has(frame.name) ? nextMasterName(graph, canvas.id) : frame.name,
+    pluginData: withPluginData(frame.pluginData, LAWHA_PLUGIN_DATA.masterPage, { role: 'master' })
+  })
+  return graph.getNode(frame.id) ?? frame
+}
+
+/**
+ * Detaches a page from its master, as Affinity Publisher's Detach from Master: the master's
+ * layers become the page's own, unlocked, and stop following the master. False with no master.
+ */
+export function detachMasterPage(graph: SceneGraph, page: SceneNode): boolean {
+  const applied = appliedMaster(graph, page)
+  if (!applied) return false
+  graph.detachInstance(applied.id)
+  const detached = graph.getNode(applied.id)
+  if (!detached) return false
+  graph.updateNode(applied.id, {
+    locked: false,
+    pluginData: withPluginData(detached.pluginData, LAWHA_PLUGIN_DATA.masterPage, undefined)
+  })
+  return true
+}
+
 /**
  * Makes an empty master page the size of `size` (a page) on the canvas: a component whose layers
  * every page it is applied to shows behind its own, and follows when the master changes.
@@ -60,15 +123,9 @@ export function createMasterPage(
   size: { width: number; height: number },
   name = nextMasterName(graph, canvasId)
 ): SceneNode {
-  const pages = publicationPages(graph, canvasId)
-  const top = Math.min(0, ...pages.map((page) => page.y))
-  const left = Math.min(0, ...pages.map((page) => page.x))
-  const existing = masterPages(graph, canvasId)
-  const x = left + existing.reduce((sum, master) => sum + master.width + MASTER_GAP / 2, 0)
   const master = graph.createNode('COMPONENT', canvasId, {
     name,
-    x,
-    y: top - size.height - MASTER_GAP,
+    ...nextMasterPlace(graph, canvasId, size),
     width: size.width,
     height: size.height,
     fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
@@ -150,14 +207,16 @@ function writeDerivedText(graph: SceneGraph, node: SceneNode, text: string) {
  */
 export function refreshPageNumbers(graph: SceneGraph, canvasId: string): string[] {
   const pages = publicationPages(graph, canvasId)
-  const numbers = new Map(pages.map((page, index) => [page.id, index + 1]))
+  const { numberStart, numberFormat } = publicationSettings(graph, canvasId)
+  const numbers = new Map(pages.map((page, index) => [page.id, index + numberStart]))
   const written: string[] = []
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'TEXT') continue
     const field = readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.pageNumber)
     if (!field || canvasOf(graph, node)?.id !== canvasId) continue
     const top = topLevelAncestor(graph, node)
-    const text = formatPageNumber(field.template, numbers.get(top?.id ?? '') ?? null, pages.length)
+    const page = numbers.get(top?.id ?? '') ?? null
+    const text = formatPageNumber(field.template, page, pages.length, numberFormat)
     if (node.text === text) continue
     writeDerivedText(graph, node, text)
     written.push(node.id)
@@ -166,9 +225,9 @@ export function refreshPageNumbers(graph: SceneGraph, canvasId: string): string[
 }
 
 /** Whether `text` fits `frame` at the frame's width and height, measured as layout measures. */
-export function textFitsFrame(frame: SceneNode, text: string): boolean {
+export function textFitsFrame(frame: SceneNode, text: string, runs: StyleRun[] = []): boolean {
   const size = measureTextForLayout(
-    { ...frame, text, styleRuns: [], textAutoResize: 'HEIGHT' },
+    { ...frame, text, styleRuns: runs, textAutoResize: 'HEIGHT' },
     frame.width
   )
   return size.height <= frame.height + 0.5

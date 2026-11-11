@@ -3,6 +3,7 @@ import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph, Fill } from '@lawha/scene-graph'
 import { invertGradientTransform } from '@lawha/scene-graph/gradient'
 import Matrix from '@lawha/scene-graph/matrix'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@lawha/scene-graph/vector-network'
 
@@ -413,6 +414,18 @@ export function makeImageFillLocalMatrix(
 }
 
 /**
+ * Whether `fill` is a layer's paint layer stretched beyond the density it was painted at, since
+ * its layer was enlarged, and set to follow pixel for pixel: drawn with nearest sampling, its
+ * pixels show as the crisp blocks the next stroke resamples them into, rather than a blur.
+ */
+function showsPaintPixelForPixel(fill: Fill, node: SceneNode, imgW: number, imgH: number) {
+  const marker = readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)
+  if (!marker || marker.hash !== fill.imageHash || marker.resample === 'smooth') return false
+  const density = marker.density ?? 1
+  return imgW < node.width * density - 0.5 || imgH < node.height * density - 0.5
+}
+
+/**
  * Sets `paint`'s shader to `img` laid out as `fill` places it on `node`; `preview`, when `img`
  * is a downscaled preview, keeps a tiled image at its original size.
  */
@@ -435,14 +448,20 @@ function setImageShader(
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
   const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
+  const crisp = showsPaintPixelForPixel(
+    fill,
+    node,
+    preview?.originalWidth ?? imgW,
+    preview?.originalHeight ?? imgH
+  )
   const shader =
     scaleMode === 'TILE'
       ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
       : img.makeShaderOptions(
           tileMode,
           tileMode,
-          r.ck.FilterMode.Linear,
-          r.ck.MipmapMode.Linear,
+          crisp ? r.ck.FilterMode.Nearest : r.ck.FilterMode.Linear,
+          crisp ? r.ck.MipmapMode.None : r.ck.MipmapMode.Linear,
           localMatrix
         )
   const adjusted = hasAdjustments(fill.adjustments)

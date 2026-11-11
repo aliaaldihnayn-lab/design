@@ -37,5 +37,7 @@
   "maskFromSelection": "Masque depuis la sélection",
   "invertMask": "Inverser le masque",
   "feather": "Contour progressif",
-  "cloneSourceHint": "Alt-clic pour définir la source"
+  "cloneSourceHint": "Alt-clic pour définir la source",
+  "sampleAllLayers": "Échantillonner tous les calques",
+  "smoothResize": "Lisser au redimensionnement"
 }

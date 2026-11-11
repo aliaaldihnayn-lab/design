@@ -42,6 +42,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'isInteractiveEditing',
   'isTopLevel',
   'pageSwitchCount',
+  'pixelPaintResample',
   'previewRenameSelected',
   // Recording only: what the edit runs is refused or allowed on its own.
   'recordEdit',

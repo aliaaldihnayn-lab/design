@@ -16,7 +16,7 @@ import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { defaultIcons, type IconProvider } from '#core/icons'
-import type { RasterCodec } from '#core/io/formats/raster'
+import type { RasterCodec, RGBAImage } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { fontManager } from '#core/text/font/manager'
@@ -630,6 +630,12 @@ export class FigmaAPI implements NodeProxyHost {
   /** Where icon tools search and fetch icons; hosts may pass a self-hosted or bundled set. */
   icons: IconProvider = defaultIcons
   rasterCodec?: RasterCodec
+  /** What the canvas draws over a layer's pixel grid, for the pixel tools; set by hosts. */
+  renderLayerGrid?: (
+    nodeId: string,
+    grid: { width: number; height: number },
+    scope: 'layer' | 'all'
+  ) => Promise<RGBAImage | null>
   /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
   changeBaseline?: (pageId: string) => SceneGraph | null
 }

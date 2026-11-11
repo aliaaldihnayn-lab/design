@@ -37,5 +37,7 @@
   "maskFromSelection": "選択範囲からマスク",
   "invertMask": "マスクを反転",
   "feather": "ぼかし",
-  "cloneSourceHint": "Altキーを押しながらクリックでソースを設定"
+  "cloneSourceHint": "Altキーを押しながらクリックでソースを設定",
+  "sampleAllLayers": "すべてのレイヤーからサンプル",
+  "smoothResize": "サイズ変更時に滑らかにする"
 }
