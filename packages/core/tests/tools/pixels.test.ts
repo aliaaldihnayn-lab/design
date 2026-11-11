@@ -1,7 +1,11 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { FigmaAPI } from '@lawha/core/figma-api'
-import { createCanvasKitRasterCodec, initCanvasKit } from '@lawha/core/io/formats/raster'
+import {
+  createCanvasKitRasterCodec,
+  headlessRenderLayerGrid,
+  initCanvasKit
+} from '@lawha/core/io/formats/raster'
 import { ALL_TOOLS } from '@lawha/core/tools'
 import { SceneGraph } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
@@ -54,10 +58,10 @@ describe('pixel tools for agents', () => {
 
   test('fill_pixels fills like pixels, and sample_pixel_color reads them', async () => {
     const { figma, id } = await setup()
-    expect(tool('fill_pixels')(figma, { id, x: 5, y: 5, color: '#00ff00' })).toMatchObject({
+    expect(await tool('fill_pixels')(figma, { id, x: 5, y: 5, color: '#00ff00' })).toMatchObject({
       filled_pixels: 800
     })
-    expect(tool('sample_pixel_color')(figma, { id, x: 30, y: 15 })).toEqual({
+    expect(await tool('sample_pixel_color')(figma, { id, x: 30, y: 15 })).toEqual({
       hex: '#00FF00',
       alpha: 1
     })
@@ -102,7 +106,7 @@ describe('mask_layer_from_selection', () => {
 describe('clone_pixels', () => {
   test('clones the layer from a source point', async () => {
     const { figma, id, paint } = await setup()
-    tool('fill_pixels')(figma, { id, x: 5, y: 5, color: '#0000ff' })
+    await tool('fill_pixels')(figma, { id, x: 5, y: 5, color: '#0000ff' })
     tool('paint_pixels')(figma, {
       id,
       color: '#ff0000',
@@ -120,5 +124,72 @@ describe('clone_pixels', () => {
       })
     ).toEqual({ id })
     expect(paint()?.data[(10 * 40 + 30) * 4]).toBe(255)
+  })
+})
+
+function field(result: unknown, key: string): unknown {
+  return typeof result === 'object' && result !== null ? Reflect.get(result, key) : undefined
+}
+
+describe('pixel tools sample the rendered layer', () => {
+  /** Black to white across a 100 × 20 layer, with a green bar on top over its middle. */
+  async function gradient() {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const node = graph.createNode('RECTANGLE', page, {
+      width: 100,
+      height: 20,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { position: 0, color: { r: 0, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 1, g: 1, b: 1, a: 1 } }
+          ],
+          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        }
+      ]
+    })
+    graph.createNode('RECTANGLE', page, {
+      x: 40,
+      width: 20,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const figma = new FigmaAPI(graph)
+    figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())
+    figma.renderLayerGrid = (nodeId, grid, scope) =>
+      headlessRenderLayerGrid(graph, nodeId, grid, scope)
+    return { figma, id: node.id }
+  }
+
+  test('sample_pixel_color reads a gradient as drawn, and all layers over it', async () => {
+    const { figma, id } = await gradient()
+    const dark = await tool('sample_pixel_color')(figma, { id, x: 3, y: 10 })
+    const light = await tool('sample_pixel_color')(figma, { id, x: 97, y: 10 })
+    expect(dark).toMatchObject({ alpha: 1 })
+    expect(String(field(dark, 'hex')).slice(1, 3) < '30').toBe(true)
+    expect(String(field(light, 'hex')).slice(1, 3) > 'D0').toBe(true)
+    expect(await tool('sample_pixel_color')(figma, { id, x: 50, y: 10, sample: 'all' })).toEqual({
+      hex: '#00FF00',
+      alpha: 1
+    })
+  })
+
+  test('fill_pixels stops where the gradient leaves the tolerance', async () => {
+    const { figma, id } = await gradient()
+    const result = await tool('fill_pixels')(figma, {
+      id,
+      x: 1,
+      y: 10,
+      color: '#ff0000',
+      tolerance: 0.2
+    })
+    const filled = Number(field(result, 'filled_pixels'))
+    expect(filled).toBeGreaterThan(100)
+    expect(filled).toBeLessThan(1000)
   })
 })

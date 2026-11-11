@@ -15,6 +15,7 @@ export const FIGMA_API_HOST_MEMBERS = [
   'exportImage',
   'icons',
   'rasterCodec',
+  'renderLayerGrid',
   'changeBaseline'
 ] as const
 

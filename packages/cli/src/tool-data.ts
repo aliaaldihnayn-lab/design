@@ -1,6 +1,7 @@
 import { FigmaAPI } from '@lawha/core/figma-api'
 import {
   createCanvasKitRasterCodec,
+  headlessRenderLayerGrid,
   headlessRenderNodes,
   initCanvasKit
 } from '@lawha/core/io/formats/raster'
@@ -21,6 +22,8 @@ export async function createHeadlessFigma(graph: SceneGraph): Promise<FigmaAPI> 
   const figma = new FigmaAPI(graph)
   figma.exportImage = (nodeIds, options) =>
     headlessRenderNodes(graph, options.pageId ?? figma.currentPageId, nodeIds, options)
+  figma.renderLayerGrid = (nodeId, grid, scope) =>
+    headlessRenderLayerGrid(graph, nodeId, grid, scope)
   figma.rasterCodec = createCanvasKitRasterCodec(await initCanvasKit())
   return figma
 }

@@ -56,6 +56,30 @@ export function toGrid(node: SceneNode, surface: PixelSurface, point: Vector): V
   }
 }
 
+const sampleSchema = v.optional(
+  v.pipe(
+    v.picklist(['layer', 'all']),
+    v.description('Read the layer as drawn by itself (layer) or with every layer on the page (all)')
+  ),
+  'layer'
+)
+
+/**
+ * What the layer shows on its pixel grid as the renderer draws it (gradients, adjustments,
+ * effects), from the layer alone or every layer; its solid and image fills without a renderer.
+ */
+async function shownForTool(
+  figma: FigmaAPI,
+  node: SceneNode,
+  surface: PixelSurface,
+  scope: 'layer' | 'all'
+) {
+  const rendered = figma.renderLayerGrid
+    ? await figma.renderLayerGrid(node.id, surface, scope)
+    : null
+  return rendered ?? compositeOver(surface.base, surface.paint)
+}
+
 /** Saves the paint layer back onto the layer. */
 export function savePaint(
   figma: FigmaAPI,
@@ -117,8 +141,8 @@ export const paintPixels = defineTool({
 export const fillPixels = defineTool({
   name: 'fill_pixels',
   description:
-    "Fill bucket: fill the area of pixels like the one at (x, y), as the layer shows them, with a colour, into the layer's paint layer (non-destructive). x and y are in the layer's own coordinates; tolerance 0–1 (default 0.15); contiguous false fills every like pixel in the layer.",
-  execution: { kind: 'sync', mutation: 'document' },
+    "Fill bucket: fill the area of pixels like the one at (x, y), as the layer shows them, with a colour, into the layer's paint layer (non-destructive). x and y are in the layer's own coordinates; tolerance 0–1 (default 0.15); contiguous false fills every like pixel in the layer. sample all reads every layer on the page there, not the layer alone.",
+  execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     x: toolNumber(),
@@ -126,14 +150,15 @@ export const fillPixels = defineTool({
     color: v.pipe(v.string(), v.description('Fill colour (hex)')),
     tolerance: unitSchema,
     contiguous: v.optional(v.boolean(), true),
-    opacity: unitSchema
+    opacity: unitSchema,
+    sample: sampleSchema
   }),
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface, codec } = loaded
     const at = toGrid(node, surface, args)
-    const shown = compositeOver(surface.base, surface.paint)
+    const shown = await shownForTool(figma, node, surface, args.sample)
     const region = selectSimilar(shown, at.x, at.y, args.tolerance ?? 0.15, args.contiguous)
     const filled = fillRegion(surface.paint, region, parseColor(args.color), args.opacity ?? 1)
     if (filled === 0) return { error: 'That point is outside the layer' }
@@ -146,15 +171,20 @@ export const fillPixels = defineTool({
 export const samplePixelColor = defineTool({
   name: 'sample_pixel_color',
   description:
-    'Colour picker: the colour a shape or frame shows at (x, y) in its own coordinates, from its solid and image fills and paint layer, as hex with alpha 0–1.',
-  execution: { kind: 'sync', mutation: 'none' },
-  input: v.strictObject({ id: nodeIdInputSchema, x: toolNumber(), y: toolNumber() }),
-  execute: (figma, args) => {
+    'Colour picker: the colour a shape or frame shows at (x, y) in its own coordinates, as the canvas draws it (gradients, image adjustments, effects, paint), as hex with alpha 0–1. sample all reads every layer on the page there.',
+  execution: { kind: 'async', mutation: 'none' },
+  input: v.strictObject({
+    id: nodeIdInputSchema,
+    x: toolNumber(),
+    y: toolNumber(),
+    sample: sampleSchema
+  }),
+  execute: async (figma, args) => {
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface } = loaded
     const at = toGrid(node, surface, args)
-    const color = pixelColor(compositeOver(surface.base, surface.paint), at.x, at.y)
+    const color = pixelColor(await shownForTool(figma, node, surface, args.sample), at.x, at.y)
     if (!color) return { error: 'That point is outside the layer' }
     return { hex: colorToHex(color), alpha: color.a }
   }

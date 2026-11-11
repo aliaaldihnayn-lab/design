@@ -61,7 +61,7 @@ export type { PixelMarquee, PixelOverlay, PixelToolSettings } from './pixels/typ
 export { selectionModeFor } from './pixels/select'
 export type { SelectionMode } from '#core/pixels/mask'
 export type { PaintResample } from '#core/pixels/composite'
-export type { PixelSampleScope } from './pixels/sample'
+export { renderLayerGrid, type PixelSampleScope } from './pixels/sample'
 export type { PublicationPage } from './publisher/pages'
 export type { PageNumberFormat, PublicationSettings, SpreadSide } from '#core/publisher'
 export {
