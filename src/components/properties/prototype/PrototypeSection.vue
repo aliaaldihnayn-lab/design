@@ -20,6 +20,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import PrototypeSectionBindings from './PrototypeSectionBindings.vue'
 import PrototypeSectionInteraction from './PrototypeSectionInteraction.vue'
 import { DEFAULT_TRANSITION, usePrototypeOptions } from './usePrototypeOptions'
 import { usePrototypeTools } from './usePrototypeTools'
@@ -152,6 +153,7 @@ function present() {
           @change="update(index, $event)"
           @remove="remove(index)"
         />
+        <PrototypeSectionBindings :node-id="nodeId" />
       </template>
     </div>
   </PanelSection>

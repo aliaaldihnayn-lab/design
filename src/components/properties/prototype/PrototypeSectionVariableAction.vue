@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Action } from '@lawha/core/prototype'
+import { variableScope, type Action } from '@lawha/core/prototype'
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+
+import { usePrototypeTools } from './usePrototypeTools'
 
 type SetVariable = Extract<Action, { type: 'set-variable' }>
 
@@ -24,7 +27,15 @@ const variables = computed(() => {
 const variableOptions = computed(() =>
   variables.value.map((variable) => ({ value: variable.id, label: variable.name }))
 )
-const selected = computed(() => store.graph.variables.get(action.variable))
+const selected = computed(() => {
+  void store.state.sceneVersion
+  return store.graph.variables.get(action.variable)
+})
+const { run } = usePrototypeTools()
+
+function setPerInstance(on: boolean) {
+  void run('set_variable_scope', { variable: action.variable, scope: on ? 'instance' : 'shared' })
+}
 
 const TOGGLE = '\u0000toggle'
 const booleanOptions = computed(() => [
@@ -74,5 +85,14 @@ function setText(text: string) {
       :value="action.value ?? ''"
       @change="setText(($event.target as HTMLInputElement).value)"
     />
+    <div v-if="selected" class="flex items-center justify-between gap-2 text-[11px]">
+      <span class="truncate">{{ t.perInstance }}</span>
+      <AppSwitch
+        :model-value="variableScope(selected) === 'instance'"
+        :label="t.perInstance"
+        data-test-id="prototype-variable-scope"
+        @update:model-value="setPerInstance"
+      />
+    </div>
   </template>
 </template>

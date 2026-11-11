@@ -1,6 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 
 import {
+  CONDITION_OPERATORS,
   DIRECTIONS,
   EASINGS,
   TRANSITION_TYPES,
@@ -76,8 +77,8 @@ export function usePrototypeOptions(nodeId: MaybeRefOrGetter<string | null>) {
     return [...store.graph.variables.values()].filter((variable) => variable.type !== 'COLOR')
   })
 
-  /** The actions an action select offers. */
-  const actionOptions = () =>
+  /** The actions an action select offers; a branch of a conditional offers no conditional. */
+  const actionOptions = (branch = false) =>
     options('action', [
       'navigate',
       'back',
@@ -85,6 +86,7 @@ export function usePrototypeOptions(nodeId: MaybeRefOrGetter<string | null>) {
       'close-overlay',
       'open-url',
       'set-variable',
+      ...(branch ? [] : ['conditional']),
       ...(variantOptions.value.length > 1 ? ['change-to'] : [])
     ])
 
@@ -146,6 +148,7 @@ export function usePrototypeOptions(nodeId: MaybeRefOrGetter<string | null>) {
     transitionOptions: computed(() => options('transition', TRANSITION_TYPES)),
     directionOptions: computed(() => options('direction', DIRECTIONS)),
     easingOptions: computed(() => options('easing', EASINGS)),
+    operatorOptions: computed(() => options('operator', CONDITION_OPERATORS)),
     variableOptions: computed(() =>
       variables.value.map((variable) => ({ value: variable.id, label: variable.name }))
     ),
