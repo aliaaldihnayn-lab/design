@@ -11,5 +11,6 @@
   "copy": "Copiar código",
   "sizingFixed": "Fijo",
   "sizingHug": "Ajustar al contenido",
-  "sizingFill": "Rellenar"
+  "sizingFill": "Rellenar",
+  "gradient": "Degradado"
 }

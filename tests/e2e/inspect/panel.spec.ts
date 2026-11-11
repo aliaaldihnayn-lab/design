@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('the Inspect tab shows the selected layer’s properties and its CSS, SwiftUI and Compose', async ({
+test('the Inspect tab shows the selected layer’s properties and its CSS, SwiftUI, UIKit, Compose and Android XML', async ({
   page
 }) => {
   await page.goto('/?test')
@@ -37,11 +37,16 @@ test('the Inspect tab shows the selected layer’s properties and its CSS, Swift
   await expect(code).toContainText('border-radius: 12px;')
   await expect(page.getByTestId('inspect-color')).toHaveCount(1)
 
-  await page.getByTestId('inspect-language').getByText('iOS · SwiftUI').click()
+  await page.getByTestId('inspect-language').getByText('SwiftUI', { exact: true }).click()
   await expect(code).toContainText('VStack(alignment: .leading, spacing: 12)')
-  await page.getByTestId('inspect-language').getByText('Android · Compose').click()
+  await page.getByTestId('inspect-language').getByText('Compose', { exact: true }).click()
   await expect(code).toContainText('Column(')
   await expect(code).toContainText('RoundedCornerShape(12.dp)')
+  await page.getByTestId('inspect-language').getByText('UIKit', { exact: true }).click()
+  await expect(code).toContainText('let card = UIStackView()')
+  await page.getByTestId('inspect-language').getByText('Android XML', { exact: true }).click()
+  await expect(code).toContainText('<LinearLayout')
+  await page.getByTestId('inspect-language').getByText('Compose', { exact: true }).click()
 
   // An edit shows at once.
   await page.evaluate(() => {

@@ -10,6 +10,8 @@ export interface PrototypeConnection {
   target: string
   kind: 'navigate' | 'overlay' | 'scroll-to'
   trigger: Trigger['type']
+  /** Which of the source layer's interactions this is, as `set_interactions` lists them. */
+  interaction: number
 }
 
 /** Every interaction on the page that leads to a layer, in layer order. */
@@ -18,17 +20,18 @@ export function prototypeConnections(graph: SceneGraph, pageId: string): Prototy
   const walk = (id: string) => {
     const node = graph.getNode(id)
     if (!node || !node.visible) return
-    for (const { trigger, action } of readInteractions(node, graph)) {
+    readInteractions(node, graph).forEach(({ trigger, action }, interaction) => {
       if (action.type !== 'navigate' && action.type !== 'overlay' && action.type !== 'scroll-to')
-        continue
-      if (!graph.getNode(action.destination)) continue
+        return
+      if (!graph.getNode(action.destination)) return
       out.push({
         source: node.id,
         target: action.destination,
         kind: action.type,
-        trigger: trigger.type
+        trigger: trigger.type,
+        interaction
       })
-    }
+    })
     node.childIds.forEach(walk)
   }
   graph.getNode(pageId)?.childIds.forEach(walk)
@@ -117,4 +120,56 @@ export function noodle(source: Rect, target: Rect | Vector, arrow = 8): Noodle {
 /** The SVG path data of a noodle's curve. */
 export function noodlePath({ start, c1, c2, end }: Noodle): string {
   return `M ${start.x} ${start.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${end.x} ${end.y}`
+}
+
+/** A point along a noodle's curve, `t` from 0 at its start to 1 at its end. */
+export function noodlePoint({ start, c1, c2, end }: Noodle, t: number): Vector {
+  const u = 1 - t
+  const a = u * u * u
+  const b = 3 * u * u * t
+  const c = 3 * u * t * t
+  const d = t * t * t
+  return {
+    x: a * start.x + b * c1.x + c * c2.x + d * end.x,
+    y: a * start.y + b * c1.y + c * c2.y + d * end.y
+  }
+}
+
+/** How far `point` is from a noodle's curve, measured along it in short straight steps. */
+export function noodleDistance(line: Noodle, point: Vector, steps = 48): number {
+  let best = Number.POSITIVE_INFINITY
+  let previous = line.start
+  for (let i = 1; i <= steps; i++) {
+    const next = noodlePoint(line, i / steps)
+    best = Math.min(best, segmentDistance(previous, next, point))
+    previous = next
+  }
+  return best
+}
+
+function segmentDistance(a: Vector, b: Vector, p: Vector): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const length = dx * dx + dy * dy
+  const t =
+    length === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length))
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+}
+
+/** The noodle nearest `point` within `tolerance`, by index; null when none is that close. */
+export function noodleAt(
+  lines: readonly Noodle[],
+  point: Vector,
+  tolerance: number
+): number | null {
+  let found: number | null = null
+  let best = tolerance
+  lines.forEach((line, index) => {
+    const distance = noodleDistance(line, point)
+    if (distance <= best) {
+      best = distance
+      found = index
+    }
+  })
+  return found
 }

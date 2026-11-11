@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <body
+    style="
+      font:
+        12px system-ui,
+        sans-serif;
+      margin: 12px;
+    "
+  >
+    <button id="ellipse">Add ellipse</button>
+    <p id="status"></p>
+    <script>
+      document.getElementById('ellipse').onclick = () => {
+        parent.postMessage({ pluginMessage: { type: 'create-ellipse' } }, '*')
+      }
+      onmessage = (event) => {
+        const message = event.data.pluginMessage
+        if (message && message.type === 'made')
+          document.getElementById('status').textContent = `Made ${message.count}`
+      }
+    </script>
+  </body>
+</html>

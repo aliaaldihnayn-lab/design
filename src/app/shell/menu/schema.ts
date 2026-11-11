@@ -572,10 +572,11 @@ export const APP_MENU_SCHEMA = [
     paletteIcon: 'plug',
     items: [
       { id: 'plugins-import', label: 'Import Plugin from Folder…' },
-      { type: 'separator', target: 'browser' },
-      // Each installed plugin, with its manifest's menu; filled in by `useAppMenu`.
-      { id: 'plugins-installed', label: 'Installed Plugins', target: 'browser' },
-      { id: 'plugins-remove', label: 'Remove Plugin', target: 'browser' }
+      { type: 'separator' },
+      // Each installed plugin, with its manifest's menu: filled in by `useAppMenu` in the
+      // browser, and by the desktop menu from `set_native_menu_plugins`.
+      { id: 'plugins-installed', label: 'Installed Plugins' },
+      { id: 'plugins-remove', label: 'Remove Plugin' }
     ]
   }
 ] satisfies AppMenuGroupSchema[]

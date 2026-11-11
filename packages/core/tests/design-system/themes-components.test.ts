@@ -144,6 +144,16 @@ describe('text styles', () => {
     const node = must(graph.getNode(h1.nodeId))
     expect(node).toMatchObject({ fontSize: 28, fontWeight: 700, fontFamily: 'Inter' })
     expect(node.boundVariables.fontSize).toBeDefined()
+    // The weight is bound too: changing the weight variable restyles the style.
+    const weight = must(
+      figma.variables.getLocalVariables().find((v) => v.name === 'type/h1/weight')
+    )
+    expect(node.boundVariables.fontWeight).toBe(weight.id)
+    weight.setValueForMode(
+      must(figma.variables.getVariableCollectionById(weight.variableCollectionId)).defaultModeId,
+      500
+    )
+    expect(must(graph.getNode(h1.nodeId)).fontWeight).toBe(500)
     expect(must(graph.getNode(texts[0])).textStyleId).toBe(h1.id)
 
     // Building again updates the same styles, and the layers keep them.
@@ -194,10 +204,90 @@ describe('components', () => {
     expect(label.characters).toBe('Pay now')
   })
 
-  test('components can be left out, and they go nowhere without the docs page', () => {
+  test('components can be left out, and go on a Components page without the docs page', () => {
     const { figma } = design()
     expect((build.execute(figma, { components: false }) as ComponentsReport).components).toEqual([])
-    const { figma: other } = design()
-    expect((build.execute(other, { docs: false }) as ComponentsReport).components).toEqual([])
+    const { figma: other, graph } = design()
+    const out = build.execute(other, { docs: false }) as ComponentsReport
+    expect(out.components.map((c) => c.name)).toEqual(['Button', 'Input', 'Badge'])
+    const page = must(graph.getPages().find((p) => p.name === 'Components'))
+    expect(must(graph.getNode(out.components[0].id)).parentId).toBe(page.id)
+    expect(graph.getPages().some((p) => p.name === 'Design System')).toBe(false)
+  })
+
+  test('Badge padding and its pill radius are bound to the scale', () => {
+    const { figma, graph } = design()
+    build.execute(figma, { docs: false, components: false })
+    const collection = must(
+      figma.variables.getLocalVariableCollections().find((c) => c.name === 'Design System')
+    )
+    const scale: [string, number][] = [
+      ['space/4', 4],
+      ['space/12', 12],
+      ['radius/full', 9999]
+    ]
+    const ids = new Map<string, string>()
+    for (const [name, value] of scale) {
+      const variable = figma.variables.createVariable(name, collection, 'FLOAT')
+      variable.setValueForMode(collection.defaultModeId, value)
+      ids.set(name, variable.id)
+    }
+    const create = must(ALL_TOOLS.find((tool) => tool.name === 'create_component_sets'))
+    const out = create.execute(figma, { sets: ['Badge'] }) as ComponentsReport
+    const badge = must(graph.getNode(out.components[0].id))
+    for (const id of badge.childIds) {
+      const variant = must(graph.getNode(id))
+      expect(variant).toMatchObject({ paddingLeft: 12, paddingTop: 4, cornerRadius: 9999 })
+      expect(variant.boundVariables).toMatchObject({
+        paddingLeft: ids.get('space/12'),
+        paddingRight: ids.get('space/12'),
+        paddingTop: ids.get('space/4'),
+        paddingBottom: ids.get('space/4'),
+        topLeftRadius: ids.get('radius/full'),
+        bottomRightRadius: ids.get('radius/full')
+      })
+    }
+  })
+})
+
+describe('component sets on demand', () => {
+  const create = must(ALL_TOOLS.find((tool) => tool.name === 'create_component_sets'))
+
+  test('sets are made on the current page, bound to the existing collection', () => {
+    const { figma, graph } = design()
+    build.execute(figma, { docs: false, components: false })
+    const page = figma.currentPage.id
+    const out = create.execute(figma, { sets: ['Badge', 'Button'] }) as ComponentsReport & {
+      page: string
+      collection: string | null
+    }
+    expect(out.page).toBe(page)
+    expect(out.collection).toBe('Design System')
+    expect(out.components.map((c) => c.name)).toEqual(['Button', 'Badge'])
+    const primary = must(
+      figma.variables.getLocalVariables().find((v) => v.name === 'color/primary')
+    )
+    const button = must(graph.getNode(out.components[0].id))
+    expect(button.parentId).toBe(page)
+    const primaryDefault = must(
+      button.childIds
+        .map((id) => must(graph.getNode(id)))
+        .find((v) => v.name === 'Variant=Primary, State=Default')
+    )
+    expect(primaryDefault.boundVariables['fills/0/color']).toBe(primary.id)
+    // Placed below the design, not over it.
+    const screen = must(graph.getChildren(page).find((n) => n.name === 'Home'))
+    expect(button.y).toBeGreaterThanOrEqual(screen.y + screen.height)
+  })
+
+  test('without a design system the sets use plain values', () => {
+    const { figma, graph } = design()
+    const out = create.execute(figma, { page: 'components' }) as ComponentsReport & {
+      collection: string | null
+    }
+    expect(out.collection).toBeNull()
+    expect(out.components).toHaveLength(3)
+    const badge = must(graph.getNode(out.components[2].id))
+    expect(Object.keys(must(graph.getNode(badge.childIds[0])).boundVariables)).toEqual([])
   })
 })

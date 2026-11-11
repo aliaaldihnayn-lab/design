@@ -22,6 +22,7 @@ export const NUMERIC_FIELDS = new Set([
   'borderLeftWeight',
   'borderRightWeight',
   'fontSize',
+  'fontWeight',
   'letterSpacing',
   'lineHeight',
   'paddingLeft',

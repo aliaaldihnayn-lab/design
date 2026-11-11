@@ -1,4 +1,7 @@
+import type { Vector } from '@lawha/scene-graph/primitives'
+
 import { num } from './css'
+import { topGradient, type InspectGradient } from './gradient'
 import type { InspectColor, InspectSpec } from './spec'
 
 function composeColor(color: InspectColor): string {
@@ -35,6 +38,27 @@ function sizeModifiers(spec: InspectSpec): string[] {
   return out
 }
 
+/** A gradient as a Compose Brush, its points in the layer's pixels. */
+function composeBrush(gradient: InspectGradient, spec: InspectSpec): string {
+  const stops = gradient.stops
+    .map((stop) => {
+      const alpha = Math.round(stop.opacity * 255)
+        .toString(16)
+        .padStart(2, '0')
+        .toUpperCase()
+      return `${num(stop.position)}f to Color(0x${alpha}${stop.hex.slice(1)})`
+    })
+    .join(', ')
+  const g = gradient.geometry
+  const offset = (p: Vector) => `Offset(${num(p.x * spec.width)}f, ${num(p.y * spec.height)}f)`
+  if (gradient.type === 'linear')
+    return `Brush.linearGradient(${stops}, start = ${offset(g.start)}, end = ${offset(g.end)})`
+  if (gradient.type === 'angular')
+    return `Brush.sweepGradient(${stops}, center = ${offset(g.center)})`
+  const radius = Math.max(g.radius.x * spec.width, g.radius.y * spec.height)
+  return `Brush.radialGradient(${stops}, center = ${offset(g.center)}, radius = ${num(radius)}f)`
+}
+
 function paintModifiers(spec: InspectSpec): string[] {
   const out: string[] = []
   const shape = shapeOf(spec)
@@ -42,7 +66,9 @@ function paintModifiers(spec: InspectSpec): string[] {
   for (const shadow of spec.shadows.filter((s) => !s.inner))
     out.push(`shadow(elevation = ${dp(shadow.blur / 2)}, shape = ${shape})`)
   const solid = spec.fills.find((p) => p.kind === 'solid')
-  if (solid?.kind === 'solid') out.push(`background(${composeColor(solid)}, ${shape})`)
+  const gradient = topGradient(spec)
+  if (gradient) out.push(`background(${composeBrush(gradient, spec)}, ${shape})`)
+  else if (solid?.kind === 'solid') out.push(`background(${composeColor(solid)}, ${shape})`)
   const stroke = spec.strokes.at(0)
   if (stroke) out.push(`border(${dp(stroke.weight)}, ${composeColor(stroke)}, ${shape})`)
   if (spec.layout) {

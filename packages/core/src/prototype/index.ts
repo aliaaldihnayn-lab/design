@@ -35,13 +35,17 @@ export {
   CONDITION_OPERATORS,
   POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
+  SCROLL_POSITIONS,
   TRANSITION_TYPES,
   TRIGGERS
 } from './schema'
 export {
   canvasRect,
   noodle,
+  noodleAt,
+  noodleDistance,
   noodlePath,
+  noodlePoint,
   prototypeConnections,
   screenAt,
   type Noodle,
@@ -50,9 +54,15 @@ export {
 export {
   contentExtent,
   readScroll,
+  pinnedLayerGraph,
+  pinnedLayerOf,
+  POSITION_KEY,
+  readPosition,
   scrollContentGraph,
   scrollRegions,
   scrollTarget,
+  type PinnedLayer,
+  type ScrollPosition,
   SCROLL_KEY,
   type ScrollDirection,
   type ScrollRegion
@@ -107,3 +117,9 @@ export {
   type PlayVariables,
   type PropertyBinding
 } from './variables'
+export {
+  geometryKeyframe,
+  geometryStyle,
+  overlayOrigin,
+  type GeometryStyle
+} from './smart-geometry'

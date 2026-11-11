@@ -7,5 +7,8 @@
   "done": "Utworzono tokeny: {tokens}, połączono warstwy: {bound}",
   "duplicates": "Znaleziono niemal identyczne kolory: {count}; ich warstwy zachowują własny kolor",
   "failed": "Nie udało się zbudować systemu projektowego: {error}",
-  "extras": "Dodano tryb ciemny, {styles} stylów tekstu i {components} zestawów komponentów"
+  "extras": "Dodano tryb ciemny, {styles} stylów tekstu i {components} zestawów komponentów",
+  "components": "Dodaj zestawy komponentów",
+  "componentsHint": "Dodaje do tej strony zestawy komponentów Przycisk, Pole i Plakietka, powiązane ze zmiennymi systemu projektowego, jeśli istnieje",
+  "componentsDone": "Dodano zestawy komponentów: {count}"
 }

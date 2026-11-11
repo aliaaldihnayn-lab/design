@@ -7,5 +7,8 @@
   "done": "{tokens} jetons créés, {bound} calques reliés",
   "duplicates": "{count} couleurs quasi identiques trouvées : leurs calques gardent leur propre couleur",
   "failed": "Impossible de créer le système de design : {error}",
-  "extras": "Mode sombre, {styles} styles de texte et {components} ensembles de composants ajoutés"
+  "extras": "Mode sombre, {styles} styles de texte et {components} ensembles de composants ajoutés",
+  "components": "Ajouter des ensembles de composants",
+  "componentsHint": "Ajoute à cette page des ensembles de composants Bouton, Champ et Badge, liés aux variables du système de design s’il existe",
+  "componentsDone": "{count} ensembles de composants ajoutés"
 }

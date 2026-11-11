@@ -119,5 +119,10 @@
   "kitCarousel": "Carrousel",
   "kitProgress": "Barre de progression",
   "kitSpinner": "Indicateur de chargement",
-  "kitRating": "Notation par étoiles"
+  "kitRating": "Notation par étoiles",
+  "retargetHandle": "Faites glisser vers un autre écran pour relier, ou hors des écrans pour supprimer la connexion",
+  "position": "Au défilement",
+  "positionScrolls": "Défiler avec le parent",
+  "positionFixed": "Fixe",
+  "positionSticky": "Collant"
 }

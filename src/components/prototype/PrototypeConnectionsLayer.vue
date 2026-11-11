@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { useElementSize } from '@vueuse/core'
+import { onKeyStroke, useElementSize, useEventListener } from '@vueuse/core'
 import { computed, ref, useTemplateRef, watchEffect } from 'vue'
 
 import type { ViewportTransform } from '@lawha/core/geometry'
 import {
   canvasRect,
   noodle,
+  noodleAt,
   type Noodle,
   prototypeConnections,
   screenAt,
@@ -15,7 +16,13 @@ import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { linkToScreen, showPrototypeConnections } from '@/app/prototype/connections'
+import {
+  linkToScreen,
+  removeConnection,
+  retargetConnection,
+  showPrototypeConnections,
+  type ConnectionRef
+} from '@/app/prototype/connections'
 import { toast } from '@/app/shell/ui'
 
 const { canvasEl, drawn = null } = defineProps<{
@@ -24,9 +31,10 @@ const { canvasEl, drawn = null } = defineProps<{
   drawn?: ViewportTransform | null
 }>()
 
-/** The handle's radius and the arrowhead's length, in screen pixels. */
+/** The handle's radius, the arrowhead's length, and how near a click selects a noodle, in px. */
 const HANDLE_RADIUS = 6
 const ARROW = 9
+const HIT_TOLERANCE = 6
 
 const store = useEditorStore()
 const t = usePrototypeMessages()
@@ -51,9 +59,100 @@ const noodles = computed(() => {
     const to = canvasRect(store.graph, link.target)
     if (!from || !to) return []
     const line = noodle(toScreen(from), toScreen(to), ARROW)
-    return [{ key: `${link.source}-${index}`, line, active: selected.has(link.source), link }]
+    const picked =
+      chosen.value?.source === link.source && chosen.value.interaction === link.interaction
+    return [
+      {
+        key: `${link.source}-${index}`,
+        line,
+        active: picked || selected.has(link.source),
+        picked,
+        link
+      }
+    ]
   })
 })
+
+/** The noodle selected on the canvas, which Delete removes and whose end drags to retarget. */
+const chosen = ref<ConnectionRef | null>(null)
+const chosenNoodle = computed(() => noodles.value.find((item) => item.picked) ?? null)
+
+// A click on a noodle selects it instead of the layer under it, as in Figma.
+useEventListener(
+  () => canvasEl,
+  'pointerdown',
+  (event: PointerEvent) => {
+    if (event.button !== 0 || !root.value) return
+    const index = noodleAt(
+      noodles.value.map((item) => item.line),
+      localPoint(event),
+      HIT_TOLERANCE
+    )
+    if (index === null) {
+      chosen.value = null
+      return
+    }
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    const { link } = noodles.value[index]
+    chosen.value = { source: link.source, interaction: link.interaction }
+  },
+  { capture: true }
+)
+
+async function report(work: Promise<string | null>) {
+  const error = await work
+  if (error) toast.error(t.value.failed({ error }))
+}
+
+onKeyStroke(
+  ['Delete', 'Backspace', 'Escape'],
+  (event) => {
+    const link = chosen.value
+    if (!link) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    chosen.value = null
+    if (event.key !== 'Escape') void report(removeConnection(store, link, t.value.section))
+  },
+  { target: () => globalThis, eventName: 'keydown', dedupe: true }
+)
+
+/** Dragging a selected noodle's end: onto a screen retargets it, off every screen removes it. */
+const retarget = ref<{ pointer: Vector; target: string | null } | null>(null)
+
+function retargetTarget(point: Vector): string | null {
+  const link = chosen.value
+  if (!link) return null
+  const target = screenAt(store.graph, pageId.value, canvasPoint(point))
+  return target && target !== screenOf(store.graph, link.source, pageId.value)?.id ? target : null
+}
+
+function onEndDown(event: PointerEvent) {
+  if (event.button !== 0) return
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  const pointer = localPoint(event)
+  retarget.value = { pointer, target: retargetTarget(pointer) }
+}
+
+function onEndMove(event: PointerEvent) {
+  if (!retarget.value) return
+  const pointer = localPoint(event)
+  retarget.value = { pointer, target: retargetTarget(pointer) }
+}
+
+function onEndUp() {
+  const current = retarget.value
+  const link = chosen.value
+  retarget.value = null
+  if (!current || !link) return
+  chosen.value = null
+  void report(
+    current.target
+      ? retargetConnection(store, link, current.target, t.value.section)
+      : removeConnection(store, link, t.value.section)
+  )
+}
 
 /** The single selected layer inside a screen, which a new connection starts from. */
 const source = computed(() => {
@@ -115,6 +214,13 @@ async function onPointerUp() {
 }
 
 const dragLine = computed(() => {
+  const r = retarget.value
+  const picked = chosenNoodle.value
+  if (r && picked) {
+    const from = canvasRect(store.graph, picked.link.source)
+    const to = r.target ? canvasRect(store.graph, r.target) : null
+    if (from) return noodle(toScreen(from), to ? toScreen(to) : r.pointer, ARROW)
+  }
   const d = drag.value
   const s = source.value
   if (!d || !s) return null
@@ -123,7 +229,7 @@ const dragLine = computed(() => {
 })
 
 const targetBox = computed(() => {
-  const id = drag.value?.target
+  const id = drag.value?.target ?? retarget.value?.target
   const rect = id ? canvasRect(store.graph, id) : null
   return rect ? toScreen(rect) : null
 })
@@ -138,9 +244,16 @@ const LINK_COLOR = '#38bdf8'
 const board = useTemplateRef<HTMLCanvasElement>('board')
 const { width, height } = useElementSize(root)
 
-function strokeNoodle(ctx: CanvasRenderingContext2D, line: Noodle, emphasis: boolean) {
+function strokeNoodle(
+  ctx: CanvasRenderingContext2D,
+  line: Noodle,
+  emphasis: boolean,
+  picked = false
+) {
   ctx.globalAlpha = emphasis ? 1 : 0.7
-  ctx.lineWidth = emphasis ? 2 : 1.5
+  ctx.lineWidth = 1.5
+  if (emphasis) ctx.lineWidth = 2
+  if (picked) ctx.lineWidth = 3
   ctx.beginPath()
   ctx.moveTo(line.start.x, line.start.y)
   ctx.bezierCurveTo(line.c1.x, line.c1.y, line.c2.x, line.c2.y, line.end.x, line.end.y)
@@ -169,7 +282,8 @@ watchEffect(() => {
   ctx.strokeStyle = LINK_COLOR
   ctx.fillStyle = LINK_COLOR
   for (const item of noodles.value) {
-    strokeNoodle(ctx, item.line, item.active)
+    if (item.picked && retarget.value) continue
+    strokeNoodle(ctx, item.line, item.active, item.picked)
     ctx.beginPath()
     ctx.arc(item.line.start.x, item.line.start.y, 3, 0, Math.PI * 2)
     ctx.fill()
@@ -191,6 +305,7 @@ watchEffect(() => {
     data-canvas-overlay="prototype-connections"
     data-test-id="prototype-connections"
     :data-connections="noodles.length"
+    :data-selected-connection="chosen ? `${chosen.source}:${chosen.interaction}` : undefined"
     :data-drop-target="drag ? (drag.target ?? '') : undefined"
     @wheel="forwardWheel"
   >
@@ -211,6 +326,23 @@ watchEffect(() => {
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="drag = null"
+    />
+    <button
+      v-if="chosenNoodle"
+      type="button"
+      class="pointer-events-auto absolute cursor-grab rounded-full border-2 border-[#38bdf8] bg-white shadow"
+      :style="{
+        left: `${chosenNoodle.line.end.x - HANDLE_RADIUS}px`,
+        top: `${chosenNoodle.line.end.y - HANDLE_RADIUS}px`,
+        width: `${HANDLE_RADIUS * 2}px`,
+        height: `${HANDLE_RADIUS * 2}px`
+      }"
+      :aria-label="t.retargetHandle"
+      data-test-id="prototype-connection-end"
+      @pointerdown.stop.prevent="onEndDown"
+      @pointermove="onEndMove"
+      @pointerup="onEndUp"
+      @pointercancel="retarget = null"
     />
   </div>
 </template>

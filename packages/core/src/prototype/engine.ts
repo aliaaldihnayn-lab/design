@@ -7,6 +7,13 @@ export interface OverlayState {
   screen: string
   position: 'center' | 'top' | 'bottom' | 'left' | 'right'
   closeOnOutside: boolean
+  /** How it opened; a Smart Animate overlay closes with Smart Animate too. */
+  transition?: Transition
+}
+
+/** The transition an overlay closes with: its own Smart Animate reversed, or none. */
+function closing(overlay: OverlayState | undefined): Transition | null {
+  return overlay?.transition?.type === 'smart-animate' ? overlay.transition : null
 }
 
 export interface PlayerState {
@@ -65,7 +72,7 @@ export function fire(graph: SceneGraph, state: PlayerState, action: Action): Ste
       if (state.overlays.length > 0)
         return {
           state: { ...state, overlays: state.overlays.slice(0, -1) },
-          transition: action.transition ?? null
+          transition: action.transition ?? closing(state.overlays.at(-1))
         }
       const previous = state.history.at(-1)
       if (!previous) return null
@@ -84,7 +91,8 @@ export function fire(graph: SceneGraph, state: PlayerState, action: Action): Ste
             {
               screen: action.destination,
               position: action.position,
-              closeOnOutside: action.closeOnOutside
+              closeOnOutside: action.closeOnOutside,
+              transition: action.transition
             }
           ]
         },
@@ -93,7 +101,10 @@ export function fire(graph: SceneGraph, state: PlayerState, action: Action): Ste
     }
     case 'close-overlay':
       if (state.overlays.length === 0) return null
-      return { state: { ...state, overlays: state.overlays.slice(0, -1) }, transition: null }
+      return {
+        state: { ...state, overlays: state.overlays.slice(0, -1) },
+        transition: closing(state.overlays.at(-1))
+      }
     case 'scroll-to':
       return { state, transition: null, effect: { type: 'scroll-to', node: action.destination } }
     case 'open-url':
@@ -155,7 +166,7 @@ export function timers(graph: SceneGraph, state: PlayerState): { delay: number; 
 export function clickOutside(state: PlayerState): Step | null {
   const top = state.overlays.at(-1)
   if (!top?.closeOnOutside) return null
-  return { state: { ...state, overlays: state.overlays.slice(0, -1) }, transition: null }
+  return { state: { ...state, overlays: state.overlays.slice(0, -1) }, transition: closing(top) }
 }
 
 function descendants(graph: SceneGraph, rootId: string): SceneNode[] {

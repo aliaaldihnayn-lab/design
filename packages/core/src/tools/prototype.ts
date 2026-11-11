@@ -16,11 +16,12 @@ import {
   actionSchema,
   flowSchema,
   scrollDirectionSchema,
+  scrollPositionSchema,
   interactionSchema,
   transitionSchema,
   triggerSchema
 } from '#core/prototype/schema'
-import { readScroll, SCROLL_KEY } from '#core/prototype/scroll'
+import { POSITION_KEY, readPosition, readScroll, SCROLL_KEY } from '#core/prototype/scroll'
 import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
@@ -118,6 +119,45 @@ export const addInteraction = defineTool({
       : []
     writeInteractions(figma, args.id, [...kept, added])
     return { id: args.id, interactions: kept.length + 1 }
+  }
+})
+
+export const editConnection = defineTool({
+  name: 'edit_connection',
+  description:
+    'Change one prototype connection, the noodle from a layer to the screen it opens: remove it, or retarget it to another layer (keeping its trigger, action and transition), as dragging its end does in Figma. interaction is its index in the layer’s interactions (get_prototype lists them in order).',
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: v.pipe(v.string(), v.description('Layer the connection starts from')),
+    interaction: v.pipe(v.number(), v.integer(), v.minValue(0)),
+    change: v.picklist(['remove', 'retarget']),
+    destination: v.optional(v.pipe(v.string(), v.description('New target, for retarget')))
+  }),
+  execute: (figma, args) => {
+    const raw = figma.graph.getNode(args.id)
+    if (!raw) return { error: `Node ${args.id} not found` }
+    const list = readInteractions(raw, figma.graph)
+    const current = list.at(args.interaction)
+    if (!current || !('destination' in current.action))
+      return { error: `Layer ${args.id} has no connection ${args.interaction}` }
+    if (args.change === 'remove') {
+      writeInteractions(
+        figma,
+        args.id,
+        list.filter((_, index) => index !== args.interaction)
+      )
+      return { id: args.id, interactions: list.length - 1 }
+    }
+    if (!args.destination) return { error: 'retarget needs a destination' }
+    if (!figma.graph.getNode(args.destination))
+      return { error: `Destination ${args.destination} not found` }
+    const action = { ...current.action, destination: args.destination }
+    writeInteractions(
+      figma,
+      args.id,
+      list.map((item, index) => (index === args.interaction ? { ...item, action } : item))
+    )
+    return { id: args.id, interactions: list.length, destination: args.destination }
   }
 })
 
@@ -223,5 +263,29 @@ export const setScrollBehavior = defineTool({
     if (args.direction !== 'none' && !raw.clipsContent)
       figma.graph.updateNode(args.id, { clipsContent: true })
     return { id: args.id, direction: args.direction }
+  }
+})
+
+export const setScrollPosition = defineTool({
+  name: 'set_scroll_position',
+  description:
+    'Set how a layer behaves while the scrolling frame it is a direct child of scrolls, as Figma’s scroll behaviour: scrolls (with the content, the default), fixed (stays in place, as a header or tab bar does) or sticky (scrolls until it reaches the frame’s top, then stays). Frames inside a scrolling frame that scroll themselves scroll on their own.',
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    id: v.pipe(v.string(), v.description('Direct child of a scrolling frame')),
+    position: scrollPositionSchema
+  }),
+  execute: (figma, args) => {
+    const node = requireNode(figma, args.id)
+    const raw = figma.graph.getNode(args.id)
+    if (!node || !raw) return { error: `Node ${args.id} not found` }
+    node.setPluginData(POSITION_KEY, args.position === 'scrolls' ? '' : args.position)
+    const parent = raw.parentId ? figma.graph.getNode(raw.parentId) : undefined
+    const scrolls = parent ? readScroll(parent) !== 'none' : false
+    return {
+      id: args.id,
+      position: readPosition(raw),
+      ...(scrolls ? {} : { note: 'Its parent does not scroll yet: set_scroll_behavior on it' })
+    }
   }
 })

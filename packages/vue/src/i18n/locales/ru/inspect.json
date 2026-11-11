@@ -11,5 +11,6 @@
   "copy": "Копировать код",
   "sizingFixed": "Фиксированный",
   "sizingHug": "По содержимому",
-  "sizingFill": "Заполнить"
+  "sizingFill": "Заполнить",
+  "gradient": "Градиент"
 }

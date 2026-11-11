@@ -62,6 +62,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 
 - Put Lawha-only features on `lawha`, in the same style as `figma`: methods and node-like handles with getters and setters, not parallel helper functions. `figma` stays Figma's (Figma API, Shape follows Figma).
 - Script runners get both globals only through `compileScript` (`packages/core/src/tools/analyze/eval/wrap.ts`); the `eval` tool, `lawha eval`, and app automation must not build their own `AsyncFunction`.
+- Figma plugins are the exception: their code is untrusted and runs in its own QuickJS interpreter (`packages/core/src/figma-api/plugins/sandbox/`), reaching `figma`, `lawha`, and the host only through the membrane's handles, never a host object or `Function`. A new global for plugins goes into `startPlugin`'s globals, and an escape attempt it could open gets a case in `packages/core/tests/figma-api/plugins/sandbox.test.ts`.
 - Members take names, not internal ids, and write through the same scene-graph functions the editor's actions use, such as `behaviourFromSpec`; errors name what exists. Tools for the same feature wrap the `lawha` API rather than reimplementing it (`packages/core/src/tools/create/behaviours.ts`).
 - A new member updates `packages/docs/programmable/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/lawha-api/`).
 

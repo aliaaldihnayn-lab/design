@@ -1,4 +1,11 @@
-import { deriveCSSName, explicitCSSName } from '@lawha/dom-css/export'
+import {
+  deriveCSSName,
+  explicitCSSName,
+  gradientGeometry,
+  gradientToCSS,
+  sceneNodeToDesignDocument,
+  type GradientGeometry
+} from '@lawha/dom-css/export'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { colorToCSS, colorToHex } from '@lawha/scene-graph/color'
 import { layoutSizing } from '@lawha/scene-graph/layout'
@@ -24,7 +31,12 @@ export type InspectPaint =
   | {
       kind: 'gradient'
       type: 'linear' | 'radial' | 'angular' | 'diamond'
-      stops: { css: string; position: number }[]
+      /** Each stop's colour, with the fill's opacity, and its position from 0 to 1. */
+      stops: (Omit<InspectColor, 'variable'> & { position: number })[]
+      /** Where the handles fall in the layer's unit square, and CSS's angle. */
+      geometry: GradientGeometry
+      /** The gradient as a CSS image, as the code export writes it. */
+      cssImage: string
     }
   | { kind: 'image' }
 
@@ -41,6 +53,11 @@ export type InspectSizing = 'fixed' | 'hug' | 'fill'
 /** What Dev Mode shows about a layer, in units every code target shares (px, 0–1 opacity). */
 export interface InspectSpec {
   name: string
+  /**
+   * The layer's CSS as the HTML and JSX export writes it (`@lawha/dom-css`), with bound values
+   * as `var(--token)`, in the order the export sets them.
+   */
+  css: [string, string][]
   type: SceneNode['type']
   x: number
   y: number
@@ -129,10 +146,17 @@ function paints(graph: SceneGraph, node: SceneNode): InspectPaint[] {
         {
           kind: 'gradient',
           type: GRADIENTS[fill.type as keyof typeof GRADIENTS],
-          stops: (fill.gradientStops ?? []).map((stop) => ({
-            css: colorToCSS({ ...stop.color, a: round(stop.color.a * fill.opacity) }),
-            position: round(stop.position)
-          }))
+          stops: (fill.gradientStops ?? []).map((stop) => {
+            const alpha = round(stop.color.a * fill.opacity)
+            return {
+              hex: hex(stop.color),
+              opacity: alpha,
+              css: alpha >= 1 ? hex(stop.color) : colorToCSS({ ...stop.color, a: alpha }),
+              position: round(stop.position)
+            }
+          }),
+          geometry: gradientGeometry(fill, node.width, node.height),
+          cssImage: gradientToCSS(fill, node.width, node.height) ?? ''
         }
       ]
     return fill.type === 'IMAGE' ? [{ kind: 'image' }] : []
@@ -170,6 +194,7 @@ export function inspectLayer(graph: SceneGraph, nodeId: string): InspectSpec | n
   const textFill = node.type === 'TEXT' ? paints(graph, node).find((p) => p.kind === 'solid') : null
   return {
     name: node.name,
+    css: exportedCSS(graph, nodeId),
     type: node.type,
     x: round(node.x),
     y: round(node.y),
@@ -249,4 +274,11 @@ function lineHeightPx(node: SceneNode): number | null {
   const lh = node.lineHeight
   if (!lh) return null
   return round(lh.unit === 'PIXELS' ? lh.value : (lh.value / 100) * node.fontSize)
+}
+
+/** The declarations the code export gives the layer's own element. */
+function exportedCSS(graph: SceneGraph, nodeId: string): [string, string][] {
+  const root = sceneNodeToDesignDocument(graph, nodeId).children.at(0)
+  if (root?.type !== 'element') return []
+  return Object.entries(root.inlineStyle ?? {})
 }

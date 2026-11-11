@@ -17,6 +17,7 @@ use launch::args;
 use menu::events::handle_menu_event;
 use menu::{
     install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
+    set_native_menu_plugins,
     NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
@@ -94,6 +95,7 @@ pub fn run() {
             cancel_http_request,
             files::recent::set_recent_files,
             set_native_menu_features,
+            set_native_menu_plugins,
             native_menu_checked,
             set_native_menu_checked,
             launch::take_pending_open,

@@ -32,11 +32,45 @@ struct MenuEntry {
     sub: Vec<MenuEntry>,
 }
 
-/// What the schema menu is built from besides the schema: recent files and enabled features.
+/// One command an installed plugin's manifest offers; `path` holds its submenus' names.
+#[derive(Clone, Deserialize)]
+pub struct NativePluginCommand {
+    pub name: String,
+    pub command: String,
+    #[serde(default)]
+    pub path: Vec<String>,
+}
+
+/// An installed plugin as the Plugins menu lists it.
+#[derive(Clone, Deserialize)]
+pub struct NativePlugin {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub commands: Vec<NativePluginCommand>,
+}
+
+/// What the schema menu is built from besides the schema: recent files, enabled features, and
+/// installed plugins.
 #[derive(Default)]
 pub struct NativeMenuInputs {
     pub recent_files: Vec<String>,
     pub features: Vec<String>,
+    pub plugins: Vec<NativePlugin>,
+}
+
+/// The event a plugin command sends, matching the browser menu's `plugin:<id>:<command>`; a
+/// plugin without commands runs from `plugin:<id>`.
+fn plugin_event_id(plugin: &NativePlugin, command: Option<&str>) -> String {
+    match command {
+        Some(command) => format!("plugin:{}:{}", plugin.id, command),
+        None => format!("plugin:{}", plugin.id),
+    }
+}
+
+/// The event that removes a plugin.
+fn plugin_remove_event_id(plugin: &NativePlugin) -> String {
+    format!("plugin-remove:{}", plugin.id)
 }
 
 pub struct NativeMenuState(pub Mutex<NativeMenuInputs>);
@@ -112,6 +146,17 @@ fn build_submenu<R: tauri::Runtime>(
         let label = entry.label.as_deref().unwrap_or_default();
         if entry.id.as_deref() == Some("open-recent") {
             let submenu = build_recent_files_submenu(app, label, &build.inputs.recent_files)?;
+            builder = builder.item(&submenu);
+            continue;
+        }
+        if entry.id.as_deref() == Some("plugins-installed") {
+            for plugin in &build.inputs.plugins {
+                builder = add_plugin_entry(app, builder, plugin)?;
+            }
+            continue;
+        }
+        if entry.id.as_deref() == Some("plugins-remove") {
+            let submenu = build_remove_plugins_submenu(app, label, &build.inputs.plugins)?;
             builder = builder.item(&submenu);
             continue;
         }
@@ -211,6 +256,71 @@ fn build_recent_files_submenu<R: tauri::Runtime>(
                 .id("clear-recent-files")
                 .build(app)?,
         );
+    }
+    builder.build()
+}
+
+/// The commands at one depth of a plugin's menu, nested as its manifest nests them.
+fn plugin_commands_submenu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    label: &str,
+    plugin: &NativePlugin,
+    commands: &[&NativePluginCommand],
+    depth: usize,
+) -> tauri::Result<Submenu<R>> {
+    let mut builder = SubmenuBuilder::new(app, label);
+    let mut folders: Vec<(&str, Vec<&NativePluginCommand>)> = Vec::new();
+    for command in commands {
+        match command.path.get(depth) {
+            None => {
+                let item = MenuItemBuilder::new(&command.name)
+                    .id(plugin_event_id(plugin, Some(&command.command)))
+                    .build(app)?;
+                builder = builder.item(&item);
+            }
+            Some(folder) => match folders.iter_mut().find(|(name, _)| name == folder) {
+                Some((_, nested)) => nested.push(command),
+                None => folders.push((folder.as_str(), vec![command])),
+            },
+        }
+    }
+    for (folder, nested) in folders {
+        let submenu = plugin_commands_submenu(app, folder, plugin, &nested, depth + 1)?;
+        builder = builder.item(&submenu);
+    }
+    builder.build()
+}
+
+/// An installed plugin in the Plugins menu: its commands, or one item when it has none.
+fn add_plugin_entry<'m, R: tauri::Runtime>(
+    app: &'m tauri::AppHandle<R>,
+    builder: SubmenuBuilder<'m, R, tauri::AppHandle<R>>,
+    plugin: &NativePlugin,
+) -> tauri::Result<SubmenuBuilder<'m, R, tauri::AppHandle<R>>> {
+    if plugin.commands.is_empty() {
+        let item = MenuItemBuilder::new(&plugin.name)
+            .id(plugin_event_id(plugin, None))
+            .build(app)?;
+        return Ok(builder.item(&item));
+    }
+    let commands: Vec<&NativePluginCommand> = plugin.commands.iter().collect();
+    let submenu = plugin_commands_submenu(app, &plugin.name, plugin, &commands, 0)?;
+    Ok(builder.item(&submenu))
+}
+
+/// Remove Plugin, listing each installed plugin; disabled while none is installed.
+fn build_remove_plugins_submenu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    label: &str,
+    plugins: &[NativePlugin],
+) -> tauri::Result<Submenu<R>> {
+    let mut builder =
+        SubmenuBuilder::with_id(app, "plugins-remove", label).enabled(!plugins.is_empty());
+    for plugin in plugins {
+        let item = MenuItemBuilder::new(&plugin.name)
+            .id(plugin_remove_event_id(plugin))
+            .build(app)?;
+        builder = builder.item(&item);
     }
     builder.build()
 }
@@ -387,4 +497,51 @@ pub fn set_native_menu_features<R: tauri::Runtime>(
     features: Vec<String>,
 ) -> Result<(), String> {
     update_app_menu(&app, |inputs| inputs.features = features)
+}
+
+/// Lists the installed plugins in the Plugins menu and its Remove Plugin submenu.
+#[tauri::command]
+pub fn set_native_menu_plugins<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    plugins: Vec<NativePlugin>,
+) -> Result<(), String> {
+    update_app_menu(&app, |inputs| inputs.plugins = plugins)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn plugin(id: &str) -> NativePlugin {
+        NativePlugin {
+            id: id.to_string(),
+            name: "Sample".to_string(),
+            commands: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn plugin_events_match_the_browser_menu() {
+        let sample = plugin("lawha-sample");
+        assert_eq!(plugin_event_id(&sample, None), "plugin:lawha-sample");
+        assert_eq!(
+            plugin_event_id(&sample, Some("open")),
+            "plugin:lawha-sample:open"
+        );
+        assert_eq!(
+            plugin_remove_event_id(&sample),
+            "plugin-remove:lawha-sample"
+        );
+    }
+
+    #[test]
+    fn plugins_deserialize_from_the_frontend() {
+        let plugins: Vec<NativePlugin> = serde_json::from_str(
+            r#"[{"id":"a","name":"A","commands":[{"name":"Go","command":"go","path":["Quick"]}]},{"id":"b","name":"B"}]"#,
+        )
+        .expect("plugins parse");
+        assert_eq!(plugins.len(), 2);
+        assert_eq!(plugins[0].commands[0].path, vec!["Quick".to_string()]);
+        assert!(plugins[1].commands.is_empty());
+    }
 }

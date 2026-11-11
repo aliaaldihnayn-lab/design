@@ -7,5 +7,8 @@
   "done": "{tokens} tokens creados, {bound} capas vinculadas",
   "duplicates": "Se encontraron {count} colores casi duplicados: sus capas conservan su propio color",
   "failed": "No se pudo crear el sistema de diseño: {error}",
-  "extras": "Se añadieron un modo oscuro, {styles} estilos de texto y {components} conjuntos de componentes"
+  "extras": "Se añadieron un modo oscuro, {styles} estilos de texto y {components} conjuntos de componentes",
+  "components": "Añadir conjuntos de componentes",
+  "componentsHint": "Añade a esta página conjuntos de componentes de botón, campo y distintivo, enlazados a las variables del sistema de diseño si existe",
+  "componentsDone": "Se añadieron {count} conjuntos de componentes"
 }

@@ -19,6 +19,7 @@ import {
   lineHeightToCSS,
   strokeColorToCSS
 } from './css'
+import { gradientBackgrounds } from './gradient'
 import { addGridContainer, addGridPlacement } from './grid'
 import { textCaseToCSS, textElementContent } from './text'
 
@@ -317,6 +318,8 @@ function styleFromSceneNode(
   addSizeConstraints(style, node, css)
   const fill = fillToCSS(node.fills.at(0))
   if (fill) style['background-color'] = css('fills/0/color', fill)
+  const gradients = gradientBackgrounds(node.fills, node.width, node.height)
+  if (gradients.length > 0) style['background-image'] = gradients.join(', ')
   addImageStyle(style, node)
   addStroke(style, node, css)
   Object.assign(style, effectsToCSS(node.effects))
@@ -399,9 +402,7 @@ function attrsForNode(
   node: SceneNode,
   includeSourceIds: boolean
 ): Record<string, string> {
-  const attrs: Record<string, string> = includeSourceIds
-    ? { 'data-lawha-node-id': node.id }
-    : {}
+  const attrs: Record<string, string> = includeSourceIds ? { 'data-lawha-node-id': node.id } : {}
   const sourceURL = imageSourceURL(node)
   if (sourceURL) attrs.src = sourceURL
   const fill = node.fills.at(0)

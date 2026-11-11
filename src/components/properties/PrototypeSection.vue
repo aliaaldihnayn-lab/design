@@ -5,17 +5,20 @@ import {
   DIRECTIONS,
   EASINGS,
   SCROLL_DIRECTIONS,
+  SCROLL_POSITIONS,
   TRANSITION_TYPES,
   TRIGGERS,
   changeDestinations,
   readFlows,
   readInteractions,
+  readPosition,
   readScroll,
   screenOf,
   screensOf,
   type Action,
   type Interaction,
   type ScrollDirection,
+  type ScrollPosition,
   type Transition,
   type Trigger
 } from '@lawha/core/prototype'
@@ -122,6 +125,23 @@ const scroll = computed<ScrollDirection | null>(() => {
     return null
   return readScroll(node)
 })
+
+const positionOptions = computed(() =>
+  SCROLL_POSITIONS.map((v) => ({ value: v, label: label('position', v) }))
+)
+
+/** How the selected layer behaves while its scrolling parent scrolls; null outside one. */
+const position = computed<ScrollPosition | null>(() => {
+  void version.value
+  const node = nodeId ? store.graph.getNode(nodeId) : null
+  const parent = node?.parentId ? store.graph.getNode(node.parentId) : null
+  if (!node || !parent || readScroll(parent) === 'none') return null
+  return readPosition(node)
+})
+
+function setPosition(value: ScrollPosition) {
+  if (nodeId) void run('set_scroll_position', { id: nodeId, position: value })
+}
 
 function setScroll(direction: ScrollDirection) {
   if (nodeId) void run('set_scroll_behavior', { id: nodeId, direction })
@@ -342,6 +362,14 @@ function setSpring(index: number, field: (typeof SPRING_FIELDS)[number], value: 
         :label="t.scroll"
         data-test-id="prototype-scroll"
         @update:model-value="setScroll($event as ScrollDirection)"
+      />
+      <AppSelect
+        v-if="position"
+        :model-value="position"
+        :options="positionOptions"
+        :label="t.position"
+        data-test-id="prototype-position"
+        @update:model-value="setPosition($event as ScrollPosition)"
       />
 
       <template v-if="nodeId">

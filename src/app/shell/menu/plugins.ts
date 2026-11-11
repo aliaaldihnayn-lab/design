@@ -1,5 +1,6 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useFileDialog } from '@vueuse/core'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import {
   pluginCommands,
@@ -19,6 +20,36 @@ import {
 } from '@/app/plugins/library'
 import { runPlugin } from '@/app/plugins/session'
 import { toast } from '@/app/shell/ui'
+import { isTauri } from '@/app/tauri/env'
+
+/** The event the desktop menu sends to remove a plugin; running one sends its browser menu id. */
+const REMOVE_EVENT_PREFIX = 'plugin-remove:'
+
+/** An installed plugin as `set_native_menu_plugins` takes it. */
+interface NativeMenuPlugin {
+  id: string
+  name: string
+  commands: PluginCommand[]
+}
+
+/** Keeps the desktop Plugins menu listing the installed plugins and their commands. */
+function watchNativePluginMenu(): void {
+  watch(
+    installedPlugins,
+    (bundles) => {
+      if (!isTauri()) return
+      const plugins: NativeMenuPlugin[] = bundles.map((bundle) => ({
+        id: bundle.manifest.id,
+        name: bundle.manifest.name,
+        commands: pluginCommands(bundle.manifest)
+      }))
+      invoke('set_native_menu_plugins', { plugins }).catch((error: unknown) => {
+        console.warn('[Plugins] Failed to update the native menu', error)
+      })
+    },
+    { immediate: true }
+  )
+}
 
 /** The Plugins menu: importing a plugin folder, each installed plugin's commands, removal. */
 export function usePluginMenu(store: EditorStore) {
@@ -82,16 +113,41 @@ export function usePluginMenu(store: EditorStore) {
     })
   )
 
+  function remove(bundle: PluginBundle) {
+    void removePlugin(bundle.manifest.id).then(() =>
+      toast.info(t.value.removed({ name: bundle.manifest.name }))
+    )
+  }
+
   const removeEntries = computed<MenuEntry[]>(() =>
     installedPlugins.value.map((bundle) => ({
       label: bundle.manifest.name,
-      action: () => {
-        void removePlugin(bundle.manifest.id).then(() =>
-          toast.info(t.value.removed({ name: bundle.manifest.name }))
-        )
-      }
+      action: () => remove(bundle)
     }))
   )
 
-  return { importPlugin: () => dialog.open(), installedEntries, removeEntries }
+  /**
+   * What a desktop menu event for a plugin does: `plugin:<id>[:<command>]` runs it, as the
+   * browser menu's ids do, and `plugin-remove:<id>` removes it.
+   */
+  function nativeAction(eventId: string): (() => void) | undefined {
+    for (const bundle of installedPlugins.value) {
+      const { id } = bundle.manifest
+      if (eventId === `${REMOVE_EVENT_PREFIX}${id}`) return () => remove(bundle)
+      if (eventId === `plugin:${id}`) return () => run(bundle, '')
+      const command = pluginCommands(bundle.manifest).find(
+        (item) => eventId === `plugin:${id}:${item.command}`
+      )
+      if (command) return () => run(bundle, command.command)
+    }
+    return undefined
+  }
+
+  return {
+    importPlugin: () => dialog.open(),
+    installedEntries,
+    removeEntries,
+    nativeAction,
+    watchNativeMenu: watchNativePluginMenu
+  }
 }

@@ -30,7 +30,7 @@ import {
   searchIconsTool,
   setBehaviour
 } from '#core/tools/create'
-import { buildDesignSystemTool } from '#core/tools/design-system'
+import { buildDesignSystemTool, createComponentSetsTool } from '#core/tools/design-system'
 import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
 import { inspectLayerTool } from '#core/tools/inspect'
 import {
@@ -73,11 +73,13 @@ import { runFigmaPlugin } from '#core/tools/plugins'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
+  editConnection,
   autoPrototype,
   getPrototype,
   setFlow,
   setInteractions,
-  setScrollBehavior
+  setScrollBehavior,
+  setScrollPosition
 } from '#core/tools/prototype'
 import {
   applyMasterPageTool,
@@ -203,6 +205,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   convertToDieline,
   // Design system
   buildDesignSystemTool,
+  createComponentSetsTool,
   // Interactive kit
   insertKitComponentTool,
   buildInteractiveKitTool,
@@ -228,9 +231,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   getPrototype,
   setInteractions,
   addInteraction,
+  editConnection,
   setFlow,
   autoPrototype,
   setScrollBehavior,
+  setScrollPosition,
   // Interactive components
   createInteractiveComponent,
   addStateInteraction,

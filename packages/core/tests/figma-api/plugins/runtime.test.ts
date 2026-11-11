@@ -59,11 +59,6 @@ function recordingHost() {
   return { host, log }
 }
 
-const tick = () =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0)
-  })
-
 function bundle(code: string, manifest: Partial<PluginBundle['manifest']> = {}): PluginBundle {
   return {
     manifest: {
@@ -112,7 +107,7 @@ describe('running a plugin', () => {
     const figma = new FigmaAPI(new SceneGraph())
     const { host, log } = recordingHost()
     const session = startPlugin({ figma, bundle: sampleBundle(), host, command: 'open' })
-    await tick()
+    await session.ready
 
     expect(log.shown).toHaveLength(1)
     expect(log.shown[0].html).toContain('<input id="count"')
@@ -152,27 +147,23 @@ describe('running a plugin', () => {
 
   test('the run event, figma.command, once, and close listeners fire as in Figma', async () => {
     const figma = new FigmaAPI(new SceneGraph())
-    const { host } = recordingHost()
-    const events: string[] = []
+    const { host, log } = recordingHost()
     const session = startPlugin({
       figma,
       host,
       command: 'go',
       bundle: bundle(`
-        figma.on('run', ({ command }) => record('run:' + command + ':' + figma.command))
-        figma.once('selectionchange', () => record('selection'))
-        figma.on('close', () => record('close'))
+        figma.on('run', ({ command }) => figma.notify('run:' + command + ':' + figma.command))
+        figma.once('selectionchange', () => figma.notify('selection'))
+        figma.on('close', () => figma.notify('close'))
       `),
       parameters: undefined
     })
-    // The plugin reports through a global the test gives it.
-    Object.assign(globalThis, { record: (event: string) => events.push(event) })
-    await tick()
+    await session.ready
     await session.emit('selectionchange')
     await session.emit('selectionchange')
     session.close()
-    expect(events).toEqual(['run:go:go', 'selection', 'close'])
-    Reflect.deleteProperty(globalThis, 'record')
+    expect(log.notes.map((note) => note.message)).toEqual(['run:go:go', 'selection', 'close'])
   })
 
   test('code that fails to start ends the session with its error', async () => {
@@ -192,7 +183,7 @@ describe('running a plugin', () => {
         `figma.showUI(__html__); figma.ui.onmessage = () => { throw new Error('bad') }`
       )
     })
-    await tick()
+    await session.ready
     await session.receiveFromUI({})
     expect(session.running).toBe(true)
     expect(log.notes).toEqual([{ message: 'Test: bad', error: true }])
@@ -209,7 +200,7 @@ describe('running a plugin', () => {
         figma.ui.onmessage = (msg) => { msg.changed = true; figma.ui.postMessage(msg) }
       `)
     })
-    await tick()
+    await session.ready
     const message = { value: 1 }
     await session.receiveFromUI(message)
     expect(message).toEqual({ value: 1 })
@@ -230,7 +221,7 @@ describe('running a plugin', () => {
       host,
       bundle: bundle(
         `
-        const seen = [typeof window, typeof document, typeof localStorage, typeof globalThis]
+        const seen = [typeof window, typeof document, typeof localStorage, typeof indexedDB]
         let blocked = ''
         try { await fetch('https://evil.test/x') } catch (e) { blocked = e.message }
         const ok = await (await fetch('https://api.example.com/v1/a')).text()

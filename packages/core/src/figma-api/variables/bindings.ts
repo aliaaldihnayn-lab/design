@@ -174,6 +174,7 @@ export function setLayerBinding(
 const LAYER_TEXT_FIELDS: ReadonlySet<TextBindableField> = new Set([
   'fontFamily',
   'fontSize',
+  'fontWeight',
   'letterSpacing',
   'lineHeight'
 ])
@@ -189,9 +190,7 @@ export function setEmptyTextBinding(
   variable: Variable | null
 ): void {
   if (!LAYER_TEXT_FIELDS.has(field)) {
-    throw new Error(
-      `in setBoundVariable: Lawha binds ${field} only on text that has characters`
-    )
+    throw new Error(`in setBoundVariable: Lawha binds ${field} only on text that has characters`)
   }
   if (variable) graph.bindVariable(node.id, field, variable.id)
   else graph.unbindVariable(node.id, field)

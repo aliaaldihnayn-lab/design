@@ -1,9 +1,16 @@
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { FigmaAPI } from '#core/figma-api'
-import { compileScript } from '#core/tools/analyze/eval/wrap'
+import { LawhaAPI } from '#core/lawha-api'
+import { wrapEvalCode } from '#core/tools/analyze/eval/wrap'
 
 import { type PluginBundle, uiFiles } from './manifest'
+import {
+  createPluginSandbox,
+  loadPluginInterpreter,
+  type PluginSandbox,
+  type SandboxLimits
+} from './sandbox'
 
 /** How a plugin asked its UI to appear, with Figma's defaults filled in. */
 export interface PluginUIOptions {
@@ -63,6 +70,8 @@ export interface PluginSession {
   readonly pluginId: string
   /** Settles once, when the plugin closes itself, is closed, or fails to start. */
   readonly done: Promise<PluginExit>
+  /** Settles once the plugin's code has run and its `run` event was handled, or it ended. */
+  readonly ready: Promise<void>
   readonly running: boolean
   /** A message the window sent with `parent.postMessage({ pluginMessage }, '*')`. */
   receiveFromUI(message: unknown, origin?: string): Promise<void>
@@ -79,40 +88,9 @@ export interface StartPluginOptions {
   /** The menu command the plugin was started with, as `figma.command`; '' for none. */
   command?: string
   parameters?: Record<string, unknown>
+  /** Bounds on the plugin's interpreter: memory, stack, and the length of one turn. */
+  limits?: Partial<SandboxLimits>
 }
-
-/**
- * Host globals a plugin's code does not see. Figma runs plugin code in a realm with no DOM or
- * network beyond its own `fetch`; this names them away, which keeps honest plugins inside the
- * API but is not a security boundary: code that reaches the global object (for example through
- * the `Function` constructor) still can.
- */
-const HIDDEN_GLOBALS = [
-  'window',
-  'self',
-  'globalThis',
-  'document',
-  'parent',
-  'top',
-  'frames',
-  'opener',
-  'location',
-  'navigator',
-  'localStorage',
-  'sessionStorage',
-  'indexedDB',
-  'caches',
-  'XMLHttpRequest',
-  'WebSocket',
-  'EventSource',
-  'Worker',
-  'SharedWorker',
-  'importScripts',
-  'process',
-  'require',
-  'Bun',
-  'Deno'
-] as const
 
 const DEFAULT_UI: PluginUIOptions = {
   visible: true,
@@ -196,7 +174,14 @@ export function startPlugin(options: StartPluginOptions): PluginSession {
   const done = new Promise<PluginExit>((resolve) => {
     resolveDone = resolve
   })
+  let resolveReady: () => void = () => undefined
+  const ready = new Promise<void>((resolve) => {
+    resolveReady = resolve
+  })
   const log = host.console ?? console
+  let sandbox: PluginSandbox | null = null
+  const timers = new Map<number, ReturnType<typeof setTimeout>>()
+  let nextTimer = 1
 
   const turn = <T>(run: () => Promise<T>): Promise<T> => (host.turn ? host.turn(run) : run())
 
@@ -213,6 +198,11 @@ export function startPlugin(options: StartPluginOptions): PluginSession {
     listeners.clear()
     if (uiShown) host.closeUI()
     uiShown = false
+    for (const timer of timers.values()) clearTimeout(timer)
+    timers.clear()
+    sandbox?.dispose()
+    sandbox = null
+    resolveReady()
     resolveDone(exit)
   }
 
@@ -374,42 +364,95 @@ export function startPlugin(options: StartPluginOptions): PluginSession {
     return host.fetch(url, init)
   }
 
-  const globals: Record<string, unknown> = Object.fromEntries(
-    HIDDEN_GLOBALS.map((name) => [name, undefined])
-  )
-  globals.__html__ = html
-  globals.__uiFiles__ = typeof manifest.ui === 'object' ? uiByName : undefined
-  globals.console = log
-  globals.fetch = pluginFetch
-
-  let compiled: ((figma: FigmaAPI) => Promise<unknown>) | null = null
-  try {
-    compiled = compileScript(bundle.code, globals)
-  } catch (error) {
-    finish({ error: errorText(error) })
+  overrides.createImageAsync = async (src: unknown) => {
+    if (typeof src === 'string' && /^https?:/i.test(src) && !networkAllowed(allowed, src))
+      throw new Error(
+        `in createImageAsync: ${src} is not in the manifest's networkAccess.allowedDomains`
+      )
+    return figma.createImageAsync(String(src))
   }
 
-  if (compiled) {
-    const run = compiled
-    void (async () => {
-      // The code starts after `startPlugin` returns, so the host holds the session before the
-      // plugin's first call reaches it.
-      await Promise.resolve()
-      try {
-        await turn(() => run(pluginFigma))
-      } catch (error) {
-        log.error(error)
-        finish({ error: errorText(error) })
-        return
+  /** Timers run plugin callbacks from the host's clock; a string is never evaluated. */
+  const schedule =
+    (repeat: boolean) =>
+    (callback: unknown, delay?: unknown, ...args: unknown[]) => {
+      if (typeof callback !== 'function') throw new TypeError('The callback must be a function')
+      const id = nextTimer++
+      const ms = Math.max(0, Number(delay) || 0)
+      const fire = () => {
+        if (!running) return
+        if (!repeat) timers.delete(id)
+        try {
+          Reflect.apply(callback, undefined, args)
+        } catch (error) {
+          reportHandlerError(error)
+        }
+        if (repeat && isRunning() && timers.has(id)) timers.set(id, setTimeout(fire, ms))
       }
-      if (isRunning())
-        await dispatch('run', [{ command: options.command ?? '', parameters: options.parameters }])
-    })()
+      timers.set(id, setTimeout(fire, ms))
+      return id
+    }
+  const cancel = (id: unknown) => {
+    const timer = timers.get(Number(id))
+    if (timer !== undefined) clearTimeout(timer)
+    timers.delete(Number(id))
   }
+
+  const globals: Record<string, unknown> = {
+    figma: pluginFigma,
+    lawha: new LawhaAPI(figma),
+    __html__: html,
+    __uiFiles__: typeof manifest.ui === 'object' ? uiByName : undefined,
+    console: {
+      log: (...args: unknown[]) => log.log(...args),
+      info: (...args: unknown[]) => log.info(...args),
+      warn: (...args: unknown[]) => log.warn(...args),
+      error: (...args: unknown[]) => log.error(...args),
+      debug: (...args: unknown[]) => log.debug(...args)
+    },
+    fetch: pluginFetch,
+    setTimeout: schedule(false),
+    setInterval: schedule(true),
+    clearTimeout: cancel,
+    clearInterval: cancel
+  }
+
+  void (async () => {
+    // The code starts after `startPlugin` returns, so the host holds the session before the
+    // plugin's first call reaches it.
+    await Promise.resolve()
+    let body: string
+    try {
+      body = wrapEvalCode(bundle.code)
+      const quickjs = await loadPluginInterpreter()
+      if (!isRunning()) return
+      sandbox = createPluginSandbox(quickjs, {
+        limits: options.limits,
+        onFatal: (message) => finish({ error: message })
+      })
+      sandbox.define(globals)
+    } catch (error) {
+      log.error(error)
+      finish({ error: errorText(error) })
+      return
+    }
+    const box = sandbox
+    try {
+      await turn(() => box.run(body))
+    } catch (error) {
+      log.error(error)
+      finish({ error: errorText(error) })
+      return
+    }
+    if (isRunning())
+      await dispatch('run', [{ command: options.command ?? '', parameters: options.parameters }])
+    resolveReady()
+  })()
 
   return {
     pluginId: manifest.id,
     done,
+    ready,
     get running() {
       return running
     },

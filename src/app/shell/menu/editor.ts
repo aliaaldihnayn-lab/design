@@ -38,6 +38,7 @@ export function useEditorMenu() {
   const { setTheme } = useAppTheme()
   const { runCommand } = useEditorCommands()
   const plugins = usePluginMenu(store)
+  plugins.watchNativeMenu()
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
@@ -101,6 +102,11 @@ export function useEditorMenu() {
       return
     }
     if (SHELL_MENU_IDS.has(id)) return
+    const pluginAction = plugins.nativeAction(id)
+    if (pluginAction) {
+      pluginAction()
+      return
+    }
     if (COMMAND_MENU_IDS.has(id as EditorCommandId)) {
       runFocusedCommand(store, runCommand, id as EditorCommandId)
       return

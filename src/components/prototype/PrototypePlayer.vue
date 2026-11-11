@@ -10,8 +10,11 @@ import {
   keyPress,
   readFlows,
   reachable,
+  overlayOrigin,
+  geometryKeyframe,
   readingOrder,
   screensOf,
+  pinnedLayerOf,
   scrollRegions,
   scrollTarget,
   start,
@@ -19,11 +22,13 @@ import {
   trigger,
   type Action,
   type Hotspot,
+  type OverlayState,
   type PlayerState,
   type Step,
   type Transition,
   type TriggerType
 } from '@lawha/core/prototype'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 import { PlayIsland, providePlayVariables, useIslandTokens } from '@lawha/vue/canvas'
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
@@ -33,6 +38,7 @@ import {
   renderScreen,
   renderSmartAnimate,
   revokeSmartFrames,
+  screenImageURLs,
   type ScreenImages,
   type SmartFrames
 } from '@/app/prototype/frames'
@@ -43,6 +49,7 @@ import {
   transitionFrames,
   transitionTiming
 } from '@/app/prototype/player'
+import PrototypeScrollRegion from '@/components/prototype/PrototypeScrollRegion.vue'
 
 const store = useEditorStore()
 const t = usePrototypeMessages()
@@ -55,9 +62,10 @@ const leaving = ref<string | null>(null)
 const running = ref<Transition | null>(null)
 const images = shallowRef(new Map<string, ScreenImages>())
 /** Smart Animate's frame images while it runs, drawn over the stage. */
-const smart = shallowRef<SmartFrames | null>(null)
+const smartFrames = shallowRef<SmartFrames | null>(null)
 const smartEl = ref<HTMLElement | null>(null)
-const regionEls = ref<HTMLElement[]>([])
+/** Whether Smart Animate leaves the outgoing screen in place, as when an overlay opens. */
+const smartKeepsFrom = ref(false)
 const flashHotspots = ref(false)
 const currentEl = ref<HTMLElement | null>(null)
 const leavingEl = ref<HTMLElement | null>(null)
@@ -109,8 +117,7 @@ const flows = computed(() => {
 const pixelScale = () => Math.min(window.devicePixelRatio || 1, 2)
 
 function revokeScreen(entry: ScreenImages) {
-  for (const url of [entry.screen, ...entry.regions.map((r) => r.image)])
-    if (url) URL.revokeObjectURL(url)
+  for (const url of screenImageURLs(entry)) if (url) URL.revokeObjectURL(url)
 }
 
 async function imageFor(id: string): Promise<string> {
@@ -129,18 +136,37 @@ function regionsFor(id: string) {
   return images.value.get(id)?.regions ?? []
 }
 
+/** The scrolling frames placed on the screen itself; nested ones draw inside them. */
+function topRegionsFor(id: string) {
+  return regionsFor(id).filter((entry) => entry.region.parent === null)
+}
+
 /** The screen's hotspots, less those inside a scrolling frame, which scroll with its content. */
 function spotsFor(id: string): Hotspot[] {
   const regions = scrollRegions(graph(), id)
   return hotspots(graph(), id).filter((spot) => !scrollTarget(graph(), regions, spot.node))
 }
 
-/** Hotspots inside a scrolling frame, placed in its content. */
+/** Hotspots inside a scrolling frame, placed in its content; pinned layers place their own. */
 function regionSpots(screenId: string, regionNode: string): Hotspot[] {
   const regions = scrollRegions(graph(), screenId)
   return hotspots(graph(), screenId).flatMap((spot) => {
     const target = scrollTarget(graph(), regions, spot.node)
-    return target?.region.node === regionNode ? [{ ...spot, x: target.x, y: target.y }] : []
+    if (target?.region.node !== regionNode) return []
+    if (pinnedLayerOf(graph(), target.region, spot.node)) return []
+    return [{ ...spot, x: target.x, y: target.y }]
+  })
+}
+
+/** Hotspots on a fixed or sticky layer of a scrolling frame, placed in that layer. */
+function pinnedSpots(screenId: string, regionNode: string, layerNode: string): Hotspot[] {
+  const regions = scrollRegions(graph(), screenId)
+  return hotspots(graph(), screenId).flatMap((spot) => {
+    const target = scrollTarget(graph(), regions, spot.node)
+    if (target?.region.node !== regionNode) return []
+    const layer = pinnedLayerOf(graph(), target.region, spot.node)
+    if (layer?.node !== layerNode) return []
+    return [{ ...spot, x: target.x - layer.x, y: target.y - layer.y }]
   })
 }
 
@@ -148,7 +174,8 @@ function scrollTo(nodeId: string) {
   const current = state.value
   if (!current) return
   const target = scrollTarget(graph(), scrollRegions(graph(), current.screen), nodeId)
-  const el = target && regionEls.value.find((e) => e.dataset.scroll === target.region.node)
+  const el =
+    target && currentEl.value?.querySelector<HTMLElement>(`[data-scroll="${target.region.node}"]`)
   if (!target || !el) return
   el.scrollTo({ left: target.x * scale.value, top: target.y * scale.value, behavior: 'smooth' })
 }
@@ -157,17 +184,47 @@ function scrollTo(nodeId: string) {
  * Smart Animate: every layer that shares a name and parent names with one on the next screen
  * moves and resizes from where it is to where it goes, while everything else cross-fades.
  */
-async function smartAnimate(from: string, to: string, transition: Transition) {
-  const frames = renderSmartAnimate(store, from, to, pixelScale())
-  smart.value = frames
+async function smartAnimate(
+  from: string,
+  to: string,
+  transition: Transition,
+  options: { toOffset?: Vector; keepFrom?: boolean; reverse?: boolean } = {}
+) {
+  const frames = renderSmartAnimate(store, from, to, pixelScale(), options.toOffset)
+  smartFrames.value = frames
+  smartKeepsFrom.value = options.keepFrom ?? false
   await nextTick()
   const root = smartEl.value
   if (!root) return
-  const timing = transitionTiming(transition)
+  const timing: KeyframeAnimationOptions = {
+    ...transitionTiming(transition),
+    direction: options.reverse ? 'reverse' : 'normal'
+  }
   const animations: Animation[] = []
   const back = root.querySelector<HTMLElement>('[data-smart="from"]')
-  if (back) animations.push(back.animate([{ opacity: 1 }, { opacity: 0 }], timing))
+  const front = root.querySelector<HTMLElement>('[data-smart="to"]')
+  // Over a screen that stays, as an overlay opens on it, only the overlay fades in.
+  if (back && !options.keepFrom)
+    animations.push(back.animate([{ opacity: 1 }, { opacity: 0 }], timing))
+  if (front && options.keepFrom)
+    animations.push(front.animate([{ opacity: 0 }, { opacity: 1 }], timing))
   frames.layers.forEach((layer, index) => {
+    if (layer.geometry) {
+      // A box tweens its own corners, fill, stroke and shadows while it resizes.
+      const box = root.querySelector<HTMLElement>(`[data-smart-box="${index}"]`)
+      const slots = Math.max(layer.geometry.from.shadows.length, layer.geometry.to.shadows.length)
+      if (box)
+        animations.push(
+          box.animate(
+            [
+              geometryKeyframe(layer.geometry.from, scale.value, slots),
+              geometryKeyframe(layer.geometry.to, scale.value, slots)
+            ],
+            { ...timing, fill: 'forwards' }
+          )
+        )
+      return
+    }
     const out = root.querySelector<HTMLElement>(`[data-smart-out="${index}"]`)
     const into = root.querySelector<HTMLElement>(`[data-smart-in="${index}"]`)
     const forward = cssMatrix(layer.forward, scale.value)
@@ -220,6 +277,44 @@ function scheduleTimers(current: PlayerState) {
 }
 
 /** Runs the transition between the two states; resolves when it has finished. */
+/**
+ * Smart Animate between screens, or for an overlay opening or closing over the screen (or
+ * overlay) under it: layers it shares with what is under it move into it and the rest of it
+ * fades in, and closing runs the same the other way. Whether it ran.
+ */
+async function smartTransition(
+  before: PlayerState,
+  next: PlayerState,
+  transition: Transition,
+  smartMove: boolean
+): Promise<boolean> {
+  const run = async (work: () => Promise<void>) => {
+    try {
+      await work()
+    } finally {
+      revokeSmartFrames(smartFrames.value)
+      smartFrames.value = null
+    }
+  }
+  if (smartMove) {
+    await run(() => smartAnimate(before.screen, next.screen, transition))
+    return true
+  }
+  if (transition.type !== 'smart-animate' || next.screen !== before.screen) return false
+  const opened = next.overlays.length === before.overlays.length + 1
+  const closed = next.overlays.length + 1 === before.overlays.length
+  if (!opened && !closed) return false
+  const overlay = opened ? next.overlays.at(-1) : before.overlays.at(-1)
+  if (!overlay) return false
+  const rest = opened ? before.overlays : next.overlays
+  const under = rest.at(-1)?.screen ?? next.screen
+  const toOffset = overlayOffset(under, overlay.screen, overlay.position)
+  await run(() =>
+    smartAnimate(under, overlay.screen, transition, { toOffset, keepFrom: true, reverse: closed })
+  )
+  return true
+}
+
 async function animate(before: PlayerState, next: PlayerState, transition: Transition) {
   const screenChanged = next.screen !== before.screen
   const smartMove =
@@ -227,15 +322,7 @@ async function animate(before: PlayerState, next: PlayerState, transition: Trans
     screenChanged &&
     next.overlays.length === 0 &&
     before.overlays.length === 0
-  if (smartMove) {
-    try {
-      await smartAnimate(before.screen, next.screen, transition)
-    } finally {
-      revokeSmartFrames(smart.value)
-      smart.value = null
-    }
-    return
-  }
+  if (await smartTransition(before, next, transition, smartMove)) return
   if (transition.type === 'instant') return
   const frames = transitionFrames(transition)
   const timing = transitionTiming(transition)
@@ -339,25 +426,36 @@ watch(
 onBeforeUnmount(() => {
   clearTimers()
   for (const entry of images.value.values()) revokeScreen(entry)
-  revokeSmartFrames(smart.value)
+  revokeSmartFrames(smartFrames.value)
 })
 
-function overlayStyle(id: string, position: string) {
+/** A box in screen units as CSS at the player's scale. */
+function boxStyle(rect: Rect) {
+  const px = (value: number) => `${value * scale.value}px`
+  return { left: px(rect.x), top: px(rect.y), width: px(rect.width), height: px(rect.height) }
+}
+
+/** Where an overlay sits over the screen (or overlay) under it, in screen units. */
+function overlayOffset(under: string, id: string, position: OverlayState['position']): Vector {
+  const o = node(id)
+  const s = screen.value
+  if (!o || !s) return { x: 0, y: 0 }
+  const origin = overlayOrigin(s, o, position)
+  // Over another overlay, it is placed on the screen, so measure from that overlay's corner.
+  const base = state.value?.overlays.find((item) => item.screen === under)
+  const baseNode = base ? node(base.screen) : null
+  if (!base || !baseNode) return origin
+  const at = overlayOrigin(s, baseNode, base.position)
+  return { x: origin.x - at.x, y: origin.y - at.y }
+}
+
+function overlayStyle(id: string, position: OverlayState['position']) {
   const o = node(id)
   const s = screen.value
   if (!o || !s) return {}
-  const w = o.width * scale.value
-  const h = o.height * scale.value
-  const W = s.width * scale.value
-  const H = s.height * scale.value
-  const at = {
-    center: [(W - w) / 2, (H - h) / 2],
-    top: [(W - w) / 2, 0],
-    bottom: [(W - w) / 2, H - h],
-    left: [0, (H - h) / 2],
-    right: [W - w, (H - h) / 2]
-  }[position] ?? [(W - w) / 2, (H - h) / 2]
-  return { left: `${at[0]}px`, top: `${at[1]}px`, width: `${w}px`, height: `${h}px` }
+  const at = overlayOrigin(s, o, position)
+  const px = (value: number) => `${value * scale.value}px`
+  return { left: px(at.x), top: px(at.y), width: px(o.width), height: px(o.height) }
 }
 
 /** Screens the prototype can reach from its start, in reading order, for "Screen X of Y". */
@@ -444,62 +542,18 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
             class="pointer-events-none size-full select-none"
             draggable="false"
           />
-          <div
-            v-for="{ region, image } in live ? [] : regionsFor(state.screen)"
-            :key="region.node"
-            ref="regionEls"
-            class="absolute"
-            :class="{
-              'overflow-y-auto overflow-x-hidden': region.direction === 'vertical',
-              'overflow-x-auto overflow-y-hidden': region.direction === 'horizontal',
-              'overflow-auto': region.direction === 'both'
-            }"
-            :data-scroll="region.node"
-            :style="{
-              left: `${region.x * scale}px`,
-              top: `${region.y * scale}px`,
-              width: `${region.width * scale}px`,
-              height: `${region.height * scale}px`
-            }"
-            @click.self="onMiss"
-          >
-            <div
-              class="relative"
-              :style="{
-                width: `${region.contentWidth * scale}px`,
-                height: `${region.contentHeight * scale}px`
-              }"
-              @click.self="onMiss"
-            >
-              <img
-                :src="image"
-                alt=""
-                class="pointer-events-none size-full select-none"
-                draggable="false"
-              />
-              <button
-                v-for="spot in regionSpots(state.screen, region.node)"
-                :key="spot.node"
-                type="button"
-                class="absolute rounded-sm transition-colors"
-                :class="
-                  flashHotspots
-                    ? 'bg-[rgb(56_189_248/0.3)] ring-2 ring-[#38bdf8]'
-                    : 'bg-transparent'
-                "
-                :data-hotspot="spot.node"
-                :style="{
-                  left: `${spot.x * scale}px`,
-                  top: `${spot.y * scale}px`,
-                  width: `${spot.width * scale}px`,
-                  height: `${spot.height * scale}px`
-                }"
-                @click.stop="onHotspot(spot, 'click')"
-                @mouseenter="onHotspot(spot, 'hover')"
-                @pointerdown="onHotspot(spot, 'press')"
-              />
-            </div>
-          </div>
+          <PrototypeScrollRegion
+            v-for="entry in live ? [] : topRegionsFor(state.screen)"
+            :key="entry.region.node"
+            :entry="entry"
+            :regions="regionsFor(state.screen)"
+            :scale="scale"
+            :flash="flashHotspots"
+            :spots-in="(region) => regionSpots(state?.screen ?? '', region)"
+            :spots-on-pinned="(region, layer) => pinnedSpots(state?.screen ?? '', region, layer)"
+            @hotspot="onHotspot"
+            @miss="onMiss"
+          />
           <button
             v-for="spot in live ? [] : spotsFor(state.screen)"
             :key="spot.node"
@@ -526,6 +580,9 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
           <div
             ref="overlayEls"
             class="absolute z-[4] overflow-hidden"
+            :class="{
+              invisible: !!smartFrames && smartKeepsFrom && index === state.overlays.length - 1
+            }"
             :style="overlayStyle(overlay.screen, overlay.position)"
             :data-overlay="overlay.screen"
           >
@@ -554,34 +611,52 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
         </template>
 
         <div
-          v-if="smart"
+          v-if="smartFrames"
           ref="smartEl"
           class="pointer-events-none absolute inset-0 z-[6]"
           data-test-id="prototype-smart-animate"
         >
-          <img :src="smart.to" alt="" class="absolute inset-0 size-full" draggable="false" />
           <img
-            :src="smart.from"
+            :src="smartFrames.to"
             alt=""
-            class="absolute inset-0 size-full"
+            class="absolute"
+            :style="boxStyle(smartFrames.toBox)"
+            data-smart="to"
+            draggable="false"
+          />
+          <img
+            :src="smartFrames.from"
+            alt=""
+            class="absolute"
+            :style="boxStyle(smartFrames.fromBox)"
             data-smart="from"
             draggable="false"
           />
-          <template v-for="(layer, index) in smart.layers" :key="index">
-            <img
-              :src="layer.from"
-              alt=""
-              class="absolute inset-0 size-full origin-top-left"
-              :data-smart-out="index"
-              draggable="false"
+          <template v-for="(layer, index) in smartFrames.layers" :key="index">
+            <div
+              v-if="layer.geometry"
+              class="absolute"
+              :style="geometryKeyframe(layer.geometry.from, scale)"
+              :data-smart-box="index"
             />
-            <img
-              :src="layer.to"
-              alt=""
-              class="absolute inset-0 size-full origin-top-left opacity-0"
-              :data-smart-in="index"
-              draggable="false"
-            />
+            <template v-else>
+              <img
+                :src="layer.from"
+                alt=""
+                class="absolute origin-top-left"
+                :style="boxStyle(smartFrames.fromBox)"
+                :data-smart-out="index"
+                draggable="false"
+              />
+              <img
+                :src="layer.to"
+                alt=""
+                class="absolute origin-top-left opacity-0"
+                :style="boxStyle(smartFrames.toBox)"
+                :data-smart-in="index"
+                draggable="false"
+              />
+            </template>
           </template>
         </div>
       </div>

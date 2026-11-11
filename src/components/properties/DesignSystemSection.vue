@@ -9,6 +9,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /** `page` builds from the whole page; `selection` from the selected layers only. */
@@ -51,6 +52,37 @@ async function buildKit() {
     toast.info(prototype.value.kitBuilt({ count: result.components.length }))
 }
 
+/** Adds the starter component sets to the current page, on demand. */
+async function addComponents() {
+  if (busy.value) return
+  const def = ALL_TOOLS.find((tool) => tool.name === 'create_component_sets')
+  if (!def) return
+  busy.value = true
+  try {
+    const result = await runEditorTool({
+      store,
+      figma: makeFigmaFromStore(store),
+      def,
+      args: {},
+      source: t.value.section
+    })
+    if (result && typeof result === 'object' && 'error' in result)
+      throw new Error(String(result.error))
+    const count =
+      result &&
+      typeof result === 'object' &&
+      'components' in result &&
+      Array.isArray(result.components)
+        ? result.components.length
+        : 0
+    toast.info(t.value.componentsDone({ count }))
+  } catch (error) {
+    toast.error(t.value.failed({ error: error instanceof Error ? error.message : String(error) }))
+  } finally {
+    busy.value = false
+  }
+}
+
 async function build() {
   if (busy.value) return
   const def = ALL_TOOLS.find((tool) => tool.name === 'build_design_system')
@@ -88,19 +120,31 @@ async function build() {
 
 <template>
   <PanelSection :label="t.section" data-test-id="design-system-section">
-    <AppButton
-      variant="outline"
-      class="w-full justify-start"
-      data-test-id="design-system-build"
-      :title="t.buildHint"
-      :disabled="busy"
-      @click="build"
-    >
-      <icon-lucide-swatch-book class="size-3.5" aria-hidden="true" />
-      <span class="truncate">{{ t.build }}</span>
-      <span class="ms-auto truncate text-muted">
-        {{ scope === 'page' ? t.buildPage : t.buildSelection }}
-      </span>
-    </AppButton>
+    <Tip :label="t.buildHint">
+      <AppButton
+        variant="outline"
+        class="w-full justify-start"
+        data-test-id="design-system-build"
+        :disabled="busy"
+        @click="build"
+      >
+        <icon-lucide-swatch-book class="size-3.5" aria-hidden="true" />
+        <span class="truncate">{{ t.build }}</span>
+        <span class="ms-auto truncate text-muted">
+          {{ scope === 'page' ? t.buildPage : t.buildSelection }}
+        </span>
+      </AppButton>
+    </Tip>
+    <Tip :label="t.componentsHint">
+      <AppButton
+        variant="outline"
+        class="mt-1 w-full justify-start"
+        :disabled="busy"
+        @click="addComponents"
+      >
+        <icon-lucide-component class="size-3.5" aria-hidden="true" />
+        <span class="truncate">{{ t.components }}</span>
+      </AppButton>
+    </Tip>
   </PanelSection>
 </template>
