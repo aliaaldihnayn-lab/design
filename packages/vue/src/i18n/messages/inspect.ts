@@ -9,6 +9,7 @@ export const inspectMessageDefaults = {
   layout: 'Auto layout',
   radius: 'Corner radius',
   colors: 'Colors',
+  gradient: 'Gradient',
   typography: 'Typography',
   code: 'Code',
   copy: 'Copy code',

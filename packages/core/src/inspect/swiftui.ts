@@ -1,4 +1,7 @@
+import type { Vector } from '@lawha/scene-graph/primitives'
+
 import { num } from './css'
+import { topGradient, type InspectGradient } from './gradient'
 import type { InspectColor, InspectSpec } from './spec'
 
 function swiftColor(color: InspectColor): string {
@@ -101,12 +104,37 @@ function frames(spec: InspectSpec): string[] {
   return lines
 }
 
+/** A gradient as SwiftUI's LinearGradient, RadialGradient or AngularGradient. */
+function swiftGradient(gradient: InspectGradient, spec: InspectSpec): string {
+  const stops = gradient.stops
+    .map((stop) => {
+      const opacity = stop.opacity < 1 ? `.opacity(${num(stop.opacity)})` : ''
+      return `.init(color: Color(hex: 0x${stop.hex.slice(1)})${opacity}, location: ${num(stop.position)})`
+    })
+    .join(', ')
+  const point = (p: Vector) => `UnitPoint(x: ${num(p.x)}, y: ${num(p.y)})`
+  const g = gradient.geometry
+  if (gradient.type === 'linear')
+    return `LinearGradient(stops: [${stops}], startPoint: ${point(g.start)}, endPoint: ${point(g.end)})`
+  if (gradient.type === 'angular')
+    return `AngularGradient(stops: [${stops}], center: ${point(g.center)}, angle: .degrees(${num(g.angle - 90)}))`
+  const radius = Math.max(g.radius.x * spec.width, g.radius.y * spec.height)
+  return `RadialGradient(stops: [${stops}], center: ${point(g.center)}, startRadius: 0, endRadius: ${num(radius)})`
+}
+
 function decoration(spec: InspectSpec): string[] {
   const lines: string[] = []
   const radius = spec.radii?.[0] ?? 0
   const shape = `RoundedRectangle(cornerRadius: ${num(radius)})`
   const solid = spec.fills.find((p) => p.kind === 'solid')
-  if (solid?.kind === 'solid')
+  const gradient = topGradient(spec)
+  if (gradient)
+    lines.push(
+      radius
+        ? `.background(${swiftGradient(gradient, spec)}, in: ${shape})`
+        : `.background(${swiftGradient(gradient, spec)})`
+    )
+  else if (solid?.kind === 'solid')
     lines.push(
       radius
         ? `.background(${swiftColor(solid)}, in: ${shape})`

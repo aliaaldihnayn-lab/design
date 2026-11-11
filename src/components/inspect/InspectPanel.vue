@@ -34,8 +34,10 @@ const spec = computed<InspectSpec | null>(() => {
 
 const LANGUAGE_LABELS: Record<InspectLanguage, string> = {
   css: 'CSS',
-  swiftui: 'iOS · SwiftUI',
-  compose: 'Android · Compose'
+  swiftui: 'SwiftUI',
+  uikit: 'UIKit',
+  compose: 'Compose',
+  'android-xml': 'Android XML'
 }
 const languageOptions = INSPECT_LANGUAGES.map((value) => ({ value, label: LANGUAGE_LABELS[value] }))
 
@@ -79,6 +81,8 @@ const rows = computed(() => {
       label: t.value.layout,
       value: `${s.layout.direction} · gap ${s.layout.gap} · padding ${s.layout.padding.join(' ')}`
     })
+  for (const paint of s.fills)
+    if (paint.kind === 'gradient') out.push({ label: t.value.gradient, value: paint.cssImage })
   if (s.radii) out.push({ label: t.value.radius, value: s.radii.map(num).join(' ') })
   if (s.text)
     out.push({

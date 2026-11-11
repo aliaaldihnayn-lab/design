@@ -11,5 +11,6 @@
   "copy": "复制代码",
   "sizingFixed": "固定",
   "sizingHug": "包裹内容",
-  "sizingFill": "填充"
+  "sizingFill": "填充",
+  "gradient": "渐变"
 }

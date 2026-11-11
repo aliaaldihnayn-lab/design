@@ -11,5 +11,6 @@
   "copy": "コードをコピー",
   "sizingFixed": "固定",
   "sizingHug": "コンテンツに合わせる",
-  "sizingFill": "コンテナに合わせる"
+  "sizingFill": "コンテナに合わせる",
+  "gradient": "グラデーション"
 }
