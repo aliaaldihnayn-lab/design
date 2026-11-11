@@ -17,7 +17,7 @@ export {
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
-import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { VectorNetwork, WindingRule } from '@lawha/scene-graph'
 
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
@@ -25,6 +25,20 @@ export { regenerateFillGeometry } from './fill-geometry'
 export { regionAtPoint, regionHatchPeriod, regionVertexIndices } from './region-hit'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
+export {
+  flatMesh,
+  flatMeshPoints,
+  mapContours,
+  meshFunction,
+  meshInBox,
+  resampleMesh,
+  subdivideContour,
+  warpFunction,
+  type CubicContour,
+  type EnvelopeMesh,
+  type WarpOptions
+} from './warp'
+export { profileWidthPoints, widthAt, WIDTH_PROFILES, type WidthProfile } from './width'
 
 /**
  * Fill types go on the detached `Path`: CanvasKit 0.41's `PathBuilder.setFillType` returns an

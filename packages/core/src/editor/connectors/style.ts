@@ -1,9 +1,4 @@
-import type {
-  ConnectorEndpoint,
-  ConnectorLineType,
-  SceneNode,
-  StrokeCap
-} from '@open-pencil/scene-graph'
+import type { ConnectorEndpoint, ConnectorLineType, SceneNode, StrokeCap } from '@lawha/scene-graph'
 import {
   CONNECTOR_STROKE_WEIGHT,
   CONNECTOR_THICK_STROKE_WEIGHT,
@@ -11,8 +6,8 @@ import {
   connectorSublayers,
   layoutConnector,
   type ConnectorLineStyle
-} from '@open-pencil/scene-graph/connectors'
-import { figJamColor, type FigJamColorName } from '@open-pencil/scene-graph/figjam'
+} from '@lawha/scene-graph/connectors'
+import { figJamColor, type FigJamColorName } from '@lawha/scene-graph/figjam'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes'

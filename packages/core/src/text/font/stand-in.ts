@@ -15,6 +15,28 @@ export interface FontStandIn {
   /** The family's line box above and below the baseline, in ems. */
   ascent: number
   descent: number
+  /**
+   * An open family drawn to the same widths and line box, fetched from the web font providers
+   * first; the bundled file stands in when it cannot be fetched.
+   */
+  metricCompatible?: string
+}
+
+/** Inter, bundled, made to an Office family's widths (`scale`) and Windows line box. */
+function interFor(
+  scale: number,
+  ascent: number,
+  descent: number,
+  metricCompatible?: string
+): FontStandIn {
+  return {
+    family: 'Inter',
+    file: '/InterVariable.ttf',
+    scale,
+    ascent,
+    descent,
+    ...(metricCompatible ? { metricCompatible } : {})
+  }
 }
 
 /**
@@ -30,7 +52,20 @@ export const FONT_STAND_INS: Readonly<Record<string, FontStandIn>> = {
     scale: 1.69,
     ascent: 1.02,
     descent: 0.36
-  }
+  },
+  // Office's theme and default fonts, which decks, documents and charts name but only Windows and
+  // Office may ship. Where an open family was drawn to their metrics (Carlito for Calibri and so
+  // on), it is fetched; otherwise, or offline, Inter is drawn at roughly the family's average
+  // width (from the families' published metrics) in its Windows line box.
+  Calibri: interFor(0.88, 0.952, 0.269, 'Carlito'),
+  'Calibri Light': interFor(0.88, 0.952, 0.269, 'Carlito'),
+  Cambria: interFor(0.92, 0.95, 0.222, 'Caladea'),
+  Arial: interFor(0.95, 0.905, 0.212, 'Arimo'),
+  'Times New Roman': interFor(0.85, 0.891, 0.216, 'Tinos'),
+  'Courier New': interFor(1.07, 0.833, 0.3, 'Cousine'),
+  Georgia: interFor(0.98, 0.917, 0.219, 'Gelasio'),
+  Aptos: interFor(0.93, 0.939, 0.3),
+  'Segoe UI': interFor(0.95, 1.079, 0.25)
 }
 
 /** The stand-in that draws `family` when it is missing, if it has one. */

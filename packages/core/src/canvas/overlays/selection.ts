@@ -1,10 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { layerRotates } from '@lawha/scene-graph/generated'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
@@ -441,7 +441,7 @@ export function drawGroupBounds(
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)
-  const s = HANDLE_HALF_SIZE / r.zoom
+  const s = (HANDLE_HALF_SIZE * r.handleScale) / r.zoom
   const rect = r.ck.LTRBRect(x - s, y - s, x + s, y + s)
   canvas.drawRect(rect, r.auxFill)
   canvas.drawRect(rect, r.selectionPaint)
@@ -449,12 +449,8 @@ export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number
 
 function drawHandleScreenSpace(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)
-  const rect = r.ck.LTRBRect(
-    x - HANDLE_HALF_SIZE,
-    y - HANDLE_HALF_SIZE,
-    x + HANDLE_HALF_SIZE,
-    y + HANDLE_HALF_SIZE
-  )
+  const s = HANDLE_HALF_SIZE * r.handleScale
+  const rect = r.ck.LTRBRect(x - s, y - s, x + s, y + s)
   canvas.drawRect(rect, r.auxFill)
   canvas.drawRect(rect, r.selectionPaint)
 }

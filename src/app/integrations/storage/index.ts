@@ -34,6 +34,7 @@ export type {
   StorageCredentialField,
   StorageDocument,
   StorageDocumentBinding,
+  StoredDocumentKind,
   StorageDocumentContent,
   StorageLocation,
   StoragePutOptions,

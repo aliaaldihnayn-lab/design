@@ -17,7 +17,7 @@ use launch::args;
 use menu::events::handle_menu_event;
 use menu::{
     install_app_menu, native_menu_checked, set_native_menu_checked, set_native_menu_features,
-    NativeMenuInputs, NativeMenuState,
+    set_native_menu_labels, set_native_menu_plugins, NativeMenuInputs, NativeMenuState,
 };
 use network::http::{cancel_http_request, proxy_http_request, ProxyHttpRequests};
 use std::sync::Mutex;
@@ -94,6 +94,8 @@ pub fn run() {
             cancel_http_request,
             files::recent::set_recent_files,
             set_native_menu_features,
+            set_native_menu_plugins,
+            set_native_menu_labels,
             native_menu_checked,
             set_native_menu_checked,
             launch::take_pending_open,
@@ -154,7 +156,7 @@ pub fn run() {
             // - Windows / Linux: the link is argv, and the plugin parses it in its own
             //   setup (`handle_cli_arguments`).
             // - macOS: AppKit delivers the GetURL event *before* the app's setup. Traced
-            //   on a cold `open openpencil://…`: `RunEvent::Opened` at T+0.085 s, this
+            //   on a cold `open lawha://…`: `RunEvent::Opened` at T+0.085 s, this
             //   closure at T+0.342 s, and `on_open_url` never fired.
             //
             // In all three cases the URL survives only in the plugin's `current`, so it

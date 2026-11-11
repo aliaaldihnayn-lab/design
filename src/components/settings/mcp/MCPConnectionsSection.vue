@@ -2,11 +2,7 @@
 import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import {
-  useAutomationMessages,
-  useCommonMessages,
-  useSettingsMessages
-} from '@open-pencil/vue/i18n'
+import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@lawha/vue/i18n'
 
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import { useMCPConnectionForm } from '@/app/integrations/mcp/settings/form'
@@ -135,7 +131,7 @@ async function remove() {
               <template #description>{{ item.transport.url }}</template>
               <template #trailing>
                 <span class="text-xs">{{ item.enabled ? common.enabled : common.disabled }}</span>
-                <icon-lucide-chevron-right class="size-3.5" />
+                <icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100" />
               </template>
             </AppActionRow>
           </div>

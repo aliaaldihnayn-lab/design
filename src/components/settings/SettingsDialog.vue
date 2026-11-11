@@ -15,10 +15,11 @@ import IconSettings from '~icons/lucide/settings'
 import IconShield from '~icons/lucide/shield'
 import IconSlidersHorizontal from '~icons/lucide/sliders-horizontal'
 import IconSparkles from '~icons/lucide/sparkles'
+import IconTicket from '~icons/lucide/ticket'
 import IconType from '~icons/lucide/type'
 
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {
@@ -34,6 +35,7 @@ import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/Diagnost
 import EditorSettingsPanel from '@/components/settings/editor/EditorSettingsPanel.vue'
 import FontSettingsPanel from '@/components/settings/fonts/FontSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
+import JiraSettingsPanel from '@/components/settings/jira/JiraSettingsPanel.vue'
 import SettingsBreadcrumb from '@/components/settings/layout/SettingsBreadcrumb.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
@@ -95,6 +97,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
       { value: 'services', label: settings.value.imageServices, icon: IconImage },
       { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
+      { value: 'jira', label: settings.value.jira, icon: IconTicket },
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
     ]
   },
@@ -228,6 +231,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="mcp" as-child>
         <MCPWorkspacePanel />
+      </AppTabsContent>
+      <AppTabsContent value="jira" as-child>
+        <JiraSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="usage" as-child>
         <SettingsPage><UsageSettingsPanel /></SettingsPage>

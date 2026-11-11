@@ -13,7 +13,7 @@ export const fontsMessageDefaults = {
   collapseIssues: 'Hide font issues',
   noSubstitute: 'no substitute available',
   unsupportedFormatShort: 'unsupported format',
-  unsupportedFormat: 'Installed, but in a format OpenPencil can’t draw yet',
+  unsupportedFormat: 'Installed, but in a format Lawha can’t draw yet',
   affectedLayer: '1 affected layer',
   affectedLayerCount: params('{count} affected layers'),
   settingsDesktopDescription:
@@ -44,7 +44,11 @@ export const fontsMessageDefaults = {
   fallbackDownloadFailed: 'Could not download fallback fonts.',
   downloadedFontCacheCleared: 'Downloaded font cache cleared.',
   downloadedFontCacheClearFailed: 'Could not clear downloaded font cache.',
-  clearCache: 'Clear cache'
+  clearCache: 'Clear cache',
+  localFontAccessPrompt: 'Allow local font access to browse installed fonts.',
+  localFontAccessBlocked: 'Local font access is blocked for this site.',
+  localFontsUnsupported: 'Local fonts are not available in this browser.',
+  allowLocalFonts: 'Allow local fonts'
 } as const
 
 export const fontsMessages = i18n('fonts', fontsMessageDefaults)

@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { CollapsibleRoot, CollapsibleContent, CollapsibleTrigger } from 'reka-ui'
 
-import type {
-  ComponentBinding,
-  ComponentBindingGroup
-} from '@open-pencil/vue/controls/component-props'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import type { ComponentBinding, ComponentBindingGroup } from '@lawha/vue/controls/component-props'
+import { usePanelMessages } from '@lawha/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -28,12 +25,12 @@ const panels = usePanelMessages()
       <CollapsibleTrigger as-child>
         <AppButton size="xs" variant="ghost" class="w-full justify-start gap-1">
           <icon-lucide-chevron-right
-            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 motion-reduce:transition-none"
+            class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 rtl:not-data-[open]:rotate-180 motion-reduce:transition-none"
             :data-open="open || undefined"
           />
           <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 truncate">{{ group.name }}</span>
-          <span class="ml-auto text-[10px] text-muted">{{
+          <span class="ms-auto text-[10px] text-muted">{{
             group.bindings.length === totalVariants
               ? panels.allVariants
               : panels.usedInVariants({ count: group.bindings.length, total: totalVariants })
@@ -41,7 +38,7 @@ const panels = usePanelMessages()
         </AppButton>
       </CollapsibleTrigger>
       <CollapsibleContent :class="collapsibleContentMotion">
-        <div class="flex flex-col gap-1 pl-3">
+        <div class="flex flex-col gap-1 ps-3">
           <PropertyBindingRow
             v-for="binding in group.bindings"
             :key="binding.nodeId"

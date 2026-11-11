@@ -1,11 +1,18 @@
 import { useEventListener } from '@vueuse/core'
-import type { Ref } from 'vue'
+import { onScopeDispose, watch, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import type { Editor, Tool } from '@lawha/core'
+import { TOUCH_HANDLE_SCALE } from '@lawha/core/constants'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
+import { useViewportKind } from '#vue/editor/viewport-kind'
 import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
+import { createLongPress } from '#vue/shared/input/pan/long-press'
 import type { DragState } from '#vue/shared/input/types'
 import { setupWheelPanZoom } from '#vue/shared/input/wheel'
+
+/** Tools whose press only selects or pans, so a long press can end it and open the menu instead. */
+const LONG_PRESS_TOOLS: ReadonlySet<Tool> = new Set<Tool>(['SELECT', 'HAND'])
 
 export function setupPanZoom(
   canvasRef: Ref<HTMLCanvasElement | null>,
@@ -27,6 +34,36 @@ export function setupPanZoom(
   }
 
   let touchAsMouse = false
+  /** A long press opened the menu; the finger's later moves and lift do nothing. */
+  let longPressFired = false
+
+  /**
+   * Opens the canvas menu where a finger held still, as a right-click does: the press it began
+   * ends where it started, and a `contextmenu` event at that point selects the layer under it and
+   * opens the menu the canvas's trigger owns.
+   */
+  function fireLongPress(start: Vector) {
+    const canvas = canvasRef.value
+    if (!canvas) return
+    if (touchAsMouse) {
+      onMouseUp()
+      touchAsMouse = false
+    }
+    drag.value = null
+    longPressFired = true
+    canvas.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        clientX: start.x,
+        clientY: start.y,
+        button: 2,
+        bubbles: true,
+        cancelable: true
+      })
+    )
+  }
+
+  const longPress = createLongPress(fireLongPress)
+  onScopeDispose(longPress.cancel)
 
   function syntheticMouse(type: string, t: Touch): MouseEvent {
     return new MouseEvent(type, {
@@ -47,6 +84,7 @@ export function setupPanZoom(
     if (!canvas) return
 
     if (activeTouches.length === 2) {
+      longPress.cancel()
       if (touchAsMouse) {
         onMouseUp()
         touchAsMouse = false
@@ -60,6 +98,8 @@ export function setupPanZoom(
       pinchMidY = (a.clientY + b.clientY) / 2 - rect.top
     } else if (activeTouches.length === 1) {
       const t = activeTouches[0]
+      longPressFired = false
+      if (LONG_PRESS_TOOLS.has(editor.state.activeTool)) longPress.start(t.clientX, t.clientY)
       const tool = editor.state.activeTool
       if (tool === 'HAND') {
         touchAsMouse = false
@@ -82,6 +122,7 @@ export function setupPanZoom(
     activeTouches = Array.from(e.touches)
     const canvas = canvasRef.value
     if (!canvas) return
+    if (longPressFired) return
 
     if (activeTouches.length === 2) {
       const [a, b] = activeTouches
@@ -106,6 +147,7 @@ export function setupPanZoom(
       editor.requestRepaint()
     } else if (activeTouches.length === 1) {
       const t = activeTouches[0]
+      longPress.move(t.clientX, t.clientY)
       if (touchAsMouse) {
         onMouseMove(syntheticMouse('mousemove', t))
       } else if (drag.value?.type === 'pan') {
@@ -120,6 +162,11 @@ export function setupPanZoom(
   function onTouchEnd(e: TouchEvent) {
     e.preventDefault()
     activeTouches = Array.from(e.touches)
+    longPress.cancel()
+    if (longPressFired) {
+      if (activeTouches.length === 0) longPressFired = false
+      return
+    }
 
     if (activeTouches.length === 0) {
       if (touchAsMouse) {
@@ -143,6 +190,12 @@ export function setupPanZoom(
       pinchStartDist = 0
     }
   }
+
+  // A finger needs larger handles to grab than a mouse does.
+  const { isTouch } = useViewportKind()
+  watch(isTouch, (touch) => editor.setHandleScale(touch ? TOUCH_HANDLE_SCALE : 1), {
+    immediate: true
+  })
 
   setupWheelPanZoom(canvasRef, editor, zoomSpeed)
   useEventListener(canvasRef, 'touchstart', onTouchStart, { passive: false })

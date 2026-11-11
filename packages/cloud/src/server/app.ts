@@ -41,6 +41,7 @@ import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import { createJiraConnectionService } from '#cloud/server/jira'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
@@ -57,7 +58,9 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createRoomMemberService, createRoomService } from '#cloud/server/rooms'
 import { createDocumentSharingService } from '#cloud/server/sharing'
+import { createSignatureService, readSealCredentials } from '#cloud/server/signatures'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
@@ -83,6 +86,8 @@ export type CloudServices = {
    * peer-to-peer and writes are not enforced by the server.
    */
   relayURL?: string
+  /** A font for names in Arabic and other scripts on signed PDFs' audit pages. */
+  signatureFont?: Uint8Array
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
@@ -147,6 +152,14 @@ export function createCloudApp(services: CloudServices) {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
   })
+  const rooms = createRoomService(services.database, {
+    authSecret: services.config.authSecret,
+    relayURL: services.relayURL
+  })
+  const roomMembers = createRoomMemberService(services.database, {
+    email: services.transactionalEmail,
+    publicURL: services.config.publicURL
+  })
   const enrollment =
     services.enrollment ??
     createEnrollmentService(services.database, {
@@ -207,7 +220,8 @@ export function createCloudApp(services: CloudServices) {
     publicURL: services.config.publicURL,
     policy,
     deploymentMode: services.config.deployment,
-    workspaceInvitations: workspaceMembers
+    workspaceInvitations: workspaceMembers,
+    roomInvitations: roomMembers
   })
   const collaboration = createCollaborationTicketService({
     database: services.database,
@@ -266,6 +280,20 @@ export function createCloudApp(services: CloudServices) {
     (context) => context.req.method === 'GET' || routeHasOwnBudget(context)
   )
 
+  const signatures = createSignatureService(services.database, {
+    email: services.transactionalEmail,
+    publicURL: services.config.publicURL,
+    downloadSecret: services.config.authSecret,
+    seal: services.config.signatureSealPKCS12
+      ? readSealCredentials(
+          services.config.signatureSealPKCS12,
+          services.config.signatureSealPassword
+        )
+      : null,
+    scriptFont: services.signatureFont
+  })
+  const signing = { trustedHeaders: services.config.authTrustedIPHeaders }
+
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
     pictures,
@@ -276,6 +304,17 @@ export function createCloudApp(services: CloudServices) {
     resolveSession,
     requireActiveSession,
     authenticatedMutationLimiter
+  })
+  const jira = createJiraConnectionService(services.database, {
+    secret: services.config.authSecret,
+    oauth:
+      services.config.atlassianClientId && services.config.atlassianClientSecret
+        ? {
+            clientId: services.config.atlassianClientId,
+            clientSecret: services.config.atlassianClientSecret,
+            publicURL: services.config.publicURL
+          }
+        : undefined
   })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
@@ -288,7 +327,12 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
-    resolveSession
+    rooms,
+    roomMembers,
+    resolveSession,
+    signatures,
+    signing,
+    jira
   })
   const publicCloudAPI = createPublicCloudAPIRouter({
     collaboration,
@@ -298,7 +342,12 @@ export function createCloudApp(services: CloudServices) {
     sharing,
     workspaces,
     workspaceMembers,
-    resolveSession
+    rooms,
+    roomMembers,
+    resolveSession,
+    signatures,
+    signing,
+    jira
   })
 
   // Services such as billing authenticate with their own token, not a session.
@@ -364,6 +413,7 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
+    .use('/api/signing/*', publicRateLimiter)
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
     .use('/api/*', requireActiveSession)

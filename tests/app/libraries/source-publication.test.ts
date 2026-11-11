@@ -1,12 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import {
-  readSourceLibraryPublication,
-  writeSourceLibraryPublication
-} from '@open-pencil/core/library'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@lawha/core/io/formats/fig'
+import { readSourceLibraryPublication, writeSourceLibraryPublication } from '@lawha/core/library'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import { SceneGraph } from '@lawha/scene-graph'
 
 describe('source library publication identity', () => {
   test('survives a FIG export and reimport', async () => {
@@ -60,7 +57,7 @@ describe('source library publication identity', () => {
       })
     ]) {
       graph.updateNode(root.id, {
-        pluginData: [{ pluginId: 'open-pencil', key: 'sourceLibraryPublication', value }]
+        pluginData: [{ pluginId: 'lawha', key: 'sourceLibraryPublication', value }]
       })
       expect(readSourceLibraryPublication(graph)).toBeNull()
     }

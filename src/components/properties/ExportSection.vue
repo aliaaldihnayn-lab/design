@@ -2,14 +2,16 @@
 import { tryOnScopeDispose, useObjectUrl } from '@vueuse/core'
 import { computed, onActivated, onDeactivated, ref, shallowRef, watch } from 'vue'
 
-import { useExport } from '@open-pencil/vue/document/export'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedActivity } from '@open-pencil/vue/lifecycle/retention'
+import type { ExportWarning } from '@lawha/core/io'
+import { useExport } from '@lawha/vue/document/export'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedActivity } from '@lawha/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -34,6 +36,40 @@ const {
   clampExportScale
 } = useExport()
 
+const warnings = shallowRef<ExportWarning[]>([])
+
+/** A warning in the interface's language; the English message for a code it does not know. */
+function warningText(warning: ExportWarning): string {
+  const p = panels.value
+  const subject = warning.subject ?? ''
+  switch (warning.code) {
+    case 'compressed-content':
+      return p.printCompressedContent
+    case 'gradient-colours':
+      return p.printGradientColours
+    case 'image-not-converted':
+      return p.printImageNotConverted
+    case 'standard-font':
+      return p.printStandardFont({ font: subject })
+    case 'font-not-embedded':
+      return p.printFontNotEmbedded({ font: subject })
+    case 'transparency':
+      return p.printTransparency
+    case 'rgb-remaining':
+      return p.printRGBRemaining
+    case 'transparency-flattened':
+      return p.printTransparencyFlattened({ count: subject })
+    case 'no-press-profile':
+      return p.printNoPressProfile({ condition: subject })
+    case 'profile-unreadable':
+      return p.printProfileUnreadable
+    case 'bleed-in-artwork':
+      return p.printBleedInArtwork
+    default:
+      return warning.message
+  }
+}
+
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
 const showPreview = ref(false)
@@ -56,6 +92,7 @@ const PREVIEW_WIDTH = 480
 
 async function doExport() {
   exporting.value = true
+  warnings.value = []
   try {
     const requests = []
     // Export exactly the rows shown in the panel (activeSettings) for every target,
@@ -73,7 +110,7 @@ async function doExport() {
       }
     }
     // A single file downloads directly; multiple files bundle into one zip.
-    await editorStore.exportTargets(requests)
+    warnings.value = await editorStore.exportTargets(requests)
   } finally {
     exporting.value = false
   }
@@ -178,6 +215,20 @@ watch(previewKey, updatePreview, { flush: 'post' })
       <span class="truncate">{{ panels.export }} {{ activeName }}</span>
     </AppButton>
 
+    <AppAlert
+      v-if="warnings.length > 0"
+      tone="warning"
+      :heading="panels.exportWarnings"
+      class="mt-1.5"
+      data-test-id="export-warnings"
+    >
+      <ul class="flex flex-col gap-0.5 text-[11px]">
+        <li v-for="warning in warnings" :key="`${warning.code}:${warning.subject ?? ''}`">
+          {{ warningText(warning) }}
+        </li>
+      </ul>
+    </AppAlert>
+
     <Tip v-if="activeSettings.length > 0" :label="panels.toggleExportPreview">
       <button
         data-test-id="export-preview-toggle"
@@ -185,7 +236,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
         @click="showPreview = !showPreview"
       >
         <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
-        <icon-lucide-chevron-right v-else class="size-3" />
+        <icon-lucide-chevron-right v-else class="size-3 rtl:-scale-x-100" />
         {{ panels.exportPreview }}
       </button>
     </Tip>

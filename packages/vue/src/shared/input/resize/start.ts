@@ -1,7 +1,7 @@
-import type { Editor } from '@open-pencil/core'
-import { layerResizes } from '@open-pencil/scene-graph/generated'
-import { enforcedAspectRatio } from '@open-pencil/scene-graph/layout'
-import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
+import type { Editor } from '@lawha/core'
+import { layerResizes } from '@lawha/scene-graph/generated'
+import { enforcedAspectRatio } from '@lawha/scene-graph/layout'
+import { collectResizeDescendants, createResizeSnapshot } from '@lawha/scene-graph/resize'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize } from '#vue/shared/input/types'
@@ -18,7 +18,8 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
       node,
       editor.graph,
       editor.renderer?.zoom,
-      editor.state.rotationPreview
+      editor.state.rotationPreview,
+      editor.state.handleScale
     )
     if (handleResult) {
       const snap = createResizeSnapshot(node)

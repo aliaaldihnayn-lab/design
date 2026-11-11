@@ -3,9 +3,9 @@ import { uniq } from 'es-toolkit'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile } from '@open-pencil/core'
-import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
-import { editorCommandMetadata, type EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { BOARD_TOOL_SHORTCUTS, cycleToolKey, resolveEditorProfile } from '@lawha/core'
+import { isCanvasTextInput } from '@lawha/vue/canvas/text-edit'
+import { editorCommandMetadata, type EditorCommandId } from '@lawha/vue/editor/commands'
 
 import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
@@ -169,7 +169,8 @@ function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRun
       options.spaceTool.resetToolBeforeSpace()
       // FigJam's R always arms a square; the toolbar's shapes keep the kind picked last.
       if (tool === 'SHAPE_WITH_TEXT') options.store.setShapeWithTextKind('SQUARE')
-      options.store.setTool(tool)
+      // Tools that share a key, such as M's two marquees, take turns as it is pressed again.
+      options.store.setTool(cycleToolKey(tool, options.store.state.activeTool))
     }
   }
 }
@@ -415,6 +416,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
           if (shouldIgnoreShortcut(event, options, historyKeys.has(keys))) return
           const { shortcuts: allowed } = resolveEditorProfile(options.store.state)
           if (allowed === 'view' && !viewKeys.has(keys)) return
+          // The running design answers its own keys before the preview's shortcuts do.
+          if (allowed === 'view' && options.store.handleLiveKey(event.key)) {
+            event.preventDefault()
+            return
+          }
           handler(event)
         }
       ])

@@ -1,8 +1,12 @@
 import type { Component } from 'vue'
+import IconBandage from '~icons/lucide/bandage'
+import IconShapeBuilder from '~icons/lucide/blend'
 import IconCircle from '~icons/lucide/circle'
+import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconColumns from '~icons/lucide/columns-3'
 import IconComponentSet from '~icons/lucide/component'
 import IconComponent from '~icons/lucide/diamond'
+import IconEraser from '~icons/lucide/eraser'
 import IconFrame from '~icons/lucide/frame'
 import IconGrid from '~icons/lucide/grid-3x3'
 import IconGroup from '~icons/lucide/group'
@@ -12,26 +16,32 @@ import IconSection from '~icons/lucide/layout-grid'
 import IconMessageCircle from '~icons/lucide/message-circle'
 import IconMinus from '~icons/lucide/minus'
 import IconMousePointer from '~icons/lucide/mouse-pointer'
+import IconPaintBucket from '~icons/lucide/paint-bucket'
+import IconPaintbrush from '~icons/lucide/paintbrush'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
+import IconPipette from '~icons/lucide/pipette'
 import IconRows from '~icons/lucide/rows-3'
 import IconShapes from '~icons/lucide/shapes'
 import IconSmile from '~icons/lucide/smile'
 import IconSpline from '~icons/lucide/spline'
 import IconSquare from '~icons/lucide/square'
 import IconSlot from '~icons/lucide/square-dashed'
+import IconSquareDashed from '~icons/lucide/square-dashed-mouse-pointer'
 import IconMask from '~icons/lucide/squares-intersect'
+import IconStamp from '~icons/lucide/stamp'
 import IconStar from '~icons/lucide/star'
 import IconStickyNote from '~icons/lucide/sticky-note'
 import IconTriangle from '~icons/lucide/triangle'
 import IconType from '~icons/lucide/type'
+import IconWandSparkles from '~icons/lucide/wand-sparkles'
 
-import type { Tool } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
-import type { LayerOutline } from '@open-pencil/vue/primitives/LayerTree'
+import type { Tool } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { readIcon } from '@lawha/scene-graph/icons'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
+import type { LayerOutline } from '@lawha/vue/primitives/LayerTree'
 
 import { outlineIcon } from './outlines'
 import { SHAPE_KIND_ICONS } from './shapes'
@@ -47,6 +57,17 @@ export const toolIcons: Record<Tool, Component> = {
   STAR: IconStar,
   PEN: IconPenTool,
   PENCIL: IconPencil,
+  SHAPE_BUILDER: IconShapeBuilder,
+  WIDTH: IconSpline,
+  BRUSH: IconPaintbrush,
+  ERASER: IconEraser,
+  FILL_BUCKET: IconPaintBucket,
+  COLOR_PICKER: IconPipette,
+  MARQUEE_RECT: IconSquareDashed,
+  MARQUEE_ELLIPSE: IconCircleDashed,
+  MAGIC_WAND: IconWandSparkles,
+  CLONE_STAMP: IconStamp,
+  HEALING_BRUSH: IconBandage,
   TEXT: IconType,
   STICKY: IconStickyNote,
   SHAPE_WITH_TEXT: IconShapes,

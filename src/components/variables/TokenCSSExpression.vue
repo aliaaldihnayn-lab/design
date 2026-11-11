@@ -3,13 +3,9 @@ import { computedAsync } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import {
-  cssExpressionProblem,
-  loadTokenValidator,
-  tokenNumberToCSS
-} from '@open-pencil/dom-css/export'
-import type { TokenUnit } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { cssExpressionProblem, loadTokenValidator, tokenNumberToCSS } from '@lawha/dom-css/export'
+import type { TokenUnit } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { cssExpressionPreview } from '@/app/editor/tokens/css-expression'
 import type { CSSReferenceCandidate } from '@/app/editor/tokens/model'

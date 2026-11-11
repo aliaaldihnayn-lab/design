@@ -1,0 +1,16 @@
+{
+  "tab": "インスペクト",
+  "noSelection": "レイヤーを選択するとプロパティとコードが表示されます",
+  "size": "サイズ",
+  "limits": "最小 / 最大",
+  "layout": "オートレイアウト",
+  "radius": "角の半径",
+  "colors": "カラー",
+  "typography": "タイポグラフィ",
+  "code": "コード",
+  "copy": "コードをコピー",
+  "sizingFixed": "固定",
+  "sizingHug": "コンテンツに合わせる",
+  "sizingFill": "コンテナに合わせる",
+  "gradient": "グラデーション"
+}

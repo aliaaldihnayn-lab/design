@@ -11,6 +11,7 @@ import {
   numberFieldComponent,
   plainBadgeSet,
   progressComponent,
+  rangeSliderComponent,
   sliderComponent,
   textareaComponent,
   textFieldSet,
@@ -31,7 +32,7 @@ import { renderToString } from 'vue/server-renderer'
 /** The packages generated code imports, linked so it resolves them as an app would. */
 const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
 
-const output = await mkdtemp(join(tmpdir(), 'open-pencil-vue-'))
+const output = await mkdtemp(join(tmpdir(), 'lawha-vue-'))
 await mkdir(join(output, 'node_modules'))
 await mkdir(join(output, 'node_modules', '@iconify'))
 for (const name of APP_PACKAGES)
@@ -304,6 +305,13 @@ describe('generated Vue shader backdrops', () => {
 })
 
 describe('generated Vue form controls', () => {
+  test('a range slider keeps its end beside its model and places its range between both', async () => {
+    const { files, component } = await generate(rangeSliderComponent())
+    const range = (html: string) => /style="([^"]*)" class="price__range"/.exec(html)?.[1]
+    expect(range(await render(component))).toBe('left:20%;right:20%;')
+    expect(fileText(files, 'Price.vue')).toContain('ref(80)')
+  })
+
   test('a slider binds one number within its range, the thumb and range placed by Reka', async () => {
     const { files, component } = await generate(sliderComponent())
     // Reka shows its thumb once mounted; its range already reaches the value on the server.
@@ -378,7 +386,7 @@ describe('generated Vue stories', () => {
   test('tag every state after Default, so Storybook can show one story per component', async () => {
     const { stories } = await generate(switchSet())
     const tags = (name: string) => (stories[name] as { tags?: string[] } | undefined)?.tags
-    expect((stories.default as { tags: string[] }).tags).toContain('openpencil')
+    expect((stories.default as { tags: string[] }).tags).toContain('lawha')
     expect(tags('Default')).toBeUndefined()
     expect(tags('Checked')).toEqual(['variant'])
     expect(tags('Disabled')).toEqual(['variant'])

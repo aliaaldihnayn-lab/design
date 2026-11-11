@@ -1,32 +1,31 @@
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pencil/scene-graph'
-import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@lawha/scene-graph'
+import { createConnector, freeEndpoint } from '@lawha/scene-graph/connectors'
+import type { GroupFitOptions } from '@lawha/scene-graph/group-bounds'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
-import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
+import type { InterfaceTheme } from '#core/constants'
 import { invalidateBooleanAncestors } from '#core/editor/graph-events'
 import { layerTheme, newLayerDefaults } from '#core/editor/shapes/defaults'
-import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { defaultIcons, type IconProvider } from '#core/icons'
-import type { RasterCodec } from '#core/io/formats/raster'
+import type { RasterCodec, RGBAImage } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
-import { fontManager } from '#core/text/font/manager'
 
+import { scriptBooleanOperation, type FigmaBooleanOperation } from './booleans'
 import { componentFromNode } from './components'
-import { flattenSceneNodes } from './flatten'
+import { flattenIntoVector } from './flatten'
 import { loadFigmaFont } from './fonts/load'
 import type { FigmaFontNameInput } from './fonts/names'
-import { variationAxisTags } from './fonts/variations'
+import { familyVariationAxes } from './fonts/variations'
 import * as images from './images'
+import { setMeasuringRenderer } from './measure'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -51,6 +50,7 @@ import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
 import { combineComponentsAsVariants } from './variants'
+import { ScriptViewport, type FigmaViewport } from './viewport'
 
 const noop = () => undefined
 
@@ -137,6 +137,7 @@ export class FigmaAPI implements NodeProxyHost {
     this._unbindRendererEvents?.()
     this._unbindRendererEvents = null
     this._renderer = renderer
+    setMeasuringRenderer(this, renderer)
     if (!renderer) return
     const graph = this.graph
     const invalidate = (id: string | null | undefined) =>
@@ -287,7 +288,7 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   /** The layers Figma makes from SVG markup, on the current page at its origin. */
-  // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Figma Plugin API name.
+  // eslint-disable-next-line lawha/no-mixed-case-acronym-identifiers -- Figma Plugin API name.
   createNodeFromSvg(svg: string): FigmaFrameNode {
     const node = createSVGNodes(this.graph, this._currentPageId, svg, { keepEmpty: true })
     if (!node) throw new Error('in createNodeFromSvg: Failed to convert SVG file')
@@ -392,23 +393,16 @@ export class FigmaAPI implements NodeProxyHost {
   // --- Boolean Operations ---
 
   private _booleanOperation(
-    operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE',
+    operation: FigmaBooleanOperation,
     nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
     parent: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaBooleanOperationNode {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
-    const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const { node: group } = createBooleanOperation(
-      this.graph,
-      members,
-      parentId,
-      operation,
-      index,
-      booleanOperationPaints(operation, members, 'script'),
-      this.groupFitOptions
-    )
+    const parentId = this._nodeId(parent)
+    const fit = this.groupFitOptions
+    const group = scriptBooleanOperation(this.graph, operation, members, parentId, index, fit)
     return this.wrapNode(group.id) as FigmaBooleanOperationNode
   }
 
@@ -501,51 +495,22 @@ export class FigmaAPI implements NodeProxyHost {
     parent?: (BaseNode & ChildrenMixin) | FigmaNodeProxy,
     index?: number
   ): FigmaVectorNode {
-    if (nodes.length === 0) throw new Error('Need at least 1 node to flatten')
     const parentId = this._nodeId(parent ?? this.currentPage)
-    const sourceNodes: CoreSceneNode[] = []
-    for (const node of nodes) {
-      const raw = this.graph.getNode(this._nodeId(node))
-      if (!raw) throw new Error('Node not found')
-      sourceNodes.push(raw)
-    }
-    const vector = flattenSceneNodes(this.graph, this._renderer, sourceNodes, parentId)
-    if (index != null) this.graph.insertChildAt(vector.id, parentId, index)
-    for (const node of nodes) {
-      this.graph.deleteNode(this._nodeId(node))
-    }
+    const ids = nodes.map((node) => this._nodeId(node))
+    const vector = flattenIntoVector(this.graph, this._renderer, ids, parentId, index)
     return this.wrapNode(vector.id) as FigmaVectorNode
   }
 
   // --- Viewport ---
 
-  private _viewport = { x: 0, y: 0, zoom: 1 }
+  private _viewport = new ScriptViewport()
 
-  get viewport(): {
-    center: Vector
-    zoom: number
-    scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void
-  } {
-    return {
-      center: { x: this._viewport.x, y: this._viewport.y },
-      zoom: this._viewport.zoom,
-      scrollAndZoomIntoView: (nodes) => {
-        const b = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
-        if (b.width === 0 && b.height === 0 && nodes.length === 0) return
-
-        const padding = 80
-        const contentW = b.width + padding * 2
-        const contentH = b.height + padding * 2
-        const viewW = IS_BROWSER ? window.innerWidth : 1280
-        const viewH = IS_BROWSER ? window.innerHeight : 720
-        const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
-        this._viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
-      }
-    }
+  get viewport(): FigmaViewport {
+    return this._viewport.read()
   }
 
   set viewport(v: { center: Vector; zoom: number }) {
-    this._viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
+    this._viewport.write(v)
   }
 
   createImage(data: Uint8Array): Image {
@@ -568,19 +533,9 @@ export class FigmaAPI implements NodeProxyHost {
     await loadFigmaFont(fontName)
   }
 
-  /**
-   * The axis tags a variable family takes in `variationSettings`, or `null` for a static family.
-   * Figma answers for any family it lists; OpenPencil reads the axes from a file the family has
-   * loaded, so a family has to be loaded first.
-   */
+  /** The axis tags a variable family takes in `variationSettings`, or `null` for a static one. */
   getFontFamilyVariationAxes(family: string): string[] | null {
-    const variation = fontManager.familyVariation(family)
-    if (variation === undefined) {
-      throw new Error(
-        `in getFontFamilyVariationAxes: Font family "${family}" is not available. Load it with figma.loadFontAsync({ family: "${family}" }) first.`
-      )
-    }
-    return variation ? variationAxisTags(variation.axes) : null
+    return familyVariationAxes(family)
   }
 
   async listAvailableFontsAsync(): Promise<FigmaFont[]> {
@@ -628,6 +583,12 @@ export class FigmaAPI implements NodeProxyHost {
   /** Where icon tools search and fetch icons; hosts may pass a self-hosted or bundled set. */
   icons: IconProvider = defaultIcons
   rasterCodec?: RasterCodec
+  /** What the canvas draws over a layer's pixel grid, for the pixel tools; set by hosts. */
+  renderLayerGrid?: (
+    nodeId: string,
+    grid: { width: number; height: number },
+    scope: 'layer' | 'all'
+  ) => Promise<RGBAImage | null>
   /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
   changeBaseline?: (pageId: string) => SceneGraph | null
 }

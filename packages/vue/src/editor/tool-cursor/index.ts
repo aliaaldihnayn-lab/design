@@ -1,4 +1,4 @@
-import type { Tool } from '@open-pencil/core'
+import type { Tool } from '@lawha/core'
 
 import commentCursorSVG from '#vue/shared/assets/cursors/comment.svg?raw'
 import handGrabCursorSVG from '#vue/shared/assets/cursors/hand-grab.svg?raw'
@@ -36,6 +36,18 @@ const TOOL_CURSORS: Record<Tool, string> = {
   CONNECTOR: 'crosshair',
   PEN: PEN_CURSOR,
   PENCIL: PENCIL_CURSOR,
+  SHAPE_BUILDER: 'crosshair',
+  WIDTH: 'crosshair',
+  // The brush and eraser draw their own outline on the canvas.
+  BRUSH: 'crosshair',
+  ERASER: 'crosshair',
+  FILL_BUCKET: 'cell',
+  COLOR_PICKER: 'crosshair',
+  MARQUEE_RECT: 'crosshair',
+  MARQUEE_ELLIPSE: 'crosshair',
+  MAGIC_WAND: 'crosshair',
+  CLONE_STAMP: 'crosshair',
+  HEALING_BRUSH: 'crosshair',
   HAND: HAND_CURSOR,
   COMMENT: COMMENT_CURSOR
 }

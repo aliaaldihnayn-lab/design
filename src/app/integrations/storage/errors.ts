@@ -1,3 +1,15 @@
+import { storageErrorMessages } from '@lawha/vue/i18n'
+
+type StorageErrorMessages = ReturnType<typeof storageErrorMessages.get>
+
+/**
+ * A storage error's message in the app's language, as people read it where a save, an open or
+ * a listing failed: `storageErrorText((t) => t.s3FieldRequired({ field }))`.
+ */
+export function storageErrorText(pick: (messages: StorageErrorMessages) => string): string {
+  return pick(storageErrorMessages.get())
+}
+
 /** A write based on a revision the provider has since replaced, as when someone else saved. */
 export class StorageRevisionConflictError extends Error {
   override readonly name = 'StorageRevisionConflictError'
@@ -6,7 +18,7 @@ export class StorageRevisionConflictError extends Error {
     /** The provider's current revision, when it reports one. */
     readonly currentRevision: string | null
   ) {
-    super('The stored document changed since this copy was opened')
+    super(storageErrorText((t) => t.revisionConflict))
   }
 }
 

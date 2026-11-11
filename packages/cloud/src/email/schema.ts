@@ -1,4 +1,8 @@
-import { documentPermissionSchema, workspaceRoleSchema } from '#cloud/contract'
+import {
+  documentPermissionSchema,
+  roomMemberRoleSchema,
+  workspaceRoleSchema
+} from '#cloud/contract'
 import * as v from 'valibot'
 
 export type TransactionalEmailKind =
@@ -15,6 +19,9 @@ export type TransactionalEmailKind =
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'signature-request'
+  | 'signature-completed'
+  | 'room-invitation'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -28,6 +35,14 @@ const workspaceInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
   workspaceName: v.string(),
   role: workspaceRoleSchema,
+  expiresAt: v.string(),
+  acceptanceURL: v.string()
+})
+
+const roomInvitationEmailPayloadSchema = v.object({
+  inviterName: v.string(),
+  roomName: v.string(),
+  role: roomMemberRoleSchema,
   expiresAt: v.string(),
   acceptanceURL: v.string()
 })
@@ -82,6 +97,18 @@ const twoStepChangedPayloadSchema = v.object({
   actionURL: v.string()
 })
 
+const signatureRequestPayloadSchema = v.object({
+  senderName: v.string(),
+  documentName: v.string(),
+  message: v.string(),
+  actionURL: v.string()
+})
+
+const signatureCompletedPayloadSchema = v.object({
+  documentName: v.string(),
+  actionURL: v.string()
+})
+
 function content<const Kind extends TransactionalEmailKind, Payload extends v.GenericSchema>(
   kind: Kind,
   payload: Payload
@@ -102,7 +129,10 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('password-changed', authenticationEmailPayloadSchema),
   content('email-change-requested', emailChangeRequestedPayloadSchema),
   content('new-sign-in', newSignInPayloadSchema),
-  content('two-step-changed', twoStepChangedPayloadSchema)
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('signature-request', signatureRequestPayloadSchema),
+  content('signature-completed', signatureCompletedPayloadSchema),
+  content('room-invitation', roomInvitationEmailPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -114,6 +144,7 @@ export type DocumentInvitationEmailPayload = v.InferOutput<
 export type WorkspaceInvitationEmailPayload = v.InferOutput<
   typeof workspaceInvitationEmailPayloadSchema
 >
+export type RoomInvitationEmailPayload = v.InferOutput<typeof roomInvitationEmailPayloadSchema>
 export type EnrollmentEmailPayload = v.InferOutput<typeof enrollmentEmailPayloadSchema>
 export type AdminEnrollmentNotificationPayload = v.InferOutput<
   typeof adminEnrollmentNotificationPayloadSchema
@@ -123,6 +154,9 @@ export type EmailChangeRequestedPayload = v.InferOutput<typeof emailChangeReques
 export type NewSignInPayload = v.InferOutput<typeof newSignInPayloadSchema>
 export type TwoStepChange = v.InferOutput<typeof twoStepChangeSchema>
 export type TwoStepChangedPayload = v.InferOutput<typeof twoStepChangedPayloadSchema>
+
+export type SignatureRequestPayload = v.InferOutput<typeof signatureRequestPayloadSchema>
+export type SignatureCompletedPayload = v.InferOutput<typeof signatureCompletedPayloadSchema>
 
 export type TransactionalEmailPayloadByKind = {
   [Kind in TransactionalEmailKind]: Extract<TransactionalEmailContent, { kind: Kind }>['payload']

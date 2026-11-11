@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { withPDFTextLayout } from '#core/io/formats/pdf/prepare'
 import { renderNodesToSVG, type SVGExportOptions } from '#core/io/formats/svg/export'
@@ -16,7 +16,7 @@ export async function renderNodesToLaidOutSVG(
   options: SVGExportOptions = {}
 ): Promise<string | null> {
   await prepareGraphFonts(graph, nodeIds)
-  return withPDFTextLayout(async (textLayout) =>
-    renderNodesToSVG(graph, pageId, nodeIds, { textLayout, ...options })
+  return withPDFTextLayout(async (textLayout, imageAdjust) =>
+    renderNodesToSVG(graph, pageId, nodeIds, { textLayout, imageAdjust, ...options })
   )
 }

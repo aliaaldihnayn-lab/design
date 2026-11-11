@@ -8,8 +8,8 @@ export function pixelGridDriver(page: () => Page) {
     /** The probe rectangle 40 screen pixels in from the canvas corner at `zoom`. */
     showAtZoom(zoom: number) {
       return page().evaluate(async (zoom) => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/pixel-grid/scene.ts'
         const scene: typeof PixelGridScene = await import(fixtureURL)
         scene.createPixelGridScene(store.graph, store.state.currentPageId)
@@ -26,9 +26,7 @@ export function pixelGridDriver(page: () => Page) {
     },
 
     snapsToPixelGrid() {
-      return page().evaluate(
-        () => window.openPencil?.getStore?.().state.snappingPreferences.pixelGrid
-      )
+      return page().evaluate(() => window.lawha?.getStore?.().state.snappingPreferences.pixelGrid)
     }
   }
 }

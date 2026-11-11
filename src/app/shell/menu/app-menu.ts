@@ -6,6 +6,7 @@ import IconFile from '~icons/lucide/file'
 import IconFolderOpen from '~icons/lucide/folder-open'
 import IconLayers from '~icons/lucide/layers-2'
 import IconPencil from '~icons/lucide/pencil'
+import IconPlug from '~icons/lucide/plug'
 import IconRedo from '~icons/lucide/redo-2'
 import IconSave from '~icons/lucide/save'
 import IconSettings from '~icons/lucide/settings'
@@ -15,17 +16,15 @@ import IconVariables from '~icons/lucide/variable'
 import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
-import type { BuiltinIOFormatId } from '@open-pencil/core/io'
-import { shortcutPlatform, useEditorCommands } from '@open-pencil/vue/editor/commands'
-import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
-import { useI18n } from '@open-pencil/vue/i18n'
-import type {
-  CommandPaletteGroup,
-  CommandPaletteItem
-} from '@open-pencil/vue/primitives/CommandPalette'
+import type { BuiltinIOFormatId } from '@lawha/core/io'
+import { shortcutPlatform, useEditorCommands } from '@lawha/vue/editor/commands'
+import type { MenuEntry } from '@lawha/vue/editor/menu-model'
+import { useI18n } from '@lawha/vue/i18n'
+import type { CommandPaletteGroup, CommandPaletteItem } from '@lawha/vue/primitives/CommandPalette'
 
 import { openTour } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
+import { showPrototypeConnections } from '@/app/prototype/connections'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -36,6 +35,8 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { APP_MENU_LABEL_KEYS } from '@/app/shell/menu/labels'
+import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -48,6 +49,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
+import { showStoryPins } from '@/app/stories/use'
 import { closeTab, activeTab, createTab, openNewFileTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
@@ -63,6 +65,7 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   'folder-open': IconFolderOpen,
   layers: IconLayers,
   pencil: IconPencil,
+  plug: IconPlug,
   redo: IconRedo,
   save: IconSave,
   settings: IconSettings,
@@ -102,64 +105,9 @@ export function useAppMenu() {
   } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
+  const plugins = usePluginMenu(store)
 
-  const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
-    new: 'new',
-    'new-tab': 'newTab',
-    open: 'open',
-    'open-tour': 'openTour',
-    diagnostics: 'diagnostics',
-    save: 'save',
-    'save-as': 'saveAs',
-    'save-to': 'saveTo',
-    'save-version': 'saveToVersionHistory',
-    'version-history': 'showVersionHistory',
-    'export-selection': 'exportSelection',
-    autosave: 'autosave',
-    close: 'closeTab',
-    'previous-tab': 'selectPreviousTab',
-    'next-tab': 'selectNextTab',
-    copy: 'copy',
-    cut: 'cut',
-    paste: 'paste',
-    'paste-to-replace': 'pasteToReplace',
-    'selection.rename': 'renameSelection',
-    'selection.moveToPage': 'moveToPage',
-    'arrange-layout': 'autoArrange',
-    language: 'language',
-    preferences: 'preferences',
-    settings: 'settings',
-    variables: 'variables',
-    'insert-icon': 'insertIcon',
-    'view-rulers': 'rulers',
-    'view-pixel-grid': 'pixelGrid',
-    'view-multiplayer-cursors': 'multiplayerCursors',
-    'view-design-issues': 'designIssues',
-    'view-comments': 'comments',
-    'snap-geometry': 'snapToGeometry',
-    'snap-objects': 'snapToObjects',
-    'snap-pixel-grid': 'snapToPixelGrid',
-    profiler: 'profiler',
-    'toggle-ui': 'toggleUI',
-    'toggle-preview': 'togglePreview',
-    theme: 'theme',
-    'theme-light': 'themeLight',
-    'theme-dark': 'themeDark',
-    'theme-auto': 'themeAuto',
-    'zoom-in': 'zoomIn',
-    'zoom-out': 'zoomOut',
-    'view-split-right': 'splitRight',
-    'view-split-down': 'splitDown',
-    'text.bold': 'bold',
-    'text.italic': 'italic',
-    'text.underline': 'underline',
-    'arrange.align-left': 'arrangeAlignLeft',
-    'arrange.align-center': 'arrangeAlignCenter',
-    'arrange.align-right': 'arrangeAlignRight',
-    'arrange.align-top': 'arrangeAlignTop',
-    'arrange.align-middle': 'arrangeAlignMiddle',
-    'arrange.align-bottom': 'arrangeAlignBottom'
-  }
+  const translatedMenuItemLabels = APP_MENU_LABEL_KEYS
 
   const languageMenu = computed<MenuEntry[]>(() =>
     availableLocales.map((code) => ({
@@ -193,10 +141,20 @@ export function useAppMenu() {
     settings: openSettingsDialog,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'export-png': () => exportSelection('png'),
+    'export-jpg': () => exportSelection('jpg'),
+    'export-webp': () => exportSelection('webp'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
+    'export-pdf-print': () => exportSelection('pdf-print'),
     'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
+    'plugins-import': plugins.importPlugin,
+    'view-prototype-connections': () => {
+      showPrototypeConnections.value = !showPrototypeConnections.value
+    },
+    'view-user-stories': () => {
+      showStoryPins.value = !showStoryPins.value
+    },
     ...createSharedEditorMenuActions(setTheme)
   }
 
@@ -218,8 +176,12 @@ export function useAppMenu() {
         return store.state.showRemoteCursors
       case 'view-design-issues':
         return appPreferences.value.designCheck.showOnCanvas
+      case 'view-prototype-connections':
+        return showPrototypeConnections.value
       case 'view-comments':
         return appPreferences.value.comments.showOnCanvas
+      case 'view-user-stories':
+        return showStoryPins.value
       case 'snap-geometry':
         return store.state.snappingPreferences.geometry
       case 'snap-objects':
@@ -259,8 +221,16 @@ export function useAppMenu() {
         }
       case 'view-design-issues':
         return (value: boolean) => setDesignIssuesOnCanvas(value)
+      case 'view-prototype-connections':
+        return (value: boolean) => {
+          showPrototypeConnections.value = value
+        }
       case 'view-comments':
         return (value: boolean) => setCommentsOnCanvas(value)
+      case 'view-user-stories':
+        return (value: boolean) => {
+          showStoryPins.value = value
+        }
       case 'snap-geometry':
         return (value: boolean) => setSnappingPreference('geometry', value)
       case 'snap-objects':
@@ -311,6 +281,11 @@ export function useAppMenu() {
       return { label: menuLabel(entry), sub: languageMenu.value }
     }
 
+    if (entry.id === 'plugins-remove') {
+      if (plugins.removeEntries.value.length === 0) return null
+      return { label: menuLabel(entry), sub: plugins.removeEntries.value }
+    }
+
     if (entry.id === 'selection.moveToPage') {
       if (otherPages.value.length === 0) return null
       const disabled = !commands['selection.moveToPage'].enabled.value
@@ -358,7 +333,13 @@ export function useAppMenu() {
     return {
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: group.items
+        .flatMap((entry) =>
+          'id' in entry && entry.id === 'plugins-installed'
+            ? plugins.installedEntries.value
+            : [buildEntry(entry)]
+        )
+        .filter((item): item is MenuEntry => item !== null)
     }
   }
 

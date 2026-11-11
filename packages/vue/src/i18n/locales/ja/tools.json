@@ -14,5 +14,16 @@
   "shape": "シェイプ",
   "connector": "コネクタ",
   "hand": "手のひらツール",
-  "comment": "コメント"
+  "comment": "コメント",
+  "shapeBuilder": "シェイプ形成",
+  "width": "線幅",
+  "brush": "ブラシ",
+  "eraser": "消しゴム",
+  "fillBucket": "塗りつぶし",
+  "colorPicker": "スポイト",
+  "marqueeRect": "長方形選択",
+  "marqueeEllipse": "楕円形選択",
+  "magicWand": "自動選択",
+  "cloneStamp": "コピースタンプ",
+  "healingBrush": "修復ブラシ"
 }

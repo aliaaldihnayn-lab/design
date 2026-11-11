@@ -1,18 +1,15 @@
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { HomeLocationView } from '@/app/home/locations'
+import type { StoredKind } from '@/components/home/document/kinds'
 
 /** A place the home tab lists documents from. */
-export type HomeLocation =
-  | { kind: 'recent'; id: 'recent' }
-  | { kind: 'workspace'; id: string }
-  | { kind: 'shared'; id: 'shared' }
-  | { kind: 'storage'; id: 'storage' }
+export type HomeLocation = HomeLocationView
 
 export type HomeCloudAccount = {
   id: string
   name: string
   email: string
   image?: string | null
-  /** The Cloud server's host, such as `cloud.openpencil.dev`. */
+  /** The Cloud server's host, such as `cloud.lawha.invalid`. */
   host: string
 }
 
@@ -23,7 +20,7 @@ export type CloudDocumentRow = {
   id: string
   name: string
   /** A design or a board, when Cloud says which. */
-  kind?: DocumentKind
+  kind?: StoredKind
   previewURL?: string | null
   editedAt: string
   editedBy?: string

@@ -1,10 +1,10 @@
 {
-  "name": "@open-pencil/core",
+  "name": "@lawha/core",
   "version": "0.17.0-beta.1",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/aliaaldihnayn-lab/design.git",
     "directory": "packages/core"
   },
   "files": [
@@ -48,15 +48,25 @@
       "import": "./dist/vector/index.js",
       "default": "./dist/vector/index.js"
     },
-    "./openpencil-api": {
-      "types": "./dist/openpencil-api/index.d.ts",
-      "import": "./dist/openpencil-api/index.js",
-      "default": "./dist/openpencil-api/index.js"
+    "./lawha-api": {
+      "types": "./dist/lawha-api/index.d.ts",
+      "import": "./dist/lawha-api/index.js",
+      "default": "./dist/lawha-api/index.js"
     },
     "./figma-api": {
       "types": "./dist/figma-api/index.d.ts",
       "import": "./dist/figma-api/index.js",
       "default": "./dist/figma-api/index.js"
+    },
+    "./figma-api/plugins": {
+      "types": "./dist/figma-api/plugins/index.d.ts",
+      "import": "./dist/figma-api/plugins/index.js",
+      "default": "./dist/figma-api/plugins/index.js"
+    },
+    "./inspect": {
+      "types": "./dist/inspect/index.d.ts",
+      "import": "./dist/inspect/index.js",
+      "default": "./dist/inspect/index.js"
     },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
@@ -78,6 +88,21 @@
       "import": "./dist/tools/index.js",
       "default": "./dist/tools/index.js"
     },
+    "./design-system/kit": {
+      "types": "./dist/design-system/kit/index.d.ts",
+      "import": "./dist/design-system/kit/index.js",
+      "default": "./dist/design-system/kit/index.js"
+    },
+    "./pdf-sign": {
+      "types": "./dist/pdf-sign/index.d.ts",
+      "import": "./dist/pdf-sign/index.js",
+      "default": "./dist/pdf-sign/index.js"
+    },
+    "./prototype": {
+      "types": "./dist/prototype/index.d.ts",
+      "import": "./dist/prototype/index.js",
+      "default": "./dist/prototype/index.js"
+    },
     "./profiler": {
       "types": "./dist/profiler/index.d.ts",
       "import": "./dist/profiler/index.js",
@@ -87,6 +112,11 @@
       "types": "./dist/rpc/index.d.ts",
       "import": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
+    },
+    "./stories": {
+      "types": "./dist/stories/index.d.ts",
+      "import": "./dist/stories/index.js",
+      "default": "./dist/stories/index.js"
     },
     "./library": {
       "bun": "./src/library/index.ts",
@@ -149,6 +179,16 @@
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
     },
+    "./history": {
+      "types": "./dist/history/index.d.ts",
+      "import": "./dist/history/index.js",
+      "default": "./dist/history/index.js"
+    },
+    "./writer": {
+      "types": "./dist/writer/index.d.ts",
+      "import": "./dist/writer/index.js",
+      "default": "./dist/writer/index.js"
+    },
     "./xpath": {
       "types": "./dist/xpath.d.ts",
       "import": "./dist/xpath.js",
@@ -182,21 +222,27 @@
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
+    "@cantoo/pdf-lib": "^2.11.1",
     "@iconify/utils": "^3.1.4",
-    "@open-pencil/design-jsx": "workspace:*",
-    "@open-pencil/dom-css": "workspace:*",
-    "@open-pencil/drawio": "workspace:*",
-    "@open-pencil/fig": "workspace:*",
-    "@open-pencil/kiwi": "workspace:*",
-    "@open-pencil/mermaid": "workspace:*",
-    "@open-pencil/pen": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*",
+    "@internationalized/date": "^3.12.3",
+    "@jitl/quickjs-wasmfile-release-sync": "^0.32.0",
+    "@lawha/design-jsx": "workspace:*",
+    "@lawha/dom-css": "workspace:*",
+    "@lawha/drawio": "workspace:*",
+    "@lawha/fig": "workspace:*",
+    "@lawha/kiwi": "workspace:*",
+    "@lawha/mermaid": "workspace:*",
+    "@lawha/pen": "workspace:*",
+    "@lawha/scene-graph": "workspace:*",
     "@tauri-apps/api": "^2.12.1",
     "@valibot/to-json-schema": "^1.8.0",
     "@xmldom/xmldom": "^0.9.12",
     "acorn": "^8.18.0",
+    "ag-psd": "^34.1.0",
     "canvaskit-wasm": "^0.41.1",
+    "cfb": "^1.2.2",
     "culori": "^4.0.2",
+    "dedent": "^1.7.2",
     "destr": "^2.0.5",
     "diff": "^8.0.4",
     "elkjs": "^0.12.0",
@@ -215,11 +261,14 @@
     "mdast-util-to-string": "^4.0.0",
     "micromark-extension-gfm": "^3",
     "nanoevents": "^9.1.0",
+    "node-forge": "^1.4.3",
     "ofetch": "^1.5.1",
     "parse5": "^8.0.1",
     "pathe": "^2.0.3",
+    "pdfjs-dist": "4.10.38",
     "pixelmatch": "^7.2.0",
     "pptxgenjs": "^4.0.1",
+    "quickjs-emscripten-core": "^0.32.0",
     "rbush": "^4.0.1",
     "sucrase": "^3.35.1",
     "svg2pdf.js": "^2.8.1",
@@ -235,6 +284,7 @@
     "@types/culori": "^4.0.1",
     "@types/diff": "^8.0.0",
     "@types/mdast": "^4.0.4",
+    "@types/node-forge": "^1.3.14",
     "@types/rbush": "^4.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "unplugin-raw": "^0.7.0"

@@ -1,5 +1,7 @@
-import type { Editor, EditorState } from '@open-pencil/core'
-import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@open-pencil/core/io'
+import { uniqBy } from 'es-toolkit'
+
+import type { Editor, EditorState } from '@lawha/core'
+import type { BuiltinIOFormatId, ExportRequest, ExportWarning, IORegistry } from '@lawha/core/io'
 
 import {
   bundleExportFiles,
@@ -54,7 +56,8 @@ export function createDocumentExportActions(
       fileName: getExportFileName(baseName, format, result.extension, options),
       format: format.label,
       ext: `.${result.extension}`,
-      mime: result.mimeType
+      mime: result.mimeType,
+      ...(result.warnings ? { warnings: result.warnings } : {})
     }
   }
 
@@ -80,9 +83,10 @@ export function createDocumentExportActions(
   }
 
   // Export a batch of targets. A single file downloads directly; multiple files
-  // are bundled into one zip so the user gets a single download.
-  async function exportTargets(requests: ExportTargetRequest[]) {
-    if (requests.length === 0) return
+  // are bundled into one zip so the user gets a single download. Returns the warnings the
+  // files gave, each once.
+  async function exportTargets(requests: ExportTargetRequest[]): Promise<ExportWarning[]> {
+    if (requests.length === 0) return []
 
     const files: ExportedFile[] = []
     for (const request of requests) {
@@ -105,6 +109,10 @@ export function createDocumentExportActions(
     // Counted once delivered, so a failed render or a cancelled save is not an export.
     if (saved)
       for (const { formatId } of requests) trackDocumentFormat('document_exported', formatId)
+    return uniqBy(
+      files.flatMap((file) => file.warnings ?? []),
+      (warning) => `${warning.code}:${warning.subject ?? ''}`
+    )
   }
 
   async function exportSelection(scale: number, formatId: BuiltinIOFormatId) {

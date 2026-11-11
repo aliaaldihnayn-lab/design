@@ -1,5 +1,6 @@
-import { preprocessForVectorize, svgToVectorPaths } from '@open-pencil/core/vector'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { traceableImageFill } from '@lawha/core/tools'
+import { preprocessForVectorize, svgToVectorPaths } from '@lawha/core/vector'
+import { pathMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -7,17 +8,21 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
 
 import { resolveVectorizeCredential } from './credentials'
-import { vectorizeProviderID } from './preferences'
+import { LOCAL_TRACE_PROVIDER, type LocalTraceOptions } from './local'
+import { localTraceOptions, vectorizeEngine, vectorizeProviderID } from './preferences'
 import { getVectorizeProvider } from './providers'
 import { VectorizeAuthError } from './types'
 
 const activeStores = new WeakSet<EditorStore>()
 const ERROR_MAX_LENGTH = 240
 
-function imageFill(node: SceneNode): Fill | null {
-  if (node.type !== 'RECTANGLE' || node.childIds.length > 0 || node.fills.length !== 1) return null
-  const fill = node.fills[0]
-  return fill.type === 'IMAGE' && fill.imageHash ? fill : null
+/** The layer and its image, when the layer is only an image and no conversion runs for `store`. */
+function traceableImage(store: EditorStore, nodeId: string) {
+  if (activeStores.has(store)) return null
+  const node = store.graph.getNode(nodeId)
+  const fill = node ? traceableImageFill(node) : null
+  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return null
+  return { node, imageHash: fill.imageHash }
 }
 
 export function canVectorizeImageNode(store: EditorStore): boolean {
@@ -25,7 +30,7 @@ export function canVectorizeImageNode(store: EditorStore): boolean {
   const nodeId = store.state.selectedIds.values().next().value
   if (!nodeId) return false
   const node = store.graph.getNode(nodeId)
-  return Boolean(node && imageFill(node))
+  return Boolean(node && traceableImageFill(node))
 }
 
 function vectorizeErrorMessage(error: unknown): string {
@@ -35,11 +40,22 @@ function vectorizeErrorMessage(error: unknown): string {
   return message.length <= ERROR_MAX_LENGTH ? message : `${message.slice(0, ERROR_MAX_LENGTH)}…`
 }
 
+/**
+ * Converts an image layer into vector layers with the engine Settings chose: Image Trace on this
+ * device, which needs no key or network, or a cloud service.
+ */
 export async function vectorizeImageNode(store: EditorStore, nodeId: string): Promise<void> {
-  if (activeStores.has(store)) return
-  const node = store.graph.getNode(nodeId)
-  const fill = node ? imageFill(node) : null
-  if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return
+  if (vectorizeEngine.value === 'local') {
+    await traceImageNodeOnDevice(store, nodeId, localTraceOptions.value)
+    return
+  }
+  await vectorizeImageNodeInCloud(store, nodeId)
+}
+
+async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Promise<void> {
+  const image = traceableImage(store, nodeId)
+  if (!image) return
+  const { node, imageHash } = image
 
   const provider = getVectorizeProvider(vectorizeProviderID.value)
   activeStores.add(store)
@@ -53,7 +69,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
       return
     }
 
-    const imageBytes = store.graph.images.get(fill.imageHash)
+    const imageBytes = store.graph.images.get(imageHash)
     if (!imageBytes) {
       toast.error(notificationMessages.get().vectorizeImageMissing)
       return
@@ -65,8 +81,8 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 
     const svg = await provider.vectorize(preprocessed.pngBytes, apiKey)
     const currentNode = store.graph.getNode(node.id)
-    const currentFill = currentNode ? imageFill(currentNode) : null
-    if (!currentNode || currentFill?.type !== 'IMAGE' || currentFill.imageHash !== fill.imageHash) {
+    const currentFill = currentNode ? traceableImageFill(currentNode) : null
+    if (!currentNode || currentFill?.type !== 'IMAGE' || currentFill.imageHash !== imageHash) {
       throw new Error('The image changed before vectorization finished')
     }
     const vectorized = svgToVectorPaths(svg, {
@@ -89,6 +105,46 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
           .vectorizeFailed({ provider: provider.name, error: vectorizeErrorMessage(error) })
       )
     }
+  } finally {
+    activeStores.delete(store)
+  }
+}
+
+/**
+ * Traces an image layer into vector layers on this device with the offline provider, in one
+ * undo step, as Convert to vector does with a cloud service.
+ */
+export async function traceImageNodeOnDevice(
+  store: EditorStore,
+  nodeId: string,
+  options: LocalTraceOptions = localTraceOptions.value
+): Promise<void> {
+  const image = traceableImage(store, nodeId)
+  if (!image) return
+  const { node, imageHash } = image
+  const messages = pathMessages.get()
+  activeStores.add(store)
+  try {
+    const imageBytes = store.graph.images.get(imageHash)
+    if (!imageBytes) {
+      toast.error(notificationMessages.get().vectorizeImageMissing)
+      return
+    }
+    const ck = store.renderer?.ck
+    if (!ck) throw new Error('The canvas is not ready yet')
+    toast.info(messages.tracingImage)
+    // Let the toast paint before the trace takes the main thread.
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    const svg = LOCAL_TRACE_PROVIDER.vectorize(imageBytes, ck, options)
+    const vectorized = svgToVectorPaths(svg, { width: node.width, height: node.height })
+    if (!vectorized?.paths.length) throw new Error('The trace found no shapes')
+    const frameId = store.replaceNodeWithVectorFrame(node.id, vectorized)
+    if (!frameId) throw new Error('Could not replace this image with vector layers')
+    toast.info(messages.imageTraced)
+  } catch (error) {
+    toast.error(messages.traceFailed({ error: vectorizeErrorMessage(error) }))
   } finally {
     activeStores.delete(store)
   }

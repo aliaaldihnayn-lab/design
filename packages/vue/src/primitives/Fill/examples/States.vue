@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import type { Fill, Variable } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, Variable } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { BindingProvider, BindingTarget } from '#vue/controls/binding-provider/types'
 import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.vue'
@@ -128,7 +128,7 @@ const provider: BindingProvider<Color> = {
         <ChannelSliderThumb
           class="block size-4 rounded-full border-2 border-white bg-[var(--vp-c-brand-1)] shadow outline-none focus-visible:ring-2"
         />
-        <output class="ml-auto pl-4 text-xs tabular-nums"
+        <output class="ms-auto ps-4 text-xs tabular-nums"
           >{{ Math.round(slider.value * 100) }}%</output
         >
       </ChannelSliderRoot>

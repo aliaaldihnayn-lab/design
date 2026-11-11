@@ -1,5 +1,6 @@
-import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@open-pencil/core/figma-api'
-import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
+import { renderLayerGrid } from '@lawha/core'
+import { FigmaAPI, MAX_IMAGE_FETCH_BYTES } from '@lawha/core/figma-api'
+import { createCanvasKitRasterCodec } from '@lawha/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -45,6 +46,13 @@ export function makeFigmaFromStore(
       opts.pageId ?? pageId
     )
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
+  api.renderLayerGrid = async (nodeId, grid, scope) => {
+    const renderer = store.renderer
+    const node = store.graph.getNode(nodeId)
+    return renderer && node
+      ? renderLayerGrid(renderer.ck, renderer, store.graph, node, grid, scope)
+      : null
+  }
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
     const fonts = systemFonts.flatMap(({ family, faces }) =>

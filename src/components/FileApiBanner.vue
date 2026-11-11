@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { supportsFileSystemAccess } from '@/app/document/io/capability'
 import ExternalLink from '@/components/links/ExternalLink.vue'
@@ -16,7 +16,7 @@ const show = !IS_TAURI && !supportsFileSystemAccess()
 <template>
   <AppBanner v-if="show" storage-key="safari-banner-dismissed">
     {{ files.browserFileAPINotSupported }}
-    <ExternalLink :href="supportURL" class="ml-1">{{ common.browserSupport }}</ExternalLink>
+    <ExternalLink :href="supportURL" class="ms-1">{{ common.browserSupport }}</ExternalLink>
     <template #dismiss>{{ common.dismiss }}</template>
   </AppBanner>
 </template>

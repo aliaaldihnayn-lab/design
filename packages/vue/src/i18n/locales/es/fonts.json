@@ -32,12 +32,16 @@
   "collapseIssues": "Ocultar problemas de fuentes",
   "noSubstitute": "sin sustituto disponible",
   "unsupportedFormatShort": "formato no compatible",
-  "unsupportedFormat": "Instalada, pero en un formato que OpenPencil aún no puede dibujar",
+  "unsupportedFormat": "Instalada, pero en un formato que Lawha aún no puede dibujar",
   "settingsDesktopDescription": "Accede a fuentes del sistema, proveedores en línea, paquetes de respaldo y descargas en caché.",
   "settingsBrowserDescription": "Permite al navegador acceder a fuentes locales y gestiona proveedores de fuentes en línea.",
   "providerEnabled": "{provider} activado.",
   "providerDisabled": "{provider} desactivado.",
   "fallbackDownloaded": "Fuentes de respaldo descargadas.",
   "fallbackDownloadFailed": "No se pudieron descargar las fuentes de respaldo.",
-  "clearCache": "Borrar caché"
+  "clearCache": "Borrar caché",
+  "localFontAccessPrompt": "Permite el acceso a las fuentes locales para explorar las fuentes instaladas.",
+  "localFontAccessBlocked": "El acceso a las fuentes locales está bloqueado para este sitio.",
+  "localFontsUnsupported": "Las fuentes locales no están disponibles en este navegador.",
+  "allowLocalFonts": "Permitir fuentes locales"
 }

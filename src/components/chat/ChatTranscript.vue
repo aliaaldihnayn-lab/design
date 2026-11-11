@@ -3,7 +3,7 @@ import type { ChatStatus, UIMessage } from 'ai'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, provide, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
@@ -170,7 +170,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
     <IconButton
       v-if="messages.length && !arrivedState.bottom"
       :label="ai.jumpToLatest"
-      class="absolute right-3 bottom-3 border border-border bg-panel shadow-sm"
+      class="absolute end-3 bottom-3 border border-border bg-panel shadow-sm"
       @click="resumeFollowing"
       ><icon-lucide-arrow-down class="size-4"
     /></IconButton>

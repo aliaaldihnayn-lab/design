@@ -52,7 +52,7 @@ export type RequestImageLinksInput = v.InferOutput<typeof requestImageLinksSchem
 export const documentPermissionSchema = v.picklist(['view', 'edit'])
 export type DocumentPermission = v.InferOutput<typeof documentPermissionSchema>
 
-export const documentAccessSourceSchema = v.picklist(['owner', 'workspace', 'direct-grant'])
+export const documentAccessSourceSchema = v.picklist(['owner', 'workspace', 'room', 'direct-grant'])
 export type DocumentAccessSource = v.InferOutput<typeof documentAccessSourceSchema>
 
 export const documentAccessSchema = v.object({
@@ -62,8 +62,11 @@ export const documentAccessSchema = v.object({
 })
 export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
 
-/** What a document is: a Figma design or a FigJam board, which the file it stores says too. */
-export const documentKindSchema = v.picklist(['design', 'board'])
+/**
+ * What a document is: a Figma design or a FigJam board, which the file it stores says too, or a
+ * text document from the document editor, whose revisions are Word `.docx` files.
+ */
+export const documentKindSchema = v.picklist(['design', 'board', 'writer'])
 export type CloudDocumentKind = v.InferOutput<typeof documentKindSchema>
 
 export const documentSummarySchema = v.object({

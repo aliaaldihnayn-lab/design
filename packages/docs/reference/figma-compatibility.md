@@ -1,12 +1,12 @@
 # Figma Feature Matrix
 
-Feature-by-feature comparison of Figma Design capabilities with Open Pencil's current implementation status.
+Feature-by-feature comparison of Figma Design capabilities with Lawha's current implementation status.
 
 ::: tip Status Legend
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 128 of 156 Figma feature items addressed — 112 ✅ fully supported, 16 🟡 partial, 28 🔲 not yet. Last updated: 2026-10-27.
+**Coverage:** 140 of 157 Figma feature items addressed — 123 ✅ fully supported, 17 🟡 partial, 17 🔲 not yet. Last updated: 2026-11-11.
 
 ## Interface & Navigation
 
@@ -174,17 +174,18 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Prototype connections | 🔲 | Not supported yet |
-| Triggers (click, hover, drag, etc.) | 🔲 | Not supported yet |
-| Actions (navigate, overlay, scroll, etc.) | 🔲 | Not supported yet |
-| Animations & transitions | 🔲 | Not supported yet |
-| Smart animate | 🔲 | Auto-animate matching layers |
-| Overlays | 🔲 | Modal/popover prototyping |
-| Scroll & overflow behavior | 🔲 | Scrollable frames in prototypes |
-| Prototype flows | 🔲 | Named starting points |
-| Variables in prototypes | 🔲 | Conditional logic with variables |
-| Easing & spring animations | 🔲 | Custom animation curves |
-| Present & play prototypes | 🔲 | Fullscreen prototype viewer |
+| Prototype connections | ✅ | Interactions per layer, connection noodles on the canvas, `.fig` round trip as Figma's `prototypeInteractions` |
+| Triggers (click, hover, drag, etc.) | ✅ | Click, while hovering, while pressing, key, after delay, mouse enter/leave/down/up, drag; focus and blur are Lawha's own |
+| Actions (navigate, overlay, scroll, etc.) | ✅ | Navigate, back, overlay, close overlay, scroll to, open link, change to |
+| Interactive components | ✅ | Change to between variants in place on the canvas (preview) and in the player, with while-hovering/pressing holds |
+| Animations & transitions | ✅ | Instant, dissolve, slide in/out, push, move in/out, smart animate |
+| Smart animate | ✅ | Layers matched by name, between screens and between variants |
+| Overlays | ✅ | Over the frame they open from, with a background, close on outside click |
+| Scroll & overflow behavior | ✅ | Scrollable frames in prototypes |
+| Prototype flows | ✅ | Named starting points |
+| Variables in prototypes | 🟡 | Set variable (value, toggle, add), conditionals, bound text, visibility and component properties, per-instance or shared; `.fig` writes Set variable and conditionals as Figma's own variable actions, keeping Lawha data only for focus and blur triggers and actions Figma lacks; no free-form expressions |
+| Easing & spring animations | ✅ | Linear, ease, back, gentle spring, custom spring (stiffness, damping, mass) |
+| Present & play prototypes | ✅ | Full-screen player and live preview on the canvas |
 
 ## Import & Export
 
@@ -197,7 +198,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Figma clipboard (copy) | ✅ | Encode Kiwi binary that Figma can read |
 | Sketch file import | 🔲 | .sketch file parsing |
 | Image/SVG/PDF export | ✅ | PNG, JPG, WEBP, SVG, PDF with embedded fonts where their files can be embedded, PPTX, and draw.io |
-| Version history | 🟡 | OpenPencil Cloud documents (in preview): save named versions, browse, preview, restore, and duplicate; not for local files |
+| Version history | 🟡 | Lawha Cloud documents (in preview): save named versions, browse, preview, restore, and duplicate; not for local files |
 | Copy assets between tools | ✅ | Figma clipboard (Kiwi binary), Copy as text/SVG/PNG/JSX |
 
 ## Plugin API & Scripting
@@ -219,7 +220,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Code snippets | 🟡 | Design JSX, HTML, Vue, and React with CSS or Tailwind and token-aware values; no Swift, Kotlin, or Compose |
 | Tailwind CSS v4 export | ✅ | Export as HTML with Tailwind utility classes from Code panel, CLI, or programmatically |
 | Figma for VS Code | 🔲 | Editor plugin integration |
-| MCP server | ✅ | `@open-pencil/mcp` with stdio + HTTP transports; 125 core tools plus document, history, and settings tools |
+| MCP server | ✅ | `@lawha/mcp` with stdio + HTTP transports; 125 core tools plus document, history, and settings tools |
 | CLI tools | ✅ | 24 commands, including info, tree, find, query, node, pages, variables, tokens, fonts, lint, analyze, export, import, convert, diff, eval, and tool |
 
 ## Figma Draw

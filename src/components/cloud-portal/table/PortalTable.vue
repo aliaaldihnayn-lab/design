@@ -2,7 +2,7 @@
 import type { RowData } from '@tanstack/vue-table'
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import type { PortalList } from '@/app/cloud-portal/list'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -91,7 +91,7 @@ function countOf(value: string) {
         type="search"
         :placeholder="searchLabel"
         :aria-label="searchLabel"
-        class="ml-auto w-64 max-w-full"
+        class="ms-auto w-64 max-w-full"
       >
         <template #leading><icon-lucide-search class="size-3.5" /></template>
       </AppInput>

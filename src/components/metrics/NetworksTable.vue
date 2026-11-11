@@ -2,6 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatCount, formatShare } from '@/app/metrics/format'
 import { metricsNetworksTheme } from '@/theme/metrics/dashboard'
 
@@ -24,13 +26,14 @@ const {
   limit?: number
 }>()
 const ui = metricsNetworks()
+const t = useMetricsMessages()
 
 const rows = computed(() =>
   networks.slice(0, limit).map((network) => {
     const pings = network.desktop + network.web
     return {
       asn: network.asn,
-      name: network.asn && network.name ? network.name : 'Not reported',
+      name: network.asn && network.name ? network.name : t.value.notReported,
       pings,
       share: total ? pings / total : 0
     }
@@ -43,9 +46,9 @@ const rows = computed(() =>
     <thead>
       <tr :class="ui.row()">
         <th :class="ui.asn()" scope="col">AS</th>
-        <th :class="ui.name()" scope="col">Network</th>
-        <th :class="ui.number()" scope="col">Share</th>
-        <th :class="ui.number()" scope="col">Pings</th>
+        <th :class="ui.name()" scope="col">{{ t.network }}</th>
+        <th :class="ui.number()" scope="col">{{ t.share }}</th>
+        <th :class="ui.number()" scope="col">{{ t.pings }}</th>
       </tr>
     </thead>
     <tbody>

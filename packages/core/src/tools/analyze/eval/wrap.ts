@@ -1,7 +1,7 @@
 import { type Node, parse } from 'acorn'
 
 import type { FigmaAPI } from '#core/figma-api'
-import { OpenPencilAPI } from '#core/openpencil-api'
+import { LawhaAPI } from '#core/lawha-api'
 
 /**
  * Wrap eval code so the last bare expression is returned (REPL-style).
@@ -41,13 +41,25 @@ export function wrapEvalCode(code: string): string {
 
 type AsyncFunctionConstructor = new (...args: string[]) => (...args: unknown[]) => Promise<unknown>
 
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
+
 /**
  * Compile a script for a document: it sees the `figma` global, the Figma Plugin API, and the
- * `openpencil` global, what OpenPencil adds to it, both over the same document.
+ * `lawha` global, what Lawha adds to it, both over the same document. `globals` adds names a
+ * runner gives its scripts, such as a plugin's `__html__`, or hides host globals by naming
+ * them with `undefined`.
  */
-export function compileScript(code: string): (figma: FigmaAPI) => Promise<unknown> {
+export function compileScript(
+  code: string,
+  globals: Readonly<Record<string, unknown>> = {}
+): (figma: FigmaAPI) => Promise<unknown> {
   const AsyncFunction = Object.getPrototypeOf(async () => undefined)
     .constructor as AsyncFunctionConstructor
-  const run = new AsyncFunction('figma', 'openpencil', wrapEvalCode(code))
-  return (figma) => run(figma, new OpenPencilAPI(figma))
+  const names = Object.keys(globals)
+  for (const name of names)
+    if (!IDENTIFIER.test(name) || name === 'figma' || name === 'lawha')
+      throw new Error(`Invalid script global name: ${name}`)
+  const run = new AsyncFunction('figma', 'lawha', ...names, wrapEvalCode(code))
+  const values = names.map((name) => globals[name])
+  return (figma) => run(figma, new LawhaAPI(figma), ...values)
 }

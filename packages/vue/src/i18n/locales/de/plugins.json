@@ -1,0 +1,7 @@
+{
+  "imported": "{name} ist installiert",
+  "importFailed": "Das Plugin konnte nicht importiert werden: {error}",
+  "failed": "{name} wurde beendet: {error}",
+  "removed": "{name} wurde entfernt",
+  "close": "Plugin schließen"
+}

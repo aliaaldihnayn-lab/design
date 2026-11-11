@@ -5,6 +5,8 @@ export type FramePresetCategoryId =
   | 'presentation'
   | 'watch'
   | 'paper'
+  | 'print'
+  | 'web'
   | 'social-media'
   | 'figma-community'
   | 'archive'
@@ -16,13 +18,18 @@ export type FramePresetCategoryLabelKey =
   | 'framePresetCategoryPresentation'
   | 'framePresetCategoryWatch'
   | 'framePresetCategoryPaper'
+  | 'framePresetCategoryPrint'
+  | 'framePresetCategoryWeb'
   | 'framePresetCategorySocialMedia'
   | 'framePresetCategoryFigmaCommunity'
   | 'framePresetCategoryArchive'
 
 export interface FramePreset {
   id: string
-  /** Canonical Figma preset label, kept verbatim across locales. */
+  /**
+   * Figma's preset label. Device and product names show as written; generic ones, such as
+   * Desktop or Instagram post, show in the reader's language (`framePresetLabel`).
+   */
   name: string
   width: number
   height: number
@@ -128,6 +135,34 @@ export const FRAME_PRESET_CATEGORIES: readonly FramePresetCategory[] = [
     ]
   },
   {
+    id: 'print',
+    labelKey: 'framePresetCategoryPrint',
+    presets: [
+      { id: 'business-card-90x50', name: 'Business card 90×50 mm', width: 255, height: 142 },
+      { id: 'business-card-85x55', name: 'Business card 85×55 mm', width: 241, height: 156 },
+      { id: 'flyer-dl', name: 'DL flyer 99×210 mm', width: 281, height: 595 },
+      { id: 'a3', name: 'A3', width: 842, height: 1191 },
+      { id: 'a2', name: 'A2', width: 1191, height: 1684 },
+      { id: 'a1', name: 'A1', width: 1684, height: 2384 },
+      { id: 'poster-50x70', name: 'Poster 50×70 cm', width: 1417, height: 1984 },
+      { id: 'rollup-85x200', name: 'Roll-up 85×200 cm', width: 2409, height: 5669 },
+      { id: 'envelope-dl', name: 'Envelope DL 220×110 mm', width: 624, height: 312 }
+    ]
+  },
+  {
+    id: 'web',
+    labelKey: 'framePresetCategoryWeb',
+    presets: [
+      { id: 'web-1920', name: 'Web 1920', width: 1920, height: 1080 },
+      { id: 'web-1440', name: 'Web 1440', width: 1440, height: 900 },
+      { id: 'web-1366', name: 'Web 1366', width: 1366, height: 768 },
+      { id: 'web-1280', name: 'Web 1280', width: 1280, height: 720 },
+      { id: 'web-tablet', name: 'Web tablet 768', width: 768, height: 1024 },
+      { id: 'web-mobile', name: 'Web mobile 390', width: 390, height: 844 },
+      { id: 'web-mobile-small', name: 'Web mobile 360', width: 360, height: 800 }
+    ]
+  },
+  {
     id: 'social-media',
     labelKey: 'framePresetCategorySocialMedia',
     presets: [
@@ -139,7 +174,16 @@ export const FRAME_PRESET_CATEGORIES: readonly FramePresetCategory[] = [
       { id: 'instagram-story', name: 'Instagram story', width: 1080, height: 1920 },
       { id: 'dribbble-shot', name: 'Dribbble shot', width: 400, height: 300 },
       { id: 'dribbble-shot-hd', name: 'Dribbble shot HD', width: 800, height: 600 },
-      { id: 'linkedin-cover', name: 'LinkedIn cover', width: 1584, height: 396 }
+      { id: 'linkedin-cover', name: 'LinkedIn cover', width: 1584, height: 396 },
+      { id: 'instagram-square', name: 'Instagram square', width: 1080, height: 1080 },
+      { id: 'x-post', name: 'X post', width: 1600, height: 900 },
+      { id: 'linkedin-post', name: 'LinkedIn post', width: 1200, height: 627 },
+      { id: 'tiktok-video', name: 'TikTok video', width: 1080, height: 1920 },
+      { id: 'snapchat-story', name: 'Snapchat story', width: 1080, height: 1920 },
+      { id: 'whatsapp-status', name: 'WhatsApp status', width: 1080, height: 1920 },
+      { id: 'youtube-thumbnail', name: 'YouTube thumbnail', width: 1280, height: 720 },
+      { id: 'youtube-banner', name: 'YouTube banner', width: 2560, height: 1440 },
+      { id: 'pinterest-pin', name: 'Pinterest pin', width: 1000, height: 1500 }
     ]
   },
   {
@@ -220,4 +264,21 @@ export function findFrameResizePreset(
   preferredName?: string
 ): FramePreset | undefined {
   return findPreset(FRAME_RESIZE_PRESETS, width, height, preferredName)
+}
+
+/** The message key a preset's translated name lives under: its id in camelCase. */
+export function framePresetMessageKey(preset: Pick<FramePreset, 'id'>): string {
+  return preset.id.replace(/-([a-z0-9])/g, (_, next: string) => next.toUpperCase())
+}
+
+/**
+ * A preset's name in the reader's language, from the `framePresets` messages, or as Figma
+ * writes it for device and product names, which have no message.
+ */
+export function framePresetLabel(
+  preset: Pick<FramePreset, 'id' | 'name'>,
+  messages: Readonly<Record<string, unknown>>
+): string {
+  const label: unknown = messages[framePresetMessageKey(preset)]
+  return typeof label === 'string' ? label : preset.name
 }

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { templateRef } from '@vueuse/core'
 import { nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
-import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { DocumentKind } from '@lawha/scene-graph'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
+import { newWriterDocument } from '@/app/writer/session'
 import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -25,7 +27,14 @@ const CREATE_CHOICES = [
   { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board }
 ] as const satisfies ReadonlyArray<{ kind: DocumentKind; label: string; icon: unknown }>
 const query = defineModel<string>({ required: true })
-const { menu, files } = useI18n()
+const { menu, files, locale } = useI18n()
+const writerMessages = useWriterMessages()
+const router = useRouter()
+
+function newTextDocument() {
+  newWriterDocument(localeDirection(locale.value))
+  void router.push('/writer')
+}
 const { isMobile, isTouch } = useViewportKind()
 const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 
@@ -101,6 +110,15 @@ watch(
           {{ files[choice.label] }}
         </AppButton>
       </Tip>
+      <AppButton
+        :size="isTouch ? 'lg' : 'md'"
+        variant="outline"
+        data-test-id="home-new-text-document"
+        @click="newTextDocument"
+      >
+        <template #leading><icon-lucide-file-text class="size-3.5" /></template>
+        {{ writerMessages.newDocument }}
+      </AppButton>
     </div>
   </div>
 </template>

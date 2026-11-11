@@ -2,8 +2,8 @@
 import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
-import { useStatusMessages } from '@open-pencil/vue/i18n'
+import type { PlacedStatusLabel } from '@lawha/core/canvas'
+import { useStatusMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
@@ -79,7 +79,7 @@ function clear() {
           @click="choose(state.id)"
         >
           <StatusDot :color="state.color" />
-          <span class="flex-1 text-left">{{ state.name }}</span>
+          <span class="flex-1 text-start">{{ state.name }}</span>
           <icon-lucide-check v-if="stateId === state.id" :class="styles.icon()" />
         </button>
         <div :class="styles.separator()" />

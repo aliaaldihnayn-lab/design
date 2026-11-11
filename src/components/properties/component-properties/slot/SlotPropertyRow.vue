@@ -7,8 +7,8 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { SlotInstanceOption, SlotLimit } from '@lawha/vue/controls/slots'
+import { useI18n } from '@lawha/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -59,7 +59,7 @@ const item = menuItem({ justify: 'start' })
         <span class="truncate" :class="modified ? 'text-surface' : 'text-muted'">
           {{ modified ? panels.slotModified : panels.slotDefault }}
         </span>
-        <span class="ml-auto shrink-0 text-[11px] text-muted">
+        <span class="ms-auto shrink-0 text-[11px] text-muted">
           {{ panels.slotItemCount(itemCount) }}
         </span>
       </div>

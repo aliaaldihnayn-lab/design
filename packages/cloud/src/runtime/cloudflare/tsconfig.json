@@ -16,6 +16,6 @@
       "#cloud/*": ["../../*"]
     }
   },
-  "include": ["./**/*.ts", "../../../deploy/**/*.ts"],
+  "include": ["./**/*.ts", "../../server/signatures/fontkit.d.ts", "../../../deploy/**/*.ts"],
   "exclude": ["../../../deploy/generated"]
 }

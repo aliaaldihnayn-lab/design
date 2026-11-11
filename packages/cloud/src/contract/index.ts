@@ -97,6 +97,7 @@ export {
   requestImageLinksSchema,
   requestImageUploadsSchema,
   type CloudActorContract,
+  type CloudDocumentKind,
   type CloudSession,
   type CommitImageUploadsInput,
   type CommitUploadInput,
@@ -202,3 +203,7 @@ export {
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './history'
+export * from './jira'
+export * from './signatures'
+export * from './rooms'

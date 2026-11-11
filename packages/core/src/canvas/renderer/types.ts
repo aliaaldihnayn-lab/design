@@ -1,10 +1,12 @@
-import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import type { VectorRegion, VectorVertex } from '@lawha/scene-graph'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { SnapGuide } from '@lawha/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { LiveEffectHandles } from '#core/canvas/live-effect-handles'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { PixelOverlay } from '#core/editor/pixels/types'
 import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -36,6 +38,12 @@ export interface PresenceCursor {
   selection?: string[]
   /** Outlines in world coordinates of what is not a layer yet, such as streamed JSX. */
   outline?: Rect[]
+}
+
+/** Regions the Shape Builder tool would merge or delete, as SVG path data in canvas coordinates. */
+export interface ShapeBuilderHover {
+  paths: string[]
+  mode: 'merge' | 'delete'
 }
 
 export interface RenderOverlays {
@@ -93,6 +101,11 @@ export interface RenderOverlays {
     cursorY?: number
   } | null
   pencilState?: PencilState | null
+  /** The Shape Builder regions under the pointer or the drag. */
+  shapeBuilderHover?: ShapeBuilderHover | null
+  /** A live envelope mesh's or width profile's on-canvas handles. */
+  liveEffectHandles?: LiveEffectHandles | null
+  pixelOverlay?: PixelOverlay | null
   nodeEditState?: {
     nodeId: string
     vertices: VectorVertex[]

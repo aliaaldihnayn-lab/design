@@ -1,10 +1,10 @@
 import { isEqual } from 'es-toolkit'
 
-import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
-import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
-import type { Mat3 } from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import type { SceneNode, SceneGraph, Fill, Stroke } from '@lawha/scene-graph'
+import type { RenderColorSpace, ResolvedRenderColor } from '@lawha/scene-graph/color'
+import type { Mat3 } from '@lawha/scene-graph/matrix'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
@@ -50,6 +50,7 @@ export type {
   MeasurementMode,
   PresenceCursor,
   RenderOverlays,
+  ShapeBuilderHover,
   RulerTheme,
   SelectionTheme
 } from './renderer/types'
@@ -204,6 +205,8 @@ export class SkiaRenderer {
   // What the overlays show and leave behind for hit testing.
   /** Selections draw handles to drag; off while the canvas offers no edits. */
   editHandles = true
+  /** How much larger handles draw than `HANDLE_HALF_SIZE`; larger where a finger is the pointer. */
+  handleScale = 1
   /**
    * What an empty sticky note shows while it is edited on this canvas, in the interface language;
    * null for a canvas that draws only the document, such as an export.
@@ -492,6 +495,35 @@ export class SkiaRenderer {
     }
     for (const id of nodeIds) this.redrawNode(id)
     return this.images.live.has(hash)
+  }
+
+  /**
+   * Shows unpremultiplied RGBA `pixels` wherever image `hash` is drawn until called again with
+   * null, without encoding them: the canvas follows a brush stroke this way while it is painted.
+   */
+  setLivePixels(
+    hash: string,
+    pixels: { width: number; height: number; data: Uint8Array } | null,
+    nodeIds: Iterable<string> = []
+  ): void {
+    const live = this.images.live.get(hash)
+    if (live?.surface === this.surface) live.image.delete()
+    this.images.live.delete(hash)
+    if (pixels) {
+      const image = this.ck.MakeImage(
+        {
+          alphaType: this.ck.AlphaType.Unpremul,
+          colorType: this.ck.ColorType.RGBA_8888,
+          colorSpace: this.ck.ColorSpace.SRGB,
+          width: pixels.width,
+          height: pixels.height
+        },
+        pixels.data,
+        pixels.width * 4
+      )
+      if (image) this.images.live.set(hash, { image, surface: this.surface })
+    }
+    for (const id of nodeIds) this.redrawNode(id)
   }
 
   /**

@@ -1,8 +1,9 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { boundEndpoint, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { boundEndpoint, layoutConnector } from '@lawha/scene-graph/connectors'
+import { getParentWorldMatrix } from '@lawha/scene-graph/coordinate'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import Matrix from '@lawha/scene-graph/matrix'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import type { ArrangeInput, ArrangedRoute, Arrangement } from './boxes'
 import { runConnectorAlong } from './routes'
@@ -17,17 +18,6 @@ export interface ArrangedLayers {
 
 /** Where an arrangement goes in its parent: by its top-left corner or by its centre. */
 export type ArrangePlacement = { topLeft: Vector } | { center: Vector }
-
-function bounds(boxes: Rect[]): Rect {
-  const x = Math.min(...boxes.map((box) => box.x))
-  const y = Math.min(...boxes.map((box) => box.y))
-  return {
-    x,
-    y,
-    width: Math.max(...boxes.map((box) => box.x + box.width)) - x,
-    height: Math.max(...boxes.map((box) => box.y + box.height)) - y
-  }
-}
 
 /**
  * Joins a connector to the layers at its edge's ends by the sides the route takes: an elbow runs
@@ -77,7 +67,7 @@ export function applyArrangement(
 ): void {
   const boxes = new Map<string, Rect>([...arrangement.groups, ...arrangement.boxes])
   if (boxes.size === 0) return
-  const drawing = bounds([...boxes.values()])
+  const drawing = computeBounds(boxes.values())
   const origin =
     'center' in placement
       ? {

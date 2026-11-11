@@ -1,9 +1,9 @@
 import { clamp } from 'es-toolkit'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, SceneNode, Stroke } from '@lawha/scene-graph'
+import { colorToHex } from '@lawha/scene-graph/color'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 /** Scene paint/effect/text style → PPT property mapping (no slide geometry). */
 
@@ -43,7 +43,12 @@ export function getSolidOffsetShadow(node: SceneNode) {
   return e
 }
 
-export function mapShadow(node: SceneNode, opacity: number): PptxGenJS.ShadowProps | undefined {
+/** A layer's first shadow as PowerPoint's, its blur and offset turned into points by `toPt`. */
+export function mapShadow(
+  node: SceneNode,
+  opacity: number,
+  toPt: (px: number) => number
+): PptxGenJS.ShadowProps | undefined {
   const e = node.effects.find(
     (fx) => fx.visible && (fx.type === 'DROP_SHADOW' || fx.type === 'INNER_SHADOW')
   )
@@ -53,8 +58,8 @@ export function mapShadow(node: SceneNode, opacity: number): PptxGenJS.ShadowPro
     type: e.type === 'INNER_SHADOW' ? 'inner' : 'outer',
     color: hex(e.color),
     opacity: clamp01(e.color.a * opacity),
-    blur: clamp(e.radius, 0, 100),
-    offset: Math.min(Math.hypot(e.offset.x, e.offset.y), 200),
+    blur: clamp(round2(toPt(e.radius)), 0, 100),
+    offset: Math.min(round2(toPt(Math.hypot(e.offset.x, e.offset.y))), 200),
     angle: angleRaw < 0 ? angleRaw + 360 : angleRaw
   }
 }

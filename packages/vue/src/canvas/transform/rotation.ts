@@ -1,7 +1,7 @@
-import type { Editor } from '@open-pencil/core'
-import { ROTATION_SNAP_DEGREES } from '@open-pencil/core/constants'
-import { createSceneGeometry } from '@open-pencil/core/geometry'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
+import type { Editor } from '@lawha/core'
+import { ROTATION_SNAP_DEGREES } from '@lawha/core/constants'
+import { createSceneGeometry } from '@lawha/core/geometry'
+import { layerRotates } from '@lawha/scene-graph/generated'
 
 import {
   hitTestCornerRotationByMatrix,
@@ -38,9 +38,18 @@ export function tryStartRotation(
       node,
       editor.graph,
       zoom,
-      editor.state.rotationPreview
+      editor.state.rotationPreview,
+      editor.state.handleScale
     ) ||
-    hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, zoom, editor.state.rotationPreview)
+    hitTestCornerRotationByMatrix(
+      cx,
+      cy,
+      node,
+      editor.graph,
+      zoom,
+      editor.state.rotationPreview,
+      editor.state.handleScale
+    )
   if (!hitsRotationHandle) return false
   const startAngle = Math.atan2(cy - center.y, cx - center.x) * (180 / Math.PI)
   setDrag({

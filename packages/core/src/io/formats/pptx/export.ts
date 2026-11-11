@@ -1,10 +1,10 @@
 import { fromUint8Array } from 'js-base64'
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import TransformMatrix, { type Mat3 } from '@lawha/scene-graph/matrix'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
 
 import {
   hasUnsupportedTransform,
@@ -380,7 +380,7 @@ function addEditableShape(ctx: ExportCtx, node: SceneNode, opacity: number): voi
     h: box.h,
     rotate: box.rotate,
     flipH: box.flipH,
-    shadow: solidShadow ? undefined : mapShadow(node, opacity),
+    shadow: solidShadow ? undefined : mapShadow(node, opacity, (px) => pt(ctx, px)),
     fill:
       fill?.type === 'SOLID'
         ? {
@@ -451,7 +451,8 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
     // breakage; otherwise this has no effect.
     fit: 'shrink',
     lineSpacing: lineHeightPx != null ? pt(ctx, lineHeightPx) : undefined,
-    shadow: mapShadow(node, opacity)
+    rtlMode: node.textDirection === 'RTL',
+    shadow: mapShadow(node, opacity, (px) => pt(ctx, px))
   })
   ctx.stats.editable += 1
 }
@@ -498,6 +499,8 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
           ctx,
           textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)
         ),
+        // pptxgenjs reads a paragraph's direction from its first run.
+        rtlMode: node.textDirection === 'RTL' ? true : undefined,
         underline: deco === 'UNDERLINE' ? { style: 'sng' as const } : undefined,
         strike: deco === 'STRIKETHROUGH' ? ('sngStrike' as const) : undefined
       }

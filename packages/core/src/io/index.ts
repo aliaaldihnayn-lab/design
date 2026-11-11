@@ -12,7 +12,12 @@ export {
   svgFormat,
   jsxFormat,
   htmlFormat,
-  tailwindJSXFormat
+  tailwindJSXFormat,
+  handoffFormat,
+  storiesCSVFormat,
+  storiesMarkdownFormat,
+  psdFormat,
+  aiFormat
 } from './formats'
 export { vectorElement } from './formats/html/vectors'
 export {
@@ -34,6 +39,7 @@ export type {
   ExportRequest,
   ExportAsset,
   ExportResult,
+  ExportWarning,
   HTMLExportOptions,
   IOContext,
   FigWriteOptions,

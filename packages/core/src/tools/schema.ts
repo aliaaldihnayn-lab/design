@@ -7,7 +7,7 @@
 
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
@@ -181,6 +181,16 @@ export function nodeTraversalInput(depthDescription: string) {
 export const positionInputs = {
   x: toolNumber(v.pipe(v.number(), v.description('X position in the parent, or on the page'))),
   y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
+}
+
+/** Where a new top-level layer goes on the page; by default right of what is there. */
+export const pagePositionInputs = {
+  x: v.optional(
+    toolNumber(
+      v.pipe(v.number(), v.description('X on the page; default: right of existing content'))
+    )
+  ),
+  y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y on the page; default 0'))))
 }
 
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */

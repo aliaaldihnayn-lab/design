@@ -11,9 +11,9 @@ import {
   type ImportSkipReason,
   type ModeTarget,
   type TokenImportOptions
-} from '@open-pencil/core/io/formats/design-tokens'
-import { isLibraryCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+} from '@lawha/core/io/formats/design-tokens'
+import { isLibraryCollection } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -218,7 +218,10 @@ function importTokens() {
         >
           <div class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 px-3 py-1">
             <span class="truncate font-medium text-surface">{{ collection.name }}</span>
-            <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
+            <icon-lucide-arrow-right
+              class="size-3 text-muted rtl:-scale-x-100"
+              aria-hidden="true"
+            />
             <AppSelect
               :model-value="targetValue(options.collections[index].target)"
               :options="collectionOptions()"
@@ -230,10 +233,13 @@ function importTokens() {
             <div
               v-for="(mode, modeIndex) in collection.modes"
               :key="`${modeIndex}:${mode.name}`"
-              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pr-3 pl-6"
+              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pe-3 ps-6"
             >
               <span class="truncate text-muted">{{ mode.name }}</span>
-              <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
+              <icon-lucide-arrow-right
+                class="size-3 text-muted rtl:-scale-x-100"
+                aria-hidden="true"
+              />
               <AppSelect
                 :model-value="targetValue(options.collections[index].modes[modeIndex])"
                 :options="modeOptions(index)"

@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useFramePresetMessages, useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { FRAME_PRESET_CATEGORIES, type FramePreset } from '@/app/editor/frame-presets'
+import {
+  FRAME_PRESET_CATEGORIES,
+  framePresetLabel,
+  type FramePreset
+} from '@/app/editor/frame-presets'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const store = useEditorStore()
 const { panels } = useI18n()
+const names = useFramePresetMessages()
+const label = (preset: FramePreset) => framePresetLabel(preset, names.value)
 
+/** The frame is named as the reader sees the preset. */
 function createFrame(preset: FramePreset) {
-  store.createFrameFromPreset(preset)
+  store.createFrameFromPreset({ ...preset, name: label(preset) })
 }
 </script>
 
@@ -31,10 +38,10 @@ function createFrame(preset: FramePreset) {
       class="border-b border-border"
     >
       <CollapsibleTrigger
-        class="flex h-9 w-full items-center gap-1.5 px-3 text-left text-[11px] text-surface hover:bg-hover"
+        class="flex h-9 w-full items-center gap-1.5 px-3 text-start text-[11px] text-surface hover:bg-hover"
       >
         <icon-lucide-chevron-right
-          class="size-3 shrink-0 transition-transform data-[open]:rotate-90"
+          class="size-3 shrink-0 transition-transform data-[open]:rotate-90 rtl:not-data-[open]:rotate-180"
           :data-open="open || undefined"
           aria-hidden="true"
         />
@@ -49,10 +56,10 @@ function createFrame(preset: FramePreset) {
             :key="preset.id"
             type="button"
             :data-frame-preset="preset.id"
-            class="flex h-7 w-full items-center gap-2 px-7 text-left text-[11px] text-surface hover:bg-hover"
+            class="flex h-7 w-full items-center gap-2 px-7 text-start text-[11px] text-surface hover:bg-hover"
             @click="createFrame(preset)"
           >
-            <span class="min-w-0 flex-1 truncate">{{ preset.name }}</span>
+            <span class="min-w-0 flex-1 truncate">{{ label(preset) }}</span>
             <span class="shrink-0 tabular-nums text-muted">
               {{ preset.width }} × {{ preset.height }}
             </span>

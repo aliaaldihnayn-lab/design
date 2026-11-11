@@ -1,6 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
@@ -27,9 +27,12 @@ import { drawConnectorTarget } from '#core/canvas/overlays/connectors'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
+import { drawLiveEffectHandles } from '#core/canvas/overlays/live-effects'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
+import { drawPixelOverlay } from '#core/canvas/overlays/pixels'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
+import { drawShapeBuilderHover } from '#core/canvas/overlays/shape-builder'
 import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import { drawPenOverlay, drawPencilOverlay } from '#core/canvas/pen-overlay'
@@ -179,6 +182,9 @@ export function drawOverlayPass(
   drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
   drawPenOverlay(r, canvas, overlays.penState)
   drawPencilOverlay(r, canvas, overlays.pencilState)
+  drawShapeBuilderHover(r, canvas, overlays.shapeBuilderHover)
+  drawLiveEffectHandles(r, canvas, overlays.liveEffectHandles)
+  drawPixelOverlay(r, canvas, graph, overlays.pixelOverlay)
   drawSnapMarks(r, canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays, sceneVersion)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)

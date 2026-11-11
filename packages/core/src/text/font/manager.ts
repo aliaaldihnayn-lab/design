@@ -2,14 +2,14 @@
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
+import type { FontVariation, SceneGraph } from '@lawha/scene-graph'
 import {
   faceLoadKey,
   namesWeight,
   normalizeFontFamily,
   parseFontStyle,
   styleToWeight
-} from '@open-pencil/scene-graph/font-style'
+} from '@lawha/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFallbackEntry, type FontFallbackScript } from '#core/text/fallbacks'
@@ -164,7 +164,7 @@ export class FontManager {
     this.hostFontRequests.clear()
   }
 
-  /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
+  /** Lets a host that bundles `@lawha/core/assets` itself say where each file ended up. */
   setBundledFontLocator(locate: BundledFontLocator | null): void {
     this.bundled.setLocator(locate)
   }
@@ -416,6 +416,11 @@ export class FontManager {
   private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
     const standIn = fontStandIn(family)
     if (!standIn) return null
+    if (standIn.metricCompatible) {
+      // Its open twin has the family's own widths and line box, so it is drawn as it is.
+      const twin = await this.loadRemoteFont(standIn.metricCompatible, style).catch(() => null)
+      if (twin) return this.registerAndCache(family, style, twin.slice(0), 'stand-in')
+    }
     try {
       const file = await this.fetchBundledFont(standIn.file)
       if (!file) return null

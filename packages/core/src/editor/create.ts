@@ -2,8 +2,8 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { UndoManager } from '@open-pencil/scene-graph/undo'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
@@ -51,6 +51,8 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
+import { createPixelActions } from './pixels'
+import { createPublisherActions } from './publisher'
 import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
@@ -60,6 +62,7 @@ import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
+import { createStoryActions } from './stories'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
@@ -220,6 +223,7 @@ export function createEditor(options?: EditorOptions) {
     if (previous === tool) return
     // Guides the pen showed for its next point do not belong to the next tool.
     if (previous === 'PEN') state.snapGuides = []
+    if (previous === 'SHAPE_BUILDER') state.shapeBuilderHover = null
     emitEditorEvent('tool:changed', tool, previous)
   }
 
@@ -314,6 +318,7 @@ export function createEditor(options?: EditorOptions) {
   const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
+  const stories = createStoryActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
@@ -328,6 +333,8 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
+  const pixels = createPixelActions(ctx, nodes.beginNodePreview)
+  const publisher = createPublisherActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -343,6 +350,7 @@ export function createEditor(options?: EditorOptions) {
     if (state.editingTextId) text.commitTextEdit()
     shapes.penCancel()
     shapes.pencilCancel()
+    pixels.pixelStrokeCancel()
     state.gradientEdit = null
   })
 
@@ -473,6 +481,8 @@ export function createEditor(options?: EditorOptions) {
 
     // Shapes & tools
     ...shapes,
+    ...pixels,
+    ...publisher,
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,
@@ -505,6 +515,7 @@ export function createEditor(options?: EditorOptions) {
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,
     setStatusWorkflow: statuses.setStatusWorkflow,
+    ...stories,
     ...connectorDrawing,
     ...connectorEndpoints,
     ...connectorLines,

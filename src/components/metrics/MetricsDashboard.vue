@@ -4,7 +4,8 @@ import { tv } from 'tailwind-variants'
 import { BarList } from 'vccs'
 import { computed } from 'vue'
 
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { MetricsSnapshot } from '@lawha/feedback/contract'
+import { useMetricsMessages } from '@lawha/vue/i18n'
 
 import { utcDayOfTimestamp } from '@/app/metrics/days'
 import {
@@ -56,7 +57,8 @@ const emit = defineEmits<{ refresh: [] }>()
 defineSlots<{ /** A notice above the numbers, such as a failed refresh. */ alert?(): unknown }>()
 
 const ui = metricsDashboard()
-const phrase = computed(() => rangePhrase(range.value))
+const t = useMetricsMessages()
+const phrase = computed(() => rangePhrase(range.value, t.value))
 const usage = computed(() => snapshot.usage)
 
 // Today is still being counted, so headline numbers and tile trends use full days only.
@@ -70,23 +72,26 @@ const active = computed(() =>
   fullDays.value.length
     ? {
         value: Math.round(meanBy(fullDays.value, (day) => day.installs)),
-        label: 'Daily active installs, average',
+        label: t.value.activeAverage,
         detail: peak.value
-          ? `peak ${formatCount(peak.value.installs)} on ${formatDay(peak.value.day)}`
+          ? t.value.activePeak({
+              count: formatCount(peak.value.installs),
+              day: formatDay(peak.value.day)
+            })
           : undefined,
         trend: fullDays.value.map((day) => day.installs)
       }
     : {
         value: totals.value.at(-1)?.installs ?? 0,
-        label: 'Daily active installs',
-        detail: 'so far today',
+        label: t.value.activeToday,
+        detail: t.value.soFarToday,
         trend: undefined
       }
 )
 type Growth = MetricsSnapshot['github']['stars']['daily']
 // Growth needs two recorded days; until then the tile says so rather than showing a zero.
 const added = (daily: Growth) => (daily.length ? sumBy(daily, (day) => day.added) : undefined)
-const growthDetail = (daily: Growth) => (daily.length ? phrase.value : 'no daily history yet')
+const growthDetail = (daily: Growth) => (daily.length ? phrase.value : t.value.noDailyHistory)
 const fullTrend = (daily: Growth) => daily.filter(isFull).map((day) => day.added)
 const signupTrend = computed(() => {
   const perDay = countBy(snapshot.waitlist.recent, (signup) =>
@@ -95,49 +100,56 @@ const signupTrend = computed(() => {
   return fullDays.value.map((day) => perDay[day.day] ?? 0)
 })
 
-const INSTALL_SERIES: DailySeries<keyof DailyActiveDay & string>[] = [
-  { key: 'desktop', name: 'Desktop', color: 'var(--color-chart-1)' },
-  { key: 'web', name: 'Web', color: 'var(--color-chart-2)' }
-]
+const INSTALL_SERIES = computed<DailySeries<keyof DailyActiveDay & string>[]>(() => [
+  { key: 'desktop', name: t.value.seriesDesktop, color: 'var(--color-chart-1)' },
+  { key: 'web', name: t.value.seriesWeb, color: 'var(--color-chart-2)' }
+])
 // The web app keeps the web installs' color; the site takes the next one.
 const VISIT_SERIES: DailySeries<keyof DailyVisits & string>[] = [
-  { key: 'site', name: 'openpencil.dev', color: 'var(--color-chart-3)' },
-  { key: 'app', name: 'app.openpencil.dev', color: 'var(--color-chart-2)' }
+  { key: 'site', name: 'lawha.invalid', color: 'var(--color-chart-3)' },
+  { key: 'app', name: 'app.lawha.invalid', color: 'var(--color-chart-2)' }
 ]
-const TRAFFIC_SERIES: DailySeries<keyof DailyTraffic & string>[] = [
-  { key: 'views', name: 'Views', color: 'var(--color-chart-1)' },
-  { key: 'uniqueViews', name: 'Unique visitors', color: 'var(--color-chart-3)' }
-]
+const TRAFFIC_SERIES = computed<DailySeries<keyof DailyTraffic & string>[]>(() => [
+  { key: 'views', name: t.value.seriesViews, color: 'var(--color-chart-1)' },
+  { key: 'uniqueViews', name: t.value.seriesUniqueVisitors, color: 'var(--color-chart-3)' }
+])
 // The community leads: outside work is what the team answers to.
-const OPEN_SERIES: DailySeries<'openCommunity' | 'openTeam'>[] = [
-  { key: 'openCommunity', name: 'Community', color: 'var(--color-chart-1)' },
-  { key: 'openTeam', name: 'Team', color: 'var(--color-chart-3)' }
-]
-const OPENED_SERIES: DailySeries<'openedCommunity' | 'openedTeam'>[] = [
-  { key: 'openedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
-  { key: 'openedTeam', name: 'Team', color: 'var(--color-chart-3)' }
-]
-const CLOSED_SERIES: DailySeries<'closedCommunity' | 'closedTeam'>[] = [
-  { key: 'closedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
-  { key: 'closedTeam', name: 'Team', color: 'var(--color-chart-3)' }
-]
-const MERGED_SERIES: DailySeries<keyof DailyPulls & string>[] = [
-  { key: 'mergedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
-  { key: 'mergedTeam', name: 'Team', color: 'var(--color-chart-3)' }
-]
+const OPEN_SERIES = computed<DailySeries<'openCommunity' | 'openTeam'>[]>(() => [
+  { key: 'openCommunity', name: t.value.seriesCommunity, color: 'var(--color-chart-1)' },
+  { key: 'openTeam', name: t.value.seriesTeam, color: 'var(--color-chart-3)' }
+])
+const OPENED_SERIES = computed<DailySeries<'openedCommunity' | 'openedTeam'>[]>(() => [
+  { key: 'openedCommunity', name: t.value.seriesCommunity, color: 'var(--color-chart-1)' },
+  { key: 'openedTeam', name: t.value.seriesTeam, color: 'var(--color-chart-3)' }
+])
+const CLOSED_SERIES = computed<DailySeries<'closedCommunity' | 'closedTeam'>[]>(() => [
+  { key: 'closedCommunity', name: t.value.seriesCommunity, color: 'var(--color-chart-1)' },
+  { key: 'closedTeam', name: t.value.seriesTeam, color: 'var(--color-chart-3)' }
+])
+const MERGED_SERIES = computed<DailySeries<keyof DailyPulls & string>[]>(() => [
+  { key: 'mergedCommunity', name: t.value.seriesCommunity, color: 'var(--color-chart-1)' },
+  { key: 'mergedTeam', name: t.value.seriesTeam, color: 'var(--color-chart-3)' }
+])
 const activity = computed(() => snapshot.github.activity)
 /** How many are open at the end of the last finished day, and how many of them are the community's. */
 function openNow(days: { openTeam: number; openCommunity: number }[]) {
   const last = days.at(-1)
   return last
-    ? `${formatCount(last.openTeam + last.openCommunity)} open · ${formatCount(last.openCommunity)} from the community`
+    ? t.value.openNow({
+        open: formatCount(last.openTeam + last.openCommunity),
+        community: formatCount(last.openCommunity)
+      })
     : undefined
 }
 
 // Older versions recede: the question is how much of the day is already on the latest.
 const versionSeries = computed<DailySeries<keyof DailyVersions & string>[]>(() => [
-  { key: 'latest', name: snapshot.versions.latest ?? 'Latest', color: 'var(--color-chart-1)' },
-  { key: 'other', name: 'Other versions', color: 'var(--color-muted)' }
+  {
+    key: 'latest',
+    name: snapshot.versions.latest ?? t.value.seriesLatest,
+    color: 'var(--color-chart-1)'
+  },
+  { key: 'other', name: t.value.seriesOtherVersions, color: 'var(--color-muted)' }
 ])
 const latestShare = computed(() => {
   const day = snapshot.versions.daily.findLast(isFull)
@@ -168,8 +180,10 @@ const sharingNote = computed(() => {
     (day) => day.installs
   )
   const pinged = sumBy(fullDays.value, (day) => day.installs)
-  const share = pinged ? `, about ${formatPercent(shared / pinged)} of daily active installs` : ''
-  return `${formatCount(usage.value.installs)} installs sharing stats${share}`
+  const count = formatCount(usage.value.installs)
+  return pinged
+    ? t.value.sharingShare({ count, share: formatPercent(shared / pinged) })
+    : t.value.sharingInstalls({ count })
 })
 </script>
 
@@ -177,16 +191,16 @@ const sharingNote = computed(() => {
   <div :class="ui.page()">
     <header :class="ui.bar()">
       <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">Metrics</span>
+      <span :class="ui.barTitle()">{{ t.title }}</span>
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
-        <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
+        <span :class="ui.barMeta()">{{ t.updated({ time: formatTime(snapshot.asOf) }) }}</span>
         <MetricsRangePicker
           v-model="range"
           :today="snapshot.today"
           :earliest="snapshot.earliest ?? snapshot.start"
         />
-        <IconButton label="Refresh" :disabled="loading" @click="emit('refresh')">
+        <IconButton :label="t.refresh" :disabled="loading" @click="emit('refresh')">
           <icon-lucide-refresh-cw class="size-3.5" />
         </IconButton>
       </div>
@@ -202,36 +216,35 @@ const sharingNote = computed(() => {
             :trend="active.trend"
           />
           <MetricsTile
-            label="Installer downloads"
+            :label="t.installerDownloads"
             :value="snapshot.github.downloads.total"
             :change="added(snapshot.github.downloads.daily)"
             :detail="growthDetail(snapshot.github.downloads.daily)"
             :trend="fullTrend(snapshot.github.downloads.daily)"
           />
           <MetricsTile
-            label="GitHub stars"
+            :label="t.githubStars"
             :value="snapshot.github.stars.total"
             :change="added(snapshot.github.stars.daily)"
             :detail="growthDetail(snapshot.github.stars.daily)"
             :trend="fullTrend(snapshot.github.stars.daily)"
           />
           <MetricsTile
-            label="Cloud waitlist"
+            :label="t.cloudWaitlist"
             :value="snapshot.waitlist.total"
             :change="snapshot.waitlist.added"
-            :detail="`${phrase} · ${formatCount(snapshot.waitlist.confirmed)} confirmed`"
+            :detail="
+              t.waitlistDetail({ phrase, confirmed: formatCount(snapshot.waitlist.confirmed) })
+            "
             :trend="signupTrend"
           />
         </div>
 
         <section :class="ui.section()" aria-labelledby="metrics-reach">
-          <h2 id="metrics-reach" :class="ui.sectionHeading()">Reach</h2>
-          <MetricsCard
-            heading="Daily active installs"
-            note="Anonymous pings, one per install per UTC day. Days can't be added up: a returning install counts on each day."
-          >
+          <h2 id="metrics-reach" :class="ui.sectionHeading()">{{ t.reach }}</h2>
+          <MetricsCard :heading="t.activeToday" :note="t.dailyActiveNote">
             <DailyChart
-              label="Daily active installs, desktop and web"
+              :label="t.dailyActiveChart"
               :days="snapshot.dailyActive"
               :series="INSTALL_SERIES"
               :today="snapshot.today"
@@ -239,15 +252,12 @@ const sharingNote = computed(() => {
               stacked
             />
           </MetricsCard>
-          <MetricsCard
-            heading="Visits"
-            note="Cloudflare's count of page views that arrived from another site or a link. Not unique people: a returning visitor counts again."
-          >
+          <MetricsCard :heading="t.visits" :note="t.visitsNote">
             <template v-if="reachedEditor !== undefined" #aside>
-              About {{ formatPercent(reachedEditor) }} of app visits reach the editor
+              {{ t.reachedEditor({ share: formatPercent(reachedEditor) }) }}
             </template>
             <DailyChart
-              label="Visits to the website and the web app"
+              :label="t.visitsChart"
               :days="snapshot.visits"
               :series="VISIT_SERIES"
               :today="snapshot.today"
@@ -255,30 +265,29 @@ const sharingNote = computed(() => {
             />
           </MetricsCard>
           <div :class="ui.row()">
-            <MetricsCard heading="Platforms" note="Daily pings added up across the range">
+            <MetricsCard :heading="t.platforms" :note="t.platformsNote">
               <PlatformsChart :platforms="snapshot.platforms" />
             </MetricsCard>
-            <MetricsCard
-              heading="Networks"
-              note="Daily pings added up by the network Cloudflare reports"
-            >
+            <MetricsCard :heading="t.networks" :note="t.networksNote">
               <NetworksTable
                 v-if="snapshot.networks.top.length"
                 :networks="snapshot.networks.top"
                 :total="snapshot.networks.total"
               />
-              <p v-else :class="ui.sectionLabel()">No networks recorded in this range yet</p>
+              <p v-else :class="ui.sectionLabel()">{{ t.noNetworks }}</p>
             </MetricsCard>
           </div>
-          <MetricsCard
-            heading="Versions"
-            note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
-          >
+          <MetricsCard :heading="t.versions" :note="t.versionsNote">
             <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
-              {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
+              {{
+                t.latestShare({
+                  share: formatShare(latestShare),
+                  version: snapshot.versions.latest
+                })
+              }}
             </template>
             <DailyChart
-              label="Daily pings on the latest version and on others"
+              :label="t.versionsChart"
               :days="snapshot.versions.daily"
               :series="versionSeries"
               :today="snapshot.today"
@@ -286,10 +295,10 @@ const sharingNote = computed(() => {
               stacked
             />
           </MetricsCard>
-          <MetricsCard heading="Website" note="Visits to openpencil.dev by page and country">
+          <MetricsCard :heading="t.website" :note="t.websiteNote">
             <div :class="ui.breakdown()">
               <div>
-                <h4 :class="ui.sectionLabel()">Top pages</h4>
+                <h4 :class="ui.sectionLabel()">{{ t.topPages }}</h4>
                 <BarList
                   class="text-xs"
                   :data="snapshot.website.pages"
@@ -299,7 +308,7 @@ const sharingNote = computed(() => {
                 />
               </div>
               <div>
-                <h4 :class="ui.sectionLabel()">Countries</h4>
+                <h4 :class="ui.sectionLabel()">{{ t.countries }}</h4>
                 <BarList
                   class="text-xs"
                   :data="countries"
@@ -313,18 +322,15 @@ const sharingNote = computed(() => {
         </section>
 
         <section :class="ui.section()" aria-labelledby="metrics-engagement">
-          <h2 id="metrics-engagement" :class="ui.sectionHeading()">Engagement</h2>
+          <h2 id="metrics-engagement" :class="ui.sectionHeading()">{{ t.engagement }}</h2>
           <div v-if="usage" :class="ui.row()">
-            <MetricsCard
-              heading="Retention"
-              note="Share of installs that came back N days after their first day; only installs sharing stats"
-            >
+            <MetricsCard :heading="t.retention" :note="t.retentionNote">
               <RetentionChart :cohorts="usage.retention" />
             </MetricsCard>
-            <MetricsCard heading="What people do" :note="sharingNote">
+            <MetricsCard :heading="t.whatPeopleDo" :note="sharingNote">
               <div :class="ui.usage()">
                 <div>
-                  <h4 :class="ui.sectionLabel()">Documents opened</h4>
+                  <h4 :class="ui.sectionLabel()">{{ t.documentsOpened }}</h4>
                   <BarList
                     class="text-xs"
                     :data="usage.documents"
@@ -333,7 +339,7 @@ const sharingNote = computed(() => {
                   />
                 </div>
                 <div>
-                  <h4 :class="ui.sectionLabel()">Exports</h4>
+                  <h4 :class="ui.sectionLabel()">{{ t.exports }}</h4>
                   <BarList
                     class="text-xs"
                     :data="usage.exports"
@@ -342,7 +348,7 @@ const sharingNote = computed(() => {
                   />
                 </div>
                 <div>
-                  <h4 :class="ui.sectionLabel()">AI replies by provider</h4>
+                  <h4 :class="ui.sectionLabel()">{{ t.aiReplies }}</h4>
                   <BarList
                     class="text-xs"
                     :data="usage.aiProviders"
@@ -353,12 +359,12 @@ const sharingNote = computed(() => {
               </div>
             </MetricsCard>
           </div>
-          <MetricsCard v-else heading="Usage">
+          <MetricsCard v-else :heading="t.usage">
             <AppPlaceholder
               size="compact"
               :fill="false"
-              label="PostHog did not answer"
-              description="Retention and usage come from PostHog; the rest of the page is current. Refresh to ask again."
+              :label="t.posthogDown"
+              :description="t.posthogDownDetail"
             >
               <template #icon><icon-lucide-cloud-off class="size-4" /></template>
             </AppPlaceholder>
@@ -366,14 +372,11 @@ const sharingNote = computed(() => {
         </section>
 
         <section :class="ui.section()" aria-labelledby="metrics-growth">
-          <h2 id="metrics-growth" :class="ui.sectionHeading()">Growth</h2>
+          <h2 id="metrics-growth" :class="ui.sectionHeading()">{{ t.growth }}</h2>
           <div :class="ui.row()">
-            <MetricsCard
-              heading="GitHub"
-              note="Repository views per day, and the sites that sent visitors over the last 14 days"
-            >
+            <MetricsCard :heading="t.github" :note="t.githubNote">
               <DailyChart
-                label="Repository views and unique visitors"
+                :label="t.githubChart"
                 :days="snapshot.github.traffic"
                 :series="TRAFFIC_SERIES"
                 :today="snapshot.today"
@@ -387,10 +390,14 @@ const sharingNote = computed(() => {
                 :is-animation-active="false"
               />
             </MetricsCard>
-            <MetricsCard heading="Cloud waitlist" note="Sign-ups in the range by email domain">
+            <MetricsCard :heading="t.cloudWaitlist" :note="t.waitlistNote">
               <template #aside>
-                {{ formatCount(snapshot.waitlist.confirmed) }} of
-                {{ formatCount(snapshot.waitlist.total) }} confirmed
+                {{
+                  t.waitlistConfirmed({
+                    confirmed: formatCount(snapshot.waitlist.confirmed),
+                    total: formatCount(snapshot.waitlist.total)
+                  })
+                }}
               </template>
               <WaitlistList :signups="snapshot.waitlist.recent" />
             </MetricsCard>
@@ -398,33 +405,30 @@ const sharingNote = computed(() => {
         </section>
 
         <section :class="ui.section()" aria-labelledby="metrics-development">
-          <h2 id="metrics-development" :class="ui.sectionHeading()">Development</h2>
+          <h2 id="metrics-development" :class="ui.sectionHeading()">{{ t.development }}</h2>
           <div v-if="activity.issues.length" :class="ui.row()">
-            <MetricsCard
-              heading="Issues"
-              note="Open at the end of each day, and opened and closed per day. Team: the repository's members and collaborators."
-            >
+            <MetricsCard :heading="t.issues" :note="t.issuesNote">
               <template v-if="openNow(activity.issues)" #aside>{{
                 openNow(activity.issues)
               }}</template>
-              <h4 :class="ui.sectionLabel()">Open</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.open }}</h4>
               <DailyLevelChart
-                label="Open issues by the community and the team"
+                :label="t.openIssuesChart"
                 :days="activity.issues"
                 :series="OPEN_SERIES"
               />
-              <h4 :class="ui.sectionLabel()">Opened per day</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.openedPerDay }}</h4>
               <DailyChart
-                label="Issues opened per day by the community and the team"
+                :label="t.issuesOpenedChart"
                 :days="activity.issues"
                 :series="OPENED_SERIES"
                 :today="snapshot.today"
                 :height="160"
                 stacked
               />
-              <h4 :class="ui.sectionLabel()">Closed per day</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.closedPerDay }}</h4>
               <DailyChart
-                label="Issues closed per day, by who opened them"
+                :label="t.issuesClosedChart"
                 :days="activity.issues"
                 :series="CLOSED_SERIES"
                 :today="snapshot.today"
@@ -432,31 +436,28 @@ const sharingNote = computed(() => {
                 stacked
               />
             </MetricsCard>
-            <MetricsCard
-              heading="Pull requests"
-              note="Open at the end of each day, and opened and merged per day"
-            >
+            <MetricsCard :heading="t.pullRequests" :note="t.pullsNote">
               <template v-if="openNow(activity.pulls)" #aside>{{
                 openNow(activity.pulls)
               }}</template>
-              <h4 :class="ui.sectionLabel()">Open</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.open }}</h4>
               <DailyLevelChart
-                label="Open pull requests by the community and the team"
+                :label="t.openPullsChart"
                 :days="activity.pulls"
                 :series="OPEN_SERIES"
               />
-              <h4 :class="ui.sectionLabel()">Opened per day</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.openedPerDay }}</h4>
               <DailyChart
-                label="Pull requests opened per day by the community and the team"
+                :label="t.pullsOpenedChart"
                 :days="activity.pulls"
                 :series="OPENED_SERIES"
                 :today="snapshot.today"
                 :height="160"
                 stacked
               />
-              <h4 :class="ui.sectionLabel()">Merged per day</h4>
+              <h4 :class="ui.sectionLabel()">{{ t.mergedPerDay }}</h4>
               <DailyChart
-                label="Pull requests merged per day from the community and the team"
+                :label="t.pullsMergedChart"
                 :days="activity.pulls"
                 :series="MERGED_SERIES"
                 :today="snapshot.today"
@@ -465,12 +466,12 @@ const sharingNote = computed(() => {
               />
             </MetricsCard>
           </div>
-          <MetricsCard v-else heading="Issues and pull requests">
+          <MetricsCard v-else :heading="t.issuesAndPulls">
             <AppPlaceholder
               size="compact"
               :fill="false"
-              label="Not synced yet"
-              description="The nightly snapshot at 00:05 UTC mirrors the repository's issues and pull requests; their whole history shows from then on."
+              :label="t.notSynced"
+              :description="t.notSyncedDetail"
             >
               <template #icon><icon-lucide-git-pull-request class="size-4" /></template>
             </AppPlaceholder>

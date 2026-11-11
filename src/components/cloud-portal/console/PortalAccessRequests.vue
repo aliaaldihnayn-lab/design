@@ -2,7 +2,7 @@
 import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import {
   usePortalList,
@@ -89,7 +89,7 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { class: 'w-px whitespace-nowrap text-end', actions: true },
       cell: ({ row: { original: request } }) =>
         h(PortalRequestActions, {
           request,

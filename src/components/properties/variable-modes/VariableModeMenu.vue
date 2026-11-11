@@ -15,9 +15,9 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { MIXED } from '@open-pencil/vue/controls/node-props'
-import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { MIXED } from '@lawha/vue/controls/node-props'
+import type { VariableModeChoice } from '@lawha/vue/controls/variable-modes'
+import { usePanelMessages } from '@lawha/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -31,7 +31,7 @@ const emit = defineEmits<{ set: [collectionId: string, modeId: string | null] }>
 
 const panels = usePanelMessages()
 const menu = useMenuUI({ content: 'min-w-44' })
-const item = menuItem({ justify: 'start', class: 'pl-6 relative' })
+const item = menuItem({ justify: 'start', class: 'ps-6 relative' })
 const groups = computed(() =>
   [
     { label: panels.value.variableModesInFile, choices: choices.filter((c) => !c.library) },
@@ -68,7 +68,7 @@ function select(choice: VariableModeChoice, value: string) {
                 :class="[menu.subTrigger, 'justify-between data-[highlighted]:bg-hover']"
               >
                 {{ choice.name }}
-                <icon-lucide-chevron-right :class="menu.icon" />
+                <icon-lucide-chevron-right :class="[menu.icon, 'rtl:-scale-x-100']" />
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent :side-offset="4" :class="menu.content">
@@ -80,7 +80,7 @@ function select(choice: VariableModeChoice, value: string) {
                       "
                     >
                       <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute start-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ autoModeLabel(panels, choice) }}
@@ -95,7 +95,7 @@ function select(choice: VariableModeChoice, value: string) {
                         :value="mode.modeId"
                         :class="item"
                       >
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute start-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ mode.name }}

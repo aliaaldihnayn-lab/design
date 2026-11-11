@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { getNodeEditCapability } from '@open-pencil/core'
-import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generated'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { getNodeEditCapability } from '@lawha/core'
+import { isGeneratedFrame, layerResizes } from '@lawha/scene-graph/generated'
+import { readIcon } from '@lawha/scene-graph/icons'
+import { hasPluginData, LAWHA_PLUGIN_DATA } from '@lawha/scene-graph/plugin-data'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
+import { useI18n } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
@@ -20,6 +21,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
+import AdaptSection from './properties/AdaptSection.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import BehaviourPanel from './properties/component-properties/behaviour/BehaviourPanel.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
@@ -31,6 +33,7 @@ import SlotAuthoringSection from './properties/component-properties/slot/SlotAut
 import { usePropertyBinding } from './properties/component-properties/usePropertyBinding'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
+import DesignSystemSection from './properties/DesignSystemSection.vue'
 import DocumentSection from './properties/DocumentSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
@@ -44,7 +47,9 @@ import LayoutSection from './properties/layout/LayoutSection.vue'
 import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
+import PathEffectsSection from './properties/paths/PathEffectsSection.vue'
 import PositionSection from './properties/PositionSection.vue'
+import PrototypeSection from './properties/prototype/PrototypeSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
@@ -88,6 +93,26 @@ function openSelectedInstanceReview() {
     initialInstanceId: instance.id
   })
 }
+/** Layers with an outline Illustrator's path effects reshape. */
+const PATH_EFFECT_TYPES = new Set([
+  'RECTANGLE',
+  'ROUNDED_RECTANGLE',
+  'ELLIPSE',
+  'POLYGON',
+  'STAR',
+  'LINE',
+  'VECTOR',
+  'TEXT',
+  'BOOLEAN_OPERATION'
+])
+const pathEffectIds = useSceneComputed(() => {
+  const nodes = store.getSelectedNodes()
+  // A live blend's group takes the section too, for its blend options.
+  const takes = (selected: (typeof nodes)[number]) =>
+    PATH_EFFECT_TYPES.has(selected.type) ||
+    hasPluginData(selected.pluginData, LAWHA_PLUGIN_DATA.liveBlend)
+  return nodes.length > 0 && nodes.every(takes) ? nodes.map((selected) => selected.id) : []
+})
 const LAYOUT_GUIDE_TYPES = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
 // Figma offers layout guides while every selected layer is a frame.
 const supportsLayoutGuides = useSceneComputed(() => {
@@ -142,6 +167,7 @@ const { panels } = useI18n()
       <SelectionColorsSection />
     </template>
     <LayoutGridSection v-if="supportsLayoutGuides" />
+    <PathEffectsSection v-if="freeStyle && pathEffectIds.length > 0" :node-ids="pathEffectIds" />
     <ExportSection />
   </div>
 
@@ -249,7 +275,14 @@ const { panels } = useI18n()
         <SelectionColorsSection />
       </template>
       <LayoutGridSection v-if="supportsLayoutGuides" />
+      <PathEffectsSection v-if="freeStyle && pathEffectIds.length > 0" :node-ids="pathEffectIds" />
 
+      <AdaptSection
+        v-if="node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'"
+        :node-id="node.id"
+      />
+      <PrototypeSection :node-id="node.id" />
+      <DesignSystemSection scope="selection" />
       <ExportSection />
     </div>
   </RetainedPanel>
@@ -263,6 +296,8 @@ const { panels } = useI18n()
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <StatusesSection />
     <DocumentSection />
+    <PrototypeSection />
+    <DesignSystemSection scope="page" />
     <ExportSection />
   </div>
 </template>

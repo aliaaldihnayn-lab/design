@@ -25,6 +25,7 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
+import { pluginDataForCopy } from './stories/model'
 import { invalidateTextCaches } from './text/picture'
 import type {
   DocumentColorSpace,
@@ -751,6 +752,8 @@ export class SceneGraph {
     if (props.source) props.source = { ...props.source, id: null, orderKey: null }
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
+    // A copy's stories are new work: new ids, and no Jira issue of the original's.
+    props.pluginData = pluginDataForCopy(props.pluginData)
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
 

@@ -4,7 +4,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 import { uniq } from 'es-toolkit/array'
 
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { resolveWorkspaceRoot } from '@lawha/package-artifacts-tools'
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
 
@@ -85,6 +85,7 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/variables.test.ts',
   'packages/core/tests/io/formats/fig/import/stale-overrides.test.ts',
+  'packages/fig/tests/document/record-headers.test.ts',
   'tests/engine/io/fig/export/text.test.ts',
   'tests/engine/io/fig/export/worker.test.ts',
   'tests/engine/io/fig/import/group-reclassify.test.ts',

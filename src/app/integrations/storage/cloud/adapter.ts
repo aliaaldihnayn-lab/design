@@ -1,16 +1,16 @@
-import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
-import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
-import { extractFigThumbnailFromReader, figArchiveKind } from '@open-pencil/fig'
+import { CloudAPIError, type CloudAPIClient } from '@lawha/cloud/client'
+import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@lawha/cloud/contract'
+import { extractFigThumbnailFromReader, figArchiveKind } from '@lawha/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, recheckedCloudConnection } from '@/app/cloud/sessions/connection'
 
-import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
+import { storageErrorText, StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
 import { cloudChecksum, downloadCloudDocument, readCloudRevisionRange } from './download'
-import { splitCloudDocument, uploadCloudImages } from './images'
+import { isWordPackage, splitCloudDocument, uploadCloudImages } from './images'
 import { uploadCloudObject } from './upload'
 
 function revisionConflict(error: unknown): boolean {
@@ -48,10 +48,12 @@ export type CloudStorageDependencies = {
 /** The API client of a signed-in server, asking it once more before giving up. */
 async function signedInClient(serverId: string): Promise<CloudAPIClient> {
   const server = findCloudServer(serverId)
-  if (!server) throw new StorageUnavailableError('This Cloud server was removed from the app')
+  if (!server) throw new StorageUnavailableError(storageErrorText((t) => t.cloudServerRemoved))
   const connection = await recheckedCloudConnection(server)
   if (connection.state !== 'signed-in' || !connection.discovery) {
-    throw new StorageUnavailableError(`Sign in to ${cloudServerHost(server.url)} to sync`)
+    throw new StorageUnavailableError(
+      storageErrorText((t) => t.cloudSignIn({ host: cloudServerHost(server.url) }))
+    )
   }
   return cloudAPIClient(server, connection.discovery)
 }
@@ -74,7 +76,7 @@ export function createCloudStorageAdapter(
   const client = () => dependencies.client(serverId)
 
   function workspaceId(): string {
-    if (!runtime.containerId) throw new Error('A Cloud storage location names its workspace')
+    if (!runtime.containerId) throw new Error(storageErrorText((t) => t.cloudWorkspaceMissing))
     return runtime.containerId
   }
 
@@ -83,13 +85,27 @@ export function createCloudStorageAdapter(
     return documents.find((document) => document.id === id) ?? null
   }
 
+  /**
+   * Whether the server already has the document, asked of the document itself: one made in a
+   * room is reachable through the room by people who are not in its workspace's list.
+   */
+  async function exists(id: string): Promise<boolean> {
+    try {
+      await (await client()).getDocumentAccess(id)
+      return true
+    } catch (error) {
+      if (error instanceof CloudAPIError && error.status === 404) return false
+      throw error
+    }
+  }
+
   return {
     async testConnection() {
       try {
         const workspaces = await (await client()).listWorkspaces()
         const found = workspaces.workspaces.some((workspace) => workspace.id === workspaceId())
         return found
-          ? { ok: true, message: 'Connected to OpenPencil Cloud.' }
+          ? { ok: true, message: 'Connected to Lawha Cloud.' }
           : { ok: false, message: 'This workspace is no longer available.' }
       } catch (error) {
         return { ok: false, message: error instanceof Error ? error.message : String(error) }
@@ -122,10 +138,10 @@ export function createCloudStorageAdapter(
       const cloud = await client()
       const baseRevision = options?.baseRevision ?? null
       const name = cloudDocumentName(metadata.name)
-      // The file says whether it is a board, as its header does for Figma.
-      const kind = figArchiveKind(bytes) ?? 'design'
+      // The file says whether it is a board, as its header does for Figma, or a Word file.
+      const kind = figArchiveKind(bytes) ?? (isWordPackage(bytes) ? 'writer' : 'design')
       // Without a revision this is the first save; the document may not exist on the server yet.
-      if (!baseRevision && !(await listed(id))) {
+      if (!baseRevision && !(await exists(id))) {
         await cloud.createDocument(workspaceId(), { id, name, kind })
       }
       // The workspace keeps images once; the stored file names them and uploads only those it lacks.

@@ -40,5 +40,18 @@
   "deleteDocumentDescription": "Le document est supprimé pour toutes les personnes qui peuvent l’ouvrir. Cette action est irréversible.",
   "deleteDocumentFailed": "Impossible de supprimer « {name} ». Réessayez.",
   "saveAsPrompt": "Enregistrer sous :",
-  "browserFileAPINotSupported": "Votre navigateur ne prend pas en charge l’API de fichiers locaux. Les fichiers seront téléchargés au lieu d’être enregistrés sur place."
+  "browserFileAPINotSupported": "Votre navigateur ne prend pas en charge l’API de fichiers locaux. Les fichiers seront téléchargés au lieu d’être enregistrés sur place.",
+  "preparingDocument": "Préparation du document",
+  "preparationReading": "Lecture du document",
+  "preparationDecoding": "Décodage du document Figma",
+  "preparationMaterializing": "Préparation des calques",
+  "preparationPopulatingPage": "Préparation de la page",
+  "preparationResolvingFonts": "Résolution des polices",
+  "preparationResolvingFallbacks": "Finalisation de la typographie",
+  "preparationLayout": "Calcul de la mise en page",
+  "preparationDrawingShaders": "Dessin des shaders",
+  "preparationPreparingRender": "Préparation du canevas",
+  "preparationLoading": "Chargement…",
+  "preparationProgress": "{completed} sur {total}",
+  "createText": "Document texte"
 }

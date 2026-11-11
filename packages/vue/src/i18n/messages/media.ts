@@ -21,7 +21,21 @@ export const mediaMessageDefaults = {
     'This key has used up its {service} requests for this hour. Try again later.'
   ),
   photoKeyUnreachable: params('Couldn’t reach {service}. Check your network connection.'),
-  photoKeyCheckFailed: params('{service} didn’t answer the test. Try again later.')
+  photoKeyCheckFailed: params('{service} didn’t answer the test. Try again later.'),
+  traceOnDevice: 'Image Trace on this device',
+  tracePreset: 'Preset',
+  tracePresetLogo: 'Logo',
+  tracePresetPhotoHigh: 'High fidelity photo',
+  tracePresetPhotoLow: 'Low fidelity photo',
+  tracePresetLineArt: 'Line art',
+  tracePresetSketch: 'Sketched art',
+  traceThreshold: 'Threshold',
+  traceColors: 'Colours',
+  tracePreview: 'Image Trace preview',
+  tracePreviewSelection: params('The selected image traced in {count} colours.'),
+  tracePreviewSample: params(
+    'A sample traced in {count} colours. Select an image layer to preview it.'
+  )
 } as const
 
 export const mediaMessages = i18n('media', mediaMessageDefaults)

@@ -4,6 +4,22 @@ import { colorSchema } from '../color/schema'
 import { finiteNumberSchema, matrixSchema, vectorSchema } from '../primitives/schema'
 import type { FillType, GradientTransform } from '../types'
 
+/** An image fill's input levels: black and white points and the midtone gamma. */
+export const imageLevelsSchema = v.object({
+  black: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  white: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  gamma: v.pipe(v.number(), v.minValue(0.1), v.maxValue(10))
+})
+
+/** A point an image fill's tone curve runs through. */
+export const curvePointSchema = v.object({
+  x: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  y: v.pipe(v.number(), v.minValue(0), v.maxValue(1))
+})
+
+/** The most points a tone curve takes. */
+export const MAX_CURVE_POINTS = 32
+
 export const gradientStopSchema = v.object({ position: finiteNumberSchema, color: colorSchema })
 
 const transformRowSchema = v.strictTuple([

@@ -2,8 +2,8 @@
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
-import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@lawha/core/library'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -223,7 +223,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
           />
         </div>
       </section>
-      <div class="absolute bottom-3 left-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
+      <div class="absolute bottom-3 start-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
         <SegmentedControl
           v-model="mode"
           :options="modeOptions"
@@ -246,7 +246,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
           />
         </SliderRoot>
-        <span v-if="mode === 'overlay'" class="w-8 text-right text-[10px] text-muted">
+        <span v-if="mode === 'overlay'" class="w-8 text-end text-[10px] text-muted">
           {{ opacity[0] }}%
         </span>
       </div>
@@ -261,14 +261,14 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
           :disabled="applying || instanceIndex === 0"
           @click="instanceIndex--"
         >
-          <icon-lucide-chevron-left class="size-4" />
+          <icon-lucide-chevron-left class="size-4 rtl:-scale-x-100" />
         </IconButton>
         <IconButton
           :label="panels.nextLibraryInstance"
           :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
           @click="instanceIndex++"
         >
-          <icon-lucide-chevron-right class="size-4" />
+          <icon-lucide-chevron-right class="size-4 rtl:-scale-x-100" />
         </IconButton>
         {{
           panels.libraryInstancePosition({

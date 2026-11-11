@@ -7,7 +7,7 @@ import {
   useCredentialMessages,
   useSettingsMessages,
   useStorageMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { homeLocation } from '@/app/home/location'
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -225,7 +225,7 @@ async function testConnection() {
               configured ? settings.configured : settings.notConfigured
             }}</template>
             <template #trailing
-              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5"
+              >{{ settings.edit }}<icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
             /></template>
           </AppActionRow>
           <AppButton

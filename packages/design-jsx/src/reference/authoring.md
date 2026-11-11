@@ -1,6 +1,6 @@
-# OpenPencil design authoring
+# Lawha design authoring
 
-This reference describes scene creation, not React DOM output. Use the `render` tool for JSX strings, or import `Frame`, `Text`, and other authoring exports from `@open-pencil/design-jsx` and render them with `renderTree` from `@open-pencil/core/design-jsx` in library code. Library exports are not automatically globals in agent `eval`; use only the bindings exposed by that execution environment.
+This reference describes scene creation, not React DOM output. Use the `render` tool for JSX strings, or import `Frame`, `Text`, and other authoring exports from `@lawha/design-jsx` and render them with `renderTree` from `@lawha/core/design-jsx` in library code. Library exports are not automatically globals in agent `eval`; use only the bindings exposed by that execution environment.
 
 ## Composition and layout
 
@@ -69,6 +69,20 @@ This reference describes scene creation, not React DOM output. Use the `render` 
   </Component>
 </Switch.Root>
 ```
+
+## User stories and epics
+
+- Every screen you design arrives with its product spec. Give the screen's frame `epics={[{ title, description }]}` for the features it belongs to and a story of its own, and give **every interactive element** (button, input, dropdown, select, tab, toggle, checkbox, radio, slider, link, card that opens something, and every layer with a prototype interaction) `stories={[…]}` describing what it is and what it does. Never leave an interactive element without a story.
+- A story is `{ title, epic, asA, iWant, soThat, criteria, behaviour, states, priority, status }`. `epic` is an epic's title, found in the document or created; `criteria` are Given/When/Then, as `{ given, when, then }` or one sentence "Given …, when …, then …", covering the happy path, validation, errors, and empty and loading states; `behaviour` says what the element does and its rules; `states` lists the states it covers (default, hover, pressed, focus, disabled, loading, error, empty, selected); `priority` is `highest`, `high`, `medium`, `low`, or `lowest`.
+- Write stories in the language of the design; Arabic stories for an Arabic screen are fine. After the design, call `list_user_stories` for the frame and fill whatever it reports `missing`. When a Jira site is connected, call `sync_jira` with `direction: 'both'` (and `projectKey` the first time) so every epic and story gets its Jira issue; when none is, say that the stories are ready to sync once one is connected.
+
+## Live prototypes
+
+- Never draw one frame per state of a control (Dropdown closed, Dropdown open, Button hover…). Every state of a control is a variant of one component set, and interactions change an instance between them in place, as Figma's interactive components do; preview (Ctrl+Alt+Enter) and the player then run it on the same frame.
+- Prefer the built-in kit: `insert_kit_component` places a live, token-themed control with all its states (button, text-input, textarea, search, number-stepper, select, menu, combobox, multi-select, tabs, accordion, modal, drawer, popover, tooltip, toast, switch, checkbox, radio-group, slider, range-slider, date-picker, date-range-picker, time-picker, file-upload, stepper, pagination, carousel, progress, spinner, rating). `rtl: true` lays it out right to left with Arabic labels; `calendar: "islamic-umalqura"` gives Hijri date pickers, whose month and year grids reach any month, and `min_date`, `max_date`, `disabled_dates`, and `disabled_weekdays` limit the days one instance can pick; `hour_cycle: 12` gives a 12 hour time picker. Text inputs take real typing in preview, a combobox filters its suggestions as you type, sliders drag in steps, and each instance keeps its own value.
+- For a control of your own, render its states as a `ComponentSet` whose `Component` children are named `State=Closed`, `State=Open`, then call `create_interactive_component` (or `add_state_interaction`) with `{ from, layer, trigger, to, transition }`: `click`, `hover` (while hovering), `press` (while pressing), `key`, `after-delay`, `mouse-enter`, `focus`, `drag`; transitions `smart-animate`, `dissolve`, `move-in`, `push`, `slide-in`, with easings including `spring` and `custom-spring`.
+- Share state with prototype variables: a `set-variable` action, `conditional` branches on variable values, text or visibility bound to a variable (`bind={{ text: designVar('Selected city') }}`), and `bind_property_to_variable` so an instance's variant follows a variable, such as a button enabled by a checkbox.
+- A modal, sheet, or toast is an `overlay` action from its trigger, with `background` for the dim and `close-overlay` on its buttons; it opens over the frame it was triggered in.
 
 ## Verification
 

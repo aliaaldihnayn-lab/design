@@ -5,9 +5,9 @@ import { computed } from 'vue'
 import Search from '~icons/lucide/search'
 import X from '~icons/lucide/x'
 
-import { shortcutPlatform } from '@open-pencil/vue/editor/commands'
-import { useCommandMessages, useCommonMessages } from '@open-pencil/vue/i18n'
-import { CommandPaletteRoot } from '@open-pencil/vue/primitives/CommandPalette'
+import { shortcutPlatform } from '@lawha/vue/editor/commands'
+import { useCommandMessages, useCommonMessages } from '@lawha/vue/i18n'
+import { CommandPaletteRoot } from '@lawha/vue/primitives/CommandPalette'
 
 import { usePagePaletteGroup } from '@/app/editor/pages/palette'
 import { shortcutCode } from '@/app/shell/keyboard/layout'
@@ -72,7 +72,7 @@ if (IS_BROWSER) {
         <Search class="mx-2 size-5 shrink-0 text-muted" />
       </template>
       <template #search-trailing>
-        <IconButton class="ml-2" size="md" :label="common.close" @click="close">
+        <IconButton class="ms-2" size="md" :label="common.close" @click="close">
           <X class="size-5" />
         </IconButton>
       </template>

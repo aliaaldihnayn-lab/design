@@ -1,18 +1,18 @@
 import { clamp } from 'es-toolkit'
 
-import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, isUnsetGuid } from '@lawha/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
-} from '@open-pencil/scene-graph/constants'
-import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
-import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
-import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
-import { isShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { pixelLength } from '@open-pencil/scene-graph/text'
-import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
+} from '@lawha/scene-graph/constants'
+import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import { createDefaultSourceMetadata } from '@lawha/scene-graph/node-defaults'
+import { LAWHA_PLUGIN_DATA } from '@lawha/scene-graph/plugin-data'
+import { POINT_COUNT_RANGE } from '@lawha/scene-graph/polygon'
+import { isShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { pixelLength } from '@lawha/scene-graph/text'
+import { parseVariantName } from '@lawha/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
 import { importCanvasGuides } from './canvas-guides'
@@ -21,6 +21,7 @@ import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokeAlign, convertStrokes } from './paint'
 import { expandPathTextLayoutBox } from './path/text-layout'
+import { withPatternPlacement } from './pattern-placement'
 import {
   extractBoundVariables,
   extractExportSettings,
@@ -58,12 +59,13 @@ export {
 } from './text/values'
 export { resolveGeometryPaths } from './vector/geometry'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
 import type {
   SceneNode,
   TextLength,
   NodeType,
   Fill,
+  ImageAdjustments,
   StrokeCap,
   StrokeJoin,
   LayoutMode,
@@ -86,8 +88,8 @@ import type {
   SymbolLink,
   VariantPropSpec,
   VariableModeMap
-} from '@open-pencil/scene-graph'
-import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph'
+import type { Vector, GUID } from '@lawha/scene-graph/primitives'
 
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
@@ -328,7 +330,7 @@ function convertPolygonProps(
 }
 
 /**
- * A text's line height. Figma writes auto as 100 percent, and OpenPencil once wrote none for
+ * A text's line height. Figma writes auto as 100 percent, and Lawha once wrote none for
  * it; a text in auto lines up each line at its own font's height. Figma saves each line at the
  * larger of its line height and its tallest font's height, so a first line shorter than the
  * text's height in pixels was laid out at another one, which a style the text uses set. A first
@@ -481,7 +483,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     opticalSizeFromFontSize: nc.detachOpticalSizeFromFontSize !== true,
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
-    textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
+    textDirection: readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.textDirection) ?? 'AUTO',
     ...convertDerivedText(nc, blobs)
   }
 }
@@ -613,8 +615,7 @@ function convertLayoutProps(
       (nc.stackCounterAlignContent as string) === 'SPACE_BETWEEN' ? 'SPACE_BETWEEN' : 'AUTO',
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
-    layoutDirection:
-      readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
+    layoutDirection: readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
     ...(derivedLayout ? { derivedLayout } : {})
   }
 }
@@ -703,7 +704,7 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
-    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
+    readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
   }
@@ -744,7 +745,13 @@ export function nodeChangeToProps(
     internalOnly: nc.internalOnly === true || sharedStyleType(nc.styleType) !== null,
     blendMode: (nc.blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
     booleanOperation: mapBooleanOperation(nc),
-    fills: convertFills(nc.fillPaints),
+    fills: withPatternPlacement(
+      withImageAdjustments(
+        convertFills(nc.fillPaints),
+        readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.imageAdjustments)
+      ),
+      readNodeChangePluginData(nc, LAWHA_PLUGIN_DATA.patternPlacement)
+    ),
     strokes: convertStrokes(
       nc.strokePaints,
       nc.strokeWeight,
@@ -807,7 +814,7 @@ export function nodeChangeToProps(
   // See path/text-layout.ts — expand the layout box before node creation so
   // clipsContent parents don't shave overflowing path lettering at first paint.
   expandPathTextLayoutBox(props, textPathData)
-  // A saved OpenPencil doc carries the true textPathBox (reflow may have
+  // A saved Lawha doc carries the true textPathBox (reflow may have
   // scaled it); the expand-time reconstruction is only right for pristine
   // Figma exports. Plugin box is in pre-expansion local coords — expand's
   // shift is textPathBox.x/y by construction, so re-home it.
@@ -1148,7 +1155,7 @@ export function sortChildren(
 }
 
 interface PreservedFigmaBlob {
-  __openPencilFigmaBlob: Uint8Array
+  __lawhaFigmaBlob: Uint8Array
 }
 
 function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown {
@@ -1163,7 +1170,7 @@ function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown
         result[key] = child
       } else {
         result[key] = {
-          __openPencilFigmaBlob:
+          __lawhaFigmaBlob:
             blob instanceof Uint8Array
               ? blob
               : new Uint8Array(Object.values(blob as Record<string, number>))
@@ -1327,4 +1334,20 @@ function extractSymbolId(nc: NodeChange): string {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
   if (!sd?.symbolID) return ''
   return guidToString(sd.symbolID)
+}
+
+/**
+ * The adjustments Lawha kept for each image fill replace the ones read from Figma's paint
+ * filter, which holds only eight of them; files Figma saved keep the paint filter's.
+ */
+function withImageAdjustments(
+  fills: Fill[],
+  kept: Record<string, ImageAdjustments> | undefined
+): Fill[] {
+  if (!kept) return fills
+  return fills.map((fill, index) => {
+    const key = String(index)
+    if (fill.type !== 'IMAGE' || !Object.hasOwn(kept, key)) return fill
+    return { ...fill, adjustments: { ...kept[key] } }
+  })
 }

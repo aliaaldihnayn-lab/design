@@ -2,6 +2,9 @@ export const VECTORIZE_PROVIDER_IDS = ['recraft', 'fal', 'quiver'] as const
 
 export type VectorizeProviderID = (typeof VECTORIZE_PROVIDER_IDS)[number]
 
+/** What Convert to vector uses: Image Trace on this device, or a cloud service. */
+export type VectorizeEngine = 'local' | VectorizeProviderID
+
 export type VectorizeProviderDefinition = {
   id: VectorizeProviderID
   name: string

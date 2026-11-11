@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import type { EditorCommandId } from '@lawha/vue/editor/commands'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
 
@@ -9,6 +9,7 @@ export type AppMenuIcon =
   | 'folder-open'
   | 'layers'
   | 'pencil'
+  | 'plug'
   | 'redo'
   | 'save'
   | 'settings'
@@ -20,8 +21,11 @@ export type AppMenuIcon =
 
 export type AppMenuPaletteLabel =
   | 'exportSelectionAsPNG'
+  | 'exportSelectionAsJPG'
+  | 'exportSelectionAsWebP'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
+  | 'exportSelectionAsPrintPDF'
   | 'exportSelectionAsDrawIO'
   | 'exportSelectionAsFig'
 
@@ -36,7 +40,7 @@ export type AppMenuHandler = 'editor' | 'shell'
 
 /** A feature an item waits for: it shows only while the feature is available (`./features`). */
 /** Items shown only for a document backed by a file on disk. */
-export type AppMenuFeature = 'local-file' | 'cloud-document'
+export type AppMenuFeature = 'local-file'
 
 export interface AppMenuActionItem {
   type?: 'item'
@@ -98,10 +102,9 @@ export const APP_MENU_SCHEMA = [
       {
         id: 'save-version',
         label: 'Save to Version History…',
-        shortcut: 'ALT+MOD+S',
-        feature: 'cloud-document'
+        shortcut: 'ALT+MOD+S'
       },
-      { id: 'version-history', label: 'Show Version History', feature: 'cloud-document' },
+      { id: 'version-history', label: 'Show Version History' },
       { type: 'separator' },
       {
         id: 'export-selection',
@@ -115,6 +118,16 @@ export const APP_MENU_SCHEMA = [
             palette: { icon: 'download', label: 'exportSelectionAsPNG' }
           },
           {
+            id: 'export-jpg',
+            label: 'JPG',
+            palette: { icon: 'download', label: 'exportSelectionAsJPG' }
+          },
+          {
+            id: 'export-webp',
+            label: 'WebP',
+            palette: { icon: 'download', label: 'exportSelectionAsWebP' }
+          },
+          {
             id: 'export-svg',
             label: 'SVG',
             palette: { icon: 'download', label: 'exportSelectionAsSVG' }
@@ -123,6 +136,11 @@ export const APP_MENU_SCHEMA = [
             id: 'export-pptx',
             label: 'PPTX',
             palette: { icon: 'download', label: 'exportSelectionAsPPTX' }
+          },
+          {
+            id: 'export-pdf-print',
+            label: 'PDF/X (CMYK)',
+            palette: { icon: 'download', label: 'exportSelectionAsPrintPDF' }
           },
           {
             id: 'export-drawio',
@@ -243,7 +261,14 @@ export const APP_MENU_SCHEMA = [
         shortcut: 'ALT+MOD+\\'
       },
       { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
+      {
+        id: 'view-prototype-connections',
+        label: 'Prototype Connections',
+        checkbox: true,
+        target: 'browser'
+      },
       { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
+      { id: 'view-user-stories', label: 'User Stories', checkbox: true, target: 'browser' },
       { type: 'separator' },
       {
         id: 'theme',
@@ -541,6 +566,18 @@ export const APP_MENU_SCHEMA = [
         ]
       }
     ]
+  },
+  {
+    label: 'Plugins',
+    paletteIcon: 'plug',
+    items: [
+      { id: 'plugins-import', label: 'Import Plugin from Folder…' },
+      { type: 'separator' },
+      // Each installed plugin, with its manifest's menu: filled in by `useAppMenu` in the
+      // browser, and by the desktop menu from `set_native_menu_plugins`.
+      { id: 'plugins-installed', label: 'Installed Plugins' },
+      { id: 'plugins-remove', label: 'Remove Plugin' }
+    ]
   }
 ] satisfies AppMenuGroupSchema[]
 
@@ -551,8 +588,8 @@ export const APP_MENU_SCHEMA = [
  * sit between them. Only the labels and accelerators are shared here.
  */
 export const APP_MENU_APP_ITEMS = [
-  { id: 'about', label: 'About OpenPencil' },
+  { id: 'about', label: 'About Lawha' },
   { id: 'check-updates', label: 'Check for Updates…' },
   SETTINGS_MENU_ITEM,
-  { id: 'quit', label: 'Quit OpenPencil', shortcut: 'MOD+Q' }
+  { id: 'quit', label: 'Quit Lawha', shortcut: 'MOD+Q' }
 ] satisfies AppMenuActionItem[]

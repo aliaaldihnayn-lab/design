@@ -1,9 +1,10 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { computeDescendantVisualBounds } from '@lawha/scene-graph/geometry'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
+import { liveEffectHandlesForState } from '#core/canvas/live-effect-handles'
 import { paintPageBackground } from '#core/canvas/page/background'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
@@ -59,6 +60,16 @@ function showsPixelGrid(profile: EditorProfile, state: EditorState): boolean {
   return profile.editChrome && profile.pixelGrid && state.showPixelGrid !== false
 }
 
+/** A live effect's handles, on a canvas that edits and shows its editing chrome. */
+function liveEffectOverlay(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  state: EditorState,
+  profile: EditorProfile
+) {
+  return profile.edits && profile.editChrome ? liveEffectHandlesForState(r, graph, state) : null
+}
+
 export function renderFromEditorState(
   r: SkiaRenderer,
   state: EditorState,
@@ -93,6 +104,7 @@ export function renderFromEditorState(
   r.panX = state.panX
   r.panY = state.panY
   r.zoom = state.zoom
+  r.handleScale = state.handleScale
   r.viewportWidth = viewportWidth
   r.viewportHeight = viewportHeight
   r.showRulers = showRulers
@@ -137,6 +149,9 @@ export function renderFromEditorState(
           }
         : null,
       pencilState: state.pencilState,
+      shapeBuilderHover: state.shapeBuilderHover,
+      liveEffectHandles: liveEffectOverlay(r, graph, state, profile),
+      pixelOverlay: editChrome ? state.pixelOverlay : null,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,

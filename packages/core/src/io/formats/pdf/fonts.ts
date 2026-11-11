@@ -1,6 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { FontVariation } from '@open-pencil/scene-graph'
+import type { FontVariation } from '@lawha/scene-graph'
 
 import type { SVGFontAlias, SVGFontRequest } from '#core/io/formats/svg'
 import { drawnFontVariations } from '#core/text/font/families'
@@ -42,6 +42,8 @@ interface EmbeddedFace {
   alias: string
   data: ArrayBuffer
   label: string
+  /** The face's PostScript-style name the PDF calls it by, such as `Inter-Bold`. */
+  postScriptName: string
 }
 
 /** An instance of a variable face the text draws, before its static file is cut. */
@@ -50,6 +52,7 @@ interface PendingInstance {
   data: ArrayBuffer
   variations: FontVariation[]
   label: string
+  postScriptName: string
 }
 
 /**
@@ -97,6 +100,13 @@ function unsupportedReason(data: ArrayBuffer): string | null {
 // jsPDF reads family names as CSS: letters and digits only keep them unambiguous.
 const aliasOf = (embedding: PDFFontEmbedding) => `EmbeddedFont${embedding.aliases++}`
 
+/**
+ * The name a PDF gives an embedded face, family and style joined as PostScript names are, so a
+ * reader shows (and Lawha opens) the face the text was set in rather than the alias.
+ */
+const postScriptNameOf = (face: { family: string; style: string }) =>
+  `${face.family}-${face.style}`.replace(/[^A-Za-z0-9-]/g, '')
+
 /** Stops naming an instance whose file could not be embedded, so its text falls back. */
 function dropInstance(embedding: PDFFontEmbedding, alias: string): void {
   for (const [key, known] of embedding.instances) {
@@ -125,7 +135,12 @@ function planFace(embedding: PDFFontEmbedding, face: PDFFontFace): void {
     embedding.variable.set(key, { data: face.data, label })
     return
   }
-  embedding.faces.set(key, { alias: aliasOf(embedding), data: face.data, label })
+  embedding.faces.set(key, {
+    alias: aliasOf(embedding),
+    data: face.data,
+    label,
+    postScriptName: postScriptNameOf(face)
+  })
 }
 
 /** Picks the faces jsPDF can embed, each under a family name of its own. */
@@ -161,7 +176,13 @@ function instanceAlias(
   const alias = aliasOf(embedding)
   embedding.instances.set(key, alias)
   const label = axes ? `${face.label} (${axes})` : face.label
-  embedding.pending.push({ alias, data: face.data, variations, label })
+  embedding.pending.push({
+    alias,
+    data: face.data,
+    variations,
+    label,
+    postScriptName: postScriptNameOf(font)
+  })
   return alias
 }
 
@@ -232,4 +253,33 @@ export function registerEmbeddedFonts(doc: PDFFontTarget, embedding: PDFFontEmbe
     }
   }
   return registered
+}
+
+/** The jsPDF calls that reach a registered font. */
+export interface PDFFontNaming {
+  setFont(fontName: string, fontStyle?: string): unknown
+  getFont(): { fontName: string }
+}
+
+/** A six-letter subset tag from a number, as PDF marks a font file it embeds only part of. */
+function subsetTag(index: number): string {
+  let tag = ''
+  let rest = index
+  for (let i = 0; i < 6; i++) {
+    tag = String.fromCharCode(65 + (rest % 26)) + tag
+    rest = Math.floor(rest / 26)
+  }
+  return tag
+}
+
+/**
+ * Names each embedded face in the file by its own name, tagged as the subset jsPDF embeds,
+ * instead of the alias it was drawn by. Run after drawing: the alias still selects the face.
+ */
+export function nameEmbeddedFonts(doc: PDFFontNaming, embedding: PDFFontEmbedding): void {
+  let index = 0
+  for (const { alias, postScriptName } of embedding.faces.values()) {
+    doc.setFont(alias, 'normal')
+    doc.getFont().fontName = `${subsetTag(index++)}+${postScriptName}`
+  }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { FontPickerRoot, type FontPickerUI } from '@open-pencil/vue/primitives/FontPicker'
+import { WEB_FONT_PROVIDER_IDS } from '@lawha/core/text'
+import { useI18n } from '@lawha/vue/i18n'
+import { FontPickerRoot, type FontPickerUI } from '@lawha/vue/primitives/FontPicker'
 
 import {
   listFamilies,
@@ -14,7 +14,7 @@ import {
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import { useSelectUI } from '@/components/ui/select/select'
 
-const { panels } = useI18n()
+const { panels, fonts } = useI18n()
 /** The placeholder shows while no family is set, such as Mixed for texts in different fonts. */
 const { label: labelProp, placeholder } = defineProps<{ label?: string; placeholder?: string }>()
 const label = computed(() => labelProp ?? panels.value.fontFamily)
@@ -66,6 +66,11 @@ function loadPreviewFont(family: string, source: string) {
     :empty-search-text="panels.noFontsFound"
     :empty-fonts-text="panels.noLocalFontsAvailable"
     :empty-fonts-hint="panels.localFontsAccessHint"
+    :access-prompt-text="fonts.localFontAccessPrompt"
+    :access-denied-text="fonts.localFontAccessBlocked"
+    :access-unsupported-text="fonts.localFontsUnsupported"
+    :allow-access-text="fonts.allowLocalFonts"
+    :loading-text="panels.loading"
     @select="emit('select', $event)"
   >
     <template #trigger>
@@ -94,7 +99,7 @@ function loadPreviewFont(family: string, source: string) {
           family
         }}</span>
         <span
-          class="font-sans ml-auto shrink-0 rounded bg-input px-1.5 py-0.5 text-[9px] uppercase text-muted"
+          class="font-sans ms-auto shrink-0 rounded bg-input px-1.5 py-0.5 text-[9px] uppercase text-muted"
         >
           {{ source }}
         </span>

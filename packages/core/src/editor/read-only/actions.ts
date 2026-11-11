@@ -28,6 +28,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getLayerTree',
   'getNode',
   'getPages',
+  'liveEffectHandleAt',
+  'liveEffectHandles',
   'getSelectedNode',
   'getSelectedNodes',
   'getShownStatus',
@@ -42,6 +44,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'isInteractiveEditing',
   'isTopLevel',
   'pageSwitchCount',
+  'pixelPaintResample',
   'previewRenameSelected',
   // Recording only: what the edit runs is refused or allowed on its own.
   'recordEdit',
@@ -105,6 +108,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePageNodes',
   'loadPageNodes',
   'revealNodes',
+  'setHandleScale',
   'setZoomAroundPoint',
   'switchPage',
   'switchToNextPage',
@@ -118,7 +122,9 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToSelection',
 
   // Preview
+  'handleLiveKey',
   'leaveCanvasView',
+  'onLiveKey',
   'resetPlay',
   'startPlay',
   'stopPlay',

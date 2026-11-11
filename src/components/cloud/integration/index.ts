@@ -1,8 +1,9 @@
 /**
- * Every Cloud component the rest of the app shows. A build with `VITE_OPENPENCIL_CLOUD=off`
+ * Every Cloud component the rest of the app shows. A build with `VITE_LAWHA_CLOUD=off`
  * resolves this module to `./off`, where each renders nothing, so Cloud's components stay out of
  * that build; components outside Cloud's folders import Cloud only from here.
  */
+export { default as CloudRoomsSection } from '../room-tree/CloudRoomsSection.vue'
 export { default as CloudSharedSection } from '@/components/home/cloud/CloudSharedSection.vue'
 export { default as CloudWorkspaceSection } from '@/components/home/cloud/CloudWorkspaceSection.vue'
 export { default as CloudSettingsSection } from '@/components/settings/cloud/CloudSettingsSection.vue'

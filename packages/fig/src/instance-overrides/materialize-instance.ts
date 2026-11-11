@@ -1,13 +1,10 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
-import {
-  bindingOverrideField,
-  setInstanceOverride
-} from '@open-pencil/scene-graph/instances/overrides'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import type { Paint } from '@lawha/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { scaleGeometryPaths } from '@lawha/scene-graph/copy'
+import { bindingOverrideField, setInstanceOverride } from '@lawha/scene-graph/instances/overrides'
+import { createDefaultSourceMetadata } from '@lawha/scene-graph/node-defaults'
 
 import { nodeChangeToProps } from '../node-change'
 import { numericVariableBindingScales } from '../node-change/variable/bindings'
@@ -31,6 +28,10 @@ function occurrenceMetadata(
   metadata.orderKey = current.properties.parentIndex?.position ?? null
   metadata.fig.layout = converted.source?.fig.layout ?? null
   metadata.fig.uniformScaleFactor = symbolDataOf(current.properties)?.uniformScaleFactor ?? null
+  // A component's layers keep their interactive-component reactions, which Core reads from here.
+  const interactions = current.properties.prototypeInteractions
+  if (interactions !== undefined)
+    metadata.fig.rawNodeFields.prototypeInteractions = structuredClone(interactions)
   return metadata
 }
 

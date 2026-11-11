@@ -6,10 +6,10 @@ import {
   type ControlRole,
   type DesignElement,
   type DesignNode
-} from '@open-pencil/dom-css/export'
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { layerPath } from '@open-pencil/scene-graph/behaviours'
-import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+} from '@lawha/dom-css/export'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { layerPath } from '@lawha/scene-graph/behaviours'
+import { shaderOfPaint } from '@lawha/scene-graph/shaders'
 
 import { wrapRole } from './controls'
 import IslandShader from './IslandShader.vue'
@@ -22,6 +22,21 @@ export interface IslandRenderContext {
   controls: ReadonlyMap<string, ControlModel>
   roles: ReadonlyMap<string, ControlRole>
   state: IslandState
+  /** The triggers each layer with prototype interactions answers, by layer path. */
+  interactive?: ReadonlyMap<string, ReadonlySet<string>>
+}
+
+/** Triggers a pointer gives, which show the hand cursor over their layer. */
+const POINTER_TRIGGERS = ['click', 'press', 'mouse-down', 'mouse-up', 'drag']
+
+/** A layer with interactions shows it can be clicked, and takes focus for focus triggers. */
+function interactiveProps(context: IslandRenderContext, path: string): Record<string, unknown> {
+  const triggers = context.interactive?.get(path)
+  const props: Record<string, unknown> = {}
+  if (!triggers) return props
+  if (triggers.has('focus') || triggers.has('blur')) props.tabindex = 0
+  if (POINTER_TRIGGERS.some((trigger) => triggers.has(trigger))) props['data-interactive'] = ''
+  return props
 }
 
 /** How a role's wrapper changes the element it wraps. */
@@ -69,10 +84,17 @@ export function renderElement(
       : []),
     ...content()
   ]
-  const { 'data-open-pencil-node-id': _id, ...attrs } = element.attrs
+  const { 'data-lawha-node-id': _id, ...attrs } = element.attrs
   return h(
     override.tag ?? element.tagName,
-    { ...attrs, key: path, 'data-layer': path, style, ...override.props },
+    {
+      ...attrs,
+      key: path,
+      'data-layer': path,
+      style,
+      ...interactiveProps(context, path),
+      ...override.props
+    },
     children()
   )
 }

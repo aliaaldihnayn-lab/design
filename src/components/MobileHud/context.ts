@@ -6,8 +6,8 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { isCloudBinding, openCloudShare } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
@@ -31,7 +31,7 @@ function createMobileHudContext() {
   const collab = useCollabInjected()
   const store = useEditorStore()
   const { send } = useSendLink()
-  const { common, collaboration } = useI18n()
+  const { common, collaboration, menu, commands } = useI18n()
   const notifications = useNotificationMessages()
   const { getCommand } = useEditorCommands()
 
@@ -60,17 +60,25 @@ function createMobileHudContext() {
   const activeToolIcon = computed(() => toolIcons[store.state.activeTool])
   const actionToast = computed(() => store.state.actionToast)
 
-  const menuItems: MenuAction[] = [
+  const menuItems = computed<MenuAction[]>(() => [
     {
       icon: IconFilePlus,
-      label: 'New',
+      label: menu.value.new,
       action: () => createTab()
     },
-    { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
-    { icon: IconSave, label: 'Save', action: () => void store.saveFigFile() },
-    { icon: IconImageDown, label: 'Export…', action: () => void store.exportSelection(1, 'png') },
-    { icon: IconZoomIn, label: 'Zoom to fit', action: () => getCommand('view.zoomFit').run() }
-  ]
+    { icon: IconFolderOpen, label: menu.value.open, action: () => void openFileDialog() },
+    { icon: IconSave, label: menu.value.save, action: () => void store.saveFigFile() },
+    {
+      icon: IconImageDown,
+      label: menu.value.exportSelection,
+      action: () => void store.exportSelection(1, 'png')
+    },
+    {
+      icon: IconZoomIn,
+      label: commands.value.zoomToFit,
+      action: () => getCommand('view.zoomFit').run()
+    }
+  ])
 
   function undo() {
     getCommand('edit.undo').run()

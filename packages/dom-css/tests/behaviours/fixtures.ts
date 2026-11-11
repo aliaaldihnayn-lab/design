@@ -1,6 +1,6 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { emptyBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene-graph/behaviours'
-import { withIcon } from '@open-pencil/scene-graph/icons'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { emptyBehaviour, withBehaviour, type Behaviour } from '@lawha/scene-graph/behaviours'
+import { withIcon } from '@lawha/scene-graph/icons'
 
 const solid = (r: number, g: number, b: number) => [
   { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
@@ -520,6 +520,57 @@ export function sliderComponent() {
         height: 20,
         fills: COLORS.white
       })
+    },
+    { width: 200, height: 20 }
+  )
+}
+
+/** A price range from 20 to 80 of 0 to 100, its two thumbs on one track. */
+export function rangeSliderComponent() {
+  return standalone(
+    'Price',
+    {
+      ...emptyBehaviour('slider'),
+      parts: {
+        track: 'track-slot',
+        range: 'range-slot',
+        thumb: 'thumb-slot',
+        endThumb: 'end-slot'
+      },
+      numbers: {
+        value: { min: 0, max: 100, step: 5, default: 20 },
+        end: { min: 0, max: 100, step: 5, default: 80 }
+      }
+    },
+    (graph, slider) => {
+      const track = graph.createNode('FRAME', slider.id, {
+        name: 'Track',
+        componentPropertyReferences: slot('track-slot'),
+        y: 8,
+        width: 200,
+        height: 4,
+        fills: COLORS.off
+      })
+      graph.createNode('FRAME', track.id, {
+        name: 'Range',
+        componentPropertyReferences: slot('range-slot'),
+        x: 40,
+        width: 120,
+        height: 4,
+        fills: COLORS.on
+      })
+      for (const [name, x, id] of [
+        ['Start', 30, 'thumb-slot'],
+        ['End', 150, 'end-slot']
+      ] as const)
+        graph.createNode('FRAME', slider.id, {
+          name,
+          componentPropertyReferences: slot(id),
+          x,
+          width: 20,
+          height: 20,
+          fills: COLORS.white
+        })
     },
     { width: 200, height: 20 }
   )

@@ -170,6 +170,65 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
+/**
+ * Colour adjustments on an image fill, applied when drawn, never baked into the image. Each runs
+ * from -1 to 1 with 0 leaving the image as it is, as Figma's image filters do.
+ */
+export interface ImageAdjustments {
+  exposure?: number
+  contrast?: number
+  brightness?: number
+  saturation?: number
+  vibrance?: number
+  /** Warmer (+) or cooler (-). */
+  temperature?: number
+  /** Magenta (+) or green (-). */
+  tint?: number
+  highlights?: number
+  shadows?: number
+  /** Hue rotation: ±1 is ±180°. */
+  hue?: number
+  /** Sharpen (+) or soften (-) edges. */
+  sharpen?: number
+  /** Film grain, 0–1. */
+  noise?: number
+  /** Darken (+) or lighten (-) the corners. */
+  vignette?: number
+  /** Invert every channel. */
+  invert?: boolean
+  /** Input levels: black and white points (0–1) and the midtone gamma (0.1–10, 1 unchanged). */
+  levels?: ImageLevels
+  /** A tone curve through these points (x and y 0–1, sorted by x); identity when absent. */
+  curve?: CurvePoint[]
+}
+
+export interface ImageLevels {
+  black: number
+  white: number
+  gamma: number
+}
+
+export interface CurvePoint {
+  x: number
+  y: number
+}
+
+export const IMAGE_ADJUSTMENT_KEYS = [
+  'exposure',
+  'contrast',
+  'brightness',
+  'saturation',
+  'vibrance',
+  'temperature',
+  'tint',
+  'highlights',
+  'shadows',
+  'hue',
+  'sharpen',
+  'noise',
+  'vignette'
+] as const satisfies readonly (keyof ImageAdjustments)[]
+
 export interface Fill {
   type: FillType
   color: Color
@@ -180,6 +239,8 @@ export interface Fill {
   gradientTransform?: GradientTransform
   imageHash?: string
   imageScaleMode?: ImageScaleMode
+  /** Colour adjustments for an IMAGE fill. */
+  adjustments?: ImageAdjustments
   /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
   /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
@@ -189,6 +250,10 @@ export interface Fill {
   spacing?: number
   patternSpacing?: Vector
   patternTileType?: PatternTileType
+  /** How far a pattern's tiles are moved across the layer, in pixels; Figma has no field for it. */
+  patternOffset?: Vector
+  /** A pattern's turn about the layer's middle, in degrees clockwise; Figma has no field for it. */
+  patternRotation?: number
   verticalAlignment?: PatternAlignment
   horizontalAlignment?: PatternAlignment
   noiseType?: NoiseType
@@ -407,6 +472,12 @@ export interface StyleRun {
   style: CharacterStyleOverride
 }
 
+/** Text with the character styles that differ from its base style, as runs over its characters. */
+export interface StyledText {
+  text: string
+  runs: StyleRun[]
+}
+
 export interface ArcData {
   startingAngle: number
   endingAngle: number
@@ -457,7 +528,7 @@ export interface PluginRelaunchDataEntry {
 
 /**
  * One derived glyph outline for display (path text / missing-font fidelity).
- * Figma import is one producer; OpenPencil editing and reflow can regenerate it.
+ * Figma import is one producer; Lawha editing and reflow can regenerate it.
  * commandsBlob is in font units; paint multiplies by fontSize (and scaleX/Y).
  */
 export interface TextPathData {
@@ -951,7 +1022,7 @@ export interface VariableFormula {
   value: VariableFormulaNode
 }
 /**
- * An imported expression OpenPencil cannot evaluate, kept as the file wrote it so saving writes it
+ * An imported expression Lawha cannot evaluate, kept as the file wrote it so saving writes it
  * back. `references` holds one entry per alias in `value`, in the order the format walks them, and
  * `null` where the alias names a variable this document does not have. `modes` holds the mode id of
  * each mode key in `value`, in the same walk order.

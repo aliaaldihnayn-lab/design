@@ -3,8 +3,8 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
-import { vTestId } from '@open-pencil/vue/testing'
+import { useI18n, usePageMessages } from '@lawha/vue/i18n'
+import { vTestId } from '@lawha/vue/testing'
 
 import AppMenu from '@/components/shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
@@ -13,19 +13,28 @@ import splitterTheme from '@/theme/splitter'
 import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
+import PublicationPanel from './publication/PublicationPanel.vue'
 
 const { menu, panels } = useI18n()
-const activePanel = ref<'file' | 'assets'>('file')
+const pageMessages = usePageMessages()
+type LeftPanel = 'file' | 'assets' | 'publication'
+const activePanel = ref<LeftPanel>('file')
 const panelModel = computed({
   get: () => activePanel.value,
   set: (value: string) => {
-    if (value === 'file' || value === 'assets') activePanel.value = value
+    if (value === 'file' || value === 'assets' || value === 'publication') activePanel.value = value
   }
 })
 const panelOptions = computed(() => [
   { value: 'file', label: menu.value.file },
-  { value: 'assets', label: panels.value.assets }
+  { value: 'assets', label: panels.value.assets },
+  { value: 'publication', label: pageMessages.value.publication }
 ])
+const PANEL_TAB_TEST_IDS: Record<string, string> = {
+  file: 'left-panel-layers-tab',
+  assets: 'left-panel-assets-tab',
+  publication: 'left-panel-publication-tab'
+}
 const panelTabsUI = { root: 'w-full' }
 const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
 </script>
@@ -45,16 +54,14 @@ const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
         :ui="panelTabsUI"
       >
         <template #option="{ option }">
-          <span
-            v-test-id="option.value === 'file' ? 'left-panel-layers-tab' : 'left-panel-assets-tab'"
-            class="truncate"
-          >
+          <span v-test-id="PANEL_TAB_TEST_IDS[option.value]" class="truncate">
             {{ option.label }}
           </span>
         </template>
       </SegmentedControl>
     </div>
     <AssetsPanel v-if="activePanel === 'assets'" />
+    <PublicationPanel v-else-if="activePanel === 'publication'" />
     <SplitterGroup
       v-else
       direction="vertical"

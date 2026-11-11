@@ -31,12 +31,16 @@
   "collapseIssues": "フォントの問題を隠す",
   "noSubstitute": "代替フォントなし",
   "unsupportedFormatShort": "未対応の形式",
-  "unsupportedFormat": "インストール済みですが、OpenPencil がまだ描画できない形式です",
+  "unsupportedFormat": "インストール済みですが、Lawha がまだ描画できない形式です",
   "settingsDesktopDescription": "システムフォント、オンラインプロバイダー、フォールバックパック、キャッシュ済みダウンロードにアクセスします。",
   "settingsBrowserDescription": "ローカルフォントへのブラウザーアクセスを許可し、オンラインフォントプロバイダーを管理します。",
   "providerEnabled": "{provider} を有効にしました。",
   "providerDisabled": "{provider} を無効にしました。",
   "fallbackDownloaded": "フォールバックフォントをダウンロードしました。",
   "fallbackDownloadFailed": "フォールバックフォントをダウンロードできませんでした。",
-  "clearCache": "キャッシュをクリア"
+  "clearCache": "キャッシュをクリア",
+  "localFontAccessPrompt": "インストール済みフォントを参照するには、ローカルフォントへのアクセスを許可してください。",
+  "localFontAccessBlocked": "このサイトではローカルフォントへのアクセスがブロックされています。",
+  "localFontsUnsupported": "このブラウザではローカルフォントを利用できません。",
+  "allowLocalFonts": "ローカルフォントを許可"
 }

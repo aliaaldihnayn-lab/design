@@ -93,8 +93,20 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
     aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
     billingPortalURL: config.billing?.portal_url,
+    signatureSealPKCS12: config.signatures?.seal
+      ? requiredSecret(environment, config.signatures.seal.pkcs12)
+      : undefined,
+    signatureSealPassword: config.signatures?.seal
+      ? optionalSecret(environment, config.signatures.seal.password)
+      : undefined,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined,
+    atlassianClientId: config.integrations?.jira
+      ? configuredText(environment, config.integrations.jira.client_id)
+      : undefined,
+    atlassianClientSecret: config.integrations?.jira
+      ? requiredSecret(environment, config.integrations.jira.client_secret)
       : undefined
   }
 }

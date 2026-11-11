@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash rechazó esta clave. Pega la Access Key de tu aplicación, no la Secret key.",
   "photoKeyRateLimited": "Esta clave agotó sus solicitudes a {service} de esta hora. Inténtalo más tarde.",
   "photoKeyUnreachable": "No se pudo conectar con {service}. Comprueba tu conexión de red.",
-  "photoKeyCheckFailed": "{service} no respondió a la prueba. Inténtalo más tarde."
+  "photoKeyCheckFailed": "{service} no respondió a la prueba. Inténtalo más tarde.",
+  "traceOnDevice": "Calco de imagen en este dispositivo",
+  "tracePreset": "Ajuste preestablecido",
+  "tracePresetLogo": "Logotipo",
+  "tracePresetPhotoHigh": "Foto de alta fidelidad",
+  "tracePresetPhotoLow": "Foto de baja fidelidad",
+  "tracePresetLineArt": "Arte lineal",
+  "tracePresetSketch": "Boceto",
+  "traceThreshold": "Umbral",
+  "traceColors": "Colores",
+  "tracePreview": "Vista previa del calco de imagen",
+  "tracePreviewSelection": "La imagen seleccionada calcada con {count} colores.",
+  "tracePreviewSample": "Una muestra calcada con {count} colores. Selecciona una capa de imagen para previsualizarla."
 }

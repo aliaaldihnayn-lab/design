@@ -1,11 +1,12 @@
 import type { Path } from 'canvaskit-wasm'
 import { omit, pick } from 'es-toolkit/object'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
-import { copyFills } from '@open-pencil/scene-graph/copy'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { getNodeLocalMatrix, localTransformFromWorld } from '@lawha/scene-graph/coordinate'
+import { copyFills } from '@lawha/scene-graph/copy'
+import Matrix from '@lawha/scene-graph/matrix'
+import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import {
   baseShapePath,
@@ -56,14 +57,7 @@ function strokePaints(node: SceneNode): Fill[] {
   )
 }
 
-interface Box {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-function boundsOf(paths: readonly Path[]): Box | null {
+function boundsOf(paths: readonly Path[]): Rect | null {
   let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity]
   for (const path of paths) {
     const [l, t, r, b] = path.getBounds()
@@ -77,7 +71,7 @@ function boundsOf(paths: readonly Path[]): Box | null {
 }
 
 /** A path as a vector network, moved so `box` starts at the origin. */
-function networkIn(r: SkiaRenderer, path: Path, box: Box): SceneNode['vectorNetwork'] {
+function networkIn(r: SkiaRenderer, path: Path, box: Rect): SceneNode['vectorNetwork'] {
   const moved = placedPath(r, path, r.ck.Matrix.translated(-box.x, -box.y))
   const network = parseSVGPath(moved.toSVGString(), windingRuleOf(r, moved))
   moved.delete()
@@ -88,7 +82,7 @@ function networkIn(r: SkiaRenderer, path: Path, box: Box): SceneNode['vectorNetw
  * A box of the layer's own axes as a layer in its parent: turned and mirrored with the layer, so
  * the outline lies where the layer drew it.
  */
-function placedLike(node: SceneNode, box: Box): Partial<SceneNode> {
+function placedLike(node: SceneNode, box: Rect): Partial<SceneNode> {
   const world = Matrix.multiply(getNodeLocalMatrix(node), Matrix.translated(box.x, box.y))
   const sized = { ...node, type: 'VECTOR' as const, width: box.width, height: box.height }
   const placement = localTransformFromWorld(sized, world, Matrix.identity())

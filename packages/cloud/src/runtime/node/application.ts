@@ -9,6 +9,7 @@ import {
   type CloudServerConfig,
   type ObjectStore
 } from '#cloud/server'
+import { readSignatureFont } from '#cloud/server/signatures/fonts/read'
 
 import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
@@ -44,7 +45,8 @@ export async function createNodeCloudApplication(
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    aiSigningKey
+    aiSigningKey,
+    signatureFont: await readSignatureFont()
   })
   return { app, config, database, objects, email }
 }

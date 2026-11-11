@@ -1,15 +1,16 @@
 import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
-import type { CloudAIClient } from '@open-pencil/cloud/client'
-import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+import type { CloudAIClient, CloudAPIClient } from '@lawha/cloud/client'
+import type { WorkspaceSummary } from '@lawha/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 import type { CloudAccount } from '@/app/cloud/servers/store'
+import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
 
 /**
- * What a build without Cloud (`VITE_OPENPENCIL_CLOUD=off`) resolves `@/app/cloud/integration`
+ * What a build without Cloud (`VITE_LAWHA_CLOUD=off`) resolves `@/app/cloud/integration`
  * to: the same names, offering nothing. Only types come from Cloud's modules, so none of its code
  * is bundled.
  */
@@ -89,4 +90,32 @@ export function useHomeCloud() {
     newWorkspace: noop,
     signOut: () => Promise.resolve()
   }
+}
+
+export const cloudJiraAvailable = computed(() => false)
+
+export function cloudJiraClient(): CloudAPIClient | null {
+  return null
+}
+
+export const cloudSignaturesAvailable = computed(() => false)
+
+export function cloudSignatureClient(): CloudAPIClient | null {
+  return null
+}
+
+export async function signingPageClient(): Promise<CloudAPIClient> {
+  throw new Error('This build has no Lawha Cloud')
+}
+
+/** Without Cloud a document editor file has no Cloud versions. */
+export async function cloudWriterVersions(_binding: StorageDocumentBinding): Promise<null> {
+  return null
+}
+
+export async function cloudWriterVersionBytes(
+  _binding: StorageDocumentBinding,
+  _versionId: string
+): Promise<Uint8Array> {
+  throw new Error('This build has no Cloud')
 }

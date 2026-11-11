@@ -1,0 +1,16 @@
+{
+  "tab": "Ispeziona",
+  "noSelection": "Seleziona un livello per vederne proprietà e codice",
+  "size": "Dimensioni",
+  "limits": "Min / max",
+  "layout": "Layout automatico",
+  "radius": "Raggio degli angoli",
+  "colors": "Colori",
+  "typography": "Tipografia",
+  "code": "Codice",
+  "copy": "Copia codice",
+  "sizingFixed": "Fisso",
+  "sizingHug": "Adatta al contenuto",
+  "sizingFill": "Riempi",
+  "gradient": "Sfumatura"
+}

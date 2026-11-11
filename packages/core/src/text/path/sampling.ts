@@ -1,7 +1,9 @@
 import { clamp } from 'es-toolkit'
 
-import type { TextPathData } from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { TextPathData } from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+
+import { controlPolygonLength, cubicPointAt } from '#core/vector/curve-math'
 
 interface Cubic {
   p0: Vector
@@ -61,15 +63,7 @@ function pathCurves(data: TextPathData, box: Rect): Cubic[] | null {
 }
 
 function cubicPoint({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
-  const u = 1 - t
-  const a = u * u * u
-  const b = 3 * u * u * t
-  const c = 3 * u * t * t
-  const d = t * t * t
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y
-  }
+  return cubicPointAt(p0, p1, p2, p3, t)
 }
 
 function cubicDerivative({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
@@ -83,20 +77,11 @@ function cubicDerivative({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
   }
 }
 
-/** Length of the control polygon: an upper bound on the curve's length, for spacing samples. */
-function hullLength({ p0, p1, p2, p3 }: Cubic): number {
-  return (
-    Math.hypot(p1.x - p0.x, p1.y - p0.y) +
-    Math.hypot(p2.x - p1.x, p2.y - p1.y) +
-    Math.hypot(p3.x - p2.x, p3.y - p2.y)
-  )
-}
-
 /** Flatten the vector network mapped into `box` for arc-length lookups. */
 export function sampleTextPath(data: TextPathData, box: Rect): SampledPath | null {
   const curves = pathCurves(data, box)
   if (!curves) return null
-  const hulls = curves.map(hullLength)
+  const hulls = curves.map(({ p0, p1, p2, p3 }) => controlPolygonLength(p0, p1, p2, p3))
   const hull = hulls.reduce((sum, value) => sum + value, 0)
   if (!(hull > 0) || !Number.isFinite(hull)) return null
   const target = clamp(Math.ceil(hull * 2), MIN_SAMPLES, MAX_SAMPLES)

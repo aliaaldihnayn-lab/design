@@ -1,14 +1,14 @@
-import { isNumber } from 'es-toolkit'
+import { isNumber, omit } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   behaviourFromSpec,
   withBehaviour,
   type BehaviourKind,
   type BehaviourSpec
-} from '@open-pencil/scene-graph/behaviours'
-import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { createSlotProperty } from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/behaviours'
+import { createComponentPropertyId } from '@lawha/scene-graph/components'
+import { createSlotProperty } from '@lawha/scene-graph/slots'
 
 import { node, type TreeNode } from '../tree'
 
@@ -46,7 +46,8 @@ const REKA_PARTS = {
     Root: root('slider'),
     Track: part('track'),
     Range: part('range'),
-    Thumb: part('thumb')
+    Thumb: part('thumb'),
+    EndThumb: part('endThumb')
   },
   Progress: { Root: root('progress'), Track: part('track'), Indicator: part('indicator') },
   Tabs: {
@@ -69,8 +70,13 @@ const REKA_PARTS = {
     Increment: part('increment'),
     Decrement: part('decrement')
   },
-  TextField: { Root: root('textField'), Input: input('value') },
-  Textarea: { Root: root('textarea'), Input: input('value') }
+  TextField: {
+    Root: root('textField'),
+    Input: input('value'),
+    Count: input('count'),
+    Clear: part('clear')
+  },
+  Textarea: { Root: root('textarea'), Input: input('value'), Count: input('count') }
 } as const satisfies Readonly<Record<string, Readonly<Record<string, RekaRole>>>>
 
 /** Each Reka namespace and its parts, as typed elements are built from them. */
@@ -201,7 +207,8 @@ export const BEHAVIOUR_PROPS = [
   'min',
   'max',
   'step',
-  'defaultValue'
+  'defaultValue',
+  'defaultEnd'
 ] as const
 
 /** A value bound to a component property by name; a variant property may name its on and off. */
@@ -233,6 +240,12 @@ function rootSpec(kind: BehaviourKind, props: Record<string, unknown>): Behaviou
   const spec: BehaviourSpec = { kind }
   if (Object.keys(values).length) spec.values = values
   if (Object.keys(range).length) spec.numbers = { value: range }
+  // A range slider's second end shares the first's range and starts at its own value.
+  if (kind === 'slider' && typeof props.defaultEnd === 'number')
+    spec.numbers = {
+      ...spec.numbers,
+      end: { ...omit(range, ['default']), default: props.defaultEnd }
+    }
   if (typeof props.states === 'string') spec.states = props.states
   return spec
 }

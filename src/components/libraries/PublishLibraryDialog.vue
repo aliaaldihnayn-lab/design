@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import type { LibraryAssetChange } from '@open-pencil/core/library'
+import type { LibraryAssetChange } from '@lawha/core/library'
 import {
   ensureLibraryAssetKeys,
   publishableLibraryRoots,
   readSourceLibraryPublication
-} from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue/i18n'
+} from '@lawha/core/library'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
@@ -167,7 +167,7 @@ async function publish() {
             @update:model-value="toggleAll"
           />
           <span>{{ panels.libraryChanges }}</span>
-          <span class="ml-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
+          <span class="ms-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ panels.loading }}

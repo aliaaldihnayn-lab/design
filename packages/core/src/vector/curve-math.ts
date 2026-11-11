@@ -1,5 +1,5 @@
-import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
+import type { VectorNetwork, VectorSegment } from '@lawha/scene-graph'
+import type { Vector, Rect } from '@lawha/scene-graph/primitives'
 
 export interface CubicPoints {
   p0: Vector
@@ -48,6 +48,11 @@ export function evalCubic(
   }
 }
 
+/** The point of the cubic bezier through four points at parameter t (0..1). */
+export function cubicPointAt(p0: Vector, p1: Vector, p2: Vector, p3: Vector, t: number): Vector {
+  return evalCubic(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t)
+}
+
 // ---------------------------------------------------------------------------
 // Curve splitting (De Casteljau subdivision)
 // ---------------------------------------------------------------------------
@@ -94,6 +99,23 @@ export function splitCubicAt(
       p3: { x: p3.x, y: p3.y }
     }
   }
+}
+
+/** The point `t` of the way from `a` to `b`. */
+export function lerpPoint(a: Vector, b: Vector, t: number): Vector {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+}
+
+/**
+ * The length of a cubic's control polygon, an upper bound on its arc length, for spacing
+ * samples along it.
+ */
+export function controlPolygonLength(p0: Vector, p1: Vector, p2: Vector, p3: Vector): number {
+  return (
+    Math.hypot(p1.x - p0.x, p1.y - p0.y) +
+    Math.hypot(p2.x - p1.x, p2.y - p1.y) +
+    Math.hypot(p3.x - p2.x, p3.y - p2.y)
+  )
 }
 
 // ---------------------------------------------------------------------------

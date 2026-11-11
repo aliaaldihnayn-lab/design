@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@lawha/core'
+import type { DocumentKind } from '@lawha/scene-graph'
 
 import {
   combineToolbarEntry,
@@ -70,6 +70,9 @@ describe('normalizeToolbarLayout', () => {
     const stored: ToolbarEntry[][] = [['TEXT'], ['SELECT'], SHAPES, ['HAND']]
     expect(layout(stored).groups).toEqual([
       ['TEXT'],
+      ['BRUSH', 'ERASER', 'FILL_BUCKET', 'COLOR_PICKER'],
+      ['MARQUEE_RECT', 'MARQUEE_ELLIPSE', 'MAGIC_WAND'],
+      ['CLONE_STAMP', 'HEALING_BRUSH'],
       ['STICKY'],
       ['SHAPE_WITH_TEXT'],
       ['CONNECTOR'],
@@ -77,6 +80,8 @@ describe('normalizeToolbarLayout', () => {
       ['FRAME', 'SECTION'],
       SHAPES,
       ['PEN', 'PENCIL'],
+      ['SHAPE_BUILDER'],
+      ['WIDTH'],
       ['HAND'],
       ['COMMENT'],
       ['insert-icon']
@@ -141,8 +146,8 @@ describe('editing', () => {
   })
 
   test('a button swaps with the button or flyout next to it', () => {
-    const moved = moveToolbarEntry(base, 'TEXT', -1)
-    expect(moved.groups.slice(3, 5)).toEqual([['TEXT'], ['PEN', 'PENCIL']])
+    const moved = moveToolbarEntry(base, 'SHAPE_BUILDER', -1)
+    expect(moved.groups.slice(3, 5)).toEqual([['SHAPE_BUILDER'], ['PEN', 'PENCIL']])
     expect(moveToolbarEntry(base, 'SELECT', -1)).toBe(base)
   })
 
@@ -156,8 +161,8 @@ describe('editing', () => {
   })
 
   test('joining merges a group into the one above', () => {
-    const joined = joinToolbarEntry(base, 'TEXT')
-    expect(joined.groups[3]).toEqual(['PEN', 'PENCIL', 'TEXT'])
+    const joined = joinToolbarEntry(base, 'SHAPE_BUILDER')
+    expect(joined.groups[3]).toEqual(['PEN', 'PENCIL', 'SHAPE_BUILDER'])
     expect(joinToolbarEntry(base, 'insert-icon')).toBe(base)
     expect(joinToolbarEntry(base, 'SELECT')).toBe(base)
     expect(joinToolbarEntry(base, 'LINE')).toBe(base)
@@ -296,5 +301,14 @@ describe('toolShortcutLabels', () => {
       board.STICKY,
       board.SHAPE_WITH_TEXT
     ]).toEqual(['R', '', '', 'S', 'R'])
+  })
+
+  test('keeps Shift+M for the Shape Builder and names the elliptical marquee by M', () => {
+    const design = toolShortcutLabels(TOOL_SHORTCUTS, 'windows')
+    expect([design.SHAPE_BUILDER, design.MARQUEE_RECT, design.MARQUEE_ELLIPSE]).toEqual([
+      'Shift+M',
+      'M',
+      'M'
+    ])
   })
 })

@@ -11,25 +11,38 @@ import comments from './comments.json'
 import common from './common.json'
 import credentials from './credentials.json'
 import designCheck from './design-check.json'
+import designSystem from './design-system.json'
 import diagnostics from './diagnostics.json'
 import editor from './editor.json'
 import figjam from './figjam.json'
 import files from './files.json'
 import fonts from './fonts.json'
+import framePresets from './frame-presets.json'
+import history from './history.json'
+import inspect from './inspect.json'
 import media from './media.json'
 import menu from './menu.json'
+import metrics from './metrics.json'
 import pages from './pages.json'
 import panels from './panels.json'
+import paths from './paths.json'
+import photo from './photo.json'
+import plugins from './plugins.json'
+import print from './print.json'
+import prototype from './prototype.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
 import statuses from './statuses.json'
+import storageErrors from './storage-errors.json'
 import storage from './storage.json'
+import stories from './stories.json'
 import tools from './tools.json'
 import updates from './updates.json'
 import variables from './variables/panel.json'
 import variableTypes from './variables/types.json'
+import writer from './writer.json'
 
 export default {
   ai,
@@ -43,20 +56,33 @@ export default {
   common,
   credentials,
   designCheck,
+  designSystem,
+  inspect,
+  plugins,
   diagnostics,
   editor,
   figjam,
   files,
   fonts,
+  framePresets,
+  history,
+  metrics,
   media,
   menu,
   pages,
+  paths,
   panels,
+  photo,
+  print,
+  writer,
+  prototype,
   recovery,
   rename,
   settings,
   shapes,
   statuses,
+  storageErrors,
+  stories,
   storage,
   tools,
   updates,

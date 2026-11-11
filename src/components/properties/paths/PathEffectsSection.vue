@@ -1,0 +1,338 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import IconGrid3x3 from '~icons/lucide/grid-3x3'
+
+import { WIDTH_PROFILES, type WidthProfile } from '@lawha/core/vector'
+import { WARP_PRESETS, type WarpPreset } from '@lawha/scene-graph/path-effects'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
+import { usePathMessages } from '@lawha/vue/i18n'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
+
+import { useEditorStore } from '@/app/editor/active-store'
+import NumberField from '@/components/inputs/NumberField.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
+import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
+import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+
+import BlendFields from './BlendFields.vue'
+import LiveEffectFields from './LiveEffectFields.vue'
+import { usePathToolRun } from './run'
+
+/** The selected layers the section works on. */
+const { nodeIds } = defineProps<{ nodeIds: string[] }>()
+
+const paths = usePathMessages()
+const { busy, run } = usePathToolRun()
+
+const preset = ref<WarpPreset>('arc')
+const bend = ref(50)
+const horizontal = ref(0)
+const vertical = ref(0)
+
+const presetOptions = computed(() => {
+  const labels: Record<WarpPreset, string> = {
+    arc: paths.value.presetArc,
+    arch: paths.value.presetArch,
+    bulge: paths.value.presetBulge,
+    flag: paths.value.presetFlag,
+    wave: paths.value.presetWave,
+    fish: paths.value.presetFish,
+    rise: paths.value.presetRise,
+    squeeze: paths.value.presetSqueeze,
+    twist: paths.value.presetTwist
+  }
+  return WARP_PRESETS.map((id) => ({ value: id, label: labels[id] }))
+})
+
+type Join = 'MITER' | 'ROUND' | 'BEVEL'
+
+const store = useEditorStore()
+
+/** The one selected layer's live warp, mesh, or width profile. */
+const live = useSceneComputed(() => {
+  if (nodeIds.length !== 1) return null
+  const node = store.graph.getNode(nodeIds[0])
+  const effect = node && readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.pathEffect)
+  return node && effect ? { nodeId: node.id, effect } : null
+})
+
+/** The live blend a selected layer is or sits in, and another selected layer to be its spine. */
+const liveBlend = useSceneComputed(() => {
+  for (const id of nodeIds) {
+    const node = store.graph.getNode(id)
+    const parent = node?.parentId ? store.graph.getNode(node.parentId) : undefined
+    for (const candidate of [node, parent]) {
+      const blend = candidate && readPluginData(candidate.pluginData, LAWHA_PLUGIN_DATA.liveBlend)
+      if (!candidate || !blend) continue
+      const other = nodeIds.find(
+        (otherId) => otherId !== id && otherId !== blend.fromId && otherId !== blend.toId
+      )
+      return { groupId: candidate.id, blend, spineCandidateId: other ?? null }
+    }
+  }
+  return null
+})
+
+const meshRows = ref(3)
+const meshColumns = ref(3)
+
+function makeMesh() {
+  if (nodeIds.length !== 1) return
+  void run('envelope_mesh', { id: nodeIds[0], rows: meshRows.value, columns: meshColumns.value })
+}
+
+const distance = ref(10)
+const join = ref<Join>('MITER')
+const profile = ref<WidthProfile>('taper-both')
+const blendSteps = ref(5)
+
+const joinOptions = computed(() => [
+  { value: 'MITER' as const, label: paths.value.joinMiter },
+  { value: 'ROUND' as const, label: paths.value.joinRound },
+  { value: 'BEVEL' as const, label: paths.value.joinBevel }
+])
+
+const profileOptions = computed(() => {
+  const labels: Record<WidthProfile, string> = {
+    uniform: paths.value.profileUniform,
+    'taper-start': paths.value.profileTaperStart,
+    'taper-end': paths.value.profileTaperEnd,
+    'taper-both': paths.value.profileTaperBoth,
+    bulge: paths.value.profileBulge,
+    pinch: paths.value.profilePinch
+  }
+  return WIDTH_PROFILES.map((id) => ({ value: id, label: labels[id] }))
+})
+
+/** The two selected layers, lower first, when they are siblings: what blends and patterns take. */
+const pair = computed(() => {
+  if (nodeIds.length !== 2) return null
+  const [a, b] = nodeIds.map((id) => store.graph.getNode(id))
+  if (!a || !b || a.parentId !== b.parentId || !a.parentId) return null
+  const siblings = store.graph.getNode(a.parentId)?.childIds ?? []
+  return siblings.indexOf(a.id) < siblings.indexOf(b.id)
+    ? { lower: a, upper: b }
+    : { lower: b, upper: a }
+})
+
+function applyOffset() {
+  void run('offset_path', { ids: nodeIds, distance: distance.value, join: join.value })
+}
+
+function applyWidth() {
+  void run('width_profile', { ids: nodeIds, profile: profile.value })
+}
+
+function makeBlend() {
+  if (!pair.value) return
+  void run('blend_shapes', {
+    from_id: pair.value.lower.id,
+    to_id: pair.value.upper.id,
+    steps: blendSteps.value
+  })
+}
+
+function makePattern() {
+  if (!pair.value) return
+  void run('set_pattern_fill', { ids: [pair.value.lower.id], source_id: pair.value.upper.id })
+}
+
+function applyWarp() {
+  void run('warp_shape', {
+    ids: nodeIds,
+    preset: preset.value,
+    bend: bend.value / 100,
+    horizontal: horizontal.value / 100,
+    vertical: vertical.value / 100
+  })
+}
+</script>
+
+<template>
+  <PanelSection :label="paths.section" data-test-id="path-effects-section">
+    <div class="flex flex-col gap-1.5">
+      <LiveEffectFields v-if="live" :node-id="live.nodeId" :effect="live.effect" class="mb-2" />
+      <BlendFields
+        v-if="liveBlend"
+        :group-id="liveBlend.groupId"
+        :blend="liveBlend.blend"
+        :spine-candidate-id="liveBlend.spineCandidateId"
+        class="mb-2"
+      />
+      <PanelFieldGroup :label="paths.warpStyle">
+        <AppSelect
+          v-model="preset"
+          :options="presetOptions"
+          :label="paths.warpStyle"
+          data-test-id="warp-preset"
+        />
+      </PanelFieldGroup>
+      <PanelGrid :columns="3">
+        <PanelFieldGroup :label="paths.bend">
+          <NumberField
+            v-model="bend"
+            suffix="%"
+            :min="-100"
+            :max="100"
+            :aria-label="paths.bend"
+            data-test-id="warp-bend"
+          />
+        </PanelFieldGroup>
+        <PanelFieldGroup :label="paths.horizontalDistortion">
+          <NumberField
+            v-model="horizontal"
+            suffix="%"
+            :min="-100"
+            :max="100"
+            :aria-label="paths.horizontalDistortion"
+          />
+        </PanelFieldGroup>
+        <PanelFieldGroup :label="paths.verticalDistortion">
+          <NumberField
+            v-model="vertical"
+            suffix="%"
+            :min="-100"
+            :max="100"
+            :aria-label="paths.verticalDistortion"
+          />
+        </PanelFieldGroup>
+      </PanelGrid>
+      <Tip :label="paths.applyWarpHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-warp"
+          :disabled="busy"
+          @click="applyWarp"
+        >
+          <icon-lucide-waves class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyWarp }}</span>
+        </AppButton>
+      </Tip>
+
+      <template v-if="nodeIds.length === 1 && !live">
+        <PanelGrid :columns="2" class="mt-2">
+          <PanelFieldGroup :label="paths.meshRows">
+            <NumberField
+              v-model="meshRows"
+              :min="1"
+              :max="16"
+              :step="1"
+              :aria-label="paths.meshRows"
+            />
+          </PanelFieldGroup>
+          <PanelFieldGroup :label="paths.meshColumns">
+            <NumberField
+              v-model="meshColumns"
+              :min="1"
+              :max="16"
+              :step="1"
+              :aria-label="paths.meshColumns"
+            />
+          </PanelFieldGroup>
+        </PanelGrid>
+        <Tip :label="paths.makeMeshHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-mesh"
+            :disabled="busy"
+            @click="makeMesh"
+          >
+            <IconGrid3x3 class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makeMesh }}</span>
+          </AppButton>
+        </Tip>
+      </template>
+
+      <PanelGrid :columns="2" class="mt-2">
+        <PanelFieldGroup :label="paths.offset">
+          <NumberField
+            v-model="distance"
+            suffix="px"
+            :min="-1000"
+            :max="1000"
+            :aria-label="paths.offset"
+            data-test-id="offset-distance"
+          />
+        </PanelFieldGroup>
+        <PanelFieldGroup :label="paths.join">
+          <AppSelect v-model="join" :options="joinOptions" :label="paths.join" />
+        </PanelFieldGroup>
+      </PanelGrid>
+      <Tip :label="paths.applyOffsetHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-offset"
+          :disabled="busy"
+          @click="applyOffset"
+        >
+          <icon-lucide-square-dashed class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyOffset }}</span>
+        </AppButton>
+      </Tip>
+
+      <PanelFieldGroup :label="paths.widthProfile" class="mt-2">
+        <AppSelect
+          v-model="profile"
+          :options="profileOptions"
+          :label="paths.widthProfile"
+          data-test-id="width-profile"
+        />
+      </PanelFieldGroup>
+      <Tip :label="paths.applyWidthHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-width"
+          :disabled="busy"
+          @click="applyWidth"
+        >
+          <icon-lucide-pen-line class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyWidth }}</span>
+        </AppButton>
+      </Tip>
+
+      <template v-if="pair && !liveBlend">
+        <PanelFieldGroup :label="paths.blendSteps" class="mt-2">
+          <NumberField
+            v-model="blendSteps"
+            :min="1"
+            :max="256"
+            :step="1"
+            :aria-label="paths.blendSteps"
+            data-test-id="blend-steps"
+          />
+        </PanelFieldGroup>
+        <Tip :label="paths.makeBlendHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-blend"
+            :disabled="busy"
+            @click="makeBlend"
+          >
+            <icon-lucide-git-merge class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makeBlend }}</span>
+          </AppButton>
+        </Tip>
+        <Tip :label="paths.makePatternHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-pattern"
+            :disabled="busy"
+            @click="makePattern"
+          >
+            <IconGrid3x3 class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makePattern }}</span>
+          </AppButton>
+        </Tip>
+      </template>
+    </div>
+  </PanelSection>
+</template>

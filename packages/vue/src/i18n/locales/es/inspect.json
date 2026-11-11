@@ -1,0 +1,16 @@
+{
+  "tab": "Inspeccionar",
+  "noSelection": "Selecciona una capa para ver sus propiedades y su código",
+  "size": "Tamaño",
+  "limits": "Mín. / máx.",
+  "layout": "Diseño automático",
+  "radius": "Radio de esquina",
+  "colors": "Colores",
+  "typography": "Tipografía",
+  "code": "Código",
+  "copy": "Copiar código",
+  "sizingFixed": "Fijo",
+  "sizingHug": "Ajustar al contenido",
+  "sizingFill": "Rellenar",
+  "gradient": "Degradado"
+}
