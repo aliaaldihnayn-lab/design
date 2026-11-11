@@ -7,5 +7,8 @@
   "done": "已创建 {tokens} 个令牌，关联 {bound} 个图层",
   "duplicates": "发现 {count} 个近似重复的颜色：其图层保留各自的颜色",
   "failed": "无法构建设计系统：{error}",
-  "extras": "已添加深色模式、{styles} 个文本样式和 {components} 个组件集"
+  "extras": "已添加深色模式、{styles} 个文本样式和 {components} 个组件集",
+  "components": "添加组件集",
+  "componentsHint": "在此页面添加按钮、输入框和徽章组件集，若有设计系统则绑定到其变量",
+  "componentsDone": "已添加 {count} 个组件集"
 }

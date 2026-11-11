@@ -70,6 +70,7 @@ export function writeTextStyles(
     }
     const bindings: [string, string | undefined][] = [
       ['fontSize', variableId.get(`type/${t.name}`)],
+      ['fontWeight', byName.get(`type/${t.name}/weight`)],
       ['lineHeight', byName.get(`type/${t.name}/line-height`)],
       ['fontFamily', variableId.get(familyName.get(t.sample.family) ?? '')]
     ]

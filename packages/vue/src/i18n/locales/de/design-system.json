@@ -7,5 +7,8 @@
   "done": "{tokens} Tokens erstellt, {bound} Ebenen verknüpft",
   "duplicates": "{count} fast identische Farben gefunden: ihre Ebenen behalten ihre eigene Farbe",
   "failed": "Designsystem konnte nicht erstellt werden: {error}",
-  "extras": "Dunkelmodus, {styles} Textstile und {components} Komponentensets hinzugefügt"
+  "extras": "Dunkelmodus, {styles} Textstile und {components} Komponentensets hinzugefügt",
+  "components": "Komponentensets hinzufügen",
+  "componentsHint": "Fügt dieser Seite Button-, Input- und Badge-Komponentensets hinzu, gebunden an die Variablen des Designsystems, sofern vorhanden",
+  "componentsDone": "{count} Komponentensets hinzugefügt"
 }
