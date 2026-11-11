@@ -3,6 +3,7 @@ import { writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import { browserFileIdentities } from '@/app/storage/file-identity'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
 
@@ -61,6 +62,10 @@ export function createDocumentWriter({
         const writable = await fileHandle.createWritable()
         await writable.write(new Uint8Array(data))
         await writable.close()
+        // What the file holds now finds it again, even through a new handle.
+        browserFileIdentities()
+          .remember(fileHandle, new Uint8Array(data))
+          .catch((error: unknown) => console.warn('[History] Remembering the file failed:', error))
         return await finishWrite(version)
       }
       return false

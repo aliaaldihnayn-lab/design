@@ -11,6 +11,7 @@ import {
 } from '@lawha/core/history'
 import type { WriterDocument } from '@lawha/core/writer'
 
+import { browserFileIdentities, type FileIdentityStore } from '@/app/storage/file-identity'
 import {
   replaceWriterDocument,
   writerAuthor,
@@ -30,11 +31,22 @@ import { provideHistoryToTools } from './tools'
 export const WRITER_CHANGE_DELAY_MS = 1500
 
 /** The key a document's history is kept under, from where it was opened or saved. */
-export function writerHistoryKey(source: WriterSource | null): string | null {
+export async function writerHistoryKey(
+  source: WriterSource | null,
+  identities: FileIdentityStore = browserFileIdentities()
+): Promise<string | null> {
   if (!source) return null
   if (source.kind === 'google') return `writer:google:${source.documentId}`
   if (source.path) return `writer:path:${source.path}`
-  if (source.handle) return `writer:file:${source.handle.name}`
+  if (source.handle) {
+    // Known by its identity on this device, as a design file is (`designHistoryKey`).
+    try {
+      return `writer:browser-file:${await identities.resolve(source.handle)}`
+    } catch (error) {
+      console.warn('[History] Could not identify the opened file:', error)
+      return `writer:file:${source.handle.name}`
+    }
+  }
   return null
 }
 
@@ -43,6 +55,7 @@ export interface WriterHistoryOptions {
   author?: () => HistoryAuthor
   changeDelayMs?: number
   idleMs?: number
+  fileIdentities?: FileIdentityStore
 }
 
 /** Comments and tracked changes are signed with the writer's name; history follows it. */
@@ -63,7 +76,7 @@ export function createWriterHistory(options: WriterHistoryOptions = {}) {
   const idleMs = options.idleMs ?? HISTORY_IDLE_CHECKPOINT_MS
   const controller = createHistoryController({
     documentKind: 'writer',
-    resolveKey: () => writerHistoryKey(writerSource.value),
+    resolveKey: () => writerHistoryKey(writerSource.value, options.fileIdentities),
     persistence: options.persistence ?? getHistoryPersistence()
   })
   let recorded: WriterDocument = writerDocument.value
