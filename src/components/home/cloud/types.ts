@@ -1,4 +1,4 @@
-import type { DocumentKind } from '@lawha/scene-graph'
+import type { StoredKind } from '@/components/home/document/kinds'
 
 /** A place the home tab lists documents from. */
 export type HomeLocation =
@@ -24,7 +24,7 @@ export type CloudDocumentRow = {
   id: string
   name: string
   /** A design or a board, when Cloud says which. */
-  kind?: DocumentKind
+  kind?: StoredKind
   previewURL?: string | null
   editedAt: string
   editedBy?: string

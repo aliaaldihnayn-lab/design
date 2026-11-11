@@ -15,3 +15,6 @@ export const STORED_DOCUMENT_KIND_ICONS = {
   ...DOCUMENT_KIND_ICONS,
   writer: IconLucideFileText
 } as const
+
+/** Any kind of file Home lists: a canvas document's kind, or the document editor's. */
+export type StoredKind = keyof typeof STORED_DOCUMENT_KIND_ICONS

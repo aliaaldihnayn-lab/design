@@ -219,5 +219,10 @@
   "pageOf": "Seite {page} von {count}",
   "signatureField": "Signaturfeld {name}",
   "exportFailed": "Das PDF konnte nicht exportiert werden: {error}",
-  "saveConflict": "Jemand hat dieses Dokument gespeichert, seit Sie es geöffnet haben. Laden Sie Ihre Kopie herunter und öffnen Sie dann die neueste Version."
+  "saveConflict": "Jemand hat dieses Dokument gespeichert, seit Sie es geöffnet haben. Laden Sie Ihre Kopie herunter und öffnen Sie dann die neueste Version.",
+  "pickFromDrive": "Aus Drive auswählen",
+  "pickerUnavailable": "Fügen Sie unter Einstellungen → Speicher → Google Drive einen Google-Picker-API-Schlüssel hinzu oder fügen Sie den Link des Dokuments ein.",
+  "googleSkippedPageField": "Kopf- oder Fußzeile enthält eine Seitenzahl, die Google Docs nicht annehmen kann; sie bleibt wie in Docs.",
+  "googleSkippedImages": "{count} eingefügte Bilder wurden nicht gespeichert: Google Docs übernimmt nur Bilder, die es aus dem Web laden kann.",
+  "googleSkippedSuggestions": "Nachverfolgte Änderungen wurden als normale Bearbeitungen gespeichert: Google Docs kann keine Vorschläge annehmen."
 }

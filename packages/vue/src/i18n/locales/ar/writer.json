@@ -219,5 +219,10 @@
   "pageOf": "الصفحة {page} من {count}",
   "signatureField": "حقل التوقيع {name}",
   "exportFailed": "تعذّر تصدير ملف PDF: {error}",
-  "saveConflict": "حفظ شخص آخر هذا المستند بعد أن فتحته. نزّل نسختك، ثم افتح أحدث إصدار."
+  "saveConflict": "حفظ شخص آخر هذا المستند بعد أن فتحته. نزّل نسختك، ثم افتح أحدث إصدار.",
+  "pickFromDrive": "اختيار من Drive",
+  "pickerUnavailable": "أضف مفتاح Google Picker API من الإعدادات ← التخزين ← Google Drive، أو الصق رابط المستند.",
+  "googleSkippedPageField": "في الترويسة أو التذييل رقم صفحة لا يستقبله Google Docs، فبقيت كما هي في المستند.",
+  "googleSkippedImages": "لم تُحفظ {count} من الصور الملصقة: لا يقبل Google Docs إلا صورًا يمكنه تنزيلها من الويب.",
+  "googleSkippedSuggestions": "حُفظت التغييرات المتعقَّبة كتعديلات عادية، لأن Google Docs لا يستقبل الاقتراحات."
 }

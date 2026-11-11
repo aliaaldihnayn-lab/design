@@ -219,5 +219,10 @@
   "pageOf": "第 {page} 页，共 {count} 页",
   "signatureField": "签名字段 {name}",
   "exportFailed": "无法导出文件：{error}",
-  "saveConflict": "在你打开后有人保存了此文档。请下载你的副本，然后打开最新版本。"
+  "saveConflict": "在你打开后有人保存了此文档。请下载你的副本，然后打开最新版本。",
+  "pickFromDrive": "从云端硬盘选择",
+  "pickerUnavailable": "请在设置 → 存储 → 谷歌云端硬盘中添加选择器密钥，或粘贴文档链接。",
+  "googleSkippedPageField": "页眉或页脚含有页码，谷歌文档无法写入，已保持原样。",
+  "googleSkippedImages": "{count} 张粘贴的图片未保存：谷歌文档只接受可从网络下载的图片。",
+  "googleSkippedSuggestions": "修订已作为普通编辑保存：谷歌文档无法接收建议。"
 }

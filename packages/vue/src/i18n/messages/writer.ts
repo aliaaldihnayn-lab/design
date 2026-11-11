@@ -227,7 +227,18 @@ export const writerMessageDefaults = {
   pageOf: params('Page {page} of {count}'),
   signatureField: params('Signature field {name}'),
   exportFailed: params('Could not export the PDF: {error}'),
-  saveConflict: 'Someone saved this document since you opened it. Download your copy, then open the latest version.'
+  saveConflict:
+    'Someone saved this document since you opened it. Download your copy, then open the latest version.',
+  pickFromDrive: 'Choose from Drive',
+  pickerUnavailable:
+    "Add a Google Picker API key in Settings → Storage → Google Drive, or paste the Doc's link.",
+  googleSkippedPageField:
+    'The header or footer has a page number, which Google Docs cannot receive; it was left as it is in Docs.',
+  googleSkippedImages: params(
+    '{count} pasted images were not saved: Google Docs only takes images it can download from the web.'
+  ),
+  googleSkippedSuggestions:
+    'Tracked changes were saved as plain edits: Google Docs cannot receive suggestions.'
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

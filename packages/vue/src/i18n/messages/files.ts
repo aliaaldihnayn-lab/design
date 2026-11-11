@@ -65,7 +65,8 @@ export const filesMessageDefaults = {
   preparationLoading: 'Loading…',
   preparationProgress: params('{completed} of {total}'),
   browserFileAPINotSupported:
-    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place."
+    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place.",
+  createText: 'Text document'
 } as const
 
 export const filesMessages = i18n('files', filesMessageDefaults)

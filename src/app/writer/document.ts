@@ -4,7 +4,8 @@ import {
   DocxReadError,
   readDocx,
   readGoogleDocument,
-  writeDocx
+  writeDocx,
+  type GoogleDocsSkipped
 } from '@lawha/core/writer'
 
 import {
@@ -12,6 +13,10 @@ import {
   parseGoogleDocId,
   type GoogleDocsClient
 } from '@/app/integrations/storage/google-drive/docs'
+import {
+  googlePickerSettings,
+  pickGoogleDocument
+} from '@/app/integrations/storage/google-drive/picker'
 
 import { DOCX, pickFile, saveFileAs, saveInPlace, type PickedFile } from './files'
 import {
@@ -25,7 +30,7 @@ import { saveStoredWriterDocument } from './storage'
 
 /** What a file action did, for the view to report; errors carry a reason to show. */
 export type WriterFileOutcome =
-  | { status: 'done' }
+  | { status: 'done'; skipped?: GoogleDocsSkipped[] }
   | { status: 'cancelled' }
   | {
       status: 'failed'
@@ -36,6 +41,7 @@ export type WriterFileOutcome =
         | 'invalid-google-doc'
         | 'google'
         | 'conflict'
+        | 'picker-unavailable'
         | 'error'
       detail: string
     }
@@ -179,20 +185,47 @@ export async function openGoogleDocument(
   }
 }
 
+/**
+ * Opens a Doc chosen in the Google Picker. Without a Picker key in the Drive settings it fails
+ * with `picker-unavailable`, and the person pastes a link instead.
+ */
+export async function pickAndOpenGoogleDocument(
+  locale: string,
+  pick: (locale: string) => Promise<string | null> = pickGoogleDocument,
+  client: GoogleDocsClient = docsClient()
+): Promise<WriterFileOutcome> {
+  if (!googlePickerSettings()) return { status: 'failed', reason: 'picker-unavailable', detail: '' }
+  try {
+    const documentId = await pick(locale)
+    if (!documentId) return { status: 'cancelled' }
+    return await openGoogleDocument(documentId, client)
+  } catch (error) {
+    return {
+      status: 'failed',
+      reason: 'google',
+      detail: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
 async function saveGoogleDocument(
   source: { documentId: string; revisionId: string | null },
   client: GoogleDocsClient
 ): Promise<WriterFileOutcome> {
   try {
-    const revisionId = await client.save(
+    const saved = await client.save(
       source.documentId,
       writerDocument.value,
       source.revisionId,
       true
     )
     // The next save requires the revision this one made, so edits made in Docs since are caught.
-    markWriterSaved({ kind: 'google', documentId: source.documentId, revisionId })
-    return { status: 'done' }
+    markWriterSaved({
+      kind: 'google',
+      documentId: source.documentId,
+      revisionId: saved.revisionId
+    })
+    return { status: 'done', skipped: saved.skipped }
   } catch (error) {
     return {
       status: 'failed',

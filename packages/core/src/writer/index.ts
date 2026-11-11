@@ -16,7 +16,16 @@ export {
   type WriteDocxOptions
 } from './docx'
 export { readGoogleDocument } from './google-docs/read'
-export { googleDocsRequests } from './google-docs/write'
+export { googleDocsRequests, type GoogleDocsWriteOptions } from './google-docs/write'
+export {
+  createdRegionIds,
+  googleDriveComments,
+  googleRegionRequests,
+  type GoogleDocsSkipped,
+  type GoogleDriveComment,
+  type GoogleRegionKind,
+  type GoogleRegionPlan
+} from './google-docs/regions'
 export type { GoogleDocsRequest, GoogleDocument } from './google-docs/types'
 export {
   blocksFromSpecs,

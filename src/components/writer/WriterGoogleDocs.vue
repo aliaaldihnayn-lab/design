@@ -9,8 +9,11 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
-/** Opens a Google Doc from its link; the view runs the open and reports how it went. */
-const emit = defineEmits<{ open: [link: string] }>()
+/**
+ * Opens a Google Doc from its link, or from the Drive picker; the view runs the open and
+ * reports how it went.
+ */
+const emit = defineEmits<{ open: [link: string]; pick: [] }>()
 const t = useWriterMessages()
 const popover = usePopoverUI({ content: 'z-50 flex w-80 flex-col gap-2 p-3' })
 const open = ref(false)
@@ -21,6 +24,11 @@ function submit() {
   emit('open', link.value)
   open.value = false
   link.value = ''
+}
+
+function pick() {
+  open.value = false
+  emit('pick')
 }
 </script>
 
@@ -33,6 +41,10 @@ function submit() {
     </PopoverTrigger>
     <PopoverPortal>
       <PopoverContent :class="popover.content" :side-offset="6" align="end">
+        <AppButton size="sm" variant="outline" data-test-id="writer-google-pick" @click="pick">
+          <icon-lucide-folder-open class="size-3.5" />
+          {{ t.pickFromDrive }}
+        </AppButton>
         <form class="flex flex-col gap-2" @submit.prevent="submit">
           <label class="text-xs text-muted" for="writer-google-link">{{ t.googleDocLink }}</label>
           <AppInput

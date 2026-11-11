@@ -8,6 +8,7 @@ import {
   PDFDict,
   PDFDocument,
   PDFName,
+  type PDFObject,
   PDFRawStream
 } from '@cantoo/pdf-lib'
 
@@ -49,8 +50,8 @@ async function writtenTexts(pdf: Uint8Array): Promise<string[]> {
   const loaded = await PDFDocument.load(pdf)
   return loaded.getPages().map((page) => {
     const contents = page.node.Contents()
-    let streams = contents ? [contents] : []
-    if (contents instanceof PDFArray) streams = contents.asArray()
+    const streams: PDFObject[] = contents instanceof PDFArray ? contents.asArray() : []
+    if (contents && !(contents instanceof PDFArray)) streams.push(contents)
     return streams
       .map((entry) => loaded.context.lookup(entry))
       .filter((stream): stream is PDFRawStream => stream instanceof PDFRawStream)

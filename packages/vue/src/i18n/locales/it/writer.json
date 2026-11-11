@@ -219,5 +219,10 @@
   "pageOf": "Pagina {page} di {count}",
   "signatureField": "Campo firma {name}",
   "exportFailed": "Impossibile esportare il PDF: {error}",
-  "saveConflict": "Qualcuno ha salvato questo documento dopo che lo hai aperto. Scarica la tua copia, poi apri la versione più recente."
+  "saveConflict": "Qualcuno ha salvato questo documento dopo che lo hai aperto. Scarica la tua copia, poi apri la versione più recente.",
+  "pickFromDrive": "Scegli da Drive",
+  "pickerUnavailable": "Aggiungi una chiave API di Google Picker in Impostazioni → Archiviazione → Google Drive, oppure incolla il link del documento.",
+  "googleSkippedPageField": "L'intestazione o il piè di pagina contiene un numero di pagina che Google Docs non accetta; è rimasto com'è in Docs.",
+  "googleSkippedImages": "{count} immagini incollate non sono state salvate: Google Docs accetta solo immagini scaricabili dal web.",
+  "googleSkippedSuggestions": "Le revisioni sono state salvate come modifiche normali: Google Docs non accetta suggerimenti."
 }

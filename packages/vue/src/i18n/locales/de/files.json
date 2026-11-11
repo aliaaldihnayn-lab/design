@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "Shader werden gezeichnet",
   "preparationPreparingRender": "Canvas wird vorbereitet",
   "preparationLoading": "Wird geladen…",
-  "preparationProgress": "{completed} von {total}"
+  "preparationProgress": "{completed} von {total}",
+  "createText": "Textdokument"
 }

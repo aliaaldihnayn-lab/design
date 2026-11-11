@@ -70,6 +70,23 @@ export function googleTextStyle(node: WriterNode): { style: GoogleTextStyle; fie
   return { style, fields }
 }
 
+/**
+ * How images reach Docs: `insertInlineImage` takes only a URI Google can fetch, so the caller
+ * maps each image's `src` (a data URL of the editor's, or the Doc's own image address) to one,
+ * such as by uploading it to Drive first. Images it gives no URI for are left out.
+ */
+export interface GoogleDocsWriteOptions {
+  imageURI?: (src: string) => string | null
+}
+
+/** An image in inserted text: where it goes, and its URI and size in points. */
+interface ImageSpan {
+  offset: number
+  uri: string
+  width: number | null
+  height: number | null
+}
+
 /** A stretch of the inserted text, by offset, and the node it came from. */
 interface Span {
   offset: number
@@ -78,9 +95,30 @@ interface Span {
 }
 
 /** Plain text of a block's inline content, with the runs that need a text style. */
-function inlineText(node: WriterNode, offset: number, runs: Span[]): string {
+function inlineText(
+  node: WriterNode,
+  offset: number,
+  runs: Span[],
+  images: ImageSpan[] = [],
+  options: GoogleDocsWriteOptions = {}
+): string {
   let text = ''
   for (const child of node.content ?? []) {
+    if (child.type === 'image') {
+      const src = stringAttr(child.attrs, 'src')
+      const uri = src ? (options.imageURI?.(src) ?? null) : null
+      const width = numberAttr(child.attrs, 'width')
+      const height = numberAttr(child.attrs, 'height')
+      if (uri) {
+        images.push({
+          offset: offset + text.length,
+          uri,
+          width: width === null ? null : width * 0.75,
+          height: height === null ? null : height * 0.75
+        })
+      }
+      continue
+    }
     if (child.type === 'text' && child.text) {
       // A deletion still pending in track changes is not part of the document Docs gets.
       if (hasMark(child, 'deletion')) continue
@@ -158,29 +196,40 @@ function chunksOf(blocks: readonly WriterNode[]): Chunk[] {
 const range = (startIndex: number, endIndex: number) => ({ startIndex, endIndex })
 
 /** Requests inserting a text chunk at `index`; inside a table cell, without a final newline. */
-function textChunkRequests(chunk: TextChunk, index: number, inCell: boolean): GoogleDocsRequest[] {
+function textChunkRequests(
+  chunk: TextChunk,
+  index: number,
+  inCell: boolean,
+  options: GoogleDocsWriteOptions = {},
+  segmentId?: string
+): GoogleDocsRequest[] {
   const runs: Span[] = []
+  const images: ImageSpan[] = []
   const paragraphs: Span[] = []
   let text = ''
   chunk.paragraphs.forEach((paragraph, i) => {
     const tabs = '\t'.repeat(chunk.levels?.[i] ?? 0)
     const offset = text.length
-    const body = tabs + inlineText(paragraph, offset + tabs.length, runs)
+    const body = tabs + inlineText(paragraph, offset + tabs.length, runs, images, options)
     paragraphs.push({ offset, length: body.length, node: paragraph })
     text += `${body}\n`
   })
   if (inCell) text = text.slice(0, -1)
-  if (!text) return []
+  if (!text && !images.length) return []
   const end = index + text.length
+  const at = (position: number) =>
+    segmentId ? { index: position, segmentId } : { index: position }
+  const span = (start: number, stop: number) =>
+    segmentId ? { ...range(start, stop), segmentId } : range(start, stop)
   const requests: GoogleDocsRequest[] = [
-    { insertText: { location: { index }, text } },
-    { updateTextStyle: { range: range(index, end), textStyle: {}, fields: TEXT_STYLE_FIELDS } }
+    { insertText: { location: at(index), text } },
+    { updateTextStyle: { range: span(index, end), textStyle: {}, fields: TEXT_STYLE_FIELDS } }
   ]
   for (const paragraph of paragraphs) {
     const start = index + paragraph.offset
     requests.push({
       updateParagraphStyle: {
-        range: range(start, start + paragraph.length + 1),
+        range: span(start, start + paragraph.length + 1),
         paragraphStyle: paragraphStyle(paragraph.node),
         fields: 'namedStyleType,alignment,direction'
       }
@@ -191,7 +240,7 @@ function textChunkRequests(chunk: TextChunk, index: number, inCell: boolean): Go
     if (!fields.length) continue
     requests.push({
       updateTextStyle: {
-        range: range(index + run.offset, index + run.offset + run.length),
+        range: span(index + run.offset, index + run.offset + run.length),
         textStyle: style,
         fields: fields.join(',')
       }
@@ -200,11 +249,24 @@ function textChunkRequests(chunk: TextChunk, index: number, inCell: boolean): Go
   if (chunk.levels) {
     requests.push({
       createParagraphBullets: {
-        range: range(index, end),
+        range: span(index, end),
         bulletPreset: chunk.ordered ? 'NUMBERED_DECIMAL_ALPHA_ROMAN' : 'BULLET_DISC_CIRCLE_SQUARE'
       }
     })
-  } else if (!inCell) requests.push({ deleteParagraphBullets: { range: range(index, end) } })
+  } else if (!inCell) requests.push({ deleteParagraphBullets: { range: span(index, end) } })
+  // Images go in last, the furthest first, so each index is still where its text put it.
+  for (const image of [...images].reverse()) {
+    const objectSize =
+      image.width && image.height
+        ? {
+            width: { magnitude: image.width, unit: 'PT' },
+            height: { magnitude: image.height, unit: 'PT' }
+          }
+        : undefined
+    requests.push({
+      insertInlineImage: { location: at(index + image.offset), uri: image.uri, objectSize }
+    })
+  }
   return requests
 }
 
@@ -256,7 +318,8 @@ const pt = (twips: number) => ({ magnitude: twips / 20, unit: 'PT' })
 /** Every request that makes `current`'s body and page setup the model's. */
 export function googleDocsRequests(
   model: WriterDocument,
-  current: GoogleDocument
+  current: GoogleDocument,
+  options: GoogleDocsWriteOptions = {}
 ): GoogleDocsRequest[] {
   const requests: GoogleDocsRequest[] = []
   const end = current.body?.content?.at(-1)?.endIndex ?? 1
@@ -277,9 +340,18 @@ export function googleDocsRequests(
     }
   })
   for (const chunk of chunksOf(model.body.content ?? []).reverse()) {
-    if (chunk.kind === 'text') requests.push(...textChunkRequests(chunk, 1, false))
+    if (chunk.kind === 'text') requests.push(...textChunkRequests(chunk, 1, false, options))
     else if (chunk.kind === 'table') requests.push(...tableRequests(chunk.node, 1))
     else requests.push({ insertPageBreak: { location: { index: 1 } } })
   }
   return requests
+}
+
+/** The header or footer text of a region, for the regions writer, which lives in `./regions`. */
+export function regionChunkRequests(
+  paragraphs: WriterNode[],
+  segmentId: string,
+  options: GoogleDocsWriteOptions = {}
+): GoogleDocsRequest[] {
+  return textChunkRequests({ kind: 'text', paragraphs }, 0, true, options, segmentId)
 }

@@ -9,6 +9,7 @@ import {
   nodeText,
   numberedFootnotes,
   writerTemplate,
+  type GoogleDocsSkipped,
   type WriterTemplateId
 } from '@lawha/core/writer'
 import { localeDirection, useHistoryMessages, useI18n, useWriterMessages } from '@lawha/vue/i18n'
@@ -16,6 +17,7 @@ import { localeDirection, useHistoryMessages, useI18n, useWriterMessages } from 
 import { useWriterHistory } from '@/app/history/writer'
 import {
   openGoogleDocument,
+  pickAndOpenGoogleDocument,
   openWordDocument,
   saveWriterDocument,
   saveWriterDocumentAs,
@@ -107,7 +109,7 @@ const statusLabel = computed(() => {
 function report(outcome: WriterFileOutcome, failed: (detail: string) => string) {
   locked.value = outcome.status === 'failed' && outcome.reason === 'encrypted'
   if (outcome.status !== 'failed') {
-    error.value = null
+    error.value = outcome.status === 'done' ? skippedNotice(outcome.skipped ?? []) : null
     return
   }
   if (outcome.reason === 'not-docx') error.value = t.value.notDocx
@@ -115,9 +117,20 @@ function report(outcome: WriterFileOutcome, failed: (detail: string) => string) 
   else if (outcome.reason === 'wrong-password') error.value = t.value.wrongPassword
   else if (outcome.reason === 'invalid-google-doc') error.value = t.value.invalidGoogleDoc
   else if (outcome.reason === 'conflict') error.value = t.value.saveConflict
+  else if (outcome.reason === 'picker-unavailable') error.value = t.value.pickerUnavailable
   else if (outcome.reason === 'google')
     error.value = t.value.googleFailed({ error: outcome.detail })
   else error.value = failed(outcome.detail)
+}
+
+/** What a Google Docs save had to leave out, since the Docs API cannot write it. */
+function skippedNotice(skipped: GoogleDocsSkipped[]): string | null {
+  const notes = skipped.map((item) => {
+    if (item.kind === 'pageField') return t.value.googleSkippedPageField
+    if (item.kind === 'image') return t.value.googleSkippedImages({ count: item.count })
+    return t.value.googleSkippedSuggestions
+  })
+  return notes.length ? notes.join(' ') : null
 }
 
 async function run(action: () => Promise<WriterFileOutcome>, failed: (detail: string) => string) {
@@ -256,6 +269,7 @@ onBeforeUnmount(() => editor.value?.destroy())
         </IconButton>
         <WriterGoogleDocs
           @open="(link: string) => run(() => openGoogleDocument(link), openFailed)"
+          @pick="run(() => pickAndOpenGoogleDocument(locale), openFailed)"
         />
         <WriterPageSetup />
         <IconButton
