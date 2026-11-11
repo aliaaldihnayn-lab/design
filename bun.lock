@@ -292,6 +292,7 @@
       "dependencies": {
         "@cantoo/pdf-lib": "^2.11.1",
         "@iconify/utils": "^3.1.4",
+        "@internationalized/date": "^3.12.3",
         "@lawha/design-jsx": "workspace:*",
         "@lawha/dom-css": "workspace:*",
         "@lawha/drawio": "workspace:*",

@@ -32,6 +32,7 @@ import {
 } from '#core/tools/create'
 import { buildDesignSystemTool } from '#core/tools/design-system'
 import { inspectLayerTool } from '#core/tools/inspect'
+import { buildInteractiveKitTool, insertKitComponentTool } from '#core/tools/kit'
 import {
   createDeviceMockup,
   createSocialPost,
@@ -174,6 +175,9 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   convertToDieline,
   // Design system
   buildDesignSystemTool,
+  // Interactive kit
+  insertKitComponentTool,
+  buildInteractiveKitTool,
   // Dev Mode
   inspectLayerTool,
   // Photo

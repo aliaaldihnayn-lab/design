@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
 import { componentPropertyDefinitions } from '@lawha/scene-graph/components'
 import { resolveVariable, variableText, variableTruthy } from '@lawha/scene-graph/variables'
@@ -143,6 +143,23 @@ export interface BoundInstanceState {
   properties: Record<string, string>
 }
 
+/** Shows a bound property's value in an instance's state, as its type takes it. */
+function showBoundProperty(
+  state: BoundInstanceState,
+  definition: ComponentPropertyDefinition,
+  binding: PropertyBinding | undefined,
+  value: PlayValue
+): void {
+  if (definition.type === 'VARIANT') {
+    const on = variableTruthy(value) ?? false
+    const mapped = typeof binding === 'object' ? (on ? binding.on : binding.off) : undefined
+    const option = mapped ?? variantOption(definition.variantOptions ?? [], value)
+    if (option) state.variants[definition.name] = option
+  } else if (definition.type === 'BOOLEAN')
+    state.properties[definition.id] = String(variableTruthy(value) ?? false)
+  else if (definition.type === 'TEXT') state.properties[definition.id] = variableText(value) ?? ''
+}
+
 /**
  * The states the variables give the instances below a root, by layer path: each property an
  * instance binds to a variable shows the variable's running value.
@@ -164,15 +181,7 @@ export function boundInstanceStates(
         const variableId = typeof binding === 'string' ? binding : binding?.variable
         const value = variableId ? playValue(graph, variables, variableId) : undefined
         if (value === undefined) continue
-        if (definition.type === 'VARIANT') {
-          const on = variableTruthy(value) ?? false
-          const mapped = typeof binding === 'object' ? (on ? binding.on : binding.off) : undefined
-          const option = mapped ?? variantOption(definition.variantOptions ?? [], value)
-          if (option) state.variants[definition.name] = option
-        } else if (definition.type === 'BOOLEAN')
-          state.properties[definition.id] = String(variableTruthy(value) ?? false)
-        else if (definition.type === 'TEXT')
-          state.properties[definition.id] = variableText(value) ?? ''
+        showBoundProperty(state, definition, binding, value)
       }
       if (Object.keys(state.variants).length + Object.keys(state.properties).length > 0)
         out.set(layerPath(graph, rootId, node.id), state)
@@ -186,7 +195,8 @@ export function boundInstanceStates(
 
 /**
  * Shows the running values of the variables a private graph's layers bind their text and
- * visibility to, as the prototype has set them. Writes into `graph`, a copy the caller owns.
+ * visibility to: as the prototype has set them, else the document's in the active modes.
+ * Writes into `graph`, a copy the caller owns, and returns the layers it changed.
  */
 export function showPlayVariables(
   graph: SceneGraph,
@@ -194,19 +204,18 @@ export function showPlayVariables(
   variables: PlayVariables
 ): string[] {
   const changed: string[] = []
-  if (variables.size === 0) return changed
   const walk = (node: SceneNode) => {
     const text = node.boundVariables.text
-    if (node.type === 'TEXT' && text && variables.has(text)) {
-      const shown = variableText(variables.get(text))
+    if (node.type === 'TEXT' && text) {
+      const shown = variableText(playValue(graph, variables, text))
       if (shown !== undefined && shown !== node.text) {
         graph.updateNode(node.id, { text: shown, styleRuns: [], derivedTextGlyphs: null })
         changed.push(node.id)
       }
     }
     const visible = node.boundVariables.visible
-    if (visible && variables.has(visible)) {
-      const shown = variableTruthy(variables.get(visible))
+    if (visible) {
+      const shown = variableTruthy(playValue(graph, variables, visible))
       if (shown !== undefined && shown !== node.visible) {
         graph.updateNode(node.id, { visible: shown })
         changed.push(node.id)

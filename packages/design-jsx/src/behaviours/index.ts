@@ -69,8 +69,13 @@ const REKA_PARTS = {
     Increment: part('increment'),
     Decrement: part('decrement')
   },
-  TextField: { Root: root('textField'), Input: input('value') },
-  Textarea: { Root: root('textarea'), Input: input('value') }
+  TextField: {
+    Root: root('textField'),
+    Input: input('value'),
+    Count: input('count'),
+    Clear: part('clear')
+  },
+  Textarea: { Root: root('textarea'), Input: input('value'), Count: input('count') }
 } as const satisfies Readonly<Record<string, Readonly<Record<string, RekaRole>>>>
 
 /** Each Reka namespace and its parts, as typed elements are built from them. */

@@ -19,6 +19,7 @@ import { useI18n } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
+import AssetsPanelKit from '@/components/assets-panel/AssetsPanelKit.vue'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
 import { nodeIcon } from '@/components/icons'
@@ -382,6 +383,7 @@ async function insertSelectedAsset() {
     </div>
 
     <div class="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+      <AssetsPanelKit />
       <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
         <h2 class="mb-1 px-1 text-[11px] font-semibold text-muted">
           {{ group.pageName }}

@@ -35,7 +35,7 @@ export { graphFromDocumentChange, graphFromPageSnapshot } from './history/snapsh
 export type { ClipboardPayload, ClipboardSnapshot, CopyOptions } from './clipboard/copy'
 export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
-export { playIslandRoots } from './play/islands'
+export { liveComponentScreens, playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
 export { EDIT_VIEW, resolveEditorProfile } from './views'
 export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'

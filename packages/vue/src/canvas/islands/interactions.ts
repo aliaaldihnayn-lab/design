@@ -61,11 +61,12 @@ interface Options {
 
 /**
  * The layer path of the layer an event happened on, or null outside the island's layers,
- * including on an overlay, whose own island answers it.
+ * including on an overlay, whose own island, in a shadow root of its own, answers it.
  */
-function eventPath(event: Event): string | null {
+function eventPath(event: Event, stage: HTMLElement | null): string | null {
+  const own = stage?.getRootNode()
   for (const target of event.composedPath()) {
-    if (!(target instanceof Element)) continue
+    if (!(target instanceof Element) || target.getRootNode() !== own) continue
     if (target.hasAttribute('data-island-overlays')) return null
     if (target.hasAttribute('data-layer')) return target.getAttribute('data-layer') ?? ''
   }
@@ -225,7 +226,7 @@ export function useIslandInteractions(options: Options) {
   }
 
   function pointerOver(event: PointerEvent): void {
-    const chain = chainOf(eventPath(event))
+    const chain = chainOf(eventPath(event, options.stage.value))
     const left = hovered.filter((path) => !chain.includes(path))
     const entered = chain.filter((path) => !hovered.includes(path))
     hovered = chain
@@ -248,7 +249,7 @@ export function useIslandInteractions(options: Options) {
   }
 
   function pointerDown(event: PointerEvent): void {
-    const path = eventPath(event)
+    const path = eventPath(event, options.stage.value)
     press = { x: event.clientX, y: event.clientY, path, dragged: false }
     bubble(path, 'mouse-down')
     bubble(path, 'press')
@@ -264,22 +265,22 @@ export function useIslandInteractions(options: Options) {
   function pointerUp(event: PointerEvent): void {
     if (!press) return
     release('press')
-    bubble(eventPath(event), 'mouse-up')
+    bubble(eventPath(event, options.stage.value), 'mouse-up')
   }
 
   function click(event: MouseEvent): void {
     // A drag that ran an interaction is not also a click.
     const dragged = press?.dragged ?? false
     press = null
-    if (!dragged) bubble(eventPath(event), 'click')
+    if (!dragged) bubble(eventPath(event, options.stage.value), 'click')
   }
 
   function focusIn(event: FocusEvent): void {
-    bubble(eventPath(event), 'focus')
+    bubble(eventPath(event, options.stage.value), 'focus')
   }
 
   function focusOut(event: FocusEvent): void {
-    bubble(eventPath(event), 'blur')
+    bubble(eventPath(event, options.stage.value), 'blur')
   }
 
   const answerKey = (key: string) => run(dispatchStateKey(options.showing(), options.rootId(), key))
@@ -287,10 +288,18 @@ export function useIslandInteractions(options: Options) {
   // running design first, so Escape closes an open dropdown before a second press leaves the
   // preview; the others come straight here. Typing in a field keeps its keys.
   const stopLiveKeys = options.onLiveKey?.(answerKey)
-  useEventListener(window, 'keydown', (event: KeyboardEvent) => {
-    if (event.defaultPrevented || (event.key.length === 1 && editable(event))) return
-    if (answerKey(event.key)) event.preventDefault()
-  })
+  // Capture, after the editor's shortcuts and before the canvas's own keys such as nudging.
+  useEventListener(
+    window,
+    'keydown',
+    (event: KeyboardEvent) => {
+      if (event.defaultPrevented || (event.key.length === 1 && editable(event))) return
+      if (!answerKey(event.key)) return
+      event.preventDefault()
+      event.stopPropagation()
+    },
+    { capture: true }
+  )
   useEventListener(window, 'pointerup', () => release('press'))
 
   // After delay timers start when the variant they belong to shows, and stop when it goes.

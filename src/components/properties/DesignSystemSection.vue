@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 
 import { ALL_TOOLS } from '@lawha/core/tools'
-import { useDesignSystemMessages } from '@lawha/vue/i18n'
+import { useDesignSystemMessages, usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -16,6 +16,7 @@ const { scope } = defineProps<{ scope: 'page' | 'selection' }>()
 
 const store = useEditorStore()
 const t = useDesignSystemMessages()
+const prototype = usePrototypeMessages()
 const busy = ref(false)
 
 interface BuildReport {
@@ -28,6 +29,26 @@ interface BuildReport {
 
 function isReport(value: unknown): value is BuildReport {
   return !!value && typeof value === 'object' && 'variables' in value && 'bound' in value
+}
+
+/** Draws the interactive kit in the tokens the build just made, so its controls follow them. */
+async function buildKit() {
+  const def = ALL_TOOLS.find((tool) => tool.name === 'build_interactive_kit')
+  if (!def) return
+  const result = await runEditorTool({
+    store,
+    figma: makeFigmaFromStore(store),
+    def,
+    args: {},
+    source: t.value.section
+  })
+  if (
+    result &&
+    typeof result === 'object' &&
+    'components' in result &&
+    Array.isArray(result.components)
+  )
+    toast.info(prototype.value.kitBuilt({ count: result.components.length }))
 }
 
 async function build() {
@@ -56,6 +77,7 @@ async function build() {
     )
     if (result.inconsistencies.length > 0)
       toast.warning(t.value.duplicates({ count: result.inconsistencies.length }))
+    await buildKit()
   } catch (error) {
     toast.error(t.value.failed({ error: error instanceof Error ? error.message : String(error) }))
   } finally {

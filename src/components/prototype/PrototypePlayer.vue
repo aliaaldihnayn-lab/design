@@ -2,7 +2,7 @@
 import { useEventListener, useWindowSize } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
-import { playIslandRoots } from '@lawha/core'
+import { liveComponentScreens } from '@lawha/core'
 import {
   clickOutside,
   fire,
@@ -72,11 +72,14 @@ const screen = computed(() => (state.value ? node(state.value.screen) : null))
 /**
  * Screens that hold controls or interactive components run live, as on the canvas in preview:
  * the player draws them as islands, which type, open, and change in place, rather than images.
+ * Screens with only navigation keep their images and hotspots.
  */
 const liveScreens = computed(() => {
   void store.state.sceneVersion
   const session = playerSession.value
-  return new Set(session ? playIslandRoots(store.graph, session.pageId) : [])
+  if (!session) return new Set<string>()
+  const screens = screensOf(store.graph, session.pageId).map((screen) => screen.id)
+  return new Set(liveComponentScreens(store.graph, screens))
 })
 const live = computed(() => !!state.value && liveScreens.value.has(state.value.screen))
 const islandTokens = useIslandTokens(computed(() => !!playerSession.value))

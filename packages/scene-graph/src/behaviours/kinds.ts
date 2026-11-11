@@ -69,15 +69,17 @@ export interface BehaviourContract {
 
 /**
  * A text field or textarea: its text is a text property, and `filled`, when bound, draws the
- * empty field with its placeholder.
+ * empty field with its placeholder. `count`, when bound, is a text layer that counts the
+ * characters typed, against the limit written after a slash (`0/80`); `clear` empties it.
  */
 const TEXT_INPUT: BehaviourContract = {
   values: [
     { id: 'value', type: 'text', required: true },
     { id: 'filled', type: 'boolean', required: false },
-    { id: 'disabled', type: 'boolean', required: false }
+    { id: 'disabled', type: 'boolean', required: false },
+    { id: 'count', type: 'text', required: false }
   ],
-  parts: []
+  parts: [{ id: 'clear', required: false }]
 }
 
 /**
