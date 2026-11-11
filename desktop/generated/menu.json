@@ -667,6 +667,17 @@
       {
         "id": "plugins-import",
         "label": "Import Plugin from Folder…"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "plugins-installed",
+        "label": "Installed Plugins"
+      },
+      {
+        "id": "plugins-remove",
+        "label": "Remove Plugin"
       }
     ]
   }
