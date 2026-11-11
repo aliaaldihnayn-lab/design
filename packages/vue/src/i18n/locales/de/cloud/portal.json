@@ -381,6 +381,7 @@
   "emailSuppressed": "Nicht gesendet",
   "emailKindInvitation": "Einladung zu einem Dokument",
   "emailKindWorkspaceInvitation": "Einladung zu einem Arbeitsbereich",
+  "emailKindRoomInvitation": "Einladung zu einem Raum",
   "emailKindEmailChangeRequested": "Änderung der E-Mail-Adresse angefordert",
   "emailKindNewSignIn": "Neue Anmeldung",
   "emailKindTwoStepChanged": "Zweistufige Anmeldung geändert",

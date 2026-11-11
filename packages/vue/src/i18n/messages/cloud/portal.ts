@@ -417,6 +417,7 @@ export const cloudPortalMessageDefaults = {
   emailSuppressed: 'Not sent',
   emailKindInvitation: 'Invitation to a document',
   emailKindWorkspaceInvitation: 'Invitation to a workspace',
+  emailKindRoomInvitation: 'Invitation to a room',
   emailKindEmailChangeRequested: 'Email change requested',
   emailKindNewSignIn: 'New sign-in',
   emailKindTwoStepChanged: 'Two-step sign-in changed',

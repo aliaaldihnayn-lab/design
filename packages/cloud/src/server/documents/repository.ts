@@ -1,7 +1,8 @@
 import type { DocumentSummary, SharedDocument, WorkspaceRole } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { CreateDocumentRecord } from '#cloud/server/documents/types'
-import { uniq } from 'es-toolkit'
+import { effectiveRoomRole, loadRoomGraph } from '#cloud/server/rooms/access'
+import { omit, uniq } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 import * as v from 'valibot'
 
@@ -39,21 +40,35 @@ export async function listDocuments(
   if (!(await workspaceRole(database, userId, workspaceId))) return undefined
   const rows = await database
     .selectFrom('document')
+    .leftJoin('roomFile', 'roomFile.documentId', 'document.id')
     .select([
-      'id',
-      'workspaceId',
-      'name',
-      'kind',
-      'currentRevisionId',
-      'version',
-      'createdAt',
-      'updatedAt'
+      'document.id',
+      'document.workspaceId',
+      'document.name',
+      'document.kind',
+      'document.currentRevisionId',
+      'document.version',
+      'document.createdAt',
+      'document.updatedAt',
+      'document.createdBy',
+      'roomFile.roomId'
     ])
-    .where('workspaceId', '=', workspaceId)
-    .where('deletedAt', 'is', null)
-    .orderBy('updatedAt', 'desc')
+    .where('document.workspaceId', '=', workspaceId)
+    .where('document.deletedAt', 'is', null)
+    .orderBy('document.updatedAt', 'desc')
     .execute()
-  return rows.map(documentSummary)
+  // A document kept in a room shows only to those who may enter the room, and to its owner.
+  const graph = rows.some((row) => row.roomId !== null)
+    ? await loadRoomGraph(database, userId, [workspaceId])
+    : undefined
+  return rows
+    .filter(
+      (row) =>
+        row.roomId === null ||
+        row.createdBy === userId ||
+        (graph !== undefined && effectiveRoomRole(graph, row.roomId) !== undefined)
+    )
+    .map((row) => documentSummary(omit(row, ['createdBy', 'roomId'])))
 }
 
 /** Documents granted to the person directly that live in workspaces they are not a member of. */

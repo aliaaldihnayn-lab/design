@@ -418,6 +418,7 @@
   "emailSuppressed": "لم يُرسل",
   "emailKindInvitation": "دعوة إلى مستند",
   "emailKindWorkspaceInvitation": "دعوة إلى مساحة عمل",
+  "emailKindRoomInvitation": "دعوة إلى غرفة",
   "emailKindEmailChangeRequested": "طلب تغيير البريد الإلكتروني",
   "emailKindNewSignIn": "تسجيل دخول جديد",
   "emailKindTwoStepChanged": "تغيير تسجيل الدخول بخطوتين",

@@ -93,6 +93,7 @@ import {
   selectNodes,
   switchPage
 } from '#core/tools/read'
+import { createRoom, inviteToRoom, listRooms, setRoomAccess } from '#core/tools/rooms'
 import type { ToolDef } from '#core/tools/schema'
 import { getStatuses, setStatus } from '#core/tools/statuses'
 import {
@@ -158,6 +159,11 @@ import { editDocument, readDocument, writeDocument } from '#core/tools/writer'
  * codegen, advanced structure, path manipulation, etc.
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
+  // Lawha Cloud rooms
+  listRooms,
+  createRoom,
+  inviteToRoom,
+  setRoomAccess,
   // Documents (the document editor)
   readDocument,
   writeDocument,

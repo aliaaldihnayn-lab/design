@@ -388,6 +388,7 @@
   "emailSuppressed": "Не отправлено",
   "emailKindInvitation": "Приглашение в документ",
   "emailKindWorkspaceInvitation": "Приглашение в рабочее пространство",
+  "emailKindRoomInvitation": "Приглашение в комнату",
   "emailKindEmailChangeRequested": "Запрос на смену почты",
   "emailKindNewSignIn": "Новый вход",
   "emailKindTwoStepChanged": "Двухэтапный вход изменён",

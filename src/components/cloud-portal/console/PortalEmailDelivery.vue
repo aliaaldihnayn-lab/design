@@ -44,6 +44,7 @@ const statusLabels = computed(() => ({
 const kindLabels = computed<Record<string, string>>(() => ({
   'document-invitation': messages.value.emailKindInvitation,
   'workspace-invitation': messages.value.emailKindWorkspaceInvitation,
+  'room-invitation': messages.value.emailKindRoomInvitation,
   'enrollment-requested': messages.value.emailKindEnrollmentRequested,
   'admin-enrollment-notification': messages.value.emailKindAdminNotification,
   'enrollment-approved': messages.value.emailKindEnrollmentApproved,

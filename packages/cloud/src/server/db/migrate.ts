@@ -29,6 +29,7 @@ import * as tableNames from './migrations/025_table_names'
 import * as userPicture from './migrations/026_user_picture'
 import * as documentKind from './migrations/027_document_kind'
 import * as signatureEnvelopes from './migrations/028_signature_envelopes'
+import * as rooms from './migrations/029_rooms'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -59,7 +60,8 @@ const migrations: Record<string, Migration> = {
   '025_table_names': tableNames,
   '026_user_picture': userPicture,
   '027_document_kind': documentKind,
-  '028_signature_envelopes': signatureEnvelopes
+  '028_signature_envelopes': signatureEnvelopes,
+  '029_rooms': rooms
 }
 
 class CloudMigrationProvider implements MigrationProvider {

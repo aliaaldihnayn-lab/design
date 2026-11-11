@@ -161,6 +161,14 @@ function cloudServer() {
       }
     ],
     [
+      'GET',
+      /^\/documents\/([^/]+)\/access$/,
+      ([, id = '']) =>
+        documents.has(id)
+          ? json({ access: { permission: 'edit', canManageSharing: true, sources: ['owner'] } })
+          : json({ error: { code: 'not_found' } }, 404)
+    ],
+    [
       'DELETE',
       /^\/documents\/([^/]+)$/,
       ([, id = '']) => {
@@ -265,6 +273,11 @@ function cloudServer() {
     return new Response(streamed(from, to), { status: 206, headers })
   }
 
+  /** A document made on the server with no revision yet, as a room makes one. */
+  function createEmpty(id: string, name: string) {
+    documents.set(id, { name, revision: null, version: 0 })
+  }
+
   /** Someone else saves the document, moving its revision on. */
   function saveElsewhere(id: string) {
     const doc = documents.get(id)
@@ -276,6 +289,7 @@ function cloudServer() {
     client,
     objectFetch,
     saveElsewhere,
+    createEmpty,
     objects,
     /** The checksums of every image an upload was offered for. */
     imageUploads,
@@ -356,6 +370,19 @@ describe('Cloud storage adapter', () => {
     const opened = await storage.getDocument(id)
     expect(new TextDecoder().decode(opened.bytes)).toBe('design')
     expect(opened.revision).toBe(saved.revision)
+  })
+
+  test('saves the first revision of a document the server already made, without making another', async () => {
+    const server = cloudServer()
+    const storage = adapter(server)
+    const id = crypto.randomUUID()
+    server.createEmpty(id, 'Room file')
+    const saved = await storage.putDocument(id, new TextEncoder().encode('design'), {
+      name: 'Room file',
+      updatedAt: ''
+    })
+    expect(saved.revision).toBeString()
+    expect((await storage.listDocuments()).map((document) => document.id)).toEqual([id])
   })
 
   test('stores a file without its images, uploads only images it lacks, and opens it whole', async () => {

@@ -3,6 +3,7 @@
  * resolves this module to `./off`, which offers the same names and does nothing, so Cloud's code
  * stays out of that build; app code outside Cloud's folders imports Cloud only from here.
  */
+import { registerCloudRoomTools } from '../room-tree/tools'
 import { watchCloudRooms } from '../rooms/live'
 import { startCloudSessions } from '../sessions/startup'
 
@@ -37,9 +38,13 @@ export {
 /** This build has Cloud; whether it shows depends on the server's listing or a preview. */
 export const CLOUD_INCLUDED: boolean = true
 
-/** Starts Cloud sign-ins, links, and live rooms; returns what stops the room watcher. */
+/** Starts Cloud sign-ins, links, live rooms, and the room tools; returns what stops them. */
 export function startCloud(options: { leaveLinkAddress(): Promise<unknown> }): () => void {
-  const stop = watchCloudRooms()
+  const stopRooms = watchCloudRooms()
+  const unregisterRoomTools = registerCloudRoomTools()
   void startCloudSessions(options)
-  return stop
+  return () => {
+    stopRooms()
+    unregisterRoomTools()
+  }
 }

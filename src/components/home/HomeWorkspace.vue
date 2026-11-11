@@ -28,7 +28,11 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
-import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
+import {
+  CloudRoomsSection,
+  CloudSharedSection,
+  CloudWorkspaceSection
+} from '@/components/cloud/integration'
 import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
@@ -250,6 +254,12 @@ function formattedDate(updatedAt: string): string {
     <CloudSharedSection
       v-else-if="places.location.value.kind === 'shared' && places.serverId.value"
       :server-id="places.serverId.value"
+      :query="normalizedQuery"
+    />
+    <CloudRoomsSection
+      v-else-if="places.location.value.kind === 'rooms' && places.serverId.value"
+      :server-id="places.serverId.value"
+      :workspaces="places.workspaces.value"
       :query="normalizedQuery"
     />
     <template v-else>

@@ -5,6 +5,7 @@ import type {
   CreateInvitationContinuationInput,
   DocumentInvitation,
   InvitationPreview,
+  RoomRole,
   WorkspaceRole
 } from '#cloud/contract'
 import { cloudInvitationURL } from '#cloud/contract'
@@ -40,8 +41,19 @@ export type WorkspaceInvitationResolver = {
   ): Promise<{ workspaceId: string; role: WorkspaceRole } | null>
 }
 
+/** Room invitations share the invitation link too. */
+export type RoomInvitationResolver = {
+  preview(invitationId: string, token: string): Promise<InvitationPreview | null>
+  accept(
+    actor: CloudActor,
+    invitationId: string,
+    token: string
+  ): Promise<{ roomId: string; role: RoomRole } | null>
+}
+
 export type InvitationServiceOptions = {
   workspaceInvitations?: WorkspaceInvitationResolver
+  roomInvitations?: RoomInvitationResolver
   continuationSecret?: string
   delivery?: InvitationDelivery
   outbox?: InvitationOutbox
@@ -216,13 +228,15 @@ export function createInvitationService(
       return continuation.consume(id)
     },
 
-    /** What an invitation link offers: a document, or a workspace when the id is one of those. */
+    /** What an invitation link offers: a document, or a workspace or room when the id is one. */
     async previewInvitation(
       invitationId: string,
       input: AcceptDocumentInvitationInput
     ): Promise<InvitationPreview> {
       const workspace = await options.workspaceInvitations?.preview(invitationId, input.token)
-      return workspace ?? previewDocumentInvitation(invitationId, input)
+      if (workspace) return workspace
+      const room = await options.roomInvitations?.preview(invitationId, input.token)
+      return room ?? previewDocumentInvitation(invitationId, input)
     },
 
     async acceptInvitation(
@@ -232,6 +246,8 @@ export function createInvitationService(
     ): Promise<AcceptedInvitation> {
       const workspace = await options.workspaceInvitations?.accept(actor, invitationId, input.token)
       if (workspace) return { kind: 'workspace', ...workspace }
+      const room = await options.roomInvitations?.accept(actor, invitationId, input.token)
+      if (room) return { kind: 'room', ...room }
       const invitation = await database
         .selectFrom('documentInvitation')
         .select([

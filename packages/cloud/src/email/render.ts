@@ -9,6 +9,7 @@ import type {
   EnrollmentEmailPayload,
   NewSignInPayload,
   RenderedTransactionalEmail,
+  RoomInvitationEmailPayload,
   TransactionalEmailContent,
   TransactionalEmailKind,
   TwoStepChange,
@@ -65,9 +66,28 @@ async function renderWorkspaceInvitation(payload: WorkspaceInvitationEmailPayloa
   )
 }
 
+const ROOM_ROLE_LABELS = { editor: 'work in', viewer: 'view' } as const
+
+async function renderRoomInvitation(payload: RoomInvitationEmailPayload) {
+  const action = ROOM_ROLE_LABELS[payload.role]
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: `Join ${payload.roomName}`,
+      preview: `${payload.inviterName} invited you to the room ${payload.roomName}`,
+      message: `${payload.inviterName} invited you to ${action} the room “${payload.roomName}” on Lawha Cloud. You will see its files and sub-rooms under Rooms once you join.`,
+      actionLabel: 'Join room',
+      actionURL: payload.acceptanceURL,
+      footer: `This invitation expires ${new Date(payload.expiresAt).toUTCString()}.`
+    },
+    `${payload.inviterName} invited you to the room ${payload.roomName}`
+  )
+}
+
 type EnrollmentMessageKind = Exclude<
   TransactionalEmailKind,
   | 'document-invitation'
+  | 'room-invitation'
   | 'workspace-invitation'
   | 'admin-enrollment-notification'
   | 'email-verification'
@@ -294,6 +314,7 @@ export async function renderTransactionalEmail(
 ): Promise<RenderedTransactionalEmail> {
   if (content.kind === 'document-invitation') return renderDocumentInvitation(content.payload)
   if (content.kind === 'workspace-invitation') return renderWorkspaceInvitation(content.payload)
+  if (content.kind === 'room-invitation') return renderRoomInvitation(content.payload)
   if (content.kind === 'admin-enrollment-notification') {
     return renderAdminNotification(content.payload)
   }
