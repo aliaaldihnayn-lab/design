@@ -2,12 +2,14 @@ import {
   createSignatureEnvelopeSchema,
   declineSigningSchema,
   signDocumentSchema,
+  signedDownloadSchema,
   signingSecretSchema
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import { trustedClientIP } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
+import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import type { SignatureService, SigningOutcome, SigningRequestContext } from './service'
@@ -80,6 +82,16 @@ export function createSignatureRoutes(service: SignatureService, options: Signin
 /** A signer's routes, opened with the secret from their link. */
 export function createPublicSigningRoutes(service: SignatureService, options: SigningRouteOptions) {
   return new Hono<CloudAPIEnvironment>()
+    .post(
+      '/signing/download',
+      validatedJSON((input) => v.parse(signedDownloadSchema, input)),
+      async (context) => {
+        const signed = await service.download(context.req.valid('json').token)
+        return signed
+          ? context.json({ title: signed.title, pdf: fromUint8Array(signed.bytes) })
+          : notFound(context)
+      }
+    )
     .post(
       '/signing/:signerId/view',
       validatedJSON((input) => v.parse(signingSecretSchema, input)),

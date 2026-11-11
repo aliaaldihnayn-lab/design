@@ -2,7 +2,7 @@
 import { useHead } from '@unhead/vue'
 import { useObjectUrl } from '@vueuse/core'
 import { toUint8Array } from 'js-base64'
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 import type { SigningView } from '@lawha/cloud/contract'
@@ -34,19 +34,36 @@ const reason = ref('')
 const busy = ref(false)
 const finished = ref<'signed' | 'declined' | null>(null)
 
-useHead({ title: computed(() => view.value?.title ?? t.value.signature) })
+useHead({
+  title: computed(() => signedPDF.value?.title ?? view.value?.title ?? t.value.signature)
+})
 
+/** A completion email's link: the signed PDF itself, downloaded with the token it carries. */
+const downloading = signerId.value === 'download'
+const signedPDF = shallowRef<{ title: string; pdf: string } | null>(null)
+const shownPDF = computed(() => signedPDF.value?.pdf ?? view.value?.pdf)
 const pdfBlob = computed(() =>
-  view.value
-    ? new Blob([toUint8Array(view.value.pdf).slice().buffer], { type: 'application/pdf' })
+  shownPDF.value
+    ? new Blob([toUint8Array(shownPDF.value).slice().buffer], { type: 'application/pdf' })
     : undefined
 )
+const download = useTemplateRef<HTMLAnchorElement>('download')
 const pdfURL = useObjectUrl(pdfBlob)
 
 const failed = (failure: unknown) =>
   t.value.signFailed({ error: failure instanceof Error ? failure.message : String(failure) })
 
 onMounted(async () => {
+  if (downloading) {
+    try {
+      signedPDF.value = await (await signingPageClient()).downloadSigned(secret)
+      await nextTick()
+      download.value?.click()
+    } catch (failure) {
+      error.value = failed(failure)
+    }
+    return
+  }
   try {
     view.value = await (await signingPageClient()).viewSigning(signerId.value, secret)
     if (view.value.signerStatus === 'signed') finished.value = 'signed'
@@ -92,10 +109,26 @@ async function decline() {
   <div :class="ui.root()" data-test-id="signing-view">
     <div :class="ui.titleRow()">
       <icon-lucide-file-signature class="size-4 shrink-0 text-muted" />
-      <span :class="ui.title()">{{ view?.title }}</span>
+      <span :class="ui.title()">{{ signedPDF?.title ?? view?.title }}</span>
     </div>
     <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 text-xs">
       <AppAlert v-if="error" tone="error" :heading="error" />
+      <template v-if="signedPDF">
+        <a ref="download" :href="pdfURL" :download="`${signedPDF.title}.pdf`" hidden />
+        <AppButton
+          size="sm"
+          class="self-start"
+          data-test-id="signing-download"
+          @click="download?.click()"
+          >{{ t.downloadSigned }}</AppButton
+        >
+        <iframe
+          v-if="pdfURL"
+          :src="pdfURL"
+          :aria-label="signedPDF.title"
+          class="min-h-[60vh] w-full rounded-md border border-border bg-white"
+        />
+      </template>
       <template v-if="view">
         <p class="text-surface">
           {{ view.senderName }}<template v-if="view.message"> · {{ view.message }}</template>

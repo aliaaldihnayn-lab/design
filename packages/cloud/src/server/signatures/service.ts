@@ -1,4 +1,5 @@
 import {
+  signedDownloadPath,
   signingPath,
   type CreateSignatureEnvelopeInput,
   type DeclineSigningInput,
@@ -15,6 +16,7 @@ import type {
   SignatureSignerTable
 } from '#cloud/server/db/tables'
 import type { TransactionalEmailService } from '#cloud/server/email'
+import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import { fromUint8Array, toUint8Array } from 'js-base64'
@@ -23,6 +25,7 @@ import type { Kysely, Selectable } from 'kysely'
 import { randomHex } from '@lawha/scene-graph/random'
 
 import { finalSignedPDF } from './final-pdf'
+import { sealPDF, type SealCredentials } from './seal'
 
 const SECRET_BYTES = 32
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
@@ -32,6 +35,12 @@ export type SignatureServiceOptions = {
   email?: TransactionalEmailService
   publicURL: string
   now?: () => Date
+  /** Keys completion emails' download links; the server's auth secret. */
+  downloadSecret: string
+  /** Seals final PDFs with the server's certificate, when the deployment configures one. */
+  seal?: SealCredentials | null
+  /** A font for names the standard PDF fonts cannot draw, such as Arabic ones. */
+  scriptFont?: Uint8Array | null
 }
 
 /** Where a request came from, for the audit trail. */
@@ -98,6 +107,13 @@ export function createSignatureService(
   const now = options.now ?? (() => new Date())
   const link = (signerId: string, secret: string) =>
     new URL(signingPath(signerId, secret), options.publicURL).href
+  const downloadMAC = (envelopeId: string) =>
+    bytesToHex(
+      hmac(sha256, utf8ToBytes(options.downloadSecret), utf8ToBytes(`signed:${envelopeId}`))
+    )
+  /** A link straight to the envelope's signed PDF, which anyone sent the completion email holds. */
+  const downloadLink = (envelopeId: string) =>
+    new URL(signedDownloadPath(`${envelopeId}.${downloadMAC(envelopeId)}`), options.publicURL).href
 
   async function record(
     executor: Kysely<CloudDatabase>,
@@ -159,7 +175,7 @@ export function createSignatureService(
     if (loaded?.envelope.status !== 'sent') return
     if (!loaded.signers.every((signer) => signer.status === 'signed')) return
     const names = new Map(loaded.signers.map((signer) => [signer.id, signer.email]))
-    const final = await finalSignedPDF({
+    const audited = await finalSignedPDF({
       original: loaded.envelope.originalPdf,
       title: loaded.envelope.title,
       envelopeId,
@@ -181,8 +197,16 @@ export function createSignatureService(
           ipAddress: event.ipAddress
         })),
         { at: now(), kind: 'completed', who: 'Lawha Cloud', ipAddress: null }
-      ]
+      ],
+      scriptFont: options.scriptFont
     })
+    const final = options.seal
+      ? await sealPDF(audited, options.seal, {
+          name: 'Lawha Cloud',
+          reason: `Signed by every signer of envelope ${envelopeId}`,
+          date: now()
+        })
+      : audited
     await database.transaction().execute(async (transaction) => {
       const updated = await transaction
         .updateTable('signatureEnvelope')
@@ -209,7 +233,7 @@ export function createSignatureService(
             recipientEmail,
             payload: {
               documentName: loaded.envelope.title,
-              actionURL: new URL('/writer', options.publicURL).href
+              actionURL: downloadLink(envelopeId)
             }
           },
           transaction
@@ -321,6 +345,19 @@ export function createSignatureService(
         signed: envelope.finalPdf !== null,
         title: envelope.title
       }
+    },
+
+    /** The signed PDF a completion email's download token opens. */
+    async download(token: string) {
+      const [envelopeId = '', mac = ''] = token.split('.')
+      if (!sameDigest(mac, downloadMAC(envelopeId))) return null
+      const envelope = await database
+        .selectFrom('signatureEnvelope')
+        .select(['finalPdf', 'title'])
+        .where('id', '=', envelopeId)
+        .where('status', '=', 'completed')
+        .executeTakeFirst()
+      return envelope?.finalPdf ? { bytes: envelope.finalPdf, title: envelope.title } : null
     },
 
     async void(actor: CloudActor, envelopeId: string, context: SigningRequestContext) {
