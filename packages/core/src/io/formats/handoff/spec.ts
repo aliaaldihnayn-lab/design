@@ -326,7 +326,7 @@ function describe(ctx: Context, node: SceneNode): HandoffNode {
   if (node.type === 'TEXT') describeText(ctx, node, out)
   const component = componentKind(node)
   if (component) out.component = component
-  const interactions = readInteractions(node)
+  const interactions = readInteractions(node, ctx.graph)
   if (interactions.length > 0) out.interactions = interactions
   const children = node.childIds.flatMap((id) => {
     const child = ctx.graph.getNode(id)

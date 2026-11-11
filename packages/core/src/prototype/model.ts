@@ -4,6 +4,7 @@ import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { getPluginData } from '#core/figma-api/plugin-data'
 
+import { figInteractionsOf } from './fig'
 import {
   flowListSchema,
   interactionListSchema,
@@ -28,9 +29,23 @@ function parseJSON<T>(text: string, schema: v.GenericSchema<unknown, T>): T | nu
   return parsed.success ? parsed.output : null
 }
 
-/** A layer's interactions; none when unset or malformed. */
-export function readInteractions(node: SceneNode): Interaction[] {
-  return parseJSON(getPluginData(node, INTERACTIONS_KEY), interactionListSchema) ?? []
+/**
+ * A layer's interactions; none when unset or malformed. Lawha's own come first; given the
+ * graph, a layer read from a `.fig` file without them has Figma's, read from its record.
+ */
+export function readInteractions(node: SceneNode, graph?: SceneGraph): Interaction[] {
+  const own = getPluginData(node, INTERACTIONS_KEY)
+  if (own || !graph) return parseJSON(own, interactionListSchema) ?? []
+  return figInteractionsOf(graph, node)
+}
+
+/**
+ * What a layer keeps as its interactions: none is kept as an empty list when the layer was
+ * read with Figma's own, so they stay removed.
+ */
+export function interactionsPluginValue(node: SceneNode, list: readonly Interaction[]): string {
+  if (list.length > 0) return JSON.stringify(list)
+  return node.source.fig.rawNodeFields.prototypeInteractions === undefined ? '' : '[]'
 }
 
 /** A page's flows; none when unset or malformed. */

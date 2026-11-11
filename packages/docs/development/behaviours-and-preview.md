@@ -40,6 +40,16 @@ Preview is a per-pane canvas view (`EditorViewState.canvasView`, `{ id: 'play', 
 
 Controls and DOM keys use layer paths (names below the island root), not node ids: a variant switch rebuilds an instance's layers with new ids, and a stable path keeps the DOM in place, including a focused input.
 
+## Interactive components
+
+Prototype interactions run in the same islands. A layer with interactions, or an instance whose variant has them, makes its top-level layer an island, so a dropdown opens, a dialog appears, and a button shows its hover state in place on the canvas and in the player.
+
+- **State.** `packages/core/src/prototype/states.ts` keeps which variant each instance shows, by layer path. `dispatchStateEvent` sends an event to the layer and up its ancestors; the nearest layer with an interaction for the trigger answers. Change to (`change-to`) switches the nearest instance of the destination's set; While hovering (`hover`) and While pressing (`press`) hold until the pointer leaves or lifts. Instances inside a changed one start again from their designed variants.
+- **Rendering.** The island merges the changed variants into the states it gives `resolvePlayState`, so a change draws exactly as the variant is designed. `transitions.ts` animates the switch in the island's DOM: Smart Animate tweens each layer the two variants share by layer path, and dissolve, move, push, and slide animate the new variant against a still copy of the old one, along the transition's easing or spring.
+- **Overlays.** Open overlay shows its destination frame as a nested island over the root, with the action's background; Close overlay, Back, and a click outside close it.
+- **Keys and timers.** After delay timers start when their variant shows. Keys the preview has shortcuts for, such as Escape, are offered to the islands first through `editor.onLiveKey`.
+- **`.fig`.** Interactions are written as Figma's `prototypeInteractions` (Change to as `SWAP_STATE`) and read back from Figma files, including those on component layers (`packages/core/src/prototype/fig.ts`).
+
 ## Code export
 
 Export reads the same model as preview. `behaviourArgs` gives a component set its props: a boolean value drawn by an on/off variant property becomes `checked`, `pressed`, `open`, or `disabled`.

@@ -2,6 +2,7 @@
 import { useEventListener, useWindowSize } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
+import { liveComponentScreens } from '@lawha/core'
 import {
   clickOutside,
   fire,
@@ -16,12 +17,14 @@ import {
   start,
   timers,
   trigger,
+  type Action,
   type Hotspot,
   type PlayerState,
   type Step,
   type Transition,
   type TriggerType
 } from '@lawha/core/prototype'
+import { PlayIsland, providePlayVariables, useIslandTokens } from '@lawha/vue/canvas'
 import { usePrototypeMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -65,6 +68,30 @@ const graph = () => store.graph
 const node = (id: string) => store.graph.getNode(id)
 
 const screen = computed(() => (state.value ? node(state.value.screen) : null))
+
+/**
+ * Screens that hold controls or interactive components run live, as on the canvas in preview:
+ * the player draws them as islands, which type, open, and change in place, rather than images.
+ * Screens with only navigation keep their images and hotspots.
+ */
+const liveScreens = computed(() => {
+  void store.state.sceneVersion
+  const session = playerSession.value
+  if (!session) return new Set<string>()
+  const screens = screensOf(store.graph, session.pageId).map((screen) => screen.id)
+  return new Set(liveComponentScreens(store.graph, screens))
+})
+const live = computed(() => !!state.value && liveScreens.value.has(state.value.screen))
+const islandTokens = useIslandTokens(computed(() => !!playerSession.value))
+/** Bumped on restart, so live screens start again as designed. */
+const islandRevision = ref(0)
+/** The prototype variables the player's live screens share; restarting resets them. */
+const playVariables = providePlayVariables()
+
+/** What a live screen leaves to the player: navigation, Back, links, and scrolling. */
+function onIslandAction(action: Action) {
+  if (state.value) void apply(fire(graph(), state.value, action))
+}
 
 /** Fits the screen into the window with a margin, never upscaling past 2×. */
 const scale = computed(() => {
@@ -180,6 +207,8 @@ function clearTimers() {
 /** Starts the active screen's After-delay timers for this state only. */
 function scheduleTimers(current: PlayerState) {
   clearTimers()
+  // A live screen runs its own timers, as it runs its other interactions.
+  if (liveScreens.value.has(current.screen)) return
   for (const { delay, action } of timers(graph(), current)) {
     timerIds.push(
       window.setTimeout(() => {
@@ -268,6 +297,8 @@ async function restart(startId = playerSession.value?.start) {
   if (!startId) return
   clearTimers()
   await imageFor(startId)
+  islandRevision.value++
+  playVariables.value = new Map()
   state.value = start(startId)
   scheduleTimers(state.value)
 }
@@ -393,14 +424,28 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
           <img :src="screenImage(leaving)" alt="" class="size-full select-none" draggable="false" />
         </div>
         <div ref="currentEl" class="absolute inset-0 z-[1]" @click.self="onMiss">
+          <div
+            v-if="live"
+            class="absolute top-0 left-0 origin-top-left"
+            data-test-id="prototype-live-screen"
+            :style="{ transform: `scale(${scale})` }"
+          >
+            <PlayIsland
+              :root-id="state.screen"
+              :revision="islandRevision"
+              :tokens="islandTokens"
+              @action="onIslandAction"
+            />
+          </div>
           <img
+            v-else
             :src="screenImage(state.screen)"
             :alt="screen.name"
             class="pointer-events-none size-full select-none"
             draggable="false"
           />
           <div
-            v-for="{ region, image } in regionsFor(state.screen)"
+            v-for="{ region, image } in live ? [] : regionsFor(state.screen)"
             :key="region.node"
             ref="regionEls"
             class="absolute"
@@ -456,7 +501,7 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
             </div>
           </div>
           <button
-            v-for="spot in spotsFor(state.screen)"
+            v-for="spot in live ? [] : spotsFor(state.screen)"
             :key="spot.node"
             type="button"
             class="absolute rounded-sm transition-colors"

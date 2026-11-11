@@ -416,6 +416,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
           if (shouldIgnoreShortcut(event, options, historyKeys.has(keys))) return
           const { shortcuts: allowed } = resolveEditorProfile(options.store.state)
           if (allowed === 'view' && !viewKeys.has(keys)) return
+          // The running design answers its own keys before the preview's shortcuts do.
+          if (allowed === 'view' && options.store.handleLiveKey(event.key)) {
+            event.preventDefault()
+            return
+          }
           handler(event)
         }
       ])

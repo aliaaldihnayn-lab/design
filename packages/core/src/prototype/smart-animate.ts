@@ -150,17 +150,107 @@ function spring(t: number): number {
   return 1 - Math.exp(-6 * t) * Math.cos(2.5 * Math.PI * t)
 }
 
+/** A spring's physics: how stiff, how damped, and how heavy, as Figma's custom spring. */
+export interface SpringPhysics {
+  stiffness: number
+  damping: number
+  mass: number
+}
+
+const DEFAULT_SPRING: SpringPhysics = { stiffness: 300, damping: 20, mass: 1 }
+
+/**
+ * Where a damped spring from 0 to 1 is after `seconds`, solving the spring's equation of
+ * motion in closed form for the under-, critically, and over-damped cases.
+ */
+function springAt(physics: SpringPhysics, seconds: number): number {
+  const { stiffness, damping, mass } = physics
+  const omega = Math.sqrt(stiffness / mass)
+  const zeta = damping / (2 * Math.sqrt(stiffness * mass))
+  if (zeta < 1) {
+    const damped = omega * Math.sqrt(1 - zeta * zeta)
+    const envelope = Math.exp(-zeta * omega * seconds)
+    return (
+      1 -
+      envelope *
+        (Math.cos(damped * seconds) + ((zeta * omega) / damped) * Math.sin(damped * seconds))
+    )
+  }
+  if (zeta === 1) return 1 - Math.exp(-omega * seconds) * (1 + omega * seconds)
+  const root = omega * Math.sqrt(zeta * zeta - 1)
+  const a = -zeta * omega + root
+  const b = -zeta * omega - root
+  return 1 - (b * Math.exp(a * seconds) - a * Math.exp(b * seconds)) / (b - a)
+}
+
+/**
+ * How long a spring takes to settle within a thousandth of its rest, in ms, capped at 5 s: a
+ * custom spring's duration comes from its physics, not from the transition's duration.
+ */
+export function springDuration(physics: SpringPhysics = DEFAULT_SPRING): number {
+  const step = 1 / 120
+  let settledSince = 0
+  for (let seconds = 0; seconds < 5; seconds += step) {
+    const settled = Math.abs(1 - springAt(physics, seconds)) < 1e-3
+    if (!settled) settledSince = seconds + step
+    else if (seconds - settledSince > 0.1) return Math.round(settledSince * 1000)
+  }
+  return 5000
+}
+
+/** A custom spring as progress over normalised time, settling at 1 by `t = 1`. */
+export function springEasing(physics: SpringPhysics = DEFAULT_SPRING): (t: number) => number {
+  const seconds = springDuration(physics) / 1000
+  return (t) => {
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    return springAt(physics, t * seconds)
+  }
+}
+
 const EASING_FUNCTIONS: Record<Transition['easing'], (t: number) => number> = {
   linear: (t) => Math.min(1, Math.max(0, t)),
   'ease-in': cubicBezier(0.42, 0, 1, 1),
   'ease-out': cubicBezier(0, 0, 0.58, 1),
   'ease-in-out': cubicBezier(0.42, 0, 0.58, 1),
-  spring
+  'ease-in-back': cubicBezier(0.3, -0.05, 0.7, -0.5),
+  'ease-out-back': cubicBezier(0.45, 1.45, 0.8, 1),
+  'ease-in-out-back': cubicBezier(0.7, -0.4, 0.4, 1.4),
+  spring,
+  'custom-spring': springEasing()
 }
 
 /** Progress along an easing curve at time `t` from 0 to 1. */
-export function ease(easing: Transition['easing'], t: number): number {
+export function ease(easing: Transition['easing'], t: number, physics?: SpringPhysics): number {
+  if (easing === 'custom-spring' && physics) return springEasing(physics)(t)
   return EASING_FUNCTIONS[easing](t)
+}
+
+/**
+ * How long a transition runs, in ms: its duration, or for a custom spring the time its physics
+ * take to settle.
+ */
+export function transitionDuration(transition: Transition): number {
+  if (transition.type === 'instant') return 0
+  if (transition.easing === 'custom-spring') return springDuration(transition.spring)
+  return transition.duration
+}
+
+/**
+ * The transition's progress sampled at `steps + 1` evenly spaced times, as keyframe offsets
+ * and eased progress, for animation APIs that take keyframes rather than a curve: the
+ * springs and "back" easings overshoot, which CSS's cubic-bezier cannot always draw.
+ */
+export function easedKeyframes(
+  transition: Transition,
+  steps = 30
+): { offset: number; progress: number }[] {
+  const frames: { offset: number; progress: number }[] = []
+  for (let i = 0; i <= steps; i++) {
+    const offset = i / steps
+    frames.push({ offset, progress: ease(transition.easing, offset, transition.spring) })
+  }
+  return frames
 }
 
 const mix = (a: number, b: number, k: number) => a + (b - a) * k

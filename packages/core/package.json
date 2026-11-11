@@ -88,6 +88,11 @@
       "import": "./dist/tools/index.js",
       "default": "./dist/tools/index.js"
     },
+    "./design-system/kit": {
+      "types": "./dist/design-system/kit/index.d.ts",
+      "import": "./dist/design-system/kit/index.js",
+      "default": "./dist/design-system/kit/index.js"
+    },
     "./pdf-sign": {
       "types": "./dist/pdf-sign/index.d.ts",
       "import": "./dist/pdf-sign/index.js",
@@ -219,6 +224,7 @@
   "dependencies": {
     "@cantoo/pdf-lib": "^2.11.1",
     "@iconify/utils": "^3.1.4",
+    "@internationalized/date": "^3.12.3",
     "@lawha/design-jsx": "workspace:*",
     "@lawha/dom-css": "workspace:*",
     "@lawha/drawio": "workspace:*",

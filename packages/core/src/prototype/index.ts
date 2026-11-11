@@ -32,6 +32,8 @@ export {
   DIRECTIONS,
   EASINGS,
   OVERLAY_POSITIONS,
+  CONDITION_OPERATORS,
+  POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
   TRANSITION_TYPES,
   TRIGGERS
@@ -56,7 +58,31 @@ export {
   type ScrollRegion
 } from './scroll'
 export {
+  actionsOf,
+  applyStateChanges,
+  changeDestinations,
+  changeTarget,
+  dispatchStateEvent,
+  dispatchStateKey,
+  interactionsOf,
+  interactiveLayers,
+  isInteractiveComponent,
+  runInteraction,
+  stateTimers,
+  variantValues,
+  type ComponentStates,
+  type StateChange,
+  type StateDispatch,
+  type StateHold,
+  type StateTimer
+} from './states'
+export {
   ease,
+  easedKeyframes,
+  springDuration,
+  springEasing,
+  transitionDuration,
+  type SpringPhysics,
   pairChanges,
   rectMapping,
   smartAnimateGraph,
@@ -67,3 +93,17 @@ export {
   type SmartAnimatePlan,
   type SmartPair
 } from './smart-animate'
+export {
+  boundInstanceStates,
+  conditionsHold,
+  playValue,
+  PROPERTY_BINDINGS_KEY,
+  readPropertyBindings,
+  runVariableActions,
+  showPlayVariables,
+  type BoundInstanceState,
+  type Condition,
+  type PlayValue,
+  type PlayVariables,
+  type PropertyBinding
+} from './variables'

@@ -125,7 +125,7 @@ export function trigger(
   }
   if (chain.at(-1)?.id !== screen) return null
   for (const layer of chain) {
-    const match = readInteractions(layer).find((i) => i.trigger.type === type)
+    const match = readInteractions(layer, graph).find((i) => i.trigger.type === type)
     if (match) return fire(graph, state, match.action)
   }
   return null
@@ -134,7 +134,7 @@ export function trigger(
 /** Handles a key press: the first interaction on the active screen's layers bound to that key. */
 export function keyPress(graph: SceneGraph, state: PlayerState, key: string): Step | null {
   for (const node of descendants(graph, activeScreen(state))) {
-    const match = readInteractions(node).find(
+    const match = readInteractions(node, graph).find(
       (i) => i.trigger.type === 'key' && i.trigger.key.toLowerCase() === key.toLowerCase()
     )
     if (match) return fire(graph, state, match.action)
@@ -146,7 +146,7 @@ export function keyPress(graph: SceneGraph, state: PlayerState, key: string): St
 export function timers(graph: SceneGraph, state: PlayerState): { delay: number; action: Action }[] {
   const out: { delay: number; action: Action }[] = []
   for (const node of descendants(graph, activeScreen(state)))
-    for (const i of readInteractions(node))
+    for (const i of readInteractions(node, graph))
       if (i.trigger.type === 'after-delay') out.push({ delay: i.trigger.delay, action: i.action })
   return out
 }
@@ -178,7 +178,7 @@ export function hotspots(graph: SceneGraph, screenId: string): Hotspot[] {
   const out: Hotspot[] = []
   for (const node of descendants(graph, screenId)) {
     if (node.id === screenId) continue
-    const triggers = readInteractions(node)
+    const triggers = readInteractions(node, graph)
       .map((i) => i.trigger.type)
       .filter((t) => t === 'click' || t === 'hover' || t === 'press')
     if (triggers.length === 0) continue
@@ -203,7 +203,7 @@ export function reachable(graph: SceneGraph, startId: string, pageId: string): S
     const id = queue.shift()
     if (!id) break
     for (const node of descendants(graph, id))
-      for (const i of readInteractions(node)) {
+      for (const i of readInteractions(node, graph)) {
         const dest = 'destination' in i.action ? i.action.destination : null
         if (!dest || i.action.type === 'scroll-to' || seen.has(dest)) continue
         if (screenOf(graph, dest, pageId)?.id !== dest) continue

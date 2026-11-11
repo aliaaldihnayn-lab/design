@@ -33,6 +33,7 @@ import {
 import { buildDesignSystemTool } from '#core/tools/design-system'
 import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
 import { inspectLayerTool } from '#core/tools/inspect'
+import { buildInteractiveKitTool, insertKitComponentTool } from '#core/tools/kit'
 import {
   createDeviceMockup,
   createSocialPost,
@@ -73,6 +74,11 @@ import {
   setInteractions,
   setScrollBehavior
 } from '#core/tools/prototype'
+import {
+  addStateInteraction,
+  bindPropertyToVariable,
+  createInteractiveComponent
+} from '#core/tools/interactive-components'
 import {
   applyMasterPageTool,
   createMasterPageTool,
@@ -188,6 +194,9 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   convertToDieline,
   // Design system
   buildDesignSystemTool,
+  // Interactive kit
+  insertKitComponentTool,
+  buildInteractiveKitTool,
   // Dev Mode
   inspectLayerTool,
   // Photo
@@ -211,6 +220,10 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setFlow,
   autoPrototype,
   setScrollBehavior,
+  // Interactive components
+  createInteractiveComponent,
+  addStateInteraction,
+  bindPropertyToVariable,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

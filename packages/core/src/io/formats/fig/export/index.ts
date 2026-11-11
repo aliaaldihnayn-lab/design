@@ -23,6 +23,7 @@ import {
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
+import { writePrototypeInteractions } from './prototype'
 import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
@@ -203,6 +204,13 @@ async function writeFigFile(
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
     nodeChanges.push(...slotContentRecords)
   }
+  writePrototypeInteractions(
+    graph,
+    nodeChanges,
+    setup.nodeIdToGuid,
+    setup.assignedGuidValues,
+    localIdCounter
+  )
 
   const msg: Record<string, unknown> = {
     type: 'NODE_CHANGES',

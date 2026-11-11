@@ -5,6 +5,7 @@ import { hasClick, interactionFor, planPrototype } from '#core/prototype/auto'
 import {
   FLOWS_KEY,
   INTERACTIONS_KEY,
+  interactionsPluginValue,
   readFlows,
   readInteractions,
   screensOf,
@@ -24,8 +25,9 @@ import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
   const node = requireNode(figma, id)
-  if (!node) return
-  node.setPluginData(INTERACTIONS_KEY, list.length > 0 ? JSON.stringify(list) : '')
+  const raw = figma.graph.getNode(id)
+  if (!node || !raw) return
+  node.setPluginData(INTERACTIONS_KEY, interactionsPluginValue(raw, list))
 }
 
 function writeFlows(figma: FigmaAPI, flows: readonly Flow[]): void {
@@ -61,7 +63,7 @@ export const getPrototype = defineTool({
     const walk = (id: string) => {
       const node = figma.graph.getNode(id)
       if (!node) return
-      const list = readInteractions(node)
+      const list = readInteractions(node, figma.graph)
       if (list.length > 0) interactions.push({ id: node.id, name: node.name, interactions: list })
       const direction = readScroll(node)
       if (direction !== 'none') scrolling.push({ id: node.id, name: node.name, direction })
@@ -80,7 +82,7 @@ export const getPrototype = defineTool({
 export const setInteractions = defineTool({
   name: 'set_interactions',
   description:
-    'Replace a layer’s prototype interactions. Each has a trigger (click, hover, press, after-delay with delay ms, key) and an action (navigate, back, overlay, close-overlay, scroll-to, open-url) with a transition (instant, dissolve, slide-in, slide-out, push, move-in, smart-animate; direction, duration ms, easing). Pass [] to remove them.',
+    'Replace a layer’s prototype interactions. Each has a trigger (click, hover = while hovering, press = while pressing, after-delay with delay ms, key, mouse-enter/leave/down/up, focus, blur, drag) and an action (navigate, back, overlay, close-overlay, scroll-to, open-url, change-to a variant of the same component set for interactive components) with a transition (instant, dissolve, slide-in, slide-out, push, move-in, move-out, smart-animate; direction, duration ms, easing incl. springs). andThen lists further actions. Pass [] to remove them.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.pipe(v.string(), v.description('Layer that triggers the interactions')),
@@ -112,7 +114,7 @@ export const addInteraction = defineTool({
     if (error) return { error }
     const raw = figma.graph.getNode(args.id)
     const kept = raw
-      ? readInteractions(raw).filter((i) => i.trigger.type !== args.trigger.type)
+      ? readInteractions(raw, figma.graph).filter((i) => i.trigger.type !== args.trigger.type)
       : []
     writeInteractions(figma, args.id, [...kept, added])
     return { id: args.id, interactions: kept.length + 1 }
@@ -173,7 +175,9 @@ export const autoPrototype = defineTool({
     if (!args.dry_run) {
       for (const link of applied) {
         const node = figma.graph.getNode(link.node)
-        const others = node ? readInteractions(node).filter((i) => i.trigger.type !== 'click') : []
+        const others = node
+          ? readInteractions(node, figma.graph).filter((i) => i.trigger.type !== 'click')
+          : []
         writeInteractions(figma, link.node, [...others, interactionFor(link, transition)])
       }
       const flows = readFlows(page)
