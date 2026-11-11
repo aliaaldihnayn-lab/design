@@ -57,12 +57,14 @@ export interface SignPDFOptions {
   fieldName?: string
 }
 
-const latin1 = (bytes: Uint8Array) => {
-  let out = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    out += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  }
-  return out
+const LATIN1_CHUNK = 0x8000
+
+/** The bytes as a string of one character each; chunked so a large PDF fits the argument limit. */
+function latin1(bytes: Uint8Array): string {
+  const chunks = Math.ceil(bytes.length / LATIN1_CHUNK)
+  return Array.from({ length: chunks }, (_, index) =>
+    String.fromCharCode(...bytes.subarray(index * LATIN1_CHUNK, (index + 1) * LATIN1_CHUNK))
+  ).join('')
 }
 
 function signatureDictionary(target: PDFDocument, options: SignPDFOptions): PDFRef {

@@ -1,3 +1,5 @@
+import { formatListNumber, listNumberFormat } from '@lawha/scene-graph/text'
+
 import { fontSizePt } from '#core/writer/docx/runs'
 import { footnoteNumbers } from '#core/writer/footnotes'
 import {
@@ -251,47 +253,10 @@ function paragraph(
   }
 }
 
-const ROMAN: Array<[number, string]> = [
-  [1000, 'm'],
-  [900, 'cm'],
-  [500, 'd'],
-  [400, 'cd'],
-  [100, 'c'],
-  [90, 'xc'],
-  [50, 'l'],
-  [40, 'xl'],
-  [10, 'x'],
-  [9, 'ix'],
-  [5, 'v'],
-  [4, 'iv'],
-  [1, 'i']
-]
-
 /** A list item's marker as the editor's lists number them, by nesting depth. */
 export function listMarker(ordered: boolean, number: number, depth: number): string {
   if (!ordered) return ['•', '◦', '▪'][depth % 3] ?? '•'
-  if (depth % 3 === 1) {
-    let out = ''
-    let n = number
-    while (n > 0) {
-      n -= 1
-      out = String.fromCharCode(97 + (n % 26)) + out
-      n = Math.floor(n / 26)
-    }
-    return `${out}.`
-  }
-  if (depth % 3 === 2) {
-    let out = ''
-    let n = number
-    for (const [value, numeral] of ROMAN) {
-      while (n >= value) {
-        out += numeral
-        n -= value
-      }
-    }
-    return `${out}.`
-  }
-  return `${number}.`
+  return `${formatListNumber(number, listNumberFormat(depth + 1))}.`
 }
 
 function list(node: WriterNode, context: FlowContext, depth: number, rtl: boolean): FlowBlock[] {

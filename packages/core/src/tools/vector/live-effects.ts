@@ -2,9 +2,9 @@ import * as v from 'valibot'
 
 import type { SceneNode } from '@lawha/scene-graph'
 import {
-  MAX_MESH_CELLS,
   MAX_WIDTH_POINTS,
   WARP_PRESETS,
+  widthPointSchema,
   type MeshPoint,
   type PathEffect
 } from '@lawha/scene-graph/path-effects'
@@ -22,6 +22,7 @@ import { replaceWithVector } from '#core/editor/structure/swap'
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
+import { layerIdsInputSchema, meshCellCountSchema, meshMoveSchema } from '#core/tools/vector/schema'
 import { resampleMesh } from '#core/vector/warp'
 
 const NO_RENDERER = 'Live effects need path geometry, which this host cannot measure'
@@ -45,7 +46,7 @@ export const getPathEffect = defineTool({
   description:
     'Read the live warp, envelope mesh, or width profile of layers made by warp_shape, envelope_mesh, or width_profile: the warp preset and amounts, the mesh size and every point (in units of the outline box, 0…1, with handle offsets), or the width points.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.strictObject({ ids: v.pipe(v.array(v.string()), v.minLength(1)) }),
+  input: layerIdsInputSchema,
   execute: (figma, { ids }) => {
     const effects: ReturnType<typeof describe>[] = []
     for (const id of ids) {
@@ -55,13 +56,6 @@ export const getPathEffect = defineTool({
     }
     return { effects }
   }
-})
-
-const meshMoveSchema = v.strictObject({
-  row: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  column: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  dx: v.number(),
-  dy: v.number()
 })
 
 const meshHandleSchema = v.strictObject({
@@ -79,21 +73,12 @@ const editInputSchema = v.strictObject({
   horizontal: v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1))),
   vertical: v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1))),
   direction: v.optional(v.picklist(['horizontal', 'vertical'])),
-  rows: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS))),
-  columns: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS))),
+  rows: v.optional(meshCellCountSchema),
+  columns: v.optional(meshCellCountSchema),
   moves: v.optional(v.array(meshMoveSchema)),
   handles: v.optional(v.array(meshHandleSchema)),
   points: v.optional(
-    v.pipe(
-      v.array(
-        v.strictObject({
-          t: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-          width: v.pipe(v.number(), v.minValue(0), v.maxValue(20))
-        })
-      ),
-      v.minLength(1),
-      v.maxLength(MAX_WIDTH_POINTS)
-    )
+    v.pipe(v.array(widthPointSchema), v.minLength(1), v.maxLength(MAX_WIDTH_POINTS))
   )
 })
 
@@ -190,7 +175,7 @@ export const expandPathEffect = defineTool({
   description:
     "Expand live warps, envelope meshes, or width profiles (Illustrator's Object → Expand): each layer keeps the shape it has as an ordinary vector, and the effect and the outline it kept are dropped.",
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({ ids: v.pipe(v.array(v.string()), v.minLength(1)) }),
+  input: layerIdsInputSchema,
   execute: (figma, { ids }) => {
     const expanded: string[] = []
     for (const id of ids) {
@@ -209,7 +194,7 @@ export const releasePathEffect = defineTool({
   description:
     "Release live warps, envelope meshes, or width profiles (Illustrator's Object → Envelope Distort → Release): each layer goes back to the outline the effect reshaped, painted as it is; a width profile goes back to its centre line stroked with its paint at its weight.",
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({ ids: v.pipe(v.array(v.string()), v.minLength(1)) }),
+  input: layerIdsInputSchema,
   execute: (figma, { ids }) => {
     const renderer = measuringRenderer(figma)
     if (!renderer) return { error: NO_RENDERER }

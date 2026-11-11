@@ -22,7 +22,7 @@ import {
   triggerSchema
 } from '#core/prototype/schema'
 import { POSITION_KEY, readPosition, readScroll, SCROLL_KEY } from '#core/prototype/scroll'
-import { variableScope, withVariableScope } from '#core/prototype/variables'
+import { findVariable, variableScope, withVariableScope } from '#core/prototype/variables'
 import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
@@ -301,9 +301,7 @@ export const setVariableScope = defineTool({
     scope: v.picklist(['instance', 'shared'])
   }),
   execute: (figma, args) => {
-    const variable =
-      figma.graph.variables.get(args.variable) ??
-      [...figma.graph.variables.values()].find((item) => item.name === args.variable)
+    const variable = findVariable(figma.graph, args.variable)
     if (!variable) return { error: `No variable ${args.variable}` }
     if (variableScope(variable) !== args.scope)
       variable.pluginData = withVariableScope(variable, args.scope)

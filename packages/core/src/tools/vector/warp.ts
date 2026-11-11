@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@lawha/scene-graph'
-import { MAX_MESH_CELLS, WARP_PRESETS } from '@lawha/scene-graph/path-effects'
+import { WARP_PRESETS } from '@lawha/scene-graph/path-effects'
 
 import { applyLiveEffect } from '#core/canvas/live-effects'
 import { canWarp, meshedVectorProps, warpBox, warpedVectorProps } from '#core/canvas/warp'
@@ -9,6 +9,7 @@ import { replaceWithVector } from '#core/editor/structure/swap'
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
+import { layerIdsSchema, meshCellCountSchema, meshMoveSchema } from '#core/tools/vector/schema'
 import { flatMesh, flatMeshPoints } from '#core/vector/warp'
 
 const NO_RENDERER = 'Warping needs path geometry, which this host cannot measure'
@@ -51,7 +52,7 @@ export const warpShape = defineTool({
   description: `Bend layers with one of Illustrator's Warp presets (${WARP_PRESETS.join(', ')}), as Object → Envelope Distort → Make with Warp: each layer becomes a vector of its warped outline, keeping its paint, stroke and effects. The warp stays live (edit it with edit_path_effect, expand or release it with expand_path_effect or release_path_effect) unless expand is true. bend, horizontal and vertical distortion run from -1 to 1 (Illustrator's -100%…100%).`,
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Layers to warp')),
+    ids: v.pipe(layerIdsSchema, v.description('Layers to warp')),
     preset: v.picklist(WARP_PRESETS),
     bend: v.pipe(v.number(), v.minValue(-1), v.maxValue(1), v.description('Bend, -1…1')),
     horizontal: amountSchema('Horizontal distortion, -1…1'),
@@ -86,18 +87,11 @@ export const envelopeMesh = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.string(),
-    rows: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS)),
-    columns: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS)),
+    rows: meshCellCountSchema,
+    columns: meshCellCountSchema,
     moves: v.optional(
       v.pipe(
-        v.array(
-          v.strictObject({
-            row: v.pipe(v.number(), v.integer(), v.minValue(0)),
-            column: v.pipe(v.number(), v.integer(), v.minValue(0)),
-            dx: v.number(),
-            dy: v.number()
-          })
-        ),
+        v.array(meshMoveSchema),
         v.description('Grid points to move; none lays a flat mesh to edit later')
       ),
       []

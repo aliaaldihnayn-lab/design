@@ -207,16 +207,25 @@ export function createJiraConnectionService(
     apiToken: string,
     request: JiraForwardRequest
   ): Promise<JiraForwardResponse> {
-    const response = await fetcher(`${site}${request.path}`, {
+    return forward(`${site}${request.path}`, `Basic ${encode(`${email}:${apiToken}`)}`, request)
+  }
+
+  /** One call to Jira; a redirect could lead anywhere, and Jira's REST API does not redirect these calls. */
+  async function forward(
+    url: string,
+    authorization: string,
+    request: JiraForwardRequest
+  ): Promise<JiraForwardResponse> {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      Authorization: authorization
+    }
+    if (request.body !== undefined) headers['Content-Type'] = 'application/json'
+    const response = await fetcher(url, {
       method: request.method,
-      // A redirect could lead anywhere; Jira's REST API does not redirect these calls.
       redirect: 'manual',
       signal: AbortSignal.timeout(FORWARD_TIMEOUT_MS),
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Basic ${encode(`${email}:${apiToken}`)}`,
-        ...(request.body === undefined ? {} : { 'Content-Type': 'application/json' })
-      },
+      headers,
       body: request.body === undefined ? undefined : JSON.stringify(request.body)
     })
     return { status: response.status, body: await readBody(response) }
@@ -227,21 +236,11 @@ export function createJiraConnectionService(
     accessToken: string,
     request: JiraForwardRequest
   ): Promise<JiraForwardResponse> {
-    const response = await fetcher(
+    return forward(
       `${ATLASSIAN_JIRA_API_URL}/${encodeURIComponent(cloudId)}${request.path}`,
-      {
-        method: request.method,
-        redirect: 'manual',
-        signal: AbortSignal.timeout(FORWARD_TIMEOUT_MS),
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-          ...(request.body === undefined ? {} : { 'Content-Type': 'application/json' })
-        },
-        body: request.body === undefined ? undefined : JSON.stringify(request.body)
-      }
+      `Bearer ${accessToken}`,
+      request
     )
-    return { status: response.status, body: await readBody(response) }
   }
 
   return {

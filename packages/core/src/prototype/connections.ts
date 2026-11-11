@@ -2,6 +2,8 @@ import type { SceneGraph } from '@lawha/scene-graph'
 import { getAbsolutePosition } from '@lawha/scene-graph/coordinate'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
+import { cubicPointAt } from '#core/vector/curve-math'
+
 import { readInteractions, screensOf, type Trigger } from './model'
 
 /** A layer's link to another screen, drawn on the canvas as Figma's prototype noodle. */
@@ -124,15 +126,7 @@ export function noodlePath({ start, c1, c2, end }: Noodle): string {
 
 /** A point along a noodle's curve, `t` from 0 at its start to 1 at its end. */
 export function noodlePoint({ start, c1, c2, end }: Noodle, t: number): Vector {
-  const u = 1 - t
-  const a = u * u * u
-  const b = 3 * u * u * t
-  const c = 3 * u * t * t
-  const d = t * t * t
-  return {
-    x: a * start.x + b * c1.x + c * c2.x + d * end.x,
-    y: a * start.y + b * c1.y + c * c2.y + d * end.y
-  }
+  return cubicPointAt(start, c1, c2, end, t)
 }
 
 /** How far `point` is from a noodle's curve, measured along it in short straight steps. */

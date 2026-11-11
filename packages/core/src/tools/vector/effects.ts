@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { Fill, SceneNode } from '@lawha/scene-graph'
+import { widthPointSchema } from '@lawha/scene-graph/path-effects'
 
 import { applyLiveEffect } from '#core/canvas/live-effects'
 import { outlineStrokeLayer, type OutlinePiece } from '#core/canvas/outline-stroke'
@@ -14,6 +15,8 @@ import { BLACK } from '#core/constants'
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
+import { withRenderer } from '#core/tools/vector/renderer'
+import { layerIdsInputSchema, layerIdsSchema } from '#core/tools/vector/schema'
 import { profileWidthPoints, WIDTH_PROFILES } from '#core/vector/width'
 
 const NO_RENDERER = 'Path effects need path geometry, which this host cannot measure'
@@ -43,7 +46,7 @@ export const offsetPath = defineTool({
     "Illustrator's Object → Path → Offset Path: a new vector of each layer's outline grown by distance pixels (shrunk when negative), with miter, round, or bevel joins, painted like the layer and placed just under it. The original stays.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(1)),
+    ids: layerIdsSchema,
     distance: v.pipe(v.number(), v.minValue(-1000), v.maxValue(1000), v.description('Pixels')),
     join: v.optional(v.picklist(['MITER', 'ROUND', 'BEVEL']), 'MITER'),
     miter_limit: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(100)), 4)
@@ -70,16 +73,11 @@ export const widthProfile = defineTool({
   description: `Illustrator's Width tool, expanded: each layer's stroke becomes a filled vector whose width varies along the path, by a preset profile (${WIDTH_PROFILES.join(', ')}) or by width points (t 0…1 along the path, width as a multiple of the stroke weight). A layer with a fill keeps it, without its stroke; a layer with only a stroke is replaced. The profile stays live, as the Width tool leaves it (edit_path_effect changes its points, expand_path_effect and release_path_effect end it), unless expand is true.`,
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(1)),
+    ids: layerIdsSchema,
     profile: v.optional(v.picklist(WIDTH_PROFILES), 'taper-both'),
     points: v.optional(
       v.pipe(
-        v.array(
-          v.strictObject({
-            t: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-            width: v.pipe(v.number(), v.minValue(0), v.maxValue(20))
-          })
-        ),
+        v.array(widthPointSchema),
         v.minLength(1),
         v.maxLength(32),
         v.description('Width points; they override profile')
@@ -116,31 +114,30 @@ export const outlineStroke = defineTool({
   description:
     "Outline stroke (Illustrator's Object → Path → Outline Stroke): each stroked layer is replaced by its fill as a vector under its stroke as a filled vector.",
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({ ids: v.pipe(v.array(v.string()), v.minLength(1)) }),
-  execute: (figma, { ids }) => {
-    const renderer = measuringRenderer(figma)
-    if (!renderer) return { error: NO_RENDERER }
-    const created: { id: string; name: string }[] = []
-    for (const id of ids) {
-      const node = figma.graph.getNode(id)
-      if (!node) return { error: `Node ${id} not found` }
-      const outlined = outlineStrokeLayer(renderer, node, figma.graph)
-      const parentId = node.parentId
-      if (!outlined || !parentId) return { error: `${node.name} has no visible stroke` }
-      const index = figma.graph.getNode(parentId)?.childIds.indexOf(node.id) ?? 0
-      const pieces = [outlined.fill, outlined.stroke].filter(
-        (piece): piece is OutlinePiece => piece !== null
-      )
-      for (const [offset, piece] of pieces.entries()) {
-        const made = figma.graph.createNode(piece.type, parentId, piece.props)
-        for (const child of piece.children) figma.graph.createNode('VECTOR', made.id, child)
-        figma.graph.insertChildAt(made.id, parentId, index + offset)
-        created.push({ id: made.id, name: made.name })
+  input: layerIdsInputSchema,
+  execute: (figma, { ids }) =>
+    withRenderer(figma, NO_RENDERER, (renderer) => {
+      const created: { id: string; name: string }[] = []
+      for (const id of ids) {
+        const node = figma.graph.getNode(id)
+        if (!node) return { error: `Node ${id} not found` }
+        const outlined = outlineStrokeLayer(renderer, node, figma.graph)
+        const parentId = node.parentId
+        if (!outlined || !parentId) return { error: `${node.name} has no visible stroke` }
+        const index = figma.graph.getNode(parentId)?.childIds.indexOf(node.id) ?? 0
+        const pieces = [outlined.fill, outlined.stroke].filter(
+          (piece): piece is OutlinePiece => piece !== null
+        )
+        for (const [offset, piece] of pieces.entries()) {
+          const made = figma.graph.createNode(piece.type, parentId, piece.props)
+          for (const child of piece.children) figma.graph.createNode('VECTOR', made.id, child)
+          figma.graph.insertChildAt(made.id, parentId, index + offset)
+          created.push({ id: made.id, name: made.name })
+        }
+        figma.graph.deleteNode(node.id)
       }
-      figma.graph.deleteNode(node.id)
-    }
-    return { created }
-  }
+      return { created }
+    })
 })
 
 export const setPatternFill = defineTool({
@@ -149,7 +146,7 @@ export const setPatternFill = defineTool({
     "Fill layers with a pattern tiled from another layer (Illustrator's pattern swatches, Figma's pattern fill): the source layer or component is drawn repeatedly, scaled, with spacing as a fraction of the tile, in a rectangular or hexagonal grid, moved by offset_x and offset_y pixels and turned by rotation degrees about the layer's middle. Replaces the layers' fills unless keep_fills is true, which adds the pattern on top.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(1)),
+    ids: layerIdsSchema,
     source_id: v.pipe(v.string(), v.description('The layer to tile')),
     scale: v.optional(v.pipe(v.number(), v.minValue(0.01), v.maxValue(100)), 1),
     spacing_x: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(10)), 0),

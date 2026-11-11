@@ -14,6 +14,7 @@ import {
 } from '#core/prototype/model'
 import { actionSchema, transitionSchema, triggerSchema } from '#core/prototype/schema'
 import {
+  findVariable,
   PROPERTY_BINDINGS_KEY,
   readPropertyBindings,
   type PropertyBinding
@@ -230,9 +231,7 @@ export const bindPropertyToVariable = defineTool({
       args.property
     ])
     if (args.variable !== null) {
-      const variable =
-        figma.graph.variables.get(args.variable) ??
-        [...figma.graph.variables.values()].find((item) => item.name === args.variable)
+      const variable = findVariable(figma.graph, args.variable)
       if (!variable) return { error: `No variable ${args.variable}` }
       bindings[args.property] =
         args.on !== undefined || args.off !== undefined

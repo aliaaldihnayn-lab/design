@@ -13,6 +13,7 @@ import {
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
+import { layerIdInputSchema } from '#core/tools/vector/schema'
 
 const NO_RENDERER = 'Blends need path geometry, which this host cannot measure'
 
@@ -24,6 +25,8 @@ const distanceSchema = v.pipe(
   v.maxValue(10_000),
   v.description('Pixels between steps, for distance spacing')
 )
+
+type LiveBlendAt = NonNullable<ReturnType<typeof enclosingLiveBlend>>
 
 function blendAt(figma: FigmaAPI, id: string) {
   const node = figma.graph.getNode(id)
@@ -109,31 +112,38 @@ export const editBlend = defineTool({
   }
 })
 
-export const releaseBlend = defineTool({
-  name: 'release_blend',
-  description:
-    "Release a live blend (Illustrator's Blend → Release): its steps are removed, and its ends and spine (drawn again) leave the group.",
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({ id: v.string() }),
-  execute: (figma, { id }) => {
-    const found = blendAt(figma, id)
-    if ('error' in found) return found
-    const left = releaseLiveBlend(figma.graph, found.group, found.blend)
-    if (!left) return { error: 'This blend cannot be released' }
-    return { released: left }
-  }
-})
+/** A tool that edits the live blend around a layer and reports `apply`'s answer. */
+function defineBlendEdit(
+  name: string,
+  description: string,
+  apply: (figma: FigmaAPI, found: LiveBlendAt) => unknown
+) {
+  return defineTool({
+    name,
+    description,
+    execution: { kind: 'sync', mutation: 'document' },
+    input: layerIdInputSchema,
+    execute: (figma, { id }) => {
+      const found = blendAt(figma, id)
+      return 'error' in found ? found : apply(figma, found)
+    }
+  })
+}
 
-export const expandBlend = defineTool({
-  name: 'expand_blend',
-  description:
-    "Expand a live blend (Illustrator's Blend → Expand): its steps stay as ordinary vectors in the group, its spine is removed, and it is no longer live.",
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({ id: v.string() }),
-  execute: (figma, { id }) => {
-    const found = blendAt(figma, id)
-    if ('error' in found) return found
+export const releaseBlend = defineBlendEdit(
+  'release_blend',
+  "Release a live blend (Illustrator's Blend → Release): its steps are removed, and its ends and spine (drawn again) leave the group.",
+  (figma, found) => {
+    const left = releaseLiveBlend(figma.graph, found.group, found.blend)
+    return left ? { released: left } : { error: 'This blend cannot be released' }
+  }
+)
+
+export const expandBlend = defineBlendEdit(
+  'expand_blend',
+  "Expand a live blend (Illustrator's Blend → Expand): its steps stay as ordinary vectors in the group, its spine is removed, and it is no longer live.",
+  (figma, found) => {
     expandLiveBlend(figma.graph, found.group, found.blend)
     return { id: found.group.id }
   }
-})
+)

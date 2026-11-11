@@ -3,7 +3,7 @@ import { clamp } from 'es-toolkit'
 import type { TextPathData } from '@lawha/scene-graph'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
-import { controlPolygonLength } from '#core/vector/curve-math'
+import { controlPolygonLength, cubicPointAt } from '#core/vector/curve-math'
 
 interface Cubic {
   p0: Vector
@@ -63,15 +63,7 @@ function pathCurves(data: TextPathData, box: Rect): Cubic[] | null {
 }
 
 function cubicPoint({ p0, p1, p2, p3 }: Cubic, t: number): Vector {
-  const u = 1 - t
-  const a = u * u * u
-  const b = 3 * u * u * t
-  const c = 3 * u * t * t
-  const d = t * t * t
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y
-  }
+  return cubicPointAt(p0, p1, p2, p3, t)
 }
 
 function cubicDerivative({ p0, p1, p2, p3 }: Cubic, t: number): Vector {

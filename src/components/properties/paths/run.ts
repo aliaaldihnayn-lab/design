@@ -1,18 +1,9 @@
-import { ref } from 'vue'
-
-import { ALL_TOOLS, type ToolDef } from '@lawha/core/tools'
 import { usePathMessages } from '@lawha/vue/i18n'
 
-import { runEditorTool } from '@/app/ai/tools/runner'
-import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 
-function toolDef(name: string): ToolDef {
-  const def = ALL_TOOLS.find((tool) => tool.name === name)
-  if (!def) throw new Error(`Missing tool ${name}`)
-  return def
-}
+import { useToolRunner } from '../useToolRunner'
 
 /** The layers a path tool reports making. */
 function createdIds(result: unknown): string[] {
@@ -32,37 +23,22 @@ function createdIds(result: unknown): string[] {
 export function usePathToolRun() {
   const store = useEditorStore()
   const paths = usePathMessages()
-  const busy = ref(false)
+  const runner = useToolRunner({
+    source: () => paths.value.section,
+    failed: (error) => paths.value.failed({ error })
+  })
 
   /**
    * Runs a path tool; `quiet` edits a live effect in place, which selects nothing new and needs
    * no toast unless it fails.
    */
   async function run(name: string, args: Record<string, unknown>, { quiet = false } = {}) {
-    if (busy.value) return
-    busy.value = true
-    try {
-      const result = await runEditorTool({
-        store,
-        figma: makeFigmaFromStore(store),
-        def: toolDef(name),
-        args,
-        source: paths.value.section
-      })
-      if (result && typeof result === 'object' && 'error' in result)
-        throw new Error(String(result.error))
-      if (quiet) return
-      const created = createdIds(result)
-      if (created.length > 0) store.select(created)
-      toast.info(paths.value.done({ count: created.length }))
-    } catch (error) {
-      toast.error(
-        paths.value.failed({ error: error instanceof Error ? error.message : String(error) })
-      )
-    } finally {
-      busy.value = false
-    }
+    const result = await runner.run(name, args)
+    if (result === null || quiet) return
+    const created = createdIds(result)
+    if (created.length > 0) store.select(created)
+    toast.info(paths.value.done({ count: created.length }))
   }
 
-  return { busy, run }
+  return { busy: runner.busy, run }
 }

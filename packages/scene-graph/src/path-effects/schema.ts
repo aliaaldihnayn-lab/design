@@ -48,21 +48,18 @@ const meshEffectSchema = v.pipe(
   )
 )
 
+/** A point of a width profile: where along the path (0…1), and its width as a multiple of the weight. */
+export const widthPointSchema = v.strictObject({
+  t: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
+  width: v.pipe(v.number(), v.minValue(0), v.maxValue(20))
+})
+
 /** A width profile kept live: the stroke's centre line, its weight, and its width points. */
 const widthEffectSchema = v.object({
   kind: v.literal('width'),
   source: pathEffectSourceSchema,
   weight: v.pipe(v.number(), v.finite(), v.minValue(0)),
-  points: v.pipe(
-    v.array(
-      v.object({
-        t: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-        width: v.pipe(v.number(), v.minValue(0), v.maxValue(20))
-      })
-    ),
-    v.minLength(1),
-    v.maxLength(MAX_WIDTH_POINTS)
-  )
+  points: v.pipe(v.array(widthPointSchema), v.minLength(1), v.maxLength(MAX_WIDTH_POINTS))
 })
 
 /** A live path effect on the vector it made, which can be edited, expanded, or released. */

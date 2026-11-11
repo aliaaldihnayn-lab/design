@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 import type { Vector } from '@lawha/scene-graph/primitives'
+import { formatListNumber } from '@lawha/scene-graph/text'
 
 /** How a canvas page is laid out as a publication. */
 export interface PublicationSettings {
@@ -95,21 +96,6 @@ export function canvasOf(graph: SceneGraph, node: SceneNode): SceneNode | undefi
 }
 
 const ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
-const ROMAN: ReadonlyArray<readonly [number, string]> = [
-  [1000, 'm'],
-  [900, 'cm'],
-  [500, 'd'],
-  [400, 'cd'],
-  [100, 'c'],
-  [90, 'xc'],
-  [50, 'l'],
-  [40, 'xl'],
-  [10, 'x'],
-  [9, 'ix'],
-  [5, 'v'],
-  [4, 'iv'],
-  [1, 'i']
-]
 
 /** `value` written in `format`; Roman numerals fall back to digits outside 1–3999. */
 export function formatNumber(value: number, format: PageNumberFormat = 'western'): string {
@@ -117,14 +103,7 @@ export function formatNumber(value: number, format: PageNumberFormat = 'western'
     return String(value).replaceAll(/\d/g, (digit) => ARABIC_INDIC_DIGITS[Number(digit)])
   }
   if ((format === 'roman' || format === 'roman-upper') && value >= 1 && value < 4000) {
-    let rest = value
-    let out = ''
-    for (const [amount, numeral] of ROMAN) {
-      while (rest >= amount) {
-        out += numeral
-        rest -= amount
-      }
-    }
+    const out = formatListNumber(value, 'LOWER_ROMAN')
     return format === 'roman-upper' ? out.toUpperCase() : out
   }
   return String(value)

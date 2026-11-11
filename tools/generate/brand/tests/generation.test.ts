@@ -60,7 +60,10 @@ describe('brand generation', () => {
       ['mark', 256],
       ['mark-micro', 16]
     ] as const) {
-      const pixels = await sharp(file(`brand/${name}.svg`)).ensureAlpha().raw().toBuffer()
+      const pixels = await sharp(file(`brand/${name}.svg`))
+        .ensureAlpha()
+        .raw()
+        .toBuffer()
       expect(pixels.length).toBe(size * size * 4)
       const alphaAt = ([x, y]: readonly [number, number]) => {
         const [px, py] = pixelOf(master(name), size, x, y)
@@ -85,7 +88,9 @@ describe('brand generation', () => {
           .ensureAlpha()
           .raw()
           .toBuffer()
-        const center = rgbaOf(suffix ? brand.darkPalette['handle-surface'] : partFill(source, 'handle-surface'))
+        const center = rgbaOf(
+          suffix ? brand.darkPalette['handle-surface'] : partFill(source, 'handle-surface')
+        )
         const border = rgbaOf(suffix ? brand.darkPalette.handle : partFill(source, 'handle'))
         for (const [spot, rgba] of [
           [spots[name].square, center],
@@ -118,7 +123,10 @@ describe('brand generation', () => {
           colors.add(pixels.subarray(offset, offset + 3).toString('hex'))
       }
       expect(colors.size).toBeGreaterThan(0)
-      const expected = Buffer.from((suffix ? brand.background : brand.darkBackground).slice(1), 'hex')
+      const expected = Buffer.from(
+        (suffix ? brand.background : brand.darkBackground).slice(1),
+        'hex'
+      )
       for (const color of colors) {
         // Overlapping antialiased edges can round a channel down by one.
         expect(

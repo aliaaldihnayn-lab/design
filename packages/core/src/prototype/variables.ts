@@ -51,6 +51,14 @@ export const VARIABLE_SCOPE_KEY = 'prototype.scope'
 export type VariableScope = 'instance' | 'shared'
 
 /** Whether a variable keeps a value per instance while the prototype runs. */
+/** The variable with this id, or else the one with this name. */
+export function findVariable(graph: SceneGraph, idOrName: string): Variable | undefined {
+  return (
+    graph.variables.get(idOrName) ??
+    [...graph.variables.values()].find((variable) => variable.name === idOrName)
+  )
+}
+
 export function variableScope(variable: Variable | undefined): VariableScope {
   const entry = variable?.pluginData?.find(
     (item) => item.pluginId === LAWHA_PLUGIN_DATA_NAMESPACE && item.key === VARIABLE_SCOPE_KEY

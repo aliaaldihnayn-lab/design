@@ -48,6 +48,11 @@ export function evalCubic(
   }
 }
 
+/** The point of the cubic bezier through four points at parameter t (0..1). */
+export function cubicPointAt(p0: Vector, p1: Vector, p2: Vector, p3: Vector, t: number): Vector {
+  return evalCubic(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t)
+}
+
 // ---------------------------------------------------------------------------
 // Curve splitting (De Casteljau subdivision)
 // ---------------------------------------------------------------------------
