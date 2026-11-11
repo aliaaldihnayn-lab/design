@@ -123,8 +123,7 @@ function readParagraph(p: Element, state: InlineState): ListedBlock[] {
       sawBreak = true
     } else current.push(item)
   }
-  if (current.length || !sawBreak)
-    blocks.push({ node: make(current), list: current.length || !sawBreak ? list : undefined })
+  if (current.length || !sawBreak) blocks.push({ node: make(current), list })
   state.paragraphStyle = null
   const sectPr = kid(pPr, 'sectPr')
   if (sectPr) {

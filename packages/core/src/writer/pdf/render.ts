@@ -373,7 +373,7 @@ async function embedDataURL(
   const data = match?.[2] ?? ''
   if (!match || !isValid(data)) return null
   const bytes = toUint8Array(data)
-  const type = match[1]?.toLowerCase() ?? ''
+  const type = match.at(1)?.toLowerCase() ?? ''
   if (type === 'png') return pdf.embedPng(bytes)
   if (type === 'jpeg' || type === 'jpg') return pdf.embedJpg(bytes)
   const png = await convert?.(bytes, `image/${type}`)

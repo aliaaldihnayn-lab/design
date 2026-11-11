@@ -66,7 +66,10 @@ function loadPicker(): Promise<GooglePickerAPI> {
         else reject(new Error('Google Picker did not load'))
       })
     }
-    if (apiLoader()) return loaded()
+    if (apiLoader()) {
+      loaded()
+      return
+    }
     const script = document.createElement('script')
     script.src = GAPI_SCRIPT
     script.async = true

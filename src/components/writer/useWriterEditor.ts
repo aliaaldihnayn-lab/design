@@ -53,7 +53,7 @@ export function useWriterEditor(placeholder: () => string) {
   /** Each page's sheet, in CSS pixels, for the paper to draw. */
   const sheets = computed(() =>
     layout.value.sections.map((section) => {
-      const page = (sections.value[section] ?? sections.value.at(-1))?.page
+      const page = (sections.value.at(section) ?? sections.value.at(-1))?.page
       return page ? paginationSection(page) : null
     })
   )

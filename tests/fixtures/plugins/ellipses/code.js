@@ -9,5 +9,7 @@ figma.ui.onmessage = (msg) => {
   ellipse.name = `Ellipse ${globalThis.made}`
   ellipse.y = 200
   figma.currentPage.appendChild(ellipse)
+  // The plugin UI is not a window: this message has no origin to name.
+  // oxlint-disable-next-line unicorn/require-post-message-target-origin
   figma.ui.postMessage({ type: 'made', count: globalThis.made })
 }

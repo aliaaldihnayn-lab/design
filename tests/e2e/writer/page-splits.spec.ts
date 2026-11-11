@@ -60,7 +60,7 @@ const linesInGaps = (page: Page) =>
 test('splits a paragraph taller than a page between its lines', async ({ page }) => {
   const long = 'A long clause that runs on and on without a paragraph break. '.repeat(400)
   await open(page, createWriterDocument({ body: { type: 'doc', content: [paragraph(long)] } }))
-  const inside = page.locator('[data-test-id="writer-body"] > p .writer-page-gap')
+  const inside = page.getByTestId('writer-body').locator('> p .writer-page-gap')
   await expect.poll(() => inside.count(), { timeout: 30_000 }).toBeGreaterThan(1)
   expect(await linesInGaps(page)).toBe(0)
 })
@@ -78,7 +78,7 @@ test('splits a table taller than a page between its rows', async ({ page }) => {
     content: Array.from({ length: 90 }, (_, index) => row(index + 1))
   }
   await open(page, createWriterDocument({ body: { type: 'doc', content: [table] } }))
-  const rows = page.locator('[data-test-id="writer-body"] tr.writer-page-gap-row')
+  const rows = page.getByTestId('writer-body').locator('tr.writer-page-gap-row')
   await expect.poll(() => rows.count(), { timeout: 30_000 }).toBeGreaterThan(0)
   await expect(rows.first().locator('.writer-page-gap')).toBeVisible()
 })

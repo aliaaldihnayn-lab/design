@@ -21,6 +21,7 @@ import {
   type WriterFontRequest,
   type WriterNode
 } from '@lawha/core/writer'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 setDefaultTimeout(120_000)
 
@@ -91,14 +92,14 @@ async function pageTexts(pdf: Uint8Array): Promise<string[]> {
 }
 
 /** Where pdf.js finds each piece of text on the first page, in PDF points. */
-async function textPositions(pdf: Uint8Array): Promise<Map<string, { x: number; y: number }>> {
+async function textPositions(pdf: Uint8Array): Promise<Map<string, Vector>> {
   const worker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
   Reflect.set(globalThis, 'pdfjsWorker', worker)
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
   const doc = await pdfjs.getDocument({ data: pdf.slice(), verbosity: 0, isEvalSupported: false })
     .promise
   const content = await (await doc.getPage(1)).getTextContent()
-  const positions = new Map<string, { x: number; y: number }>()
+  const positions = new Map<string, Vector>()
   for (const item of content.items) {
     if ('str' in item && item.str.trim()) {
       positions.set(item.str.trim(), { x: item.transform[4] ?? 0, y: item.transform[5] ?? 0 })

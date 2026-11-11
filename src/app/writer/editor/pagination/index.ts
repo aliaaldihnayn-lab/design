@@ -241,8 +241,8 @@ function gapWidget(
   pages: number
 ): HTMLElement {
   const width = paperWidth(sections)
-  const above = sections[before] ?? sections.at(-1)
-  const below = sections[after] ?? sections.at(-1)
+  const above = sections.at(before) ?? sections.at(-1)
+  const below = sections.at(after) ?? sections.at(-1)
   const gap = document.createElement('div')
   gap.className = PAGE_GAP_CLASS
   gap.contentEditable = 'false'
@@ -378,7 +378,7 @@ export const Pagination = Extension.create<PaginationOptions>({
         const sections = options.sections()
         if (!sections?.length || view.isDestroyed) return
         const height = (section: number) =>
-          (sections[section] ?? sections.at(-1))?.contentHeight ?? 0
+          (sections.at(section) ?? sections.at(-1))?.contentHeight ?? 0
         const layout = layoutPages(measure(view, height), height)
         const current = paginationKey.getState(view.state) ?? EMPTY
         if (!forced && sameLayout(layout, current.layout)) return

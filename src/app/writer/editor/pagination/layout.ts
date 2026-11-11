@@ -104,11 +104,26 @@ export function layoutPages(
     }
     forced = block.breakAfter
   }
+  return closeLayout({ breaks, sections, blocks, pageTop, forced, section, pageHeight })
+}
+
+interface LayoutEnd {
+  breaks: PageBreak[]
+  sections: number[]
+  blocks: readonly BlockBox[]
+  pageTop: number
+  forced: boolean
+  section: number
+  pageHeight: (section: number) => number
+}
+
+/** The layout once every block is placed: the last page's fill, and the page a final break opens. */
+function closeLayout(end: LayoutEnd): PageLayout {
+  const { breaks, sections, blocks, pageTop, forced, pageHeight } = end
   const last = blocks.at(-1)
   const used = last ? last.bottom - pageTop : 0
   if (forced && last) sections.push(last.section + (last.endsSection ? 1 : 0))
-  const lastSection = sections.at(-1) ?? section
-  const lastHeight = pageHeight(lastSection)
+  const lastHeight = pageHeight(sections.at(-1) ?? end.section)
   const lastFill = forced ? lastHeight : Math.max(0, lastHeight - used)
   return { breaks, pages: breaks.length + 1 + (forced ? 1 : 0), lastFill, sections }
 }
@@ -118,10 +133,10 @@ export function sameLayout(a: PageLayout, b: PageLayout): boolean {
   return (
     a.pages === b.pages &&
     Math.round(a.lastFill) === Math.round(b.lastFill) &&
-    a.sections.join() === b.sections.join() &&
+    a.sections.join(',') === b.sections.join(',') &&
     a.breaks.length === b.breaks.length &&
     a.breaks.every((entry, index) => {
-      const other = b.breaks[index]
+      const other = b.breaks.at(index)
       return (
         other !== undefined &&
         entry.index === other.index &&

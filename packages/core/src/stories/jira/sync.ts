@@ -277,6 +277,22 @@ async function pushEpic(context: PushContext, epic: Epic): Promise<void> {
   )
 }
 
+/** The fields a story's issue is written with; its priority is set only when the issue is created. */
+function storyFields(
+  context: PushContext,
+  placed: ReportedStory,
+  parentKey: string | undefined
+): Record<string, unknown> {
+  const { story, path, pageName } = placed
+  const fields: Record<string, unknown> = {
+    summary: summary(story.title, storyStatement(story.narrative) || 'Untitled story'),
+    description: storyDescription(story, { path, pageName })
+  }
+  if (parentKey) fields.parent = { key: parentKey }
+  if (!story.jiraKey) Object.assign(fields, priorityField(context, story))
+  return fields
+}
+
 async function pushStory(context: PushContext, placed: ReportedStory): Promise<void> {
   const { nodeId, story, path, pageName } = placed
   const parentKey = story.epicId ? context.epicKeys.get(story.epicId) : undefined
@@ -287,12 +303,7 @@ async function pushStory(context: PushContext, placed: ReportedStory): Promise<v
       key: story.jiraKey,
       type: context.types.story,
       typeName: 'Story',
-      fields: {
-        summary: summary(story.title, storyStatement(story.narrative) || 'Untitled story'),
-        description: storyDescription(story, { path, pageName }),
-        ...(parentKey ? { parent: { key: parentKey } } : {}),
-        ...(story.jiraKey ? {} : priorityField(context, story))
-      },
+      fields: storyFields(context, placed, parentKey),
       link: (patch) => ({ kind: 'story', nodeId, storyId: story.id, patch })
     }
   )

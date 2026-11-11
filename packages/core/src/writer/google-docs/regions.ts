@@ -1,4 +1,4 @@
-import type { WriterDocument, WriterNode } from '../model'
+import type { WriterDocument, WriterNode } from '#core/writer/model'
 import type { GoogleDocument, GoogleDocsRequest, GoogleStructuralElement } from './types'
 import { type GoogleDocsWriteOptions, regionChunkRequests } from './write'
 
@@ -60,6 +60,30 @@ function segmentEnd(content: GoogleStructuralElement[] | undefined): number {
   return content?.at(-1)?.endIndex ?? 1
 }
 
+function createRegionRequest(kind: GoogleRegionKind): GoogleDocsRequest {
+  return kind === 'header'
+    ? { createHeader: { type: 'DEFAULT', sectionBreakLocation: { index: 0 } } }
+    : { createFooter: { type: 'DEFAULT', sectionBreakLocation: { index: 0 } } }
+}
+
+/** Clears an existing segment (`end` is its end index, 0 for a new one) and writes `content`. */
+function regionFillRequests(
+  content: WriterNode[],
+  segmentId: string,
+  end: number,
+  options: GoogleDocsWriteOptions
+): GoogleDocsRequest[] {
+  const requests: GoogleDocsRequest[] = []
+  // A segment always keeps its final newline, which cannot be deleted.
+  if (end - 1 > 0) {
+    requests.push({
+      deleteContentRange: { range: { startIndex: 0, endIndex: end - 1, segmentId } }
+    })
+  }
+  requests.push(...regionChunkRequests(content, segmentId, options))
+  return requests
+}
+
 /** The header and footer requests that bring the Doc's regions in line with the model's. */
 export function googleRegionRequests(
   model: WriterDocument,
@@ -84,26 +108,13 @@ export function googleRegionRequests(
       continue
     }
     if (!existingId && !wanted) continue
-    if (!existingId) {
-      create.push(
-        kind === 'header'
-          ? { createHeader: { type: 'DEFAULT', sectionBreakLocation: { index: 0 } } }
-          : { createFooter: { type: 'DEFAULT', sectionBreakLocation: { index: 0 } } }
-      )
-    }
+    if (!existingId) create.push(createRegionRequest(kind))
     const end = segmentEnd(segment?.content)
     fills.push((ids) => {
       const segmentId = existingId ?? ids[kind]
-      if (!segmentId) return []
-      const requests: GoogleDocsRequest[] = []
-      // A segment always keeps its final newline, which cannot be deleted.
-      if (existingId && end - 1 > 0) {
-        requests.push({
-          deleteContentRange: { range: { startIndex: 0, endIndex: end - 1, segmentId } }
-        })
-      }
-      requests.push(...regionChunkRequests(region?.content ?? [], segmentId, options))
-      return requests
+      return segmentId
+        ? regionFillRequests(region?.content ?? [], segmentId, existingId ? end : 0, options)
+        : []
     })
   }
   return { create, fill: (ids) => fills.flatMap((fill) => fill(ids)), skipped }
