@@ -201,6 +201,19 @@ lawha eval design.fig -w -c '
 
 `lawha.behaviourKinds` lists every kind with its values and parts; `lawha.getBehaviour(node)` reads one (a variant reads its set's); `lawha.createSlot(frame)` makes a frame a slot. The `set_behaviour`, `get_behaviour`, and `create_slot` tools do the same over MCP, and design JSX writes controls with Reka's element names (`Switch.Root`, `Switch.Thumb`).
 
+Prototypes run live, in place: never draw one frame per state of a control. Insert a ready-made control from the interactive kit, whose every state is a variant of one component, or make your own interactive component from a set of state variants:
+
+```bash
+# Over MCP: a select that opens in place, arrow keys and Enter pick, the pick shows in its trigger
+insert_kit_component { "kind": "select", "parent_id": "<screen id>", "x": 24, "y": 120 }
+# A control of your own: states as variants, Change to between them
+create_interactive_component { "id": "<frame id>", "states": ["Closed", "Open"],
+  "interactions": [{ "from": "Closed", "layer": "Trigger", "trigger": { "type": "click" }, "to": "Open" },
+                   { "from": "Open", "layer": "Trigger", "trigger": { "type": "click" }, "to": "Closed" }] }
+```
+
+`add_state_interaction` adds one more, `bind_property_to_variable` makes an instance's property follow a prototype variable that `set-variable` and `conditional` actions change, and `build_interactive_kit` draws the whole kit in the document's design-system tokens. Preview (Ctrl+Alt+Enter) runs it all on the canvas; Escape leaves.
+
 Comments people leave on the canvas are review feedback you can act on. Read the open ones, change the design, then answer and resolve each, naming yourself as the author:
 
 ```bash

@@ -74,6 +74,11 @@ import {
   setScrollBehavior
 } from '#core/tools/prototype'
 import {
+  addStateInteraction,
+  bindPropertyToVariable,
+  createInteractiveComponent
+} from '#core/tools/prototype-states'
+import {
   applyMasterPageTool,
   createMasterPageTool,
   insertPageNumberTool,
@@ -201,6 +206,10 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setFlow,
   autoPrototype,
   setScrollBehavior,
+  // Interactive components
+  createInteractiveComponent,
+  addStateInteraction,
+  bindPropertyToVariable,
   // Read (advanced)
   getPageTree,
   getCurrentPage,

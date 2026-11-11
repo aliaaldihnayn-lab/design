@@ -70,6 +70,14 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 </Switch.Root>
 ```
 
+## Live prototypes
+
+- Never draw one frame per state of a control (Dropdown closed, Dropdown open, Button hover…). Every state of a control is a variant of one component set, and interactions change an instance between them in place, as Figma's interactive components do; preview (Ctrl+Alt+Enter) and the player then run it on the same frame.
+- Prefer the built-in kit: `insert_kit_component` places a live, token-themed control with all its states (button, text-input, textarea, search, number-stepper, select, menu, combobox, multi-select, tabs, accordion, modal, drawer, popover, tooltip, toast, switch, checkbox, radio-group, slider, range-slider, date-picker, date-range-picker, time-picker, file-upload, stepper, pagination, carousel, progress, spinner, rating). `rtl: true` lays it out right to left with Arabic labels; `calendar: "islamic-umalqura"` gives Hijri date pickers. Text inputs take real typing in preview.
+- For a control of your own, render its states as a `ComponentSet` whose `Component` children are named `State=Closed`, `State=Open`, then call `create_interactive_component` (or `add_state_interaction`) with `{ from, layer, trigger, to, transition }`: `click`, `hover` (while hovering), `press` (while pressing), `key`, `after-delay`, `mouse-enter`, `focus`, `drag`; transitions `smart-animate`, `dissolve`, `move-in`, `push`, `slide-in`, with easings including `spring` and `custom-spring`.
+- Share state with prototype variables: a `set-variable` action, `conditional` branches on variable values, text or visibility bound to a variable (`bind={{ text: designVar('Selected city') }}`), and `bind_property_to_variable` so an instance's variant follows a variable, such as a button enabled by a checkbox.
+- A modal, sheet, or toast is an `overlay` action from its trigger, with `background` for the dim and `close-overlay` on its buttons; it opens over the frame it was triggered in.
+
 ## Verification
 
 Inspect structure and actual rendered output. Node counts and `describe` diagnostics do not establish visual fidelity. Check wrapping with longer content, narrower containers, component edits, and relevant modes. Resolve overflow and contrast problems at their source. Reuse IDs returned by creation tools rather than repeatedly searching for the same nodes.
