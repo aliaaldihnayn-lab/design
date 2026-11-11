@@ -152,7 +152,25 @@ test('preview islands move with the frames the canvas draws, not ahead of them',
   await expect(island(ids.islandId).getByRole('switch')).toBeVisible()
 
   const layer = editor.page.getByTestId('play-islands').locator(':scope > div')
-  const placed = await layer.evaluate((element) => element.style.transform)
+  const transform = () => layer.evaluate((element) => element.style.transform)
+  const nextFrames = () =>
+    editor.page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        })
+    )
+  // Starting preview reflows the canvas, so frames already asked for may still move the islands;
+  // take their place once two frames in a row leave it where it was.
+  let placed = ''
+  await expect
+    .poll(async () => {
+      const before = await transform()
+      await nextFrames()
+      placed = await transform()
+      return placed === before
+    })
+    .toBe(true)
   // Hold the canvas's drawing, as a slow frame does, and move the view meanwhile.
   const held = await editor.page.evaluateHandle(() => {
     const store = window.lawha?.getStore?.()
@@ -165,17 +183,12 @@ test('preview islands move with the frames the canvas draws, not ahead of them',
     return preparation
   })
   try {
-    await editor.page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-        })
-    )
-    expect(await layer.evaluate((element) => element.style.transform)).toBe(placed)
+    await nextFrames()
+    expect(await transform()).toBe(placed)
 
     // Drawing resumes: the islands follow the pan, which the canvas has now drawn.
     await held.evaluate((preparation) => preparation.complete())
-    await expect.poll(() => layer.evaluate((element) => element.style.transform)).not.toBe(placed)
+    await expect.poll(transform).not.toBe(placed)
   } finally {
     // Never leave the canvas held for later tests; completing again does nothing.
     await held.evaluate((preparation) => preparation.complete())

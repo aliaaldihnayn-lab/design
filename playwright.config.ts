@@ -65,6 +65,8 @@ export default defineConfig({
   testDir: './tests',
   timeout: 15_000,
   workers: 1,
+  // The app server is cold when Playwright starts it; open the editor once before any test.
+  ...(server === 'storybook' ? {} : { globalSetup: './tests/helpers/canvas/warm-up.ts' }),
   projects: [
     {
       ...appDefaults,
