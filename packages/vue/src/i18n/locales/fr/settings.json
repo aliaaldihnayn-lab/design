@@ -85,5 +85,6 @@
   "modelNameHint": "Un nom que vous reconnaîtrez dans le sélecteur de modèles.",
   "modelIDHint": "Utilisez l’identifiant exact du modèle fourni par votre fournisseur.",
   "baseURLHint": "Saisissez le point d’accès de l’API, y compris le chemin requis.",
-  "designToolsRequired": "Le modèle de conception doit prendre en charge les outils. Choisissez un modèle compatible ou activez les outils dans les paramètres avancés."
+  "designToolsRequired": "Le modèle de conception doit prendre en charge les outils. Choisissez un modèle compatible ou activez les outils dans les paramètres avancés.",
+  "jira": "Jira"
 }

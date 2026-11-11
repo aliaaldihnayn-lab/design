@@ -94,5 +94,6 @@
   "plugins": "Плагины",
   "importPlugin": "Импортировать плагин из папки…",
   "removePlugin": "Удалить плагин",
-  "prototypeConnections": "Связи прототипа"
+  "prototypeConnections": "Связи прототипа",
+  "userStories": "Пользовательские истории"
 }

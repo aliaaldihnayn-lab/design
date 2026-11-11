@@ -94,5 +94,6 @@
   "plugins": "الإضافات",
   "importPlugin": "استيراد إضافة من مجلد…",
   "removePlugin": "إزالة إضافة",
-  "prototypeConnections": "روابط النموذج الأولي"
+  "prototypeConnections": "روابط النموذج الأولي",
+  "userStories": "قصص المستخدم"
 }

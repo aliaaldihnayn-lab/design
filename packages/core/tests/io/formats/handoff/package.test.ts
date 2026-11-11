@@ -2,11 +2,13 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { strFromU8, unzipSync } from 'fflate'
+import * as v from 'valibot'
 
 import { getCanvasKit } from '@lawha/core/canvaskit'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph } from '@lawha/scene-graph'
 import { computeImageHash } from '@lawha/scene-graph/images'
+import { addStory, createEpic, createUserStory, upsertEpic } from '@lawha/scene-graph/stories'
 
 setDefaultTimeout(120_000)
 
@@ -165,4 +167,42 @@ test('the HTML marks the frame with the id the verifier and guide name', async (
   expect(guide).toContain('Cairo: weights 700')
   const verifier = strFromU8(files['verify/verify.mjs'])
   expect(verifier).toContain('"slug": "product-card"')
+})
+
+test('the package carries the epics and user stories of the exported frames', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const frame = graph.createNode('FRAME', page, { name: 'Checkout', width: 100, height: 80 })
+  const button = graph.createNode('FRAME', frame.id, { name: 'Pay', width: 40, height: 20 })
+  const epic = upsertEpic(graph, createEpic({ title: 'Payments' }))
+  const story = addStory(
+    graph,
+    button.id,
+    createUserStory({ epicId: epic.id, title: 'Pay', acceptanceCriteria: [{ given: 'a cart' }] })
+  )
+  const result = await io.exportContent('handoff', {
+    graph,
+    target: { scope: 'selection', nodeIds: [frame.id] }
+  })
+  if (typeof result.data === 'string') throw new Error('Expected bytes')
+  const files = unzipSync(new Uint8Array(result.data))
+  expect(Object.keys(files)).toContain('spec/stories.md')
+  const stories = v.parse(
+    v.pipe(
+      v.string(),
+      v.parseJson(),
+      v.object({
+        epics: v.array(
+          v.object({
+            epic: v.nullable(v.object({ id: v.string() })),
+            stories: v.array(v.object({ id: v.string(), layerId: v.string() }))
+          })
+        )
+      })
+    ),
+    strFromU8(files['spec/stories.json'])
+  )
+  expect(stories.epics[0].epic?.id).toBe(epic.id)
+  expect(stories.epics[0].stories).toEqual([{ id: story.id, layerId: button.id }])
+  expect(strFromU8(files['CLAUDE.md'])).toContain('spec/stories.md')
 })

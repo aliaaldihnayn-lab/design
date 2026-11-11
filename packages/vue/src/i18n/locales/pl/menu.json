@@ -94,5 +94,6 @@
   "plugins": "Wtyczki",
   "importPlugin": "Importuj wtyczkę z folderu…",
   "removePlugin": "Usuń wtyczkę",
-  "prototypeConnections": "Połączenia prototypu"
+  "prototypeConnections": "Połączenia prototypu",
+  "userStories": "Historyjki użytkownika"
 }

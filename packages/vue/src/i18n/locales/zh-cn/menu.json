@@ -94,5 +94,6 @@
   "plugins": "插件",
   "importPlugin": "从文件夹导入插件…",
   "removePlugin": "移除插件",
-  "prototypeConnections": "原型连接"
+  "prototypeConnections": "原型连接",
+  "userStories": "用户故事"
 }

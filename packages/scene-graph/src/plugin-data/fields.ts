@@ -10,6 +10,7 @@ import { iconSchema, iconTintSchema } from '../icons/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
 import { nodeStatusSchema, statusWorkflowSchema } from '../statuses/schema'
+import { epicsSchema, storyJiraProjectSchema, userStoriesSchema } from '../stories/schema'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
@@ -254,6 +255,15 @@ export const LAWHA_PLUGIN_DATA = {
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
   /** The statuses layers can be in, on the DOCUMENT node. */
   statuses: jsonPluginDataField('statuses', 'bookkeeping', statusWorkflowSchema),
+  /** The epics a document's user stories are grouped under, on the DOCUMENT node. */
+  epics: jsonPluginDataField('epics', 'bookkeeping', epicsSchema),
+  /** The Jira site and project the document's stories are created in, on the DOCUMENT node. */
+  storyJiraProject: jsonPluginDataField('storyJiraProject', 'bookkeeping', storyJiraProjectSchema),
+  /**
+   * The user stories that specify a layer, on any layer: the product spec stays with the
+   * document, so a component copied into a library leaves them behind.
+   */
+  userStories: jsonPluginDataField('userStories', 'bookkeeping', userStoriesSchema),
   /** How tightly the document's `.fig` data is compressed, on the DOCUMENT node. */
   figCompression: textPluginDataField('figCompression', 'bookkeeping', FIG_COMPRESSIONS),
   /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */

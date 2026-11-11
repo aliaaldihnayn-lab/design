@@ -90,8 +90,7 @@ export const OFFICIAL_CLOUD_URL =
   (typeof __LAWHA_OFFICIAL_CLOUD_URL__ === 'string' && __LAWHA_OFFICIAL_CLOUD_URL__) ||
   'https://cloud.lawha.invalid'
 /** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
-export const IS_CLOUD_SITE =
-  typeof __LAWHA_CLOUD_SITE__ === 'boolean' && __LAWHA_CLOUD_SITE__
+export const IS_CLOUD_SITE = typeof __LAWHA_CLOUD_SITE__ === 'boolean' && __LAWHA_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/aliaaldihnayn-lab/design/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
@@ -162,3 +161,6 @@ export const DEFAULT_TEXT_HEIGHT = 24
 export const ACP_PERMISSION_TIMEOUT_MS = 60_000
 /** How long a request waits unanswered before a notification says an agent needs you. */
 export const AGENT_INPUT_NOTIFY_DELAY_MS = 6_000
+
+/** Where an Atlassian account creates the API token Lawha connects to Jira with. */
+export const JIRA_API_TOKEN_URL = 'https://id.atlassian.com/manage-profile/security/api-tokens'

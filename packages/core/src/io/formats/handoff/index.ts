@@ -9,6 +9,8 @@ import { exportDesignTokens } from '#core/io/formats/design-tokens'
 import { renderNodesToHTML } from '#core/io/formats/html'
 import { computeContentBounds } from '#core/io/formats/raster/render'
 import type { ExportAsset } from '#core/io/types'
+import { storiesToMarkdown } from '#core/stories/export'
+import { nonEmptyGroups, storyReport } from '#core/stories/report'
 
 import { handoffGuide, handoffVerifier, type HandoffFrameFile } from './guide'
 import { buildHandoffSpec, collectImages, type HandoffSpec } from './spec'
@@ -126,9 +128,16 @@ export async function exportHandoffPackage(input: HandoffInput): Promise<Uint8Ar
     height: Math.round(frame.frame.height)
   }))
 
+  const stories = nonEmptyGroups(storyReport(graph, nodeIds))
+  const storyCount = stories.reduce((sum, group) => sum + group.stories.length, 0)
+
   const files: Zippable = {}
-  files['CLAUDE.md'] = strToU8(handoffGuide(spec, frames))
+  files['CLAUDE.md'] = strToU8(handoffGuide(spec, frames, storyCount))
   files['spec/design.json'] = strToU8(`${JSON.stringify(spec, null, 2)}\n`)
+  if (storyCount > 0) {
+    files['spec/stories.md'] = strToU8(storiesToMarkdown(graph, nodeIds))
+    files['spec/stories.json'] = strToU8(`${JSON.stringify(handoffStories(stories), null, 2)}\n`)
+  }
   files['verify/verify.mjs'] = strToU8(handoffVerifier(frames))
 
   for (let i = 0; i < spec.frames.length; i++) {
@@ -158,6 +167,20 @@ export async function exportHandoffPackage(input: HandoffInput): Promise<Uint8Ar
   files['tokens/tokens.css'] = strToU8(tokensCSS(graph))
 
   return zipSync(files, { level: 6 })
+}
+
+/** Epics and stories as the agent reads them: each story names the layer id it specifies. */
+function handoffStories(groups: ReturnType<typeof storyReport>) {
+  return {
+    epics: groups.map(({ epic, stories }) => ({
+      epic,
+      stories: stories.map(({ nodeId, path, story }) => ({
+        layerId: nodeId,
+        layerPath: path,
+        ...story
+      }))
+    }))
+  }
 }
 
 const FONT_BUNDLE_TIMEOUT_MS = 20_000

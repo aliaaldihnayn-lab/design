@@ -222,6 +222,8 @@ lawha eval design.fig -w -c 'lawha.setStatus(figma.currentPage.findOne(n => n.na
 
 `lawha.getStatus(node)` reads one. Over MCP the same is `get_statuses` and `set_status`.
 
+User stories are the product spec on the canvas: epics group them, and each frame or element carries its own, with "As a … I want … so that …", Given/When/Then acceptance criteria, behaviour, the states it covers, priority, status, and its Jira issue. **Every screen you design must arrive with them**: epics on the screen's frame and a story for every interactive element (buttons, inputs, dropdowns, tabs, toggles, links, anything with a prototype interaction). Write them inline in the design JSX with `epics={[…]}` and `stories={[…]}` (see `references/design-authoring.md`), or afterwards with `add_epic` and `add_user_story`. Then run `list_user_stories` on the frame and fill every story it reports as `missing` something. When a Jira site is connected (Settings → Jira in Lawha), run `sync_jira` with `direction: "both"` and the project's `projectKey` so each epic becomes a Jira Epic and each story a Story under it; `sync_jira` reports when no site is connected, and `link_jira_issue` links an issue that already exists. The person exports the stories as Markdown or CSV from the Stories tab, and the Claude Code handoff package includes them in `spec/stories.md`.
+
 ### Diff
 
 Compare nodes and documents, and apply patches:

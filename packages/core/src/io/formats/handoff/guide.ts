@@ -25,11 +25,28 @@ function frameLines(frames: HandoffFrameFile[]): string {
     .join('\n')
 }
 
+function storiesSection(count: number): string {
+  return [
+    '## Behaviour — user stories',
+    '',
+    `The design comes with ${count === 1 ? 'one user story' : `${count} user stories`} in \`spec/stories.md\` (and \`spec/stories.json\`, where`,
+    'each story names the `layerId` of the frame or element it specifies). They are the product',
+    'spec: build every behaviour, state and acceptance criterion they describe, and treat each',
+    "Given/When/Then criterion as a test to write. A story's Jira key names the ticket to reference",
+    'in commits and pull requests.',
+    ''
+  ].join('\n')
+}
+
 /**
  * The package's entry point for a coding agent (Claude Code reads `CLAUDE.md` first): what is in
  * the package, the rules that make the build match, and how to prove it matches.
  */
-export function handoffGuide(spec: HandoffSpec, frames: HandoffFrameFile[]): string {
+export function handoffGuide(
+  spec: HandoffSpec,
+  frames: HandoffFrameFile[],
+  storyCount = 0
+): string {
   return dedent`
     # Design handoff — build this exactly
 
@@ -49,6 +66,7 @@ export function handoffGuide(spec: HandoffSpec, frames: HandoffFrameFile[]): str
     | \`tokens/\` | Design tokens (W3C DTCG JSON) and \`tokens/tokens.css\` custom properties. |
     | \`assets/images/\` | Every image at full resolution, named by content hash. |
     | \`verify/verify.mjs\` | Screenshots your build and diffs it against \`reference/\`, pixel by pixel. |
+    ${storyCount > 0 ? '| `spec/stories.md`, `spec/stories.json` | The product spec: epics and user stories for the frames and their elements, with acceptance criteria, behaviour, covered states and Jira links. |' : ''}
 
     ## Frames
 
@@ -109,6 +127,7 @@ export function handoffGuide(spec: HandoffSpec, frames: HandoffFrameFile[]): str
         \`transition\` (dissolve, slide, push, move in/out, smart animate, duration, easing). Wire
         them as routes and animations.
 
+    ${storyCount > 0 ? storiesSection(storyCount) : ''}
     ## Verify — you are done only when this passes
 
     \`\`\`bash

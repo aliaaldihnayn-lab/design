@@ -470,6 +470,16 @@ export interface RoomPresenceTable {
   seenAt: TimestampColumn
 }
 
+/** A person's connected Jira Cloud site; the API token is stored encrypted. */
+export interface JiraConnectionTable {
+  userId: string
+  site: string
+  email: string
+  apiTokenEncrypted: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -512,6 +522,7 @@ export interface CloudDatabase {
   roomFile: RoomFileTable
   roomAuditEvent: RoomAuditEventTable
   roomPresence: RoomPresenceTable
+  jiraConnection: JiraConnectionTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

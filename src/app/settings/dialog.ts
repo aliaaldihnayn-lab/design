@@ -13,6 +13,7 @@ export type SettingsSection =
   | 'skills'
   | 'services'
   | 'mcp'
+  | 'jira'
   | 'usage'
   | 'privacy'
   | 'diagnostics'

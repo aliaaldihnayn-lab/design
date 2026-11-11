@@ -12,6 +12,7 @@ import { localeDirection, useI18n } from '@lawha/vue/i18n'
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { startJiraConnection } from '@/app/integrations/jira/connection'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
@@ -63,6 +64,7 @@ onMounted(() => {
   onUnmounted(
     startCloud({ leaveLinkAddress: () => router.isReady().then(() => router.replace('/')) })
   )
+  onUnmounted(startJiraConnection())
 })
 </script>
 

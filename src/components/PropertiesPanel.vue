@@ -4,7 +4,12 @@ import { tv } from 'tailwind-variants'
 import { computed, watchEffect } from 'vue'
 
 import { resolveEditorProfile } from '@lawha/core'
-import { useDesignCheckMessages, useI18n, useInspectMessages } from '@lawha/vue/i18n'
+import {
+  useDesignCheckMessages,
+  useI18n,
+  useInspectMessages,
+  useStoriesMessages
+} from '@lawha/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
@@ -22,6 +27,7 @@ import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
 import InspectPanel from './inspect/InspectPanel.vue'
+import StoriesPanel from './stories/StoriesPanel.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
@@ -29,6 +35,7 @@ const { activeTab } = useAIChat()
 const { panels } = useI18n()
 const checkMessages = useDesignCheckMessages()
 const inspectMessages = useInspectMessages()
+const storiesMessages = useStoriesMessages()
 const store = useEditorStore()
 
 const tabStyles = propertiesTabs()
@@ -89,6 +96,14 @@ const problemCount = computed(() => {
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
         </TabsTrigger>
+        <TabsTrigger
+          value="stories"
+          data-test-id="properties-tab-stories"
+          :class="tabStyles.trigger()"
+        >
+          <icon-lucide-book-open :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">{{ storiesMessages.tab }}</span>
+        </TabsTrigger>
         <TabsTrigger value="ai" data-test-id="properties-tab-ai" :class="tabStyles.trigger()">
           <icon-lucide-sparkles :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.ai }}</span>
@@ -139,6 +154,14 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'code'"
       >
         <CodePanel :active="activeTab === 'code'" />
+      </TabsContent>
+
+      <TabsContent
+        value="stories"
+        class="flex min-h-0 flex-1 flex-col"
+        :hidden="activeTab !== 'stories'"
+      >
+        <StoriesPanel :active="activeTab === 'stories'" />
       </TabsContent>
 
       <TabsContent

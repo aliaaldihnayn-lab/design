@@ -21,7 +21,9 @@ import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PDFPrintOptions } from './formats/pdf/print'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
+import { storiesCSVFormat, storiesMarkdownFormat } from './formats/stories'
 import { extractExportGraph, findPageId } from './subgraph'
+import { EXPORT_EVERY_TARGET, FIXED_SIZE_EXPORT, resolveExportNodes } from './targets'
 import type {
   ExportRequest,
   ExportResult,
@@ -29,23 +31,10 @@ import type {
   HTMLExportOptions,
   IOContext,
   IOFormatAdapter,
-  IOFormatExportOptions,
-  IOFormatSupport,
   RasterExportOptions,
   ReadDocumentInput,
   SVGExportOptions
 } from './types'
-
-/** Formats that export a document, page, selection, or single node alike. */
-const EXPORT_EVERY_TARGET: IOFormatSupport = {
-  exportDocument: true,
-  exportPage: true,
-  exportSelection: true,
-  exportNode: true
-}
-
-/** Formats with a size of their own, so no export scale or quality. */
-const FIXED_SIZE_EXPORT: IOFormatExportOptions = { scale: false, quality: false }
 
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
@@ -56,37 +45,6 @@ function ensureSingleNode(target: ExportRequest['target']): string | null {
   if (target.scope === 'node') return target.nodeId
   if (target.scope === 'selection' && target.nodeIds.length === 1) return target.nodeIds[0]
   return null
-}
-
-function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {
-  switch (request.target.scope) {
-    case 'document': {
-      const page = request.graph.getPages()[0]
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'page': {
-      const page = request.graph.getNode(request.target.pageId)
-      if (!page) return null
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'selection': {
-      const first = request.target.nodeIds[0]
-      if (!first) return null
-      const pageId = findPageId(request.graph, first)
-      if (!pageId) return null
-      if (!request.target.nodeIds.every((nodeId) => findPageId(request.graph, nodeId) === pageId)) {
-        throw new Error('Export selection must stay on a single page')
-      }
-      return { pageId, nodeIds: request.target.nodeIds }
-    }
-    case 'node':
-      return resolveExportNodes({
-        ...request,
-        target: { scope: 'selection', nodeIds: [request.target.nodeId] }
-      })
-    default:
-      return null
-  }
 }
 
 async function renderRaster(
@@ -777,6 +735,8 @@ export const handoffFormat: IOFormatAdapter<'handoff'> = {
   }
 }
 
+export { storiesCSVFormat, storiesMarkdownFormat } from './formats/stories'
+
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
@@ -793,6 +753,8 @@ export const BUILTIN_IO_FORMATS = [
   tailwindJSXFormat,
   htmlFormat,
   handoffFormat,
+  storiesMarkdownFormat,
+  storiesCSVFormat,
   psdFormat,
   aiFormat
 ] as const satisfies readonly IOFormatAdapter[]

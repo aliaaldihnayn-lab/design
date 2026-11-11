@@ -85,5 +85,6 @@
   "modelNameHint": "Un nome riconoscibile nel selettore dei modelli.",
   "modelIDHint": "Usa l’identificatore esatto del modello fornito dal provider.",
   "baseURLHint": "Inserisci l’endpoint dell’API, incluso l’eventuale percorso richiesto.",
-  "designToolsRequired": "Il modello di progettazione deve supportare gli strumenti. Scegli un modello compatibile o attiva gli strumenti nelle impostazioni avanzate."
+  "designToolsRequired": "Il modello di progettazione deve supportare gli strumenti. Scegli un modello compatibile o attiva gli strumenti nelle impostazioni avanzate.",
+  "jira": "Jira"
 }

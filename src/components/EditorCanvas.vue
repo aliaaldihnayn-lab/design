@@ -51,6 +51,7 @@ import PreparationOverlay from '@/components/preparation/canvas/PreparationOverl
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import PrototypeConnectionsLayer from '@/components/prototype/PrototypeConnectionsLayer.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
+import StoriesLayer from '@/components/stories/StoriesLayer.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
@@ -395,6 +396,7 @@ const cursor = computed(() =>
           :canvas-el="canvasRef"
           :drawn="drawnView"
         />
+        <StoriesLayer v-if="isActivePane && paneProfile.editChrome" :drawn="drawnView" />
         <CommentsLayer v-if="isActivePane" :canvas-el="canvasRef" :drawn="drawnView" />
         <PreparationOverlay
           v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"

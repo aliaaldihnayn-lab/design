@@ -41,6 +41,7 @@ import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import { createJiraConnectionService } from '#cloud/server/jira'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
@@ -306,7 +307,8 @@ export function createCloudApp(services: CloudServices) {
     roomMembers,
     resolveSession,
     signatures,
-    signing
+    signing,
+    jira: createJiraConnectionService(services.database, { secret: services.config.authSecret })
   })
   const publicCloudAPI = createPublicCloudAPIRouter({
     collaboration,
