@@ -4,12 +4,12 @@ import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { getPluginData } from '#core/figma-api/plugin-data'
 
-import { figInteractionsOf } from './fig'
+import { figInteractionsOf, mergeKeptInteractions, type KeptInteraction } from './fig'
 import {
   flowListSchema,
   interactionListSchema,
+  interactionSchema,
   type flowSchema,
-  type interactionSchema,
   type transitionSchema
 } from './schema'
 
@@ -22,6 +22,19 @@ export type Trigger = Interaction['trigger']
 /** Plugin-data keys: interactions live on each layer, flows on the page. */
 export const INTERACTIONS_KEY = 'prototype.interactions'
 export const FLOWS_KEY = 'prototype.flows'
+/**
+ * In a `.fig` file, the interactions Figma's own form loses something of, with their places,
+ * kept beside Figma's `prototypeInteractions` instead of the whole list.
+ */
+export const KEPT_INTERACTIONS_KEY = 'prototype.interactions.kept'
+
+const keptInteractionListSchema = v.array(
+  v.object({
+    at: v.pipe(v.number(), v.integer(), v.minValue(0)),
+    interaction: interactionSchema,
+    figma: v.boolean()
+  })
+)
 
 function parseJSON<T>(text: string, schema: v.GenericSchema<unknown, T>): T | null {
   if (!text) return null
@@ -36,7 +49,9 @@ function parseJSON<T>(text: string, schema: v.GenericSchema<unknown, T>): T | nu
 export function readInteractions(node: SceneNode, graph?: SceneGraph): Interaction[] {
   const own = getPluginData(node, INTERACTIONS_KEY)
   if (own || !graph) return parseJSON(own, interactionListSchema) ?? []
-  return figInteractionsOf(graph, node)
+  const kept: KeptInteraction[] =
+    parseJSON(getPluginData(node, KEPT_INTERACTIONS_KEY), keptInteractionListSchema) ?? []
+  return mergeKeptInteractions(figInteractionsOf(graph, node), kept)
 }
 
 /**

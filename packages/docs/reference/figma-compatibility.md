@@ -183,7 +183,7 @@ Feature-by-feature comparison of Figma Design capabilities with Lawha's current 
 | Overlays | ✅ | Over the frame they open from, with a background, close on outside click |
 | Scroll & overflow behavior | ✅ | Scrollable frames in prototypes |
 | Prototype flows | ✅ | Named starting points |
-| Variables in prototypes | 🟡 | Set variable (value, toggle, add), conditionals, bound text, visibility and component properties; Lawha-only in `.fig`, no expressions |
+| Variables in prototypes | 🟡 | Set variable (value, toggle, add), conditionals, bound text, visibility and component properties, per-instance or shared; `.fig` writes Set variable and conditionals as Figma's own variable actions, keeping Lawha data only for focus and blur triggers and actions Figma lacks; no free-form expressions |
 | Easing & spring animations | ✅ | Linear, ease, back, gentle spring, custom spring (stiffness, damping, mass) |
 | Present & play prototypes | ✅ | Full-screen player and live preview on the canvas |
 
