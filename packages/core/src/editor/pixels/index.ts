@@ -15,9 +15,15 @@ import {
   type BrushTip,
   type StrokeCoverage
 } from '#core/pixels/brush'
-import { cloneDab, healDab, type CloneSampling } from '#core/pixels/clone'
+import { cloneDab, type CloneSampling } from '#core/pixels/clone'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
+import {
+  createHealingStroke,
+  finishHealingStroke,
+  healDab,
+  type HealingStroke
+} from '#core/pixels/heal'
 import { combineMasks, type PixelMask } from '#core/pixels/mask'
 
 import {
@@ -73,6 +79,8 @@ interface StrokeSession {
   original: Pick<SceneNode, 'fills' | 'pluginData'>
   /** What the clone stamp and healing brush copy, and from how far away. */
   sampling: CloneSampling | null
+  /** The healing brush's solved region, which settles into one patch as the stroke ends. */
+  healing: HealingStroke | null
 }
 
 const STROKE_LABELS: Record<PixelStrokeTool, string> = {
@@ -157,8 +165,8 @@ export function createPixelActions(
     if (session.tool === 'ERASER') eraseDab(surface.paint, before, coverage, at, tip, mask)
     else if (sampling && session.tool === 'CLONE_STAMP')
       cloneDab(surface.paint, before, coverage, at, tip, sampling, mask)
-    else if (sampling && session.tool === 'HEALING_BRUSH')
-      healDab(surface.paint, before, coverage, at, tip, sampling, mask)
+    else if (session.healing)
+      healDab(surface.paint, before, coverage, at, tip, session.healing, mask)
     else paintDab(surface.paint, before, coverage, at, tip, session.color, mask)
     session.changed = true
   }
@@ -202,7 +210,8 @@ export function createPixelActions(
       preview,
       liveHash,
       original,
-      sampling
+      sampling,
+      healing: sampling && tool === 'HEALING_BRUSH' ? createHealingStroke(sampling) : null
     }
     stroke = session
     lastScale = { nodeId: node.id, scale: gridScale(node, surface) }
@@ -288,6 +297,10 @@ export function createPixelActions(
   function pixelStrokeEnd(): boolean {
     const session = stroke
     if (!session) return false
+    if (session.healing && session.changed) {
+      const { surface, before, coverage, healing } = session
+      finishHealingStroke(surface.paint, before, coverage, healing)
+    }
     const png = session.changed ? codec()?.encodePNG(session.surface.paint) : null
     if (!png) {
       pixelStrokeCancel()

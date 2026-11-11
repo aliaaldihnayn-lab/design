@@ -18,9 +18,10 @@ import {
   strokeDabs,
   type BrushTip
 } from '#core/pixels/brush'
-import { cloneDab, healDab } from '#core/pixels/clone'
+import { cloneDab } from '#core/pixels/clone'
 import { compositeOver } from '#core/pixels/composite'
 import { fillRegion, pixelColor, selectSimilar } from '#core/pixels/fill'
+import { createHealingStroke, finishHealingStroke, healDab } from '#core/pixels/heal'
 import {
   ellipseMask,
   featherMask,
@@ -218,7 +219,7 @@ export const maskFromSelection = defineTool({
 export const clonePixels = defineTool({
   name: 'clone_pixels',
   description:
-    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but takes the tone around each dab, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
+    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but solves it into its surroundings (Poisson seamless cloning), so the patch takes the tone and shading around it with no seam, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -246,8 +247,11 @@ export const clonePixels = defineTool({
     }
     const before = surface.paint.data.slice()
     const coverage = createStrokeCoverage(surface.paint)
+    const healing = args.heal ? createHealingStroke(sampling) : null
     const dab = (at: Vector) =>
-      (args.heal ? healDab : cloneDab)(surface.paint, before, coverage, at, tip, sampling)
+      healing
+        ? healDab(surface.paint, before, coverage, at, tip, healing)
+        : cloneDab(surface.paint, before, coverage, at, tip, sampling)
     let carry = 0
     dab(points[0])
     for (let i = 1; i < points.length; i++) {
@@ -255,6 +259,7 @@ export const clonePixels = defineTool({
       for (const centre of stroke.dabs) dab(centre)
       carry = stroke.carry
     }
+    if (healing) finishHealingStroke(surface.paint, before, coverage, healing)
     const failure = savePaint(figma, node, surface, codec)
     if (failure) return failure
     return { id: node.id }
