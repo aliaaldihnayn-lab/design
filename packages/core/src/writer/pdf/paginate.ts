@@ -1,6 +1,6 @@
 import type { PageSetup } from '#core/writer/model'
 
-import type { FlowBlock, ParagraphBlock, RunStyle, TableBlock } from './flow'
+import type { FlowBlock, ParagraphBlock, RunStyle, TableBlock, TableCell } from './flow'
 import type { FontSet } from './fonts'
 import { layoutLines, type FieldText, type GlyphPiece, type Line } from './lines'
 
@@ -298,21 +298,40 @@ class Paginator {
     const frame = this.frame
     const tableWidth = frame.right - frame.left
     const widths = block.columns.map((fraction) => fraction * tableWidth)
-    for (const row of block.rows) {
-      const cells = cellRects(row, widths, frame, block.rtl)
-      const laid = cells.map(({ cell, left, right }) => {
-        const inner = { left: left + CELL_PADDING, right: right - CELL_PADDING }
-        return {
-          cell,
-          left,
-          right,
-          ...blocksInFrame(cell.blocks, inner, this.input.fonts, this.field)
-        }
-      })
-      const height = Math.max(0, ...laid.map((entry) => entry.height)) + 2 * CELL_PADDING_Y
-      if (!this.empty && this.y + height > this.bottom) this.open(this.setup)
-      const top = this.y
+    const placed = placeCells(block.rows)
+    const laid = placed.map((cell) => {
+      const { left, right } = cellEdges(cell.column, cell.cell.colspan, widths, frame, block.rtl)
+      const inner = { left: left + CELL_PADDING, right: right - CELL_PADDING }
+      return {
+        ...cell,
+        left,
+        right,
+        ...blocksInFrame(cell.cell.blocks, inner, this.input.fonts, this.field)
+      }
+    })
+    // A row is as tall as its tallest cell that ends in it; a cell running down several rows
+    // makes its last row taller when the rows it spans are too short for it.
+    const heights = block.rows.map(() => 0)
+    for (const entry of [...laid].sort((a, b) => a.cell.rowspan - b.cell.rowspan)) {
+      const last = Math.min(block.rows.length, entry.row + entry.cell.rowspan) - 1
+      const spanned = heights.slice(entry.row, last + 1).reduce((a, b) => a + b, 0)
+      const needed = entry.height + 2 * CELL_PADDING_Y
+      if (needed > spanned) heights[last] = (heights[last] ?? 0) + needed - spanned
+    }
+    for (const band of rowBands(placed, block.rows.length)) {
+      const bandHeight = heights.slice(band.from, band.to).reduce((a, b) => a + b, 0)
+      if (!this.empty && this.y + bandHeight > this.bottom) this.open(this.setup)
+      const tops: number[] = []
+      let y = this.y
+      for (let row = band.from; row < band.to; row += 1) {
+        tops[row] = y
+        y += heights[row] ?? 0
+      }
       for (const entry of laid) {
+        if (entry.row < band.from || entry.row >= band.to) continue
+        const top = tops[entry.row] ?? this.y
+        const last = Math.min(band.to, entry.row + entry.cell.rowspan)
+        const height = heights.slice(entry.row, last).reduce((a, b) => a + b, 0)
         const background = entry.cell.background ?? (entry.cell.header ? '#f2f2f2' : null)
         if (background) {
           this.page.ops.push({
@@ -327,7 +346,7 @@ class Paginator {
         this.page.ops.push(...entry.ops.map((op) => offset(op, top + CELL_PADDING_Y)))
         this.page.ops.push(...borderOps(entry.left, top, entry.right - entry.left, height))
       }
-      this.y += height
+      this.y = y
       this.empty = false
     }
     this.y += 6
@@ -418,21 +437,67 @@ function borderOps(x: number, y: number, width: number, height: number): DrawOp[
   ]
 }
 
-/** Cells' left and right edges; a right-to-left table puts its first column on the right. */
-function cellRects(
-  row: TableBlock['rows'][number],
+/** A cell with the row it starts in and the grid column it starts at. */
+interface PlacedCell {
+  cell: TableCell
+  row: number
+  column: number
+}
+
+/**
+ * Puts each cell in the table's grid. A cell that runs down several rows keeps its columns in
+ * the rows below, whose own cells start after it, as HTML and Word lay merged cells out.
+ */
+export function placeCells(rows: readonly TableCell[][]): PlacedCell[] {
+  const taken = new Map<number, number>()
+  const placed: PlacedCell[] = []
+  rows.forEach((cells, row) => {
+    let column = 0
+    for (const cell of cells) {
+      while ((taken.get(column) ?? -1) >= row) column += 1
+      placed.push({ cell, row, column })
+      for (let offset = 0; offset < cell.colspan; offset += 1) {
+        taken.set(column + offset, row + cell.rowspan - 1)
+      }
+      column += cell.colspan
+    }
+  })
+  return placed
+}
+
+/** Runs of rows a page must not break inside, because a cell runs down across them. */
+export function rowBands(
+  placed: readonly PlacedCell[],
+  count: number
+): Array<{ from: number; to: number }> {
+  const bands: Array<{ from: number; to: number }> = []
+  let from = 0
+  let to = 0
+  for (let row = 0; row < count; row += 1) {
+    for (const entry of placed) {
+      if (entry.row === row) to = Math.max(to, Math.min(count, row + entry.cell.rowspan))
+    }
+    to = Math.max(to, row + 1)
+    if (to === row + 1) {
+      bands.push({ from, to })
+      from = to
+    }
+  }
+  return bands
+}
+
+/** A cell's left and right edges; a right-to-left table puts its first column on the right. */
+function cellEdges(
+  column: number,
+  span: number,
   widths: readonly number[],
   frame: Frame,
   rtl: boolean
 ) {
-  let column = 0
-  return row.map((cell) => {
-    const width = widths.slice(column, column + cell.colspan).reduce((a, b) => a + b, 0)
-    const before = widths.slice(0, column).reduce((a, b) => a + b, 0)
-    column += cell.colspan
-    const left = rtl ? frame.right - before - width : frame.left + before
-    return { cell, left, right: left + width }
-  })
+  const width = widths.slice(column, column + span).reduce((a, b) => a + b, 0)
+  const before = widths.slice(0, column).reduce((a, b) => a + b, 0)
+  const left = rtl ? frame.right - before - width : frame.left + before
+  return { left, right: left + width }
 }
 
 /** Blocks laid out in a frame that does not break across pages, as in a cell or a header. */

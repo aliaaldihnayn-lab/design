@@ -90,9 +90,59 @@ async function pageTexts(pdf: Uint8Array): Promise<string[]> {
   return texts
 }
 
+/** Where pdf.js finds each piece of text on the first page, in PDF points. */
+async function textPositions(pdf: Uint8Array): Promise<Map<string, { x: number; y: number }>> {
+  const worker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
+  Reflect.set(globalThis, 'pdfjsWorker', worker)
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const doc = await pdfjs.getDocument({ data: pdf.slice(), verbosity: 0, isEvalSupported: false })
+    .promise
+  const content = await (await doc.getPage(1)).getTextContent()
+  const positions = new Map<string, { x: number; y: number }>()
+  for (const item of content.items) {
+    if ('str' in item && item.str.trim()) {
+      positions.set(item.str.trim(), { x: item.transform[4] ?? 0, y: item.transform[5] ?? 0 })
+    }
+  }
+  await doc.destroy()
+  return positions
+}
+
 const LONG = 'هذا نص عربي طويل يملأ الصفحة ويستمر حتى ينتقل إلى صفحة جديدة. '.repeat(90)
 
 describe('PDF export', () => {
+  test('draws a cell merged down two rows beside both, the rows below starting after it', async () => {
+    const cellOf = (value: string, attrs: Record<string, unknown> = {}): WriterNode => ({
+      type: 'tableCell',
+      attrs: { colspan: 1, rowspan: 1, ...attrs },
+      content: [paragraph('ltr', text(value))]
+    })
+    const table: WriterNode = {
+      type: 'table',
+      content: [
+        { type: 'tableRow', content: [cellOf('Merged', { rowspan: 2 }), cellOf('Top')] },
+        { type: 'tableRow', content: [cellOf('Second')] },
+        { type: 'tableRow', content: [cellOf('Left'), cellOf('Right')] }
+      ]
+    }
+    const pdf = await exportWriterPDF(
+      createWriterDocument({ body: { type: 'doc', content: [table] } }),
+      { fonts }
+    )
+    const at = await textPositions(pdf)
+    const merged = at.get('Merged')
+    const top = at.get('Top')
+    const second = at.get('Second')
+    const left = at.get('Left')
+    if (!merged || !top || !second || !left) throw new Error('text missing')
+    // "Second" is in the second column, under "Top", not under "Merged".
+    expect(second.x).toBeCloseTo(top.x, 0)
+    expect(second.x).toBeGreaterThan(merged.x + 50)
+    // The third row starts below both merged rows (pdf.js y grows upwards).
+    expect(left.y).toBeLessThan(second.y)
+    expect(left.x).toBeCloseTo(merged.x, 0)
+  })
+
   test("draws each section's own page size, header and footer", async () => {
     const sectioned = readDocx(
       new Uint8Array(readFileSync(join(FIXTURES, 'writer/lawha-section-headers.docx')))

@@ -62,6 +62,8 @@ export interface ParagraphBlock {
 export interface TableCell {
   blocks: FlowBlock[]
   colspan: number
+  /** Rows the cell runs down, its own included; the rows below leave its columns out. */
+  rowspan: number
   header: boolean
   background: string | null
 }
@@ -327,6 +329,7 @@ function table(node: WriterNode, context: FlowContext, rtl: boolean): TableBlock
         block.kind === 'paragraph' ? { ...block, spaceAfter: 0 } : block
       ),
       colspan: Math.max(1, numberAttr(cell.attrs, 'colspan') ?? 1),
+      rowspan: Math.max(1, numberAttr(cell.attrs, 'rowspan') ?? 1),
       header: cell.type === 'tableHeader',
       background: stringAttr(cell.attrs, 'background')
     }))
