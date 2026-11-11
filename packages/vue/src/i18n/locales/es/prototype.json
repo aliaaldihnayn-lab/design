@@ -119,5 +119,6 @@
   "kitCarousel": "Carrusel",
   "kitProgress": "Barra de progreso",
   "kitSpinner": "Indicador de carga",
-  "kitRating": "Valoración con estrellas"
+  "kitRating": "Valoración con estrellas",
+  "retargetHandle": "Arrastra a otra pantalla para volver a enlazar, o fuera de las pantallas para quitar la conexión"
 }

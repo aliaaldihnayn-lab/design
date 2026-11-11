@@ -119,5 +119,6 @@
   "kitCarousel": "Karuzela",
   "kitProgress": "Pasek postępu",
   "kitSpinner": "Wskaźnik ładowania",
-  "kitRating": "Ocena gwiazdkowa"
+  "kitRating": "Ocena gwiazdkowa",
+  "retargetHandle": "Przeciągnij na inny ekran, aby połączyć ponownie, lub poza ekrany, aby usunąć połączenie"
 }

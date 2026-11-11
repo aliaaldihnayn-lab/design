@@ -7,6 +7,7 @@ export const prototypeMessageDefaults = {
   section: 'Prototype',
   showConnections: 'Show connections',
   connectHandle: 'Drag to a screen to link it',
+  retargetHandle: 'Drag to another screen to relink, or off the screens to remove the connection',
   scroll: 'Scrolling',
   scrollNone: 'No scrolling',
   scrollVertical: 'Vertical',
@@ -89,7 +90,8 @@ export const prototypeMessageDefaults = {
   noVariables: 'Add a variable to set it from the prototype',
   conditionSummary: params('If {count} conditions hold: {then} actions, otherwise {otherwise}'),
   kitSection: 'Interactive kit',
-  kitHint: 'Live controls whose states are variants of one component; they run in preview and the player',
+  kitHint:
+    'Live controls whose states are variants of one component; they run in preview and the player',
   kitInsert: params('Insert {name}'),
   kitRtl: 'Right to left',
   kitHijri: 'Hijri calendar',

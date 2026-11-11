@@ -129,7 +129,7 @@ describe('connections', () => {
       ])
     )
     expect(prototypeConnections(s.graph, s.page)).toEqual([
-      { source: item.id, target: other.id, kind: 'navigate', trigger: 'click' }
+      { source: item.id, target: other.id, kind: 'navigate', trigger: 'click', interaction: 0 }
     ])
     expect(screenAt(s.graph, s.page, { x: 700, y: 100 })).toBe(other.id)
     expect(screenAt(s.graph, s.page, { x: 150, y: 100 })).toBe(s.screen.id)

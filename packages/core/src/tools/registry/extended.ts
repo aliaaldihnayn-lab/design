@@ -73,6 +73,7 @@ import { runFigmaPlugin } from '#core/tools/plugins'
 import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
 import {
   addInteraction,
+  editConnection,
   autoPrototype,
   getPrototype,
   setFlow,
@@ -218,6 +219,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   getPrototype,
   setInteractions,
   addInteraction,
+  editConnection,
   setFlow,
   autoPrototype,
   setScrollBehavior,

@@ -119,5 +119,6 @@
   "kitCarousel": "カルーセル",
   "kitProgress": "プログレスバー",
   "kitSpinner": "スピナー",
-  "kitRating": "星評価"
+  "kitRating": "星評価",
+  "retargetHandle": "別の画面へドラッグして接続し直すか、画面の外へドラッグして接続を削除します"
 }

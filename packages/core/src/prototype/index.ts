@@ -41,7 +41,10 @@ export {
 export {
   canvasRect,
   noodle,
+  noodleAt,
+  noodleDistance,
   noodlePath,
+  noodlePoint,
   prototypeConnections,
   screenAt,
   type Noodle,

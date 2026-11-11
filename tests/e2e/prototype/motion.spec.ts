@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { noodle, noodlePoint } from '@lawha/core/prototype'
+import type { Rect } from '@lawha/scene-graph/primitives'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 interface Ids {
@@ -188,4 +191,106 @@ test('connections draw as noodles, and dragging the handle to a screen links it'
     return node?.pluginData.find((e) => e.key === 'prototype.interactions')?.value ?? ''
   }, target.id)
   expect(saved).toContain(ids.b)
+})
+
+test('a noodle is selected by clicking it, deleted with Delete, and retargeted by its end', async ({
+  page
+}) => {
+  const ids = await build(page)
+  const c = await page.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    const screen = store.graph.createNode('FRAME', store.state.currentPageId, {
+      name: 'C',
+      x: 1200,
+      width: 390,
+      height: 844
+    })
+    store.select([])
+    store.requestRender()
+    return screen.id
+  })
+  await page.getByTestId('prototype-show-connections').click()
+  const layer = page.getByTestId('prototype-connections')
+  await expect(layer).toHaveAttribute('data-connections', '2')
+
+  /** Where, on screen, a point halfway along the noodle from `card` to `b` falls. */
+  const noodleMiddle = async (card: string, b: string) => {
+    const geometry = await page.evaluate(
+      ({ card, b }) => {
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
+        const rect = (id: string) => {
+          let node = store.graph.getNode(id)
+          let x = 0
+          let y = 0
+          const width = node?.width ?? 0
+          const height = node?.height ?? 0
+          while (node && node.type !== 'CANVAS') {
+            x += node.x
+            y += node.y
+            node = node.parentId ? store.graph.getNode(node.parentId) : undefined
+          }
+          return { x, y, width, height }
+        }
+        const { zoom, panX, panY } = store.state
+        return { from: rect(card), to: rect(b), zoom, panX, panY }
+      },
+      { card, b }
+    )
+    const screen = (r: Rect) => ({
+      x: r.x * geometry.zoom + geometry.panX,
+      y: r.y * geometry.zoom + geometry.panY,
+      width: r.width * geometry.zoom,
+      height: r.height * geometry.zoom
+    })
+    const point = noodlePoint(noodle(screen(geometry.from), screen(geometry.to), 9), 0.5)
+    const box = await layer.boundingBox()
+    if (!box) throw new Error('no layer')
+    return { x: box.x + point.x, y: box.y + point.y }
+  }
+
+  // Clicking the noodle selects the connection rather than a layer.
+  let at = await noodleMiddle(ids.card, ids.b)
+  await page.mouse.click(at.x, at.y)
+  await expect(layer).toHaveAttribute('data-selected-connection', `${ids.card}:0`)
+
+  // Dragging its end onto C points it there.
+  const end = page.getByTestId('prototype-connection-end')
+  const endBox = await end.boundingBox()
+  const target = await page.evaluate((id) => {
+    const store = window.lawha?.getStore?.()
+    const node = store?.graph.getNode(id)
+    if (!store || !node) throw new Error('missing')
+    const { zoom, panX, panY } = store.state
+    return {
+      x: (node.x + node.width / 2) * zoom + panX,
+      y: (node.y + node.height / 2) * zoom + panY
+    }
+  }, c)
+  const box = await layer.boundingBox()
+  if (!endBox || !box) throw new Error('no end handle')
+  await page.mouse.move(endBox.x + endBox.width / 2, endBox.y + endBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + target.x, box.y + target.y, { steps: 8 })
+  await page.mouse.up()
+  const links = (id: string) =>
+    page.evaluate((node) => {
+      const graph = window.lawha?.getStore?.().graph
+      return graph?.getNode(node)?.pluginData.find((e) => e.key === 'prototype.interactions')?.value
+    }, id)
+  await expect.poll(() => links(ids.card)).toContain(c)
+
+  // Selected again and deleted, it is gone and the layer stays.
+  at = await noodleMiddle(ids.card, c)
+  await page.mouse.click(at.x, at.y)
+  await expect(layer).toHaveAttribute('data-selected-connection', `${ids.card}:0`)
+  await page.keyboard.press('Delete')
+  await expect(layer).toHaveAttribute('data-connections', '1')
+  expect((await links(ids.card)) ?? '').not.toContain(c)
+  const cardLeft = await page.evaluate(
+    (id) => !!window.lawha?.getStore?.().graph.getNode(id),
+    ids.card
+  )
+  expect(cardLeft).toBe(true)
 })
