@@ -6,6 +6,7 @@ import type { WorkspaceSummary } from '@lawha/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 import type { CloudAccount } from '@/app/cloud/servers/store'
+import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
 
 /**
@@ -105,4 +106,16 @@ export function cloudSignatureClient(): CloudAPIClient | null {
 
 export async function signingPageClient(): Promise<CloudAPIClient> {
   throw new Error('This build has no Lawha Cloud')
+}
+
+/** Without Cloud a document editor file has no Cloud versions. */
+export async function cloudWriterVersions(_binding: StorageDocumentBinding): Promise<null> {
+  return null
+}
+
+export async function cloudWriterVersionBytes(
+  _binding: StorageDocumentBinding,
+  _versionId: string
+): Promise<Uint8Array> {
+  throw new Error('This build has no Cloud')
 }

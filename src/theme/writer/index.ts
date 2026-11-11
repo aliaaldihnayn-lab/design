@@ -3,7 +3,7 @@
  * Paper stays white with black text in both themes, as printed pages are.
  */
 const content = [
-  '[&_.ProseMirror]:min-h-[2em] [&_.ProseMirror]:outline-none min-h-full text-[11pt] leading-[1.4] text-black',
+  '[&_.ProseMirror]:relative [&_.ProseMirror]:min-h-[2em] [&_.ProseMirror]:outline-none min-h-full text-[11pt] leading-[1.4] text-black',
   '[&_p]:mt-0 [&_p]:mb-[8pt] [&_p]:min-h-[1.4em]',
   '[&_h1]:mt-[18pt] [&_h1]:mb-[4pt] [&_h1]:text-[16pt] [&_h1]:font-bold',
   '[&_h2]:mt-[12pt] [&_h2]:mb-[4pt] [&_h2]:text-[13pt] [&_h2]:font-bold',
@@ -17,6 +17,11 @@ const content = [
   '[&_td_p]:my-0 [&_th_p]:my-0 [&_.selectedCell]:bg-accent/15 [&_.column-resize-handle]:absolute [&_.column-resize-handle]:-end-px [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-accent [&_td]:relative [&_th]:relative',
   '[&_img]:inline [&_img]:max-w-full [&_.ProseMirror-selectednode]:outline-2 [&_.ProseMirror-selectednode]:outline-accent',
   '[&_.writer-page-break]:my-[12pt] [&_.writer-page-break]:h-0 [&_.writer-page-break]:border-t-2 [&_.writer-page-break]:border-dashed [&_.writer-page-break]:border-black/30',
+  '[&_.writer-section-break]:my-[12pt] [&_.writer-section-break]:h-1 [&_.writer-section-break]:border-y [&_.writer-section-break]:border-dashed [&_.writer-section-break]:border-black/30',
+  '[&_.writer-page-gap]:relative [&_.writer-page-gap]:flex [&_.writer-page-gap]:flex-col [&_.writer-page-gap]:select-none [&_.writer-page-gap_p]:mb-0',
+  '[&_.writer-page-footer]:flex [&_.writer-page-footer]:flex-col [&_.writer-page-footer]:justify-end [&_.writer-page-footer]:text-[9pt] [&_.writer-page-footer]:text-black/70 [&_.writer-page-header]:text-[9pt] [&_.writer-page-header]:text-black/70',
+  '[&_.writer-page-between]:bg-transparent',
+  '[&_.writer-page-gap-row>td]:border-0 [&_.writer-page-gap-row>td]:p-0 [&_.writer-page-gap-row>td]:bg-transparent',
   '[&_.writer-page-field]:rounded-sm [&_.writer-page-field]:bg-black/10 [&_.writer-page-field]:px-0.5',
   '[&_.writer-comment]:bg-warning/30 [&_.writer-comment]:border-b-2 [&_.writer-comment]:border-warning',
   '[&_.writer-insertion]:text-chart-1 [&_.writer-insertion]:underline [&_.writer-deletion]:text-error-fill [&_.writer-deletion]:line-through',
@@ -42,8 +47,9 @@ export default {
     colorSwatch: 'absolute inset-x-1 bottom-0.5 h-0.5 rounded-full',
     workspace: 'flex min-h-0 flex-1',
     scroller: 'min-w-0 flex-1 overflow-auto py-6',
-    paper:
-      'relative mx-auto flex flex-col bg-white text-black shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:shadow-none',
+    paper: 'relative isolate mx-auto flex flex-col text-black print:bg-white',
+    sheet:
+      'pointer-events-none absolute -z-10 bg-white shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:hidden',
     region:
       'group/region relative text-[9pt] text-black/70 outline-none hover:bg-black/[0.03] focus-within:bg-black/[0.03]',
     regionTools:
@@ -51,6 +57,12 @@ export default {
     regionLabel:
       'pointer-events-none absolute -top-4 start-0 hidden text-[10px] text-black/50 group-focus-within/region:block',
     body: 'flex-1',
+    footnotes:
+      'mt-[12pt] text-[9pt] before:mb-[4pt] before:block before:w-1/3 before:border-t before:border-black/60',
+    footnote: 'group/note flex items-start gap-1',
+    footnoteNumber: 'mt-px min-w-[1.5em] shrink-0 text-[8pt] leading-[1.4] text-chart-1',
+    footnoteText: 'min-w-0 flex-1 text-[9pt] [&_p]:mb-0',
+    footnoteRemove: 'opacity-0 group-hover/note:opacity-100 group-focus-within/note:opacity-100',
     watermark:
       'pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none',
     watermarkText: '-rotate-45 text-[72pt] font-bold whitespace-nowrap text-black/10',
@@ -59,6 +71,11 @@ export default {
     sideHeader:
       'flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold',
     card: 'flex flex-col gap-1 rounded-md border border-border bg-panel-secondary p-2 data-[resolved]:opacity-60',
+    signPage:
+      'relative w-full cursor-crosshair touch-none overflow-hidden rounded border border-border bg-white',
+    signBox: 'pointer-events-none absolute rounded-sm border-2 border-accent bg-accent/15',
+    signField:
+      'absolute rounded-sm border-2 border-dashed border-chart-1 bg-chart-1/10 data-[selected]:border-solid data-[selected]:bg-chart-1/25',
     findBar:
       'flex flex-wrap items-center gap-1.5 border-b border-border bg-panel px-2 py-1.5 text-xs',
     form: 'flex flex-col gap-2 text-xs',

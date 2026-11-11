@@ -18,6 +18,17 @@ function isZip(bytes: Uint8Array): boolean {
   return ZIP_SIGNATURE.every((byte, index) => bytes[index] === byte)
 }
 
+/** Whether the bytes are a Word `.docx` package, which the document editor saves. */
+export function isWordPackage(bytes: Uint8Array): boolean {
+  if (!isZip(bytes)) return false
+  try {
+    const entries = unzipSync(bytes, { filter: ({ name }) => name === 'word/document.xml' })
+    return 'word/document.xml' in entries
+  } catch {
+    return false
+  }
+}
+
 /**
  * The archive without its images, and the images. A file that is not a zip archive, or holds no
  * images, comes back whole; an image under a name Cloud does not store apart stays inside.

@@ -1,5 +1,6 @@
 import { escapeText } from 'entities'
 import { strToU8, zipSync } from 'fflate'
+import * as v from 'valibot'
 
 import {
   detectDirection,
@@ -8,10 +9,20 @@ import {
   numberAttr,
   stringAttr,
   type WriterDocument,
+  type WriterFootnote,
   type WriterNode
 } from '#core/writer/model'
+import { writerNodeSchema } from '#core/writer/schema'
+import { sectionPage } from '#core/writer/sections'
 
 import { imageFromDataURL, imageSize } from './images'
+import {
+  PackageWriter,
+  relsXML,
+  sectionPropertiesXML,
+  textWidthOf,
+  type Relationship
+} from './package'
 import {
   commentsExtendedXML,
   commentsXML,
@@ -24,41 +35,45 @@ import {
 } from './parts'
 import { runProperties } from './runs'
 import { tableGrid, columnWidths } from './tables'
-import { DOCUMENT_NAMESPACES, el, NS, REL, XML_HEADER } from './xml'
+import { DOCUMENT_NAMESPACES, el, REL, XML_HEADER } from './xml'
 
 const EMU_PER_PX = 9525
 
-interface Relationship {
-  id: string
-  type: string
-  target: string
-  external?: boolean
-}
-
-export interface ListDefinition {
-  numId: number
-  ordered: boolean
-  start: number
-}
-
 /** State of one part being written: its relationships, and the package's shared parts. */
-class PartWriter {
-  rels: Relationship[] = []
+export class PartWriter {
+  rels: Relationship[]
   private openComments = new Set<string>()
 
-  constructor(readonly pkg: PackageWriter) {}
+  /** `existing` are the part's relationships already, when patching a package. */
+  constructor(
+    readonly pkg: PackageWriter,
+    existing: readonly Relationship[] = []
+  ) {
+    this.rels = [...existing]
+  }
 
   rel(type: string, target: string, external = false): string {
     const existing = this.rels.find((rel) => rel.type === type && rel.target === target)
     if (existing) return existing.id
-    const id = `rId${this.rels.length + 1}`
+    const taken = new Set(this.rels.map((rel) => rel.id))
+    let number = this.rels.length + 1
+    while (taken.has(`rId${number}`)) number += 1
+    const id = `rId${number}`
     this.rels.push({ id, type, target, external })
     return id
   }
 
   blocks(nodes: readonly WriterNode[] | undefined, textWidth: number): string {
-    const out = (nodes ?? []).map((node) => this.block(node, textWidth, 0)).join('')
-    return out + this.closeComments([...this.openComments])
+    return this.eachBlock(nodes, textWidth).join('') + this.closeOpenComments()
+  }
+
+  /** Each block's XML on its own; comments left open close with `closeOpenComments`. */
+  eachBlock(nodes: readonly WriterNode[] | undefined, textWidth: number): string[] {
+    return (nodes ?? []).map((node) => this.block(node, textWidth, 0))
+  }
+
+  closeOpenComments(): string {
+    return this.closeComments([...this.openComments])
   }
 
   private block(node: WriterNode, textWidth: number, depth: number): string {
@@ -77,9 +92,27 @@ class PartWriter {
         return (node.content ?? []).map((child) => this.block(child, textWidth, depth)).join('')
       case 'tableOfContents':
         return this.tableOfContents()
+      case 'sectionBreak': {
+        const page = sectionPage(node)
+        return page
+          ? `<w:p><w:pPr>${sectionPropertiesXML(page, this.sectionReferences(node))}</w:pPr></w:p>`
+          : ''
+      }
       default:
         return node.content ? this.blocks(node.content, textWidth) : ''
     }
+  }
+
+  /** A section's own header and footer, written as parts of their own. */
+  private sectionReferences(node: WriterNode): string {
+    let references = ''
+    for (const kind of ['header', 'footer'] as const) {
+      const region = v.safeParse(writerNodeSchema, node.attrs?.[kind])
+      if (!region.success) continue
+      const id = writeHeaderFooter(this.pkg, this, kind, region.output, '')
+      references += el(`w:${kind}Reference`, { 'w:type': 'default', 'r:id': id })
+    }
+    return references
   }
 
   private paragraph(node: WriterNode, list?: { numId: number; level: number }): string {
@@ -383,91 +416,6 @@ export function wordJustification(align: string | null, rtl: boolean): string | 
   }
 }
 
-/** The package: shared parts and numbering every part writer adds to. */
-class PackageWriter {
-  readonly files: Record<string, Uint8Array> = {}
-  readonly lists: ListDefinition[] = []
-  private readonly media = new Map<string, string>()
-  private readonly comments = new Map<string, number>()
-  private readonly footnotes = new Map<string, number>()
-  private drawings = 0
-  private revisions = 0
-
-  constructor(readonly model: WriterDocument) {
-    model.comments.forEach((comment, index) => this.comments.set(comment.id, index))
-    model.footnotes.forEach((note, index) => this.footnotes.set(note.id, index + 1))
-  }
-
-  addList(ordered: boolean, start: number): number {
-    const numId = this.lists.length + 1
-    this.lists.push({ numId, ordered, start })
-    return numId
-  }
-
-  addMedia(bytes: Uint8Array, extension: string): string {
-    const key = `${bytes.length}:${Array.from(bytes.subarray(0, 64)).join(',')}`
-    const existing = this.media.get(key)
-    if (existing) return existing
-    const name = `media/image${this.media.size + 1}.${extension}`
-    this.media.set(key, name)
-    this.files[`word/${name}`] = bytes
-    return name
-  }
-
-  commentNumber(id: string): number {
-    let number = this.comments.get(id)
-    if (number === undefined) {
-      number = this.comments.size
-      this.comments.set(id, number)
-    }
-    return number
-  }
-
-  footnoteNumber(id: string): number | null {
-    return this.footnotes.get(id) ?? null
-  }
-
-  drawingNumber(): number {
-    this.drawings += 1
-    return this.drawings
-  }
-
-  revisionNumber(): number {
-    this.revisions += 1
-    return 1000 + this.revisions
-  }
-
-  /** The headings a table of contents lists: levels one to three. */
-  tocEntries(): Array<{ level: number; text: string }> {
-    return (this.model.body.content ?? []).flatMap((node) => {
-      const level = numberAttr(node.attrs, 'level') ?? 1
-      return node.type === 'heading' && level <= 3 ? [{ level, text: nodeText(node) }] : []
-    })
-  }
-}
-
-function relsXML(rels: readonly Relationship[]): string {
-  return (
-    XML_HEADER +
-    `<Relationships xmlns="${NS.pkgRels}">` +
-    rels
-      .map((rel) =>
-        el('Relationship', {
-          Id: rel.id,
-          Type: rel.type,
-          Target: rel.target,
-          TargetMode: rel.external ? 'External' : undefined
-        })
-      )
-      .join('') +
-    '</Relationships>'
-  )
-}
-
-function textWidthOf(model: WriterDocument): number {
-  return model.page.width - model.page.margins.left - model.page.margins.right
-}
-
 /** Writes a header or footer part and returns its relationship id in the model. */
 function writeHeaderFooter(
   pkg: PackageWriter,
@@ -480,10 +428,23 @@ function writeHeaderFooter(
   const tag = kind === 'header' ? 'w:hdr' : 'w:ftr'
   const body = part.blocks(node.content, textWidthOf(pkg.model)) || '<w:p/>'
   const xml = `${XML_HEADER}<${tag} ${DOCUMENT_NAMESPACES}>${watermark}${body}</${tag}>`
-  const name = `${kind}1.xml`
+  const name = pkg.regionName(kind)
   pkg.files[`word/${name}`] = strToU8(xml)
   if (part.rels.length) pkg.files[`word/_rels/${name}.rels`] = strToU8(relsXML(part.rels))
   return documentPart.rel(kind === 'header' ? REL.header : REL.footer, name)
+}
+
+/** One `<w:footnote>`, numbered as the package numbers it. */
+export function footnoteXML(part: PartWriter, note: WriterFootnote): string {
+  const ref =
+    '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/><w:vertAlign w:val="superscript"/></w:rPr><w:footnoteRef/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>'
+  const first = note.content.at(0)
+  const rest = note.content.slice(1)
+  const firstXML = first
+    ? `<w:p><w:pPr><w:pStyle w:val="FootnoteText"/>${paragraphDirection(first) === 'rtl' ? '<w:bidi/>' : ''}</w:pPr>${ref}${part.inlines(first.content)}</w:p>`
+    : `<w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr>${ref}</w:p>`
+  const id = part.pkg.footnoteNumber(note.id)
+  return `<w:footnote w:id="${id}">${firstXML}${part.blocks(rest, textWidthOf(part.pkg.model))}</w:footnote>`
 }
 
 function footnotesXML(pkg: PackageWriter): string {
@@ -491,29 +452,17 @@ function footnotesXML(pkg: PackageWriter): string {
   const separator =
     '<w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote>' +
     '<w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote>'
-  const notes = pkg.model.footnotes
-    .map((note, index) => {
-      const ref =
-        '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/><w:vertAlign w:val="superscript"/></w:rPr><w:footnoteRef/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>'
-      const first = note.content.at(0)
-      const rest = note.content.slice(1)
-      const firstXML = first
-        ? `<w:p><w:pPr><w:pStyle w:val="FootnoteText"/>${paragraphDirection(first) === 'rtl' ? '<w:bidi/>' : ''}</w:pPr>${ref}${part.inlines(first.content)}</w:p>`
-        : `<w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr>${ref}</w:p>`
-      return `<w:footnote w:id="${index + 1}">${firstXML}${part.blocks(rest, textWidthOf(pkg.model))}</w:footnote>`
-    })
-    .join('')
+  const notes = pkg.model.footnotes.map((note) => footnoteXML(part, note)).join('')
   if (part.rels.length) pkg.files['word/_rels/footnotes.xml.rels'] = strToU8(relsXML(part.rels))
   return `${XML_HEADER}<w:footnotes ${DOCUMENT_NAMESPACES}>${separator}${notes}</w:footnotes>`
 }
 
-export interface WriteDocxOptions {
-  /** Encrypts nothing itself; protection is a separate step on the written bytes. */
+export interface BuildDocxOptions {
   creator?: string
 }
 
-/** A Word `.docx` package holding the model. */
-export function writeDocx(model: WriterDocument, options: WriteDocxOptions = {}): Uint8Array {
+/** A new Word `.docx` package holding the model. */
+export function buildDocx(model: WriterDocument, options: BuildDocxOptions = {}): Uint8Array {
   const pkg = new PackageWriter(model)
   const part = new PartWriter(pkg)
   const { page } = model
@@ -537,31 +486,14 @@ export function writeDocx(model: WriterDocument, options: WriteDocxOptions = {})
     const id = writeHeaderFooter(pkg, part, 'footer', model.footer, '')
     references.push(el('w:footerReference', { 'w:type': 'default', 'r:id': id }))
   }
-  const landscape = page.width > page.height
-  const sectPr =
-    `<w:sectPr>${references.join('')}` +
-    el('w:pgSz', {
-      'w:w': page.width,
-      'w:h': page.height,
-      'w:orient': landscape ? 'landscape' : undefined
-    }) +
-    el('w:pgMar', {
-      'w:top': page.margins.top,
-      'w:right': page.margins.right,
-      'w:bottom': page.margins.bottom,
-      'w:left': page.margins.left,
-      'w:header': page.margins.header,
-      'w:footer': page.margins.footer,
-      'w:gutter': 0
-    }) +
-    '</w:sectPr>'
+  const sectPr = sectionPropertiesXML(page, references.join(''))
 
   pkg.files['word/document.xml'] = strToU8(
     `${XML_HEADER}<w:document ${DOCUMENT_NAMESPACES}><w:body>${body}${sectPr}</w:body></w:document>`
   )
   part.rel(REL.styles, 'styles.xml')
   part.rel(REL.settings, 'settings.xml')
-  pkg.files['word/styles.xml'] = strToU8(stylesXML())
+  pkg.files['word/styles.xml'] = strToU8(stylesXML(model.defaults))
   pkg.files['word/settings.xml'] = strToU8(settingsXML(model))
   if (pkg.lists.length) {
     part.rel(REL.numbering, 'numbering.xml')

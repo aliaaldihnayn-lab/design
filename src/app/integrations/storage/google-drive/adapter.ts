@@ -28,6 +28,8 @@ export const DRIVE_CLIENT_ID_FIELD = 'client-id'
 export const DEFAULT_DRIVE_CLIENT_ID =
   '1513535845-1u9552fr7236r6hrllnngv4p7jivnj4c.apps.googleusercontent.com'
 export const DRIVE_FOLDER_FIELD = 'folder'
+/** The browser API key the Google Picker needs besides the signed-in user's token. */
+export const DRIVE_PICKER_KEY_FIELD = 'picker-api-key'
 
 const driveFileSchema = v.object({
   id: v.string(),

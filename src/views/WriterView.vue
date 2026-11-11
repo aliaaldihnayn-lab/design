@@ -7,7 +7,9 @@ import { useRouter } from 'vue-router'
 import {
   documentStatistics,
   nodeText,
+  numberedFootnotes,
   writerTemplate,
+  type GoogleDocsSkipped,
   type WriterTemplateId
 } from '@lawha/core/writer'
 import { localeDirection, useHistoryMessages, useI18n, useWriterMessages } from '@lawha/vue/i18n'
@@ -15,6 +17,7 @@ import { localeDirection, useHistoryMessages, useI18n, useWriterMessages } from 
 import { useWriterHistory } from '@/app/history/writer'
 import {
   openGoogleDocument,
+  pickAndOpenGoogleDocument,
   openWordDocument,
   saveWriterDocument,
   saveWriterDocumentAs,
@@ -22,6 +25,7 @@ import {
   type WriterFileOutcome
 } from '@/app/writer/document'
 import { WRITER_FONTS_STYLESHEET } from '@/app/writer/fonts'
+import { saveWriterPDF } from '@/app/writer/pdf'
 import { printableHTML, printHTML } from '@/app/writer/print'
 import {
   newWriterDocument,
@@ -40,6 +44,7 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import { writer } from '@/components/writer/ui'
 import { useWriterEditor } from '@/components/writer/useWriterEditor'
 import WriterFindBar from '@/components/writer/WriterFindBar.vue'
+import WriterFootnotes from '@/components/writer/WriterFootnotes.vue'
 import WriterGoogleDocs from '@/components/writer/WriterGoogleDocs.vue'
 import WriterNewMenu from '@/components/writer/WriterNewMenu.vue'
 import WriterPageSetup from '@/components/writer/WriterPageSetup.vue'
@@ -63,7 +68,7 @@ useHead({
   link: [{ rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }]
 })
 
-const editor = useWriterEditor(() => t.value.untitled)
+const { editor, pages, sheets, sections } = useWriterEditor(() => t.value.untitled)
 const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
 const findOpen = ref(false)
@@ -104,16 +109,28 @@ const statusLabel = computed(() => {
 function report(outcome: WriterFileOutcome, failed: (detail: string) => string) {
   locked.value = outcome.status === 'failed' && outcome.reason === 'encrypted'
   if (outcome.status !== 'failed') {
-    error.value = null
+    error.value = outcome.status === 'done' ? skippedNotice(outcome.skipped ?? []) : null
     return
   }
   if (outcome.reason === 'not-docx') error.value = t.value.notDocx
   else if (outcome.reason === 'encrypted') error.value = t.value.encrypted
   else if (outcome.reason === 'wrong-password') error.value = t.value.wrongPassword
   else if (outcome.reason === 'invalid-google-doc') error.value = t.value.invalidGoogleDoc
+  else if (outcome.reason === 'conflict') error.value = t.value.saveConflict
+  else if (outcome.reason === 'picker-unavailable') error.value = t.value.pickerUnavailable
   else if (outcome.reason === 'google')
     error.value = t.value.googleFailed({ error: outcome.detail })
   else error.value = failed(outcome.detail)
+}
+
+/** What a Google Docs save had to leave out, since the Docs API cannot write it. */
+function skippedNotice(skipped: GoogleDocsSkipped[]): string | null {
+  const notes = skipped.map((item) => {
+    if (item.kind === 'pageField') return t.value.googleSkippedPageField
+    if (item.kind === 'image') return t.value.googleSkippedImages({ count: item.count })
+    return t.value.googleSkippedSuggestions
+  })
+  return notes.length ? notes.join(' ') : null
 }
 
 async function run(action: () => Promise<WriterFileOutcome>, failed: (detail: string) => string) {
@@ -129,7 +146,26 @@ async function run(action: () => Promise<WriterFileOutcome>, failed: (detail: st
 const openFailed = (detail: string) => t.value.openFailed({ error: detail })
 const saveFailed = (detail: string) => t.value.saveFailed({ error: detail })
 
-/** Opens the print dialog on the document as it prints; its Save as PDF exports the PDF. */
+/** Lays the document out and saves it as a PDF file, its text in embedded fonts. */
+async function exportPDF() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await saveWriterPDF(
+      { ...writerDocument.value, title: writerTitle.value },
+      writerTitle.value || t.value.untitled
+    )
+    error.value = null
+  } catch (cause) {
+    error.value = t.value.exportFailed({
+      error: cause instanceof Error ? cause.message : String(cause)
+    })
+  } finally {
+    busy.value = false
+  }
+}
+
+/** Opens the print dialog on the document as it prints. */
 async function printDocument() {
   const instance = editor.value
   if (!instance) return
@@ -139,9 +175,9 @@ async function printDocument() {
       {
         bodyHTML: instance.getHTML(),
         fontsStylesheet: WRITER_FONTS_STYLESHEET,
-        footnotes: writerDocument.value.footnotes.map((note) =>
-          note.content.map(nodeText).join(' ')
-        )
+        footnotes: numberedFootnotes(writerDocument.value)
+          .filter((note) => note.number !== null)
+          .map((note) => note.content.map(nodeText).join(' '))
       }
     )
   )
@@ -215,7 +251,10 @@ onBeforeUnmount(() => editor.value?.destroy())
         >
           <icon-lucide-download class="size-3.5" />
         </IconButton>
-        <IconButton :label="t.exportPDF" data-test-id="writer-print" @click="printDocument">
+        <IconButton :label="t.exportPDF" data-test-id="writer-export-pdf" @click="exportPDF">
+          <icon-lucide-file-down class="size-3.5" />
+        </IconButton>
+        <IconButton :label="t.print" data-test-id="writer-print" @click="printDocument">
           <icon-lucide-printer class="size-3.5" />
         </IconButton>
         <IconButton :label="t.signPDF" data-test-id="writer-sign-pdf" @click="signPDFOpen = true">
@@ -230,6 +269,7 @@ onBeforeUnmount(() => editor.value?.destroy())
         </IconButton>
         <WriterGoogleDocs
           @open="(link: string) => run(() => openGoogleDocument(link), openFailed)"
+          @pick="run(() => pickAndOpenGoogleDocument(locale), openFailed)"
         />
         <WriterPageSetup />
         <IconButton
@@ -310,9 +350,13 @@ onBeforeUnmount(() => editor.value?.destroy())
           v-show="!previewedVersion"
           :editor="editor"
           :page="page"
+          :first-page="sections[0]?.page ?? page"
+          :sheets="sheets"
+          :pages="pages.pages"
           :watermark="writerDocument.watermark?.text"
         >
           <template #header><WriterRegion kind="header" /></template>
+          <template #footnotes><WriterFootnotes :editor="editor" /></template>
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>
       </div>

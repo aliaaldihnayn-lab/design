@@ -210,7 +210,19 @@
   "saveEncryptedPDF": "Сохранить зашифрованный PDF",
   "openEncrypted": "Открыть",
   "wrongPassword": "Неверный пароль.",
-  "stampBottomRight": "Видимая, внизу справа на последней странице",
-  "stampBottomLeft": "Видимая, внизу слева на последней странице",
-  "stampHidden": "Невидимая"
+  "stampHidden": "Невидимая",
+  "deleteFootnote": "Удалить сноску",
+  "stampPlaced": "Видимая, там, где вы её разместите",
+  "placeSignature": "Щёлкните или проведите по странице, чтобы разместить подпись",
+  "previousPage": "Предыдущая страница",
+  "nextPage": "Следующая страница",
+  "pageOf": "Страница {page} из {count}",
+  "signatureField": "Поле подписи {name}",
+  "exportFailed": "Не удалось экспортировать PDF: {error}",
+  "saveConflict": "Кто-то сохранил этот документ после того, как вы его открыли. Скачайте свою копию, затем откройте последнюю версию.",
+  "pickFromDrive": "Выбрать на Drive",
+  "pickerUnavailable": "Добавьте ключ API Google Picker в Настройки → Хранилище → Google Drive или вставьте ссылку на документ.",
+  "googleSkippedPageField": "В колонтитуле есть номер страницы, который Google Docs не принимает; колонтитул оставлен как в Docs.",
+  "googleSkippedImages": "Вставленные изображения ({count}) не сохранены: Google Docs принимает только изображения, доступные в интернете.",
+  "googleSkippedSuggestions": "Отслеживаемые изменения сохранены как обычные правки: Google Docs не принимает предложения."
 }

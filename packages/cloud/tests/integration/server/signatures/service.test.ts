@@ -51,7 +51,8 @@ describe('sending documents for signature', () => {
       const { email, sent } = recordingEmail()
       const service = createSignatureService(runtime.database, {
         email,
-        publicURL: 'https://cloud.example.com'
+        publicURL: 'https://cloud.example.com',
+        downloadSecret: 'test-download-secret-of-enough-length'
       })
       const envelope = await service.create(
         owner,
@@ -151,7 +152,8 @@ describe('sending documents for signature', () => {
       const { email, sent } = recordingEmail()
       const service = createSignatureService(runtime.database, {
         email,
-        publicURL: 'https://cloud.example.com'
+        publicURL: 'https://cloud.example.com',
+        downloadSecret: 'test-download-secret-of-enough-length'
       })
       const envelope = await service.create(
         owner,
@@ -198,7 +200,8 @@ describe('sending documents for signature', () => {
     const runtime = await createCloudTestDatabase()
     try {
       const service = createSignatureService(runtime.database, {
-        publicURL: 'https://cloud.example.com'
+        publicURL: 'https://cloud.example.com',
+        downloadSecret: 'test-download-secret-of-enough-length'
       })
       const result = await service.create(
         owner,

@@ -58,5 +58,6 @@
   "actionUndo": "Правка отменена",
   "actionRedo": "Правка повторена",
   "actionRestore": "Версия восстановлена",
-  "unknownAuthor": "Вы"
+  "unknownAuthor": "Вы",
+  "cloudVersions": "Сохранено в Lawha Cloud"
 }

@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "Disegno degli shader",
   "preparationPreparingRender": "Preparazione della tela",
   "preparationLoading": "Caricamento…",
-  "preparationProgress": "{completed} di {total}"
+  "preparationProgress": "{completed} di {total}",
+  "createText": "Documento di testo"
 }

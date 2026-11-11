@@ -160,6 +160,7 @@ function services() {
       list: async () => [],
       get: async () => null,
       pdf: async () => null,
+      download: async () => null,
       void: async () => false,
       view: async () => null,
       sign: async () => 'not_found' as const,

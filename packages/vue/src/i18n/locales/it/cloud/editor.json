@@ -410,5 +410,6 @@
   "joinRoom": "Entra nella stanza",
   "roomsExpand": "Mostra sottostanze",
   "roomsCollapse": "Nascondi sottostanze",
-  "roomsRenameHeading": "Rinomina stanza"
+  "roomsRenameHeading": "Rinomina stanza",
+  "roomsNewText": "Nuovo documento di testo"
 }

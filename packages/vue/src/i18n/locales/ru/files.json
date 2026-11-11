@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "Отрисовка шейдеров",
   "preparationPreparingRender": "Подготовка холста",
   "preparationLoading": "Загрузка…",
-  "preparationProgress": "{completed} из {total}"
+  "preparationProgress": "{completed} из {total}",
+  "createText": "Текстовый документ"
 }

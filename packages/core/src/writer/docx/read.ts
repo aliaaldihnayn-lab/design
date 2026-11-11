@@ -25,6 +25,12 @@ import {
   type ReadContext
 } from './context'
 import { mergeText, readInlines, type InlineState } from './inline'
+import {
+  documentDefaults,
+  effectiveParagraph,
+  readParagraphProperties,
+  type ParagraphProperties
+} from './styles'
 import { attrOf, find, kid, kids, parseXML, toggleOf, valOf } from './xml'
 
 const TWIPS_PER_PX = 15
@@ -33,9 +39,19 @@ export class DocxReadError extends Error {
   override name = 'DocxReadError'
 }
 
+/** Styles Word gives text by its role, which the model keeps as structure instead. */
+const ROLE_PARAGRAPH_STYLES = new Set([
+  'footnote text',
+  'endnote text',
+  'annotation text',
+  'header',
+  'footer',
+  'title'
+])
+
 function headingLevel(styleId: string | null, context: ReadContext): number | null {
   if (!styleId) return null
-  const name = context.styles.get(styleId) ?? styleId.toLowerCase()
+  const name = context.styles.names.get(styleId) ?? styleId.toLowerCase()
   const match = /^heading\s*(\d)$/.exec(name) ?? /^heading(\d)$/i.exec(styleId)
   if (match) return Math.min(6, Number(match[1]))
   if (name === 'title') return 1
@@ -62,15 +78,30 @@ function readAlignment(jc: string | null, rtl: boolean): string | null {
   }
 }
 
+/** The list a numbered paragraph is an item of, from its own numbering or its style's. */
+function listOf(props: ParagraphProperties, context: ReadContext): ListInfo | undefined {
+  const numId = props.numId
+  if (!numId || numId === '0') return undefined
+  const level = props.ilvl ?? 0
+  const info = context.numbering.levels.get(numId)?.[level]
+  return info ? { numId, level, ordered: info.ordered, start: info.start } : undefined
+}
+
 function readParagraph(p: Element, state: InlineState): BlockItem[] {
   const { context } = state
   const pPr = kid(p, 'pPr')
-  const bidi = toggleOf(pPr, 'bidi')
-  const rtl = bidi === true
+  const sheet = context.styles
+  const styleId = valOf(pPr, 'pStyle') ?? sheet.defaultParagraphStyle
+  const props = effectiveParagraph(sheet, styleId, readParagraphProperties(pPr))
+  const rtl = props.bidi === true
   const attrs: Record<string, unknown> = { dir: rtl ? 'rtl' : 'ltr' }
-  const align = readAlignment(valOf(pPr, 'jc'), rtl)
+  const align = readAlignment(props.jc ?? null, rtl)
   if (align) attrs.textAlign = align
   const level = headingLevel(valOf(pPr, 'pStyle'), context)
+  // A heading's or a footnote's look is the editor's for that role; its runs inherit only
+  // what plain text would.
+  const role = level !== null || ROLE_PARAGRAPH_STYLES.has(sheet.names.get(styleId ?? '') ?? '')
+  state.paragraphStyle = role ? sheet.defaultParagraphStyle : styleId
   const make = (content: WriterNode[]): WriterNode => {
     const merged = mergeText(content)
     const node: WriterNode =
@@ -79,15 +110,7 @@ function readParagraph(p: Element, state: InlineState): BlockItem[] {
         : { type: 'paragraph', attrs: { ...attrs } }
     return merged.length ? { ...node, content: merged } : node
   }
-  let list: ListInfo | undefined
-  const numPr = kid(pPr, 'numPr')
-  const numId = valOf(numPr, 'numId')
-  if (numId && numId !== '0') {
-    const ilvl = Number(valOf(numPr, 'ilvl') ?? 0)
-    const levels = context.numbering.levels.get(numId)
-    const info = levels?.[ilvl]
-    if (info) list = { numId, level: ilvl, ordered: info.ordered, start: info.start }
-  }
+  const list = listOf(props, context)
 
   const items = readInlines(p, state, [])
   const blocks: BlockItem[] = []
@@ -103,6 +126,17 @@ function readParagraph(p: Element, state: InlineState): BlockItem[] {
   }
   if (current.length || !sawBreak)
     blocks.push({ node: make(current), list: current.length || !sawBreak ? list : undefined })
+  state.paragraphStyle = null
+  const sectPr = kid(pPr, 'sectPr')
+  if (sectPr) {
+    const attrs: Record<string, unknown> = { page: readSection(sectPr) }
+    // A section without a reference keeps the previous section's; `inheritRegions` fills it.
+    for (const kind of ['header', 'footer'] as const) {
+      const region = readHeaderFooter(state.context, sectPr, `${kind}Reference`)
+      if (region) attrs[kind] = region.node.content?.length ? region.node : null
+    }
+    blocks.push({ node: { type: 'sectionBreak', attrs } })
+  }
   return blocks
 }
 
@@ -151,37 +185,66 @@ function readTable(tbl: Element, state: InlineState): WriterNode {
   return { type: 'table', attrs: { dir }, content: rows }
 }
 
-function readBlocks(parent: Element, state: InlineState): WriterNode[] {
-  const items: BlockItem[] = []
-  const visit = (container: Element) => {
+/** Body blocks, and the top-level elements each was read from, for patching a package. */
+export interface SourcedBlock {
+  node: WriterNode
+  sources: Element[]
+}
+
+function countItems(node: WriterNode): number {
+  if (node.type === 'listItem') {
+    return 1 + (node.content ?? []).reduce((sum, child) => sum + countItems(child), 0)
+  }
+  return (node.content ?? []).reduce((sum, child) => sum + countItems(child), 0)
+}
+
+export function readSourcedBlocks(parent: Element, state: InlineState): SourcedBlock[] {
+  const items: Array<BlockItem & { owner: Element }> = []
+  const visit = (container: Element, owner: Element | null) => {
     for (const child of kids(container)) {
+      const top = owner ?? child
       if (child.localName === 'p' && /^toc/i.test(valOf(kid(child, 'pPr'), 'pStyle') ?? '')) {
         if (items.at(-1)?.node.type !== 'tableOfContents') {
-          items.push({ node: { type: 'tableOfContents' } })
+          items.push({ node: { type: 'tableOfContents' }, owner: top })
         }
-      } else if (child.localName === 'p') items.push(...readParagraph(child, state))
-      else if (child.localName === 'tbl') items.push({ node: readTable(child, state) })
+      } else if (child.localName === 'p') {
+        items.push(...readParagraph(child, state).map((item) => ({ ...item, owner: top })))
+      } else if (child.localName === 'tbl')
+        items.push({ node: readTable(child, state), owner: top })
       else if (child.localName === 'sdt') {
         const content = kid(child, 'sdtContent')
         const gallery =
           valOf(find(child, 'docPartGallery'), 'docPartGallery') ??
           attrOf(find(child, 'docPartGallery'), 'val')
-        if (gallery === 'Table of Contents') items.push({ node: { type: 'tableOfContents' } })
-        else if (content) visit(content)
-      } else if (child.localName === 'customXml') visit(child)
+        if (gallery === 'Table of Contents') {
+          items.push({ node: { type: 'tableOfContents' }, owner: top })
+        } else if (content) visit(content, top)
+      } else if (child.localName === 'customXml') visit(child, top)
     }
   }
-  visit(parent)
-  return buildLists(
+  visit(parent, null)
+  const blocks = buildLists(
     items.map((item) =>
       item.list
         ? { node: item.node, list: { ...item.list, id: item.list.numId } }
         : { node: item.node }
     )
   )
+  // A list consumed one item per list item in it; any other block, one item.
+  let index = 0
+  return blocks.map((node) => {
+    const used = node.type === 'bulletList' || node.type === 'orderedList' ? countItems(node) : 1
+    const owners = items.slice(index, index + used).map((item) => item.owner)
+    index += used
+    return { node, sources: owners.filter((owner, at) => owners.indexOf(owner) === at) }
+  })
 }
 
-function readSection(sectPr: Element | null): PageSetup {
+function readBlocks(parent: Element, state: InlineState): WriterNode[] {
+  return readSourcedBlocks(parent, state).map((block) => block.node)
+}
+
+export function readSection(sectPr: Element | null): PageSetup {
   const page = defaultPageSetup()
   const size = kid(sectPr, 'pgSz')
   const margins = kid(sectPr, 'pgMar')
@@ -281,8 +344,16 @@ export function isEncryptedOffice(bytes: Uint8Array): boolean {
   return CFB_MAGIC.every((byte, index) => bytes[index] === byte)
 }
 
-/** Reads a Word `.docx` package into the model model. */
-export function readDocx(bytes: Uint8Array): WriterDocument {
+/** A package opened for reading: its parts, its main part's XML, and what reading it needs. */
+export interface OpenedDocx {
+  files: PackageFiles
+  documentPath: string
+  root: Element
+  body: Element
+  context: ReadContext
+}
+
+export function openDocx(bytes: Uint8Array): OpenedDocx {
   if (!ZIP_MAGIC.every((byte, index) => bytes[index] === byte)) {
     throw new DocxReadError(isEncryptedOffice(bytes) ? 'encrypted' : 'not-docx')
   }
@@ -292,8 +363,7 @@ export function readDocx(bytes: Uint8Array): WriterDocument {
   const documentPath = officeDocument ? resolvePath('', officeDocument.target) : 'word/document.xml'
   const root = parseXML(readText(files, documentPath) ?? '')
   const body = kid(root, 'body')
-  if (!body) throw new DocxReadError('not-docx')
-
+  if (!root || !body) throw new DocxReadError('not-docx')
   const base: ReadContext = {
     files,
     rels: new Map(),
@@ -301,12 +371,49 @@ export function readDocx(bytes: Uint8Array): WriterDocument {
     styles: readStyles(files),
     numbering: readNumbering(files)
   }
-  const context = partContext(base, documentPath)
-  const state: InlineState = { context, comments: [], field: null }
-  const content = readBlocks(body, state)
+  return { files, documentPath, root, body, context: partContext(base, documentPath) }
+}
+
+export const newInlineState = (context: ReadContext): InlineState => ({
+  context,
+  comments: [],
+  field: null
+})
+
+/**
+ * Gives each section break the header and footer Word shows in it: a section with no reference
+ * of its own continues the one before (ECMA-376 17.10.5). Returns what the last break had, for
+ * the document's own section.
+ */
+function inheritRegions(content: WriterNode[]): Record<'header' | 'footer', WriterNode | null> {
+  const current: Record<'header' | 'footer', WriterNode | null> = { header: null, footer: null }
+  for (const node of content) {
+    if (node.type !== 'sectionBreak') continue
+    const attrs = { ...node.attrs }
+    for (const kind of ['header', 'footer'] as const) {
+      if (kind in attrs) current[kind] = (attrs[kind] as WriterNode | null) ?? null
+      else attrs[kind] = current[kind]
+    }
+    node.attrs = attrs
+  }
+  return current
+}
+
+/** Reads a Word `.docx` package into the model. */
+export function readDocx(bytes: Uint8Array): WriterDocument {
+  const { files, body, context } = openDocx(bytes)
+  const content = readBlocks(body, newInlineState(context))
   const sectPr = kid(body, 'sectPr')
+  const inherited = inheritRegions(content)
   const header = readHeaderFooter(context, sectPr, 'headerReference')
   const footer = readHeaderFooter(context, sectPr, 'footerReference')
+  const lastRegion = (
+    kind: 'header' | 'footer',
+    read: { node: WriterNode } | null
+  ): WriterNode | null => {
+    if (read) return read.node.content?.length ? read.node : null
+    return inherited[kind]
+  }
   const settings = parseXML(readText(files, 'word/settings.xml') ?? '')
   const core = parseXML(readText(files, 'docProps/core.xml') ?? '')
   const title = find(core, 'title')?.textContent ?? ''
@@ -314,12 +421,13 @@ export function readDocx(bytes: Uint8Array): WriterDocument {
   return createWriterDocument({
     body: { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] },
     page: readSection(sectPr),
-    header: header?.node.content?.length ? header.node : null,
-    footer: footer?.node.content?.length ? footer.node : null,
+    header: lastRegion('header', header),
+    footer: lastRegion('footer', footer),
     watermark: header?.watermark ? { text: header.watermark } : null,
     comments: readComments(files),
     footnotes: readFootnotes(context),
     trackChanges: toggleOf(settings, 'trackRevisions') === true,
-    title
+    title,
+    defaults: documentDefaults(context.styles)
   })
 }

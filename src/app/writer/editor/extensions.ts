@@ -16,6 +16,7 @@ import {
   PageBreak,
   PageCount,
   PageNumber,
+  SectionBreak,
   Subscript,
   Superscript,
   TableOfContents
@@ -71,6 +72,7 @@ export function writerExtensions(options: WriterExtensionOptions = {}): Extensio
     extensions.push(
       TableKit.configure({ table: { resizable: true } }),
       PageBreak,
+      SectionBreak,
       Footnote,
       TableOfContents
     )

@@ -51,7 +51,8 @@ export const historyMessageDefaults = {
   actionUndo: 'Undid an edit',
   actionRedo: 'Redid an edit',
   actionRestore: 'Restored a version',
-  unknownAuthor: 'You'
+  unknownAuthor: 'You',
+  cloudVersions: 'Saved on Lawha Cloud'
 } as const
 
 export const historyMessages = i18n('history', historyMessageDefaults)

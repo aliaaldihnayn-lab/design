@@ -10,3 +10,4 @@ export {
   type SignatureServiceOptions,
   type SigningRequestContext
 } from './service'
+export { readSealCredentials, sealPDF, type SealCredentials } from './seal'

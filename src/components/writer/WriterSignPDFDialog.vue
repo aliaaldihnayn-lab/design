@@ -2,11 +2,17 @@
 import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
-import { pdfPageSizes } from '@lawha/core/pdf-sign'
-import { useWriterMessages } from '@lawha/vue/i18n'
+import {
+  previewPDFPages,
+  signatureFields,
+  type PDFPagePreview,
+  type SignatureField
+} from '@lawha/core/pdf-sign'
+import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { PDF, pickFile, saveFileAs, type PickedFile } from '@/app/writer/files'
+import { boxToRect, defaultBox, rectToBox } from '@/app/writer/placement'
 import { writerAuthor } from '@/app/writer/session'
 import {
   createSigningCertificate,
@@ -24,11 +30,15 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { writer } from './ui'
+import WriterSignPDFDialogPlacement, {
+  type SignaturePlacement
+} from './WriterSignPDFDialogPlacement.vue'
 
 /** Digitally signs a PDF with the person's certificate, made here or imported. */
 const open = defineModel<boolean>('open', { default: false })
 const t = useWriterMessages()
 const dates = useDateFormat()
+const { locale } = useI18n()
 const ui = writer()
 
 const certificate = ref(signingCertificate())
@@ -42,14 +52,16 @@ const pdf = ref<PickedFile | null>(null)
 const password = ref('')
 const reason = ref('')
 const location = ref('')
-const placement = ref<'none' | 'bottom-end' | 'bottom-start'>('bottom-end')
+const visibility = ref<'placed' | 'none'>('placed')
+const previews = ref<PDFPagePreview[]>([])
+const fields = ref<SignatureField[]>([])
+const placement = ref<SignaturePlacement | null>(null)
 const busy = ref(false)
 const error = ref<string | null>(null)
 const done = ref(false)
 
-const placementOptions = computed(() => [
-  { value: 'bottom-end', label: t.value.stampBottomRight },
-  { value: 'bottom-start', label: t.value.stampBottomLeft },
+const visibilityOptions = computed(() => [
+  { value: 'placed', label: t.value.stampPlaced },
   { value: 'none', label: t.value.stampHidden }
 ])
 
@@ -110,14 +122,39 @@ async function forget() {
   certificate.value = null
 }
 
+/**
+ * Opens the PDF's pages for placing the signature: on the file's first empty signature field
+ * when it has one, else in the bottom corner of the last page where the text ends.
+ */
 async function choosePDF() {
-  pdf.value = await pickFile(PDF)
+  const file = await pickFile(PDF)
+  if (!file) return
+  pdf.value = file
   done.value = false
+  error.value = null
+  busy.value = true
+  try {
+    previews.value = await previewPDFPages(file.bytes)
+    fields.value = await signatureFields(file.bytes)
+    const field = fields.value.find((entry) => !entry.signed)
+    const index = field?.page ?? Math.max(0, previews.value.length - 1)
+    const page = previews.value.at(index)
+    const rtl = localeDirection(locale.value) === 'rtl'
+    placement.value = page
+      ? {
+          page: index,
+          box: field ? rectToBox(field.rect, page) : defaultBox(page, rtl),
+          fieldName: field?.name ?? null
+        }
+      : null
+  } catch (cause) {
+    error.value = t.value.signFailed({
+      error: cause instanceof Error ? cause.message : String(cause)
+    })
+  } finally {
+    busy.value = false
+  }
 }
-
-const STAMP_WIDTH = 180
-const STAMP_HEIGHT = 60
-const MARGIN = 36
 
 async function sign() {
   const file = pdf.value
@@ -127,28 +164,24 @@ async function sign() {
   try {
     const date = new Date()
     let appearance
-    if (placement.value !== 'none') {
-      const sizes = await pdfPageSizes(file.bytes)
-      const last = sizes.at(-1) ?? { width: 595, height: 842 }
-      const x = placement.value === 'bottom-end' ? last.width - MARGIN - STAMP_WIDTH : MARGIN
+    const place = placement.value
+    const page = place ? previews.value.at(place.page) : undefined
+    if (visibility.value === 'placed' && place && page) {
       const lines = [
         certificate.value.subject,
         dates.format(date.toISOString(), 'dateTime'),
         reason.value
       ]
       const png = await signatureStamp(compact(lines), null)
-      appearance = {
-        page: sizes.length - 1,
-        rect: [x, MARGIN, STAMP_WIDTH, STAMP_HEIGHT] as [number, number, number, number],
-        png
-      }
+      appearance = { page: place.page, rect: boxToRect(place.box, page), png }
     }
     const result = await signWithCertificate(file.bytes, password.value, {
       name: certificate.value.subject,
       reason: reason.value || undefined,
       location: location.value || undefined,
       date,
-      appearance
+      appearance,
+      fieldName: placement.value?.fieldName ?? undefined
     })
     if ('bytes' in result) {
       const name = file.name.replace(/\.pdf$/i, '')
@@ -248,7 +281,13 @@ async function sign() {
           <AppInput v-model="reason" :aria-label="t.reason" :placeholder="t.reason" />
           <AppInput v-model="location" :aria-label="t.location" :placeholder="t.location" />
         </div>
-        <AppSelect v-model="placement" :options="placementOptions" :label="t.signature" />
+        <AppSelect v-model="visibility" :options="visibilityOptions" :label="t.signature" />
+        <WriterSignPDFDialogPlacement
+          v-if="visibility === 'placed' && placement && previews.length"
+          v-model="placement"
+          :previews="previews"
+          :fields="fields"
+        />
         <AppInput
           v-model="password"
           type="password"

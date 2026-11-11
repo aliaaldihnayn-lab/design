@@ -112,6 +112,17 @@ export const declineSigningSchema = v.object({
   reason: v.optional(v.pipe(v.string(), v.maxLength(500)), '')
 })
 
+/** A completed envelope's download token, from the link in its completion email. */
+export const signedDownloadSchema = v.object({
+  token: v.pipe(v.string(), v.regex(/^[0-9a-f-]{36}\.[0-9a-f]{64}$/))
+})
+
+/** The signed PDF a download token opens. */
+export const signedDownloadResponseSchema = v.object({
+  title: v.string(),
+  pdf: v.string()
+})
+
 export type SignatureEnvelopeStatus = v.InferOutput<typeof signatureEnvelopeStatusSchema>
 export type SignatureSignerStatus = v.InferOutput<typeof signatureSignerStatusSchema>
 export type SignatureEventKind = v.InferOutput<typeof signatureEventKindSchema>
@@ -122,6 +133,13 @@ export type SignatureEnvelope = v.InferOutput<typeof signatureEnvelopeSchema>
 export type SigningView = v.InferOutput<typeof signingViewSchema>
 export type SignDocumentInput = v.InferOutput<typeof signDocumentSchema>
 export type DeclineSigningInput = v.InferOutput<typeof declineSigningSchema>
+
+export type SignedDownloadResponse = v.InferOutput<typeof signedDownloadResponseSchema>
+
+/** Where a completion email's link downloads the signed PDF; the token travels in the fragment. */
+export function signedDownloadPath(token: string): string {
+  return `/sign/download#${token}`
+}
 
 /** Where a signer opens their link, relative to the server's public URL. */
 export function signingPath(signerId: string, secret: string): string {

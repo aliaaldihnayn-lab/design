@@ -210,7 +210,19 @@
   "saveEncryptedPDF": "Enregistrer un PDF chiffré",
   "openEncrypted": "Ouvrir",
   "wrongPassword": "Le mot de passe est incorrect.",
-  "stampBottomRight": "Visible, en bas à droite de la dernière page",
-  "stampBottomLeft": "Visible, en bas à gauche de la dernière page",
-  "stampHidden": "Invisible"
+  "stampHidden": "Invisible",
+  "deleteFootnote": "Supprimer la note de bas de page",
+  "stampPlaced": "Visible, là où vous la placez",
+  "placeSignature": "Cliquez ou faites glisser sur la page pour placer la signature",
+  "previousPage": "Page précédente",
+  "nextPage": "Page suivante",
+  "pageOf": "Page {page} sur {count}",
+  "signatureField": "Champ de signature {name}",
+  "exportFailed": "Impossible d’exporter le PDF : {error}",
+  "saveConflict": "Quelqu’un a enregistré ce document depuis que vous l’avez ouvert. Téléchargez votre copie, puis ouvrez la dernière version.",
+  "pickFromDrive": "Choisir dans Drive",
+  "pickerUnavailable": "Ajoutez une clé d'API Google Picker dans Réglages → Stockage → Google Drive, ou collez le lien du document.",
+  "googleSkippedPageField": "L'en-tête ou le pied de page contient un numéro de page que Google Docs ne peut pas recevoir ; il reste tel quel dans Docs.",
+  "googleSkippedImages": "{count} images collées n'ont pas été enregistrées : Google Docs n'accepte que des images téléchargeables depuis le web.",
+  "googleSkippedSuggestions": "Les modifications suivies ont été enregistrées comme des modifications simples : Google Docs ne peut pas recevoir de suggestions."
 }

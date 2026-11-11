@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "Dessin des shaders",
   "preparationPreparingRender": "Préparation du canevas",
   "preparationLoading": "Chargement…",
-  "preparationProgress": "{completed} sur {total}"
+  "preparationProgress": "{completed} sur {total}",
+  "createText": "Document texte"
 }

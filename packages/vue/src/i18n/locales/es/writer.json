@@ -210,7 +210,19 @@
   "saveEncryptedPDF": "Guardar PDF cifrado",
   "openEncrypted": "Abrir",
   "wrongPassword": "La contraseña no es correcta.",
-  "stampBottomRight": "Visible, abajo a la derecha de la última página",
-  "stampBottomLeft": "Visible, abajo a la izquierda de la última página",
-  "stampHidden": "Invisible"
+  "stampHidden": "Invisible",
+  "deleteFootnote": "Eliminar nota al pie",
+  "stampPlaced": "Visible, donde la coloques",
+  "placeSignature": "Haz clic o arrastra en la página para colocar la firma",
+  "previousPage": "Página anterior",
+  "nextPage": "Página siguiente",
+  "pageOf": "Página {page} de {count}",
+  "signatureField": "Campo de firma {name}",
+  "exportFailed": "No se pudo exportar el PDF: {error}",
+  "saveConflict": "Alguien guardó este documento después de que lo abrieras. Descarga tu copia y abre la versión más reciente.",
+  "pickFromDrive": "Elegir de Drive",
+  "pickerUnavailable": "Añade una clave de API de Google Picker en Ajustes → Almacenamiento → Google Drive, o pega el enlace del documento.",
+  "googleSkippedPageField": "El encabezado o pie tiene un número de página que Google Docs no admite; se dejó como está en Docs.",
+  "googleSkippedImages": "No se guardaron {count} imágenes pegadas: Google Docs solo acepta imágenes que puede descargar de la web.",
+  "googleSkippedSuggestions": "Los cambios con seguimiento se guardaron como ediciones normales: Google Docs no admite sugerencias."
 }

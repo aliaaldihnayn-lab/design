@@ -413,5 +413,6 @@
   "joinRoom": "Войти в комнату",
   "roomsExpand": "Показать подкомнаты",
   "roomsCollapse": "Скрыть подкомнаты",
-  "roomsRenameHeading": "Переименовать комнату"
+  "roomsRenameHeading": "Переименовать комнату",
+  "roomsNewText": "Новый текстовый документ"
 }

@@ -67,5 +67,6 @@
   "actionUndo": "تراجع عن تعديل",
   "actionRedo": "أعاد تعديلًا",
   "actionRestore": "استعاد إصدارًا",
-  "unknownAuthor": "أنت"
+  "unknownAuthor": "أنت",
+  "cloudVersions": "المحفوظ على Lawha Cloud"
 }

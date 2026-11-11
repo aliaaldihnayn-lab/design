@@ -1,10 +1,5 @@
 import type { EditorState } from '@lawha/core'
-import type {
-  VectorNetwork,
-  VectorRegion,
-  VectorSegment,
-  VectorVertex
-} from '@lawha/scene-graph'
+import type { VectorNetwork, VectorRegion, VectorSegment, VectorVertex } from '@lawha/scene-graph'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
 export type NodeEditState = {

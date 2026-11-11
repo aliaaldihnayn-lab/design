@@ -14,6 +14,7 @@ import {
   startCleanupWorker,
   startTransactionalEmailWorker
 } from '#cloud/server'
+import { readSignatureFont } from '#cloud/server/signatures/fonts/read'
 
 import { createMigratedNodeCloudDatabase } from './bootstrap'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
@@ -34,9 +35,7 @@ function siteFiles(
   if (developmentSite) return developmentSiteFiles(developmentSite)
   const siteDirectory = environment.LAWHA_CLOUD_SITE_DIR
   if (siteDirectory) return nodeSiteFiles(siteDirectory)
-  console.warn(
-    '[Cloud] LAWHA_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
-  )
+  console.warn('[Cloud] LAWHA_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.')
   return undefined
 }
 
@@ -79,6 +78,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     transactionalEmail: email,
     enrollment,
     aiSigningKey,
+    signatureFont: await readSignatureFont(),
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId)

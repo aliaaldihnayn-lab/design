@@ -1,10 +1,6 @@
 import { computed, ref } from 'vue'
 
-import type {
-  FontFamilyOption,
-  LocalFontAccessState,
-  WebFontProviderId
-} from '@lawha/core/text'
+import type { FontFamilyOption, LocalFontAccessState, WebFontProviderId } from '@lawha/core/text'
 import { useI18n } from '@lawha/vue/i18n'
 
 import {

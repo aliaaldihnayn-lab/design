@@ -210,7 +210,19 @@
   "saveEncryptedPDF": "Zapisz zaszyfrowany PDF",
   "openEncrypted": "Otwórz",
   "wrongPassword": "Hasło jest nieprawidłowe.",
-  "stampBottomRight": "Widoczny, prawy dolny róg ostatniej strony",
-  "stampBottomLeft": "Widoczny, lewy dolny róg ostatniej strony",
-  "stampHidden": "Niewidoczny"
+  "stampHidden": "Niewidoczny",
+  "deleteFootnote": "Usuń przypis",
+  "stampPlaced": "Widoczny, tam gdzie go umieścisz",
+  "placeSignature": "Kliknij lub przeciągnij na stronie, aby umieścić podpis",
+  "previousPage": "Poprzednia strona",
+  "nextPage": "Następna strona",
+  "pageOf": "Strona {page} z {count}",
+  "signatureField": "Pole podpisu {name}",
+  "exportFailed": "Nie udało się wyeksportować PDF: {error}",
+  "saveConflict": "Ktoś zapisał ten dokument po jego otwarciu. Pobierz swoją kopię, a potem otwórz najnowszą wersję.",
+  "pickFromDrive": "Wybierz z Drive",
+  "pickerUnavailable": "Dodaj klucz API Google Picker w Ustawienia → Pamięć → Google Drive albo wklej link do dokumentu.",
+  "googleSkippedPageField": "Nagłówek lub stopka zawiera numer strony, którego Google Docs nie przyjmuje; pozostawiono je bez zmian.",
+  "googleSkippedImages": "Nie zapisano {count} wklejonych obrazów: Google Docs przyjmuje tylko obrazy, które może pobrać z sieci.",
+  "googleSkippedSuggestions": "Śledzone zmiany zapisano jako zwykłe edycje: Google Docs nie przyjmuje sugestii."
 }

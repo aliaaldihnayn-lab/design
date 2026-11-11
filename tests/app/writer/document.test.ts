@@ -22,7 +22,8 @@ describe('opening Word documents in the document editor', () => {
     writerDirty.value = true
     expect(openWordBytes(bytes, 'contract.docx', target)).toEqual({ status: 'done' })
     expect(writerName.value).toBe('contract')
-    expect(writerSource.value).toEqual({ kind: 'file', ...target })
+    // Save patches the very package that was opened.
+    expect(writerSource.value).toEqual({ kind: 'file', ...target, package: bytes })
     expect(writerDirty.value).toBe(false)
     expect(writerDocument.value.body.content?.[0].content?.[0].text).toBe('بند')
   })

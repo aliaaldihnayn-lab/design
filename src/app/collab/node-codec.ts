@@ -8,12 +8,7 @@ import {
 } from '@lawha/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@lawha/scene-graph/node-defaults'
 import { fillSchema } from '@lawha/scene-graph/paints'
-import {
-  matrixSchema,
-  vectorSchema,
-  type Matrix,
-  type Vector
-} from '@lawha/scene-graph/primitives'
+import { matrixSchema, vectorSchema, type Matrix, type Vector } from '@lawha/scene-graph/primitives'
 
 import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from '@/app/collab/shared-tree/fields'
 

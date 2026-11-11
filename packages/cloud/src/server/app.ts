@@ -60,7 +60,7 @@ import {
 } from '#cloud/server/rate-limit'
 import { createRoomMemberService, createRoomService } from '#cloud/server/rooms'
 import { createDocumentSharingService } from '#cloud/server/sharing'
-import { createSignatureService } from '#cloud/server/signatures'
+import { createSignatureService, readSealCredentials } from '#cloud/server/signatures'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
@@ -86,6 +86,8 @@ export type CloudServices = {
    * peer-to-peer and writes are not enforced by the server.
    */
   relayURL?: string
+  /** A font for names in Arabic and other scripts on signed PDFs' audit pages. */
+  signatureFont?: Uint8Array
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
@@ -277,7 +279,15 @@ export function createCloudApp(services: CloudServices) {
 
   const signatures = createSignatureService(services.database, {
     email: services.transactionalEmail,
-    publicURL: services.config.publicURL
+    publicURL: services.config.publicURL,
+    downloadSecret: services.config.authSecret,
+    seal: services.config.signatureSealPKCS12
+      ? readSealCredentials(
+          services.config.signatureSealPKCS12,
+          services.config.signatureSealPassword
+        )
+      : null,
+    scriptFont: services.signatureFont
   })
   const signing = { trustedHeaders: services.config.authTrustedIPHeaders }
 

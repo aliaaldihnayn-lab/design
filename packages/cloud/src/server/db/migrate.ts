@@ -32,6 +32,7 @@ import * as signatureEnvelopes from './migrations/028_signature_envelopes'
 import * as rooms from './migrations/029_rooms'
 import * as documentHistory from './migrations/030_document_history'
 import * as jiraConnection from './migrations/031_jira_connection'
+import * as writerDocuments from './migrations/032_writer_documents'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -65,7 +66,8 @@ const migrations: Record<string, Migration> = {
   '028_signature_envelopes': signatureEnvelopes,
   '029_rooms': rooms,
   '030_document_history': documentHistory,
-  '031_jira_connection': jiraConnection
+  '031_jira_connection': jiraConnection,
+  '032_writer_documents': writerDocuments
 }
 
 class CloudMigrationProvider implements MigrationProvider {

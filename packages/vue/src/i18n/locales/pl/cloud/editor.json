@@ -413,5 +413,6 @@
   "joinRoom": "Dołącz do pokoju",
   "roomsExpand": "Pokaż podpokoje",
   "roomsCollapse": "Ukryj podpokoje",
-  "roomsRenameHeading": "Zmień nazwę pokoju"
+  "roomsRenameHeading": "Zmień nazwę pokoju",
+  "roomsNewText": "Nowy dokument tekstowy"
 }

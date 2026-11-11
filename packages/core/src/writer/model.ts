@@ -62,6 +62,18 @@ export interface WriterWatermark {
   color?: string
 }
 
+/**
+ * How unstyled text looks: Word's document defaults with its default paragraph style. Arabic
+ * and Hebrew text uses the complex-script face and size where they differ.
+ */
+export interface WriterDefaults {
+  fontFamily?: string
+  fontFamilyComplex?: string
+  /** Points. */
+  fontSize?: number
+  fontSizeComplex?: number
+}
+
 export interface WriterDocument {
   /** The body: a node of type `doc`. */
   body: WriterNode
@@ -75,6 +87,8 @@ export interface WriterDocument {
   trackChanges: boolean
   watermark: WriterWatermark | null
   title: string
+  /** The document's default text style; the editor's own when left out. */
+  defaults?: WriterDefaults | null
 }
 
 const MM_PER_INCH = 25.4
@@ -176,7 +190,8 @@ export const BLOCK_TYPES: ReadonlySet<string> = new Set([
   'tableHeader',
   'pageBreak',
   'blockquote',
-  'tableOfContents'
+  'tableOfContents',
+  'sectionBreak'
 ])
 
 export function hasMark(node: WriterNode, type: string): boolean {

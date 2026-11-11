@@ -3,7 +3,8 @@ import { CLOUD_STORAGE_PROVIDERS } from '@/app/cloud/integration/storage'
 import {
   createGoogleDriveStorageAdapter,
   DRIVE_CLIENT_ID_FIELD,
-  DRIVE_FOLDER_FIELD
+  DRIVE_FOLDER_FIELD,
+  DRIVE_PICKER_KEY_FIELD
 } from './google-drive/adapter'
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
@@ -35,7 +36,8 @@ export const GOOGLE_DRIVE_STORAGE_PROVIDER = defineStorageProvider({
       kind: 'text',
       placeholder: 'Lawha’s own client'
     },
-    { id: DRIVE_FOLDER_FIELD, label: 'Folder', kind: 'text', placeholder: 'Lawha' }
+    { id: DRIVE_FOLDER_FIELD, label: 'Folder', kind: 'text', placeholder: 'Lawha' },
+    { id: DRIVE_PICKER_KEY_FIELD, label: 'Google Picker API key (optional)', kind: 'text' }
   ],
   credentialFields: [],
   createAdapter: createGoogleDriveStorageAdapter

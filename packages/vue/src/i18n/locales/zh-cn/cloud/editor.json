@@ -407,5 +407,6 @@
   "joinRoom": "加入房间",
   "roomsExpand": "显示子房间",
   "roomsCollapse": "隐藏子房间",
-  "roomsRenameHeading": "重命名房间"
+  "roomsRenameHeading": "重命名房间",
+  "roomsNewText": "新建文本文档"
 }

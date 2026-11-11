@@ -2,11 +2,7 @@ import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 import { watch } from 'vue'
 
-import {
-  recordJSXPreview,
-  stageJSXPreview,
-  type StagedJSXPreview
-} from '@lawha/core/design-jsx'
+import { recordJSXPreview, stageJSXPreview, type StagedJSXPreview } from '@lawha/core/design-jsx'
 import { computeContentBounds } from '@lawha/core/io/formats/raster'
 import type { JSXPreviewNode } from '@lawha/design-jsx'
 import type { SceneGraph } from '@lawha/scene-graph'

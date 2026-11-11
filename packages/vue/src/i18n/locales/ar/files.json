@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "جارٍ رسم المظللات",
   "preparationPreparingRender": "جارٍ تجهيز اللوحة",
   "preparationLoading": "جارٍ التحميل…",
-  "preparationProgress": "{completed} من {total}"
+  "preparationProgress": "{completed} من {total}",
+  "createText": "مستند نصي"
 }

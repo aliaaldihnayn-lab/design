@@ -1,10 +1,6 @@
 import type { McpServer } from '@agentclientprotocol/sdk'
 
-import {
-  MCP_AGENT_HEADER,
-  MCP_CHAT_HEADER,
-  LAWHA_MCP_SERVER
-} from '@lawha/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER, LAWHA_MCP_SERVER } from '@lawha/core/constants'
 
 import { getMCPServerURL } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordMCPConnectionFailure } from '@/app/diagnostics'

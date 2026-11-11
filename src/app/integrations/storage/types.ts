@@ -25,6 +25,9 @@ export type StorageTransferProgress = {
   totalBytes: number | null
 }
 
+/** What a stored document is: a canvas document's kind, or a document editor file. */
+export type StoredDocumentKind = DocumentKind | 'writer'
+
 export type StorageDocumentMetadata = {
   name: string
   updatedAt: string
@@ -32,8 +35,11 @@ export type StorageDocumentMetadata = {
 
 export type StorageDocument = StorageDocumentMetadata & {
   id: string
-  /** A design or a board, when the provider lists it; providers that cannot say leave it out. */
-  kind?: DocumentKind
+  /**
+   * A design, a board, or a text document (`writer`, a Word file), when the provider lists it;
+   * providers that cannot say leave it out.
+   */
+  kind?: StoredDocumentKind
   thumbnailURL?: string | null
   metadataAuthoritative?: boolean
   /**

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import { computed, onMounted, ref, shallowRef, toRef, useTemplateRef } from 'vue'
+import { useRouter } from 'vue-router'
 
-import type { RoomAccessMode, RoomFile } from '@lawha/cloud/contract'
-import type { DocumentKind } from '@lawha/scene-graph'
+import type { CloudDocumentKind, RoomAccessMode, RoomFile } from '@lawha/cloud/contract'
 import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import { useCloudRoomPresence } from '@/app/cloud/room-tree/presence'
@@ -36,6 +36,7 @@ const {
 }>()
 
 const ui = cloudRooms()
+const router = useRouter()
 const t = useCloudMessages()
 const common = useCommonMessages()
 const rooms = useCloudRooms(toRef(() => serverId))
@@ -174,9 +175,16 @@ function archive(archived: boolean) {
   if (archived) confirming.value = { kind: 'archive' }
   else if (roomId) void rooms.setArchived(roomId, false)
 }
-function newFile(kind: DocumentKind) {
+async function newFile(kind: CloudDocumentKind) {
   const roomId = room.value?.id
-  if (roomId) void rooms.createFile(roomId, kind, t.value.roomsUntitled)
+  if (!roomId) return
+  // A text document opens in the document editor; designs and boards open in tabs.
+  if ((await rooms.createFile(roomId, kind, t.value.roomsUntitled)) && kind === 'writer') {
+    await router.push('/writer')
+  }
+}
+async function openFile(file: RoomFile) {
+  if ((await rooms.openFile(file)) === 'writer') await router.push('/writer')
 }
 </script>
 
@@ -215,7 +223,7 @@ function newFile(kind: DocumentKind) {
         @move="moveRoom"
         @archive="archive"
         @leave="confirming = { kind: 'leave' }"
-        @open-file="rooms.openFile"
+        @open-file="openFile"
         @move-file="moveFile"
         @remove-file="(file) => (confirming = { kind: 'remove-file', file })"
       />

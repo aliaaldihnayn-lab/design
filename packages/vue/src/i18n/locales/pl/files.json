@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "Rysowanie shaderów",
   "preparationPreparingRender": "Przygotowywanie płótna",
   "preparationLoading": "Wczytywanie…",
-  "preparationProgress": "{completed} z {total}"
+  "preparationProgress": "{completed} z {total}",
+  "createText": "Dokument tekstowy"
 }

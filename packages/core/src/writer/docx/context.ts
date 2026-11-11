@@ -2,6 +2,7 @@ import { strFromU8 } from 'fflate'
 
 import type { WriterNode } from '#core/writer/model'
 
+import { readStyleSheet, type StyleSheet } from './styles'
 import { attrOf, kids, parseXML, valOf } from './xml'
 
 /** The package's parts by path; a path the package lacks reads as undefined. */
@@ -29,7 +30,7 @@ export interface ReadContext {
   rels: Map<string, Relationship>
   /** Directory of the part, for resolving relative targets. */
   base: string
-  styles: Map<string, string>
+  styles: StyleSheet
   numbering: Numbering
 }
 
@@ -77,15 +78,8 @@ export function readRels(files: PackageFiles, partPath: string): Map<string, Rel
   return rels
 }
 
-export function readStyles(files: PackageFiles): Map<string, string> {
-  const styles = new Map<string, string>()
-  const root = parseXML(readText(files, 'word/styles.xml') ?? '')
-  for (const style of kids(root, 'style')) {
-    const id = attrOf(style, 'styleId')
-    const name = valOf(style, 'name')
-    if (id) styles.set(id, (name ?? id).toLowerCase())
-  }
-  return styles
+export function readStyles(files: PackageFiles): StyleSheet {
+  return readStyleSheet(readText(files, 'word/styles.xml'))
 }
 
 export function readNumbering(files: PackageFiles): Numbering {

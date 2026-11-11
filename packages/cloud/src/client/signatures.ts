@@ -1,6 +1,8 @@
 import {
   signatureEnvelopeSchema,
+  signedDownloadResponseSchema,
   signingViewSchema,
+  type SignedDownloadResponse,
   type CreateSignatureEnvelopeInput,
   type DeclineSigningInput,
   type SignatureEnvelope,
@@ -57,6 +59,14 @@ export function createSignatureRequests(
     async voidSignatureEnvelope(envelopeId: string): Promise<void> {
       await responseBody(
         await client.signatures[':envelopeId'].void.$post({ param: { envelopeId } }),
+        onDiagnostic
+      )
+    },
+    /** The signed PDF a completion email's link opens. */
+    async downloadSigned(token: string): Promise<SignedDownloadResponse> {
+      return parseResponse(
+        publicClient.signing.download.$post({ json: { token } }),
+        signedDownloadResponseSchema,
         onDiagnostic
       )
     },

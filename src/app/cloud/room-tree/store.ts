@@ -7,14 +7,15 @@ import type {
   RoomAccessMode,
   RoomAudit,
   RoomDetail,
+  CloudDocumentKind,
   RoomFile,
   RoomMemberRole,
   RoomMembers,
   RoomSummary
 } from '@lawha/cloud/contract'
-import type { DocumentKind } from '@lawha/scene-graph'
 
 import { createDocumentTab, openStorageDocumentInNewTab } from '@/app/tabs'
+import { openStoredWriterDocument, startStoredWriterDocument } from '@/app/writer/storage'
 import { IS_BROWSER } from '@/constants'
 
 import { findCloudServer } from '../servers/store'
@@ -220,9 +221,20 @@ export function useCloudRooms(serverId: Ref<string>) {
       )
     },
 
-    /** Opens a room's file with Cloud's own document loading, in a tab of its own. */
-    openFile(file: RoomFile): void {
+    /**
+     * Opens a room's file with Cloud's own document loading, in a tab of its own; a text
+     * document opens in the document editor, and `'writer'` says the caller should show it.
+     */
+    async openFile(file: RoomFile): Promise<'canvas' | 'writer'> {
       const { document } = file
+      if (document.kind === 'writer') {
+        const outcome = await openStoredWriterDocument(
+          { ...locationOf(document.workspaceId), documentId: document.id },
+          document.name
+        )
+        if (outcome.status === 'failed') failure.value = 'unavailable'
+        return 'writer'
+      }
       // Opening reports its own failure.
       void openStorageDocumentInNewTab(
         {
@@ -233,15 +245,24 @@ export function useCloudRooms(serverId: Ref<string>) {
         },
         locationOf(document.workspaceId)
       ).catch(() => undefined)
+      return 'canvas'
     },
 
     /**
      * Makes a design or a board in the room on the server, then opens it in a new tab bound to
      * that document, so its first save lands in the room even for someone outside the workspace.
      */
-    async createFile(roomId: string, kind: DocumentKind, name: string): Promise<boolean> {
+    async createFile(roomId: string, kind: CloudDocumentKind, name: string): Promise<boolean> {
       const document = await change((api) => api.createRoomDocument(roomId, { name, kind }))
       if (!document) return false
+      if (kind === 'writer') {
+        // Its first save makes the file's first revision, a Word document, in the room.
+        startStoredWriterDocument(
+          { ...locationOf(document.workspaceId), documentId: document.id },
+          document.name
+        )
+        return true
+      }
       const { store } = createDocumentTab(kind)
       store.setStorageDocumentSource(
         { ...locationOf(document.workspaceId), documentId: document.id },

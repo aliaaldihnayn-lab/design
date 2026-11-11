@@ -159,8 +159,6 @@ export const writerMessageDefaults = {
   reason: 'Reason',
   location: 'Location',
   signAndSave: 'Sign and save',
-  stampBottomRight: 'Visible, bottom right of the last page',
-  stampBottomLeft: 'Visible, bottom left of the last page',
   stampHidden: 'Invisible',
   signed: 'Signed PDF saved',
   signFailed: params('Could not sign the PDF: {error}'),
@@ -220,7 +218,27 @@ export const writerMessageDefaults = {
   saveEncryptedDocx: 'Save encrypted Word document',
   saveEncryptedPDF: 'Save encrypted PDF',
   openEncrypted: 'Open',
-  wrongPassword: 'The password is not correct.'
+  wrongPassword: 'The password is not correct.',
+  deleteFootnote: 'Delete footnote',
+  stampPlaced: 'Visible, where you place it',
+  placeSignature: 'Click or drag on the page to place the signature',
+  previousPage: 'Previous page',
+  nextPage: 'Next page',
+  pageOf: params('Page {page} of {count}'),
+  signatureField: params('Signature field {name}'),
+  exportFailed: params('Could not export the PDF: {error}'),
+  saveConflict:
+    'Someone saved this document since you opened it. Download your copy, then open the latest version.',
+  pickFromDrive: 'Choose from Drive',
+  pickerUnavailable:
+    "Add a Google Picker API key in Settings → Storage → Google Drive, or paste the Doc's link.",
+  googleSkippedPageField:
+    'The header or footer has a page number, which Google Docs cannot receive; it was left as it is in Docs.',
+  googleSkippedImages: params(
+    '{count} pasted images were not saved: Google Docs only takes images it can download from the web.'
+  ),
+  googleSkippedSuggestions:
+    'Tracked changes were saved as plain edits: Google Docs cannot receive suggestions.'
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

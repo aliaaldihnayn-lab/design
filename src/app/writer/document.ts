@@ -4,7 +4,8 @@ import {
   DocxReadError,
   readDocx,
   readGoogleDocument,
-  writeDocx
+  writeDocx,
+  type GoogleDocsSkipped
 } from '@lawha/core/writer'
 
 import {
@@ -12,6 +13,10 @@ import {
   parseGoogleDocId,
   type GoogleDocsClient
 } from '@/app/integrations/storage/google-drive/docs'
+import {
+  googlePickerSettings,
+  pickGoogleDocument
+} from '@/app/integrations/storage/google-drive/picker'
 
 import { DOCX, pickFile, saveFileAs, saveInPlace, type PickedFile } from './files'
 import {
@@ -21,10 +26,11 @@ import {
   writerName,
   writerSource
 } from './session'
+import { saveStoredWriterDocument } from './storage'
 
 /** What a file action did, for the view to report; errors carry a reason to show. */
 export type WriterFileOutcome =
-  | { status: 'done' }
+  | { status: 'done'; skipped?: GoogleDocsSkipped[] }
   | { status: 'cancelled' }
   | {
       status: 'failed'
@@ -34,6 +40,8 @@ export type WriterFileOutcome =
         | 'wrong-password'
         | 'invalid-google-doc'
         | 'google'
+        | 'conflict'
+        | 'picker-unavailable'
         | 'error'
       detail: string
     }
@@ -72,7 +80,7 @@ export function openWordBytes(
 ): WriterFileOutcome {
   try {
     const document = readDocx(bytes)
-    loadWriterDocument(document, stem(name), { kind: 'file', ...target })
+    loadWriterDocument(document, stem(name), { kind: 'file', ...target, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
@@ -107,21 +115,27 @@ export async function openWordDocument(): Promise<WriterFileOutcome> {
   }
 }
 
+/** The document as Word bytes, patched into the package it came from when there is one. */
 function currentBytes(): Uint8Array {
-  return writeDocx({
-    ...writerDocument.value,
-    title: writerName.value || writerDocument.value.title
-  })
+  const source = writerSource.value
+  return writeDocx(
+    { ...writerDocument.value, title: writerName.value || writerDocument.value.title },
+    { source: source && source.kind !== 'google' ? source.package : null }
+  )
 }
 
 /** Saves as a new file; the document then saves there. */
 export async function saveWriterDocumentAs(): Promise<WriterFileOutcome> {
   try {
-    const saved = await saveFileAs(currentBytes(), writerName.value || 'Document', DOCX)
+    const bytes = currentBytes()
+    const saved = await saveFileAs(bytes, writerName.value || 'Document', DOCX)
     if (!saved) return { status: 'cancelled' }
     if (saved.inPlace) {
-      markWriterSaved({ kind: 'file', handle: saved.handle, path: saved.path }, stem(saved.name))
-    } else markWriterSaved({ kind: 'file', handle: null, path: null })
+      markWriterSaved(
+        { kind: 'file', handle: saved.handle, path: saved.path, package: bytes },
+        stem(saved.name)
+      )
+    } else markWriterSaved({ kind: 'file', handle: null, path: null, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
@@ -134,11 +148,13 @@ export async function saveWriterDocument(
 ): Promise<WriterFileOutcome> {
   const source = writerSource.value
   if (source?.kind === 'google') return saveGoogleDocument(source, client)
+  if (source?.kind === 'storage') return saveStoredWriterDocument(source)
   if (source?.kind !== 'file' || (!source.handle && !source.path)) return saveWriterDocumentAs()
   try {
-    const written = await saveInPlace(source, currentBytes())
+    const bytes = currentBytes()
+    const written = await saveInPlace(source, bytes)
     if (!written) return await saveWriterDocumentAs()
-    markWriterSaved(source)
+    markWriterSaved({ ...source, package: bytes })
     return { status: 'done' }
   } catch (error) {
     return failure(error)
@@ -169,20 +185,47 @@ export async function openGoogleDocument(
   }
 }
 
+/**
+ * Opens a Doc chosen in the Google Picker. Without a Picker key in the Drive settings it fails
+ * with `picker-unavailable`, and the person pastes a link instead.
+ */
+export async function pickAndOpenGoogleDocument(
+  locale: string,
+  pick: (locale: string) => Promise<string | null> = pickGoogleDocument,
+  client: GoogleDocsClient = docsClient()
+): Promise<WriterFileOutcome> {
+  if (!googlePickerSettings()) return { status: 'failed', reason: 'picker-unavailable', detail: '' }
+  try {
+    const documentId = await pick(locale)
+    if (!documentId) return { status: 'cancelled' }
+    return await openGoogleDocument(documentId, client)
+  } catch (error) {
+    return {
+      status: 'failed',
+      reason: 'google',
+      detail: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
 async function saveGoogleDocument(
   source: { documentId: string; revisionId: string | null },
   client: GoogleDocsClient
 ): Promise<WriterFileOutcome> {
   try {
-    const revisionId = await client.save(
+    const saved = await client.save(
       source.documentId,
       writerDocument.value,
       source.revisionId,
       true
     )
     // The next save requires the revision this one made, so edits made in Docs since are caught.
-    markWriterSaved({ kind: 'google', documentId: source.documentId, revisionId })
-    return { status: 'done' }
+    markWriterSaved({
+      kind: 'google',
+      documentId: source.documentId,
+      revisionId: saved.revisionId
+    })
+    return { status: 'done', skipped: saved.skipped }
   } catch (error) {
     return {
       status: 'failed',

@@ -97,6 +97,7 @@ export {
   requestImageLinksSchema,
   requestImageUploadsSchema,
   type CloudActorContract,
+  type CloudDocumentKind,
   type CloudSession,
   type CommitImageUploadsInput,
   type CommitUploadInput,

@@ -1,10 +1,16 @@
 import * as v from 'valibot'
 
 import {
+  createdRegionIds,
   googleDocsRequests,
+  googleDriveComments,
+  googleRegionRequests,
+  type GoogleDocsRequest,
+  type GoogleDocsSkipped,
   googleDocumentSchema,
   type GoogleDocument,
-  type WriterDocument
+  type WriterDocument,
+  type WriterNode
 } from '@lawha/core/writer'
 
 import { readStoragePreferences } from '../preferences'
@@ -18,6 +24,40 @@ import { driveAccessToken, forgetDriveToken, GOOGLE_DOCS_SCOPE } from './auth'
  * Docs in the meantime is reported instead of overwritten.
  */
 const DOCS_API = 'https://docs.googleapis.com/v1/documents'
+const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files'
+
+/**
+ * Images Docs can fetch itself. An image the editor holds as a data URL would have to be made
+ * public on Drive first, which a save must not do behind the user's back, so it is skipped.
+ */
+function fetchableImageURI(src: string): string | null {
+  return src.startsWith('https://') ? src : null
+}
+
+const batchReplySchema = v.object({
+  replies: v.optional(v.array(v.unknown())),
+  writeControl: v.optional(v.object({ requiredRevisionId: v.optional(v.string()) }))
+})
+
+const commentListSchema = v.object({
+  comments: v.optional(
+    v.array(
+      v.object({
+        content: v.optional(v.string()),
+        quotedFileContent: v.optional(v.object({ value: v.optional(v.string()) }))
+      })
+    )
+  )
+})
+
+const createdCommentSchema = v.object({ id: v.string() })
+
+/** What a save wrote, and what Google's APIs gave no way to write. */
+export interface GoogleDocsSaveResult {
+  revisionId: string | null
+  skipped: GoogleDocsSkipped[]
+  commentsPosted: number
+}
 
 /** The Doc id in a Docs link (`/document/d/<id>/edit`), or the id itself. */
 export function parseGoogleDocId(input: string): string | null {
@@ -86,38 +126,143 @@ export function createGoogleDocsClient(
     return parsed.output
   }
 
+  async function batch(
+    documentId: string,
+    requests: GoogleDocsRequest[],
+    revisionId: string | null,
+    interactive: boolean
+  ) {
+    const body = await request(
+      `${DOCS_API}/${encodeURIComponent(documentId)}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests,
+          writeControl: revisionId ? { requiredRevisionId: revisionId } : undefined
+        })
+      },
+      interactive
+    )
+    const reply = v.safeParse(batchReplySchema, body)
+    return {
+      replies: reply.success ? (reply.output.replies ?? []) : [],
+      revisionId: reply.success ? (reply.output.writeControl?.requiredRevisionId ?? null) : null
+    }
+  }
+
   /**
-   * Writes the model over the Doc's body. `revisionId` is the revision it was opened at; Docs
-   * refuses the update when the Doc changed since. Returns the revision the save made.
+   * Drive comments the model has that the Doc does not, matched by text and quote so saving
+   * twice posts nothing new. A resolved one is resolved with a reply, as Drive requires.
+   * https://developers.google.com/drive/api/guides/manage-comments
+   */
+  async function postComments(
+    documentId: string,
+    model: WriterDocument,
+    interactive: boolean
+  ): Promise<number> {
+    const wanted = googleDriveComments(model)
+    if (!wanted.length) return 0
+    const url = `${DRIVE_FILES_API}/${encodeURIComponent(documentId)}/comments`
+    const listed = v.safeParse(
+      commentListSchema,
+      await request(
+        `${url}?fields=comments(content,quotedFileContent)&pageSize=100`,
+        {},
+        interactive
+      )
+    )
+    const existing = new Set(
+      (listed.success ? (listed.output.comments ?? []) : []).map(
+        (comment) => `${comment.content ?? ''}\u0000${comment.quotedFileContent?.value ?? ''}`
+      )
+    )
+    let posted = 0
+    for (const comment of wanted) {
+      const key = `${comment.content}\u0000${comment.quotedFileContent?.value ?? ''}`
+      if (existing.has(key)) continue
+      const created = v.safeParse(
+        createdCommentSchema,
+        await request(
+          `${url}?fields=id`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: comment.content,
+              quotedFileContent: comment.quotedFileContent
+            })
+          },
+          interactive
+        )
+      )
+      posted++
+      if (comment.resolved && created.success) {
+        await request(
+          `${url}/${encodeURIComponent(created.output.id)}/replies?fields=id`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'resolve' })
+          },
+          interactive
+        )
+      }
+    }
+    return posted
+  }
+
+  /**
+   * Writes the model over the Doc: the body in one batch, then its header and footer (a new
+   * one takes a batch to create and one to fill), then comments through Drive. `revisionId` is
+   * the revision it was opened at; Docs refuses the first batch when the Doc changed since.
    */
   async function save(
     documentId: string,
     model: WriterDocument,
     revisionId: string | null,
     interactive: boolean
-  ): Promise<string | null> {
+  ): Promise<GoogleDocsSaveResult> {
     const current = await get(documentId, interactive)
-    const requests = googleDocsRequests(model, current)
-    const writeControl = { requiredRevisionId: revisionId ?? current.revisionId }
-    const body = await request(
-      `${DOCS_API}/${encodeURIComponent(documentId)}:batchUpdate`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requests, writeControl })
-      },
-      interactive
-    )
-    const reply = v.safeParse(
-      v.object({
-        writeControl: v.optional(v.object({ requiredRevisionId: v.optional(v.string()) }))
-      }),
-      body
-    )
-    return reply.success ? (reply.output.writeControl?.requiredRevisionId ?? null) : null
+    const options = { imageURI: fetchableImageURI }
+    const skippedImages = countImages(model.body) - countImages(model.body, fetchableImageURI)
+    let revision = (
+      await batch(
+        documentId,
+        googleDocsRequests(model, current, options),
+        revisionId ?? current.revisionId ?? null,
+        interactive
+      )
+    ).revisionId
+    const regions = googleRegionRequests(model, current, options)
+    let ids = {}
+    if (regions.create.length) {
+      const created = await batch(documentId, regions.create, revision, interactive)
+      revision = created.revisionId ?? revision
+      ids = createdRegionIds(regions.create, created.replies)
+    }
+    const fill = regions.fill(ids)
+    if (fill.length) revision = (await batch(documentId, fill, revision, interactive)).revisionId
+    const commentsPosted = await postComments(documentId, model, interactive)
+    const skipped = [...regions.skipped]
+    if (skippedImages) skipped.push({ kind: 'image', count: skippedImages })
+    if (hasSuggestions(model.body)) skipped.push({ kind: 'suggestions' })
+    return { revisionId: revision, skipped, commentsPosted }
   }
 
   return { get, save }
 }
 
 export type GoogleDocsClient = ReturnType<typeof createGoogleDocsClient>
+
+function countImages(node: WriterNode, accept: (src: string) => string | null = () => ''): number {
+  const src = node.type === 'image' ? node.attrs?.src : undefined
+  const own = typeof src === 'string' && accept(src) !== null ? 1 : 0
+  return own + (node.content ?? []).reduce((sum, child) => sum + countImages(child, accept), 0)
+}
+
+/** Tracked insertions and deletions, which Docs keeps as suggestions no API can create. */
+function hasSuggestions(node: WriterNode): boolean {
+  if (node.marks?.some((mark) => mark.type === 'insertion' || mark.type === 'deletion')) return true
+  return (node.content ?? []).some(hasSuggestions)
+}

@@ -52,5 +52,6 @@
   "preparationDrawingShaders": "正在绘制着色器",
   "preparationPreparingRender": "正在准备画布",
   "preparationLoading": "正在加载…",
-  "preparationProgress": "{completed} / {total}"
+  "preparationProgress": "{completed} / {total}",
+  "createText": "文本文档"
 }

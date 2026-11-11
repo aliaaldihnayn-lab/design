@@ -52,5 +52,6 @@
   "actionUndo": "編集を取り消し",
   "actionRedo": "編集をやり直し",
   "actionRestore": "バージョンを復元",
-  "unknownAuthor": "あなた"
+  "unknownAuthor": "あなた",
+  "cloudVersions": "クラウドに保存済み"
 }
