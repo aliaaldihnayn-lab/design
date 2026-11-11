@@ -64,9 +64,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.17",
-    "@modelcontextprotocol/server": "^2.0.0",
     "@lawha/core": "workspace:*",
     "@lawha/scene-graph": "workspace:*",
+    "@modelcontextprotocol/server": "^2.0.0",
     "@valibot/to-json-schema": "^1.8.0",
     "es-toolkit": "^1.52.0",
     "hono": "^4.13.13",

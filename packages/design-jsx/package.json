@@ -57,9 +57,9 @@
     "@lawha/scene-graph": "workspace:*"
   },
   "dependencies": {
+    "@lawha/emit": "workspace:*",
     "@lezer/common": "^1.5.2",
     "@lezer/javascript": "^1.5.4",
-    "@lawha/emit": "workspace:*",
     "acorn": "^8.18.0",
     "dedent": "^1.7.2",
     "entities": "^8.0.0",

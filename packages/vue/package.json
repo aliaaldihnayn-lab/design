@@ -448,10 +448,10 @@
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
-    "@nanostores/i18n": "^1.3.3",
-    "@nanostores/vue": "^1.1.0",
     "@lawha/dom-css": "workspace:*",
     "@lawha/scene-graph": "workspace:*",
+    "@nanostores/i18n": "^1.3.3",
+    "@nanostores/vue": "^1.1.0",
     "@vueuse/core": "^14.4.0",
     "es-toolkit": "^1.52.0",
     "fuse.js": "^7.5.0",
