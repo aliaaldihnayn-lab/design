@@ -63,6 +63,7 @@ function services() {
       }
     },
     versions: {
+      changes: { list: notUsed, append: notUsed },
       list: notUsed,
       save: notUsed,
       update: notUsed,

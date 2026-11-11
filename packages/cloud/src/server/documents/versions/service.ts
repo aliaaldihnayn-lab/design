@@ -18,6 +18,7 @@ import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, Transaction } from 'kysely'
 
+import { createDocumentChangeService } from './changes'
 import { announceVersions, keepRevision } from './checkpoint'
 import { historyStart } from './history'
 
@@ -139,6 +140,12 @@ export function createDocumentVersionService(
   }
 
   return {
+    /** The edits between versions, as the editor's history records them. */
+    changes: createDocumentChangeService(database, {
+      policy: options.policy,
+      deploymentMode
+    }),
+
     async list(
       userId: string,
       documentId: string,

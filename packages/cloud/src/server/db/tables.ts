@@ -152,6 +152,22 @@ export interface DocumentVersionTable {
   createdAt: TimestampColumn
 }
 
+/** An edit made to a document, as the editor's version history records it; see migration 030. */
+export interface DocumentHistoryChangeTable {
+  id: string
+  documentId: string
+  clientId: string
+  authorId: string
+  sessionId: string
+  action: string
+  changeCount: number
+  /** The names of the first few layers or paragraphs, as a JSON array of strings. */
+  names: unknown
+  label: string
+  madeAt: Date
+  createdAt: TimestampColumn
+}
+
 export type UploadKind = 'revision' | 'image'
 
 export interface UploadTable {
@@ -476,6 +492,7 @@ export interface CloudDatabase {
   revisionImage: RevisionImageTable
   workspaceImage: WorkspaceImageTable
   documentVersion: DocumentVersionTable
+  documentHistoryChange: DocumentHistoryChangeTable
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable

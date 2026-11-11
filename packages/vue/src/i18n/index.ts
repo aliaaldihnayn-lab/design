@@ -19,6 +19,7 @@ export {
   usePageMessages,
   usePanelMessages,
   useRecoveryMessages,
+  useHistoryMessages,
   useDesignSystemMessages,
   usePathMessages,
   useInspectMessages,

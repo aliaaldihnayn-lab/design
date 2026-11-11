@@ -11,6 +11,18 @@ export interface UndoManagerOptions {
   onChange?: () => void
 }
 
+/**
+ * A step the history committed, undid, or redid, as version history records it. `coalesced`
+ * marks a step that replaced the one before it, as a run of picker changes does.
+ */
+export interface UndoStepEvent {
+  kind: 'record' | 'undo' | 'redo'
+  label: string
+  coalesced: boolean
+}
+
+export type UndoStepListener = (event: UndoStepEvent) => void
+
 interface UndoBatch {
   label: string
   entries: UndoEntry[]
@@ -27,6 +39,7 @@ export class UndoManager {
   private replaying = 0
   private openEdits = 0
   private readonly settlers = new Set<() => void>()
+  private readonly stepListeners = new Set<UndoStepListener>()
   private readonly limit: number
   private readonly onChange: (() => void) | undefined
 
@@ -76,6 +89,19 @@ export class UndoManager {
     return () => this.settlers.delete(settle)
   }
 
+  /**
+   * Listens for committed steps, undos, and redos, so a history beside undo, such as version
+   * history, records the same edits rather than tracking changes again. Returns the unsubscribe.
+   */
+  onStep(listener: UndoStepListener): () => void {
+    this.stepListeners.add(listener)
+    return () => this.stepListeners.delete(listener)
+  }
+
+  private emitStep(event: UndoStepEvent) {
+    for (const listener of this.stepListeners) listener(event)
+  }
+
   private settle() {
     for (const settle of this.settlers) settle()
   }
@@ -87,6 +113,7 @@ export class UndoManager {
     this.replay(() => entry.inverse())
     this.redoStack.push(entry)
     this.onChange?.()
+    this.emitStep({ kind: 'undo', label: entry.label, coalesced: false })
     return entry.label
   }
 
@@ -97,6 +124,7 @@ export class UndoManager {
     this.replay(() => entry.forward())
     this.undoStack.push(entry)
     this.onChange?.()
+    this.emitStep({ kind: 'redo', label: entry.label, coalesced: false })
     return entry.label
   }
 
@@ -264,7 +292,8 @@ export class UndoManager {
 
   private pushUndoEntry(entry: UndoEntry): void {
     const previous = this.undoStack.at(-1)
-    if (entry.coalesceKey && previous?.coalesceKey === entry.coalesceKey) {
+    const coalesced = !!entry.coalesceKey && previous?.coalesceKey === entry.coalesceKey
+    if (coalesced) {
       this.undoStack[this.undoStack.length - 1] = {
         ...entry,
         inverse: previous.inverse
@@ -275,6 +304,7 @@ export class UndoManager {
     this.redoStack = []
     this.trimUndoStack()
     this.onChange?.()
+    this.emitStep({ kind: 'record', label: entry.label, coalesced })
   }
 
   private trimUndoStack(): void {

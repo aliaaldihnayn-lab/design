@@ -26,6 +26,9 @@ export const writerDirty = ref(false)
 /** Bumped when a different document is loaded, so editors replace their content. */
 export const writerRevision = ref(0)
 
+/** Bumped only when another document is opened or started, unlike `writerRevision`. */
+export const writerLoads = ref(0)
+
 /** Bumped when the header or footer is replaced from outside its editor, such as by a command. */
 export const writerRegionsRevision = ref(0)
 
@@ -44,6 +47,7 @@ export function loadWriterDocument(
   writerSource.value = source
   writerDirty.value = false
   writerRevision.value += 1
+  writerLoads.value += 1
 }
 
 export function newWriterDocument(dir: TextDirection, template?: WriterDocument): void {
@@ -73,12 +77,18 @@ export function setWriterRegion(kind: 'header' | 'footer', node: WriterNode | nu
   writerRegionsRevision.value += 1
 }
 
+/**
+ * Replaces the whole document from outside the editor, as an AI tool or a restored version does:
+ * it is marked changed and every editor loads it again.
+ */
+export function replaceWriterDocument(document: Partial<WriterDocument>): void {
+  updateWriterDocument(document)
+  writerRevision.value += 1
+  writerRegionsRevision.value += 1
+}
+
 /** The AI tools read and edit the document editor's document through this host. */
 setWriterHost({
   read: () => writerDocument.value,
-  write: (document) => {
-    updateWriterDocument(document)
-    writerRevision.value += 1
-    writerRegionsRevision.value += 1
-  }
+  write: replaceWriterDocument
 })

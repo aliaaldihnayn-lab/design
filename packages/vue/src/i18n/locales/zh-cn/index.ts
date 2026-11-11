@@ -17,6 +17,7 @@ import editor from './editor.json'
 import figjam from './figjam.json'
 import files from './files.json'
 import fonts from './fonts.json'
+import history from './history.json'
 import inspect from './inspect.json'
 import media from './media.json'
 import menu from './menu.json'
@@ -25,7 +26,6 @@ import panels from './panels.json'
 import photo from './photo.json'
 import plugins from './plugins.json'
 import print from './print.json'
-import writer from './writer.json'
 import prototype from './prototype.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
@@ -37,6 +37,7 @@ import tools from './tools.json'
 import updates from './updates.json'
 import variables from './variables/panel.json'
 import variableTypes from './variables/types.json'
+import writer from './writer.json'
 
 export default {
   ai,
@@ -58,6 +59,7 @@ export default {
   figjam,
   files,
   fonts,
+  history,
   media,
   menu,
   pages,

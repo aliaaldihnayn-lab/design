@@ -10,8 +10,9 @@ import {
   writerTemplate,
   type WriterTemplateId
 } from '@lawha/core/writer'
-import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
+import { localeDirection, useHistoryMessages, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
+import { useWriterHistory } from '@/app/history/writer'
 import {
   openGoogleDocument,
   openWordDocument,
@@ -29,6 +30,9 @@ import {
   writerName,
   writerTitle
 } from '@/app/writer/session'
+import HistoryVersionDialog from '@/components/history/HistoryVersionDialog.vue'
+import WriterHistoryPanel from '@/components/history/WriterHistoryPanel.vue'
+import WriterHistoryPreview from '@/components/history/WriterHistoryPreview.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -49,6 +53,7 @@ import WriterToolbar from '@/components/writer/WriterToolbar.vue'
 import WriterWordCount from '@/components/writer/WriterWordCount.vue'
 
 const t = useWriterMessages()
+const history = useHistoryMessages()
 const { locale } = useI18n()
 const router = useRouter()
 const ui = writer()
@@ -68,10 +73,27 @@ const protectOpen = ref(false)
 const locked = ref(false)
 const unlockPassword = ref('')
 const sideTab = ref<'comments' | 'changes' | null>(null)
+const historyOpen = ref(false)
+/** The version shown in the document's place while the history is open, or null for now. */
+const historyVersionId = ref<string | null>(null)
+const historyMode = ref<'version' | 'compare'>('version')
+const writerHistory = useWriterHistory()
+const previewedVersion = computed(() =>
+  historyOpen.value && historyVersionId.value
+    ? writerHistory.versionDocument(historyVersionId.value)
+    : null
+)
+
+function toggleHistory() {
+  historyOpen.value = !historyOpen.value
+  historyVersionId.value = null
+  if (historyOpen.value) sideTab.value = null
+}
 const statistics = computed(() => documentStatistics(writerDocument.value.body))
 
 function toggleSide(tab: 'comments' | 'changes') {
   sideTab.value = sideTab.value === tab ? null : tab
+  if (sideTab.value) historyOpen.value = false
 }
 const error = ref<string | null>(null)
 const statusLabel = computed(() => {
@@ -244,6 +266,15 @@ onBeforeUnmount(() => editor.value?.destroy())
         >
           <icon-lucide-file-diff class="size-3.5" />
         </IconButton>
+        <IconButton
+          :label="history.panelTitle"
+          toggle
+          :active="historyOpen"
+          data-test-id="writer-history-toggle"
+          @click="toggleHistory"
+        >
+          <icon-lucide-history class="size-3.5" />
+        </IconButton>
         <WriterWordCount :statistics="statistics" />
       </div>
     </div>
@@ -251,6 +282,7 @@ onBeforeUnmount(() => editor.value?.destroy())
     <WriterSignPDFDialog v-model:open="signPDFOpen" />
     <WriterSendDialog v-model:open="sendOpen" />
     <WriterProtectDialog v-model:open="protectOpen" />
+    <HistoryVersionDialog />
     <WriterFindBar v-if="editor && findOpen" :editor="editor" @close="findOpen = false" />
     <AppAlert v-if="error" tone="error" :heading="error" class="m-2">
       <form v-if="locked" class="mt-2 flex gap-1.5" @submit.prevent="unlock">
@@ -268,8 +300,14 @@ onBeforeUnmount(() => editor.value?.destroy())
     </AppAlert>
     <div :class="ui.workspace()">
       <div :class="ui.scroller()">
+        <WriterHistoryPreview
+          v-if="previewedVersion"
+          :version="previewedVersion"
+          :mode="historyMode"
+        />
         <WriterPaper
           v-if="editor"
+          v-show="!previewedVersion"
           :editor="editor"
           :page="page"
           :watermark="writerDocument.watermark?.text"
@@ -278,8 +316,14 @@ onBeforeUnmount(() => editor.value?.destroy())
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>
       </div>
+      <WriterHistoryPanel
+        v-if="historyOpen"
+        v-model:selected="historyVersionId"
+        v-model:mode="historyMode"
+        @close="toggleHistory"
+      />
       <WriterSidePanel
-        v-if="editor && sideTab"
+        v-else-if="editor && sideTab"
         :editor="editor"
         :tab="sideTab"
         @close="sideTab = null"

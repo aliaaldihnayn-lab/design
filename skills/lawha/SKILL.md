@@ -334,6 +334,7 @@ Discover available tools and their arguments from the connected server or browse
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
 - **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
 - **`diff_jsx` / `diff_create`** — compare two nodes as a JSX line diff or as an appliable patch of JSX attributes; `diff_show` previews setting attributes and `diff_apply` applies a patch only if the nodes still match it.
+- **`list_versions` / `save_version` / `restore_version` / `diff_versions`** — the open design's or document's version history: save a named version before a large change, compare what changed since a version, and restore one; a restore keeps the state before it as a version.
 - **`diff_visual`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.

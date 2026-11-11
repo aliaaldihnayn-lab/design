@@ -1,0 +1,57 @@
+import { count, params } from '@nanostores/i18n'
+
+import { i18n } from '#vue/i18n/create'
+
+/** Version history of documents kept on this device: designs and documents alike. */
+export const historyMessageDefaults = {
+  panelTitle: 'Version history',
+  close: 'Close version history',
+  currentVersion: 'Current version',
+  saveVersion: 'Save version',
+  saveVersionHeading: 'Save to version history',
+  editVersionInfo: 'Edit version info',
+  versionTitle: 'Title',
+  versionDescription: 'Describe what changed',
+  restore: 'Restore this version',
+  duplicate: 'Duplicate as new file',
+  compare: 'Compare with current',
+  nameVersion: 'Name this version',
+  removeName: 'Remove name',
+  versionOptions: 'Version options',
+  showChanges: 'Show changes',
+  hideChanges: 'Hide changes',
+  today: 'Today',
+  yesterday: 'Yesterday',
+  empty: 'Edits you make are listed here as you work.',
+  restored: params('Restored “{name}”'),
+  restoredUnnamed: 'Restored an earlier version',
+  viewing: params('Viewing {name}. Restore it or duplicate it, or go back to the current version.'),
+  duplicateName: params('{name} (copy)'),
+  changeFailed: 'The version history could not be changed.',
+  comparing: 'Changes since this version',
+  comparisonEmpty: 'Nothing changed since this version.',
+  endComparison: 'Done comparing',
+  added: 'Added',
+  removed: 'Removed',
+  changed: 'Changed',
+  unnamedLayer: 'Unnamed layer',
+  sessionChanges: count({ one: '{count} edit', many: '{count} edits' }),
+  layers: count({ one: '{count} layer', many: '{count} layers' }),
+  paragraphs: count({ one: '{count} paragraph', many: '{count} paragraphs' }),
+  actionCreate: params('Added {target}'),
+  actionDelete: params('Deleted {target}'),
+  actionMove: params('Moved {target}'),
+  actionResize: params('Resized {target}'),
+  actionRotate: params('Rotated {target}'),
+  actionReorder: params('Reordered {target}'),
+  actionRename: params('Renamed {target}'),
+  actionEditText: params('Edited text in {target}'),
+  actionRestyle: params('Changed the style of {target}'),
+  actionEdit: 'Edited the document',
+  actionUndo: 'Undid an edit',
+  actionRedo: 'Redid an edit',
+  actionRestore: 'Restored a version',
+  unknownAuthor: 'You'
+} as const
+
+export const historyMessages = i18n('history', historyMessageDefaults)

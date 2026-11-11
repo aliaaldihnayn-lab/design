@@ -25,6 +25,7 @@ import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
+import { attachDesignHistory, designHistoryOf } from '@/app/history/design'
 import { notificationMessages } from '@/app/i18n/notifications'
 import {
   activeStorageProviderID,
@@ -117,6 +118,7 @@ export function getTabsSnapshot(): Tab[] {
 
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const s = store ?? createEditorStore(initialGraph)
+  attachDesignHistory(s)
   const tab: Tab = { id: generateTabId(), store: s, kind: 'document' }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
@@ -216,6 +218,7 @@ export function switchAdjacentTab(step: 1 | -1): void {
 function disposeTabStore(store: EditorStore): void {
   coverThumbnailListeners.get(store)?.()
   coverThumbnailListeners.delete(store)
+  void designHistoryOf(store)?.dispose()
   store.preparationController.dispose()
   store.dispose()
 }

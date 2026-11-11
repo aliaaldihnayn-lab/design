@@ -13,6 +13,8 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  appendDocumentHistoryResponseSchema,
+  documentHistoryPageSchema,
   documentVersionDownloadSchema,
   documentVersionResponseSchema,
   documentVersionsSchema,
@@ -39,6 +41,8 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type AppendDocumentHistoryInput,
+  type DocumentHistoryPage,
   type DocumentVersion,
   type DocumentVersionDownload,
   type DocumentVersions,
@@ -449,6 +453,32 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** A page of the edits made to the document, newest first, each signed by its author. */
+    async listDocumentHistory(
+      documentId: string,
+      page: { before?: string; limit?: number } = {}
+    ): Promise<DocumentHistoryPage> {
+      return parseResponse(
+        client.documents[':documentId'].history.$get({
+          param: { documentId },
+          query: pickBy(page, (value) => value !== undefined)
+        }),
+        documentHistoryPageSchema,
+        options.onDiagnostic
+      )
+    },
+    /** Adds edits made in the editor; the server signs them as the signed-in person. */
+    async appendDocumentHistory(
+      documentId: string,
+      input: AppendDocumentHistoryInput
+    ): Promise<number> {
+      const response = await parseResponse(
+        client.documents[':documentId'].history.$post({ param: { documentId }, json: input }),
+        appendDocumentHistoryResponseSchema,
+        options.onDiagnostic
+      )
+      return response.added
     },
     /** A page of the document's version history, newest first. */
     async listDocumentVersions(

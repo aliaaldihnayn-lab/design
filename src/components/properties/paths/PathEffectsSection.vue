@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import IconGrid3x3 from '~icons/lucide/grid-3x3'
 
 import {
   WARP_PRESETS,
@@ -245,7 +246,7 @@ function applyWarp() {
           :disabled="busy"
           @click="makePattern"
         >
-          <icon-lucide-grid-3x3 class="size-3.5" aria-hidden="true" />
+          <IconGrid3x3 class="size-3.5" aria-hidden="true" />
           <span class="truncate">{{ paths.makePattern }}</span>
         </AppButton>
       </template>
