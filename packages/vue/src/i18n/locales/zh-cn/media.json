@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash 拒绝了此密钥。请粘贴应用的 Access Key，而不是 Secret key。",
   "photoKeyRateLimited": "此密钥本小时的 {service} 请求已用完。请稍后再试。",
   "photoKeyUnreachable": "无法连接 {service}。请检查网络连接。",
-  "photoKeyCheckFailed": "{service} 没有响应测试。请稍后再试。"
+  "photoKeyCheckFailed": "{service} 没有响应测试。请稍后再试。",
+  "traceOnDevice": "在本设备上图像描摹",
+  "tracePreset": "预设",
+  "tracePresetLogo": "徽标",
+  "tracePresetPhotoHigh": "高保真度照片",
+  "tracePresetPhotoLow": "低保真度照片",
+  "tracePresetLineArt": "线稿",
+  "tracePresetSketch": "素描图稿",
+  "traceThreshold": "阈值",
+  "traceColors": "颜色",
+  "tracePreview": "图像描摹预览",
+  "tracePreviewSelection": "所选图像已用 {count} 种颜色描摹。",
+  "tracePreviewSample": "示例已用 {count} 种颜色描摹。选择一个图像图层即可预览。"
 }

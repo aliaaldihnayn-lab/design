@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash a refusé cette clé. Collez l’Access Key de votre application, pas sa Secret key.",
   "photoKeyRateLimited": "Cette clé a épuisé ses requêtes {service} pour cette heure. Réessayez plus tard.",
   "photoKeyUnreachable": "Impossible de joindre {service}. Vérifiez votre connexion réseau.",
-  "photoKeyCheckFailed": "{service} n’a pas répondu au test. Réessayez plus tard."
+  "photoKeyCheckFailed": "{service} n’a pas répondu au test. Réessayez plus tard.",
+  "traceOnDevice": "Vectorisation de l'image sur cet appareil",
+  "tracePreset": "Paramètre prédéfini",
+  "tracePresetLogo": "Logotype",
+  "tracePresetPhotoHigh": "Photo haute fidélité",
+  "tracePresetPhotoLow": "Photo basse fidélité",
+  "tracePresetLineArt": "Dessin au trait",
+  "tracePresetSketch": "Croquis",
+  "traceThreshold": "Seuil",
+  "traceColors": "Couleurs",
+  "tracePreview": "Aperçu de la vectorisation",
+  "tracePreviewSelection": "L'image sélectionnée vectorisée en {count} couleurs.",
+  "tracePreviewSample": "Un exemple vectorisé en {count} couleurs. Sélectionnez un calque d'image pour l'aperçu."
 }

@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash hat diesen Schlüssel abgelehnt. Füge den Access Key deiner App ein, nicht den Secret Key.",
   "photoKeyRateLimited": "Dieser Schlüssel hat seine {service}-Anfragen für diese Stunde aufgebraucht. Versuche es später erneut.",
   "photoKeyUnreachable": "{service} ist nicht erreichbar. Prüfe deine Netzwerkverbindung.",
-  "photoKeyCheckFailed": "{service} hat auf den Test nicht geantwortet. Versuche es später erneut."
+  "photoKeyCheckFailed": "{service} hat auf den Test nicht geantwortet. Versuche es später erneut.",
+  "traceOnDevice": "Bildnachzeichner auf diesem Gerät",
+  "tracePreset": "Vorgabe",
+  "tracePresetLogo": "Firmenlogo",
+  "tracePresetPhotoHigh": "Foto mit hoher Wiedergabetreue",
+  "tracePresetPhotoLow": "Foto mit geringer Wiedergabetreue",
+  "tracePresetLineArt": "Strichgrafik",
+  "tracePresetSketch": "Skizzierte Grafik",
+  "traceThreshold": "Schwellenwert",
+  "traceColors": "Farben",
+  "tracePreview": "Vorschau des Bildnachzeichners",
+  "tracePreviewSelection": "Das ausgewählte Bild, nachgezeichnet mit {count} Farben.",
+  "tracePreviewSample": "Ein Beispiel, nachgezeichnet mit {count} Farben. Wähle eine Bildebene für ihre Vorschau."
 }

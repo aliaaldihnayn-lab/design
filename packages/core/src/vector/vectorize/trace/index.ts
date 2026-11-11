@@ -16,6 +16,13 @@ export interface TraceOptions {
   cornerAngle: number
   /** Traces each colour over the ones after it, so the shapes leave no hairline gaps. */
   stacked: boolean
+  /**
+   * Black and white at this luminance, 0–255, as Illustrator's black and white mode: darker
+   * pixels are black, the rest white. Unset traces in colour.
+   */
+  threshold?: number
+  /** Leaves white areas out, as Illustrator's Ignore White, so only the dark shapes remain. */
+  ignoreWhite?: boolean
 }
 
 export const DEFAULT_TRACE_OPTIONS: TraceOptions = {
@@ -44,8 +51,10 @@ const hex = ([r, g, b]: RGB) =>
 export function traceImage(pixels: TracePixels, options: Partial<TraceOptions> = {}): TraceResult {
   const settings = { ...DEFAULT_TRACE_OPTIONS, ...options }
   const { width, height } = pixels
-  const colors = Math.max(2, Math.min(64, Math.round(settings.colors)))
-  const { palette, labels } = quantize(pixels, colors)
+  const bw = settings.threshold !== undefined
+  const colors = bw ? 2 : Math.max(2, Math.min(64, Math.round(settings.colors)))
+  const source = bw ? thresholded(pixels, settings.threshold ?? 128) : pixels
+  const { palette, labels } = quantize(source, colors)
   despeckle(labels, width, height, Math.max(0, Math.round(settings.noise)))
   const areas = palette.map(() => 0)
   for (const label of labels) if (label >= 0) areas[label]++
@@ -70,9 +79,31 @@ export function traceImage(pixels: TracePixels, options: Partial<TraceOptions> =
       .map((loop) => fitLoopPath(loop, fit))
       .filter((part) => part.length > 0)
       .join('')
-    if (d) layers.push({ color: palette[index], area: areas[index], d })
+    if (d && !(settings.ignoreWhite && isWhite(palette[index])))
+      layers.push({ color: palette[index], area: areas[index], d })
   }
   return { width, height, layers }
+}
+
+/** Near enough to white to count as the paper an ignore-white trace leaves out. */
+function isWhite([r, g, b]: RGB) {
+  return Math.min(r, g, b) >= 240
+}
+
+/** Pixels as pure black or white by luminance, keeping their alpha. */
+function thresholded(pixels: TracePixels, threshold: number): TracePixels {
+  const level = Math.max(0, Math.min(255, threshold))
+  const data = new Uint8ClampedArray(pixels.data.length)
+  for (let i = 0; i < data.length; i += 4) {
+    const luminance =
+      0.2126 * pixels.data[i] + 0.7152 * pixels.data[i + 1] + 0.0722 * pixels.data[i + 2]
+    const value = luminance < level ? 0 : 255
+    data[i] = value
+    data[i + 1] = value
+    data[i + 2] = value
+    data[i + 3] = pixels.data[i + 3]
+  }
+  return { width: pixels.width, height: pixels.height, data }
 }
 
 /** A trace as an SVG document, each colour one even-odd path, for the vector importer. */

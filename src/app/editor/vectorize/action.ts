@@ -9,7 +9,7 @@ import { toast } from '@/app/shell/ui'
 
 import { resolveVectorizeCredential } from './credentials'
 import { LOCAL_TRACE_PROVIDER, type LocalTraceOptions } from './local'
-import { vectorizeProviderID } from './preferences'
+import { localTraceOptions, vectorizeEngine, vectorizeProviderID } from './preferences'
 import { getVectorizeProvider } from './providers'
 import { VectorizeAuthError } from './types'
 
@@ -37,7 +37,19 @@ function vectorizeErrorMessage(error: unknown): string {
   return message.length <= ERROR_MAX_LENGTH ? message : `${message.slice(0, ERROR_MAX_LENGTH)}…`
 }
 
+/**
+ * Converts an image layer into vector layers with the engine Settings chose: Image Trace on this
+ * device, which needs no key or network, or a cloud service.
+ */
 export async function vectorizeImageNode(store: EditorStore, nodeId: string): Promise<void> {
+  if (vectorizeEngine.value === 'local') {
+    await traceImageNodeOnDevice(store, nodeId, localTraceOptions.value)
+    return
+  }
+  await vectorizeImageNodeInCloud(store, nodeId)
+}
+
+async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Promise<void> {
   if (activeStores.has(store)) return
   const node = store.graph.getNode(nodeId)
   const fill = node ? imageFill(node) : null
@@ -103,7 +115,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 export async function traceImageNodeOnDevice(
   store: EditorStore,
   nodeId: string,
-  options?: LocalTraceOptions
+  options: LocalTraceOptions = localTraceOptions.value
 ): Promise<void> {
   if (activeStores.has(store)) return
   const node = store.graph.getNode(nodeId)
