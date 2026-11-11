@@ -77,7 +77,7 @@ import {
   addStateInteraction,
   bindPropertyToVariable,
   createInteractiveComponent
-} from '#core/tools/prototype-states'
+} from '#core/tools/interactive-components'
 import {
   applyMasterPageTool,
   createMasterPageTool,
