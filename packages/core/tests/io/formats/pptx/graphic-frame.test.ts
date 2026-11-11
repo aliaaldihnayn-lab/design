@@ -73,6 +73,7 @@ ${frame(4, 'Share chart', [850, 40, 300, 300], 'chart', '<c:chart xmlns:c="http:
 ${frame(5, 'Process', [40, 400, 250, 50], 'diagram', '<dgm:relIds xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" r:dm="rId4" r:lo="rId9" r:qs="rId9" r:cs="rId9"/>')}
 ${frame(6, 'Radar', [400, 400, 100, 100], 'chart', '<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId5"/>')}
 ${frame(7, 'Embedded sheet', [600, 400, 100, 80], 'presentationml/2006/ole', '<p:oleObj r:id="rId9" progId="Excel.Sheet.12"><p:embed/><p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId7"/></p:blipFill><p:spPr/></p:pic></p:oleObj>')}
+<p:sp><p:nvSpPr><p:cNvPr id="8" name="Engraved"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${800 * EMU}" y="${400 * EMU}"/><a:ext cx="${300 * EMU}" cy="${60 * EMU}"/></a:xfrm><a:prstGeom prst="rect"/><a:noFill/></p:spPr><p:txBody><a:bodyPr/><a:p><a:r><a:rPr sz="2400"><a:effectLst><a:innerShdw blurRad="38100" dist="25400" dir="2700000"><a:srgbClr val="000000"><a:alpha val="50000"/></a:srgbClr></a:innerShdw></a:effectLst></a:rPr><a:t>Engraved</a:t></a:r></a:p></p:txBody></p:sp>
 </p:spTree></p:cSld></p:sld>`
   return zipSync({
     '_rels/.rels': strToU8(rels([['rId1', 'officeDocument', 'ppt/presentation.xml']])),
@@ -208,5 +209,17 @@ describe('PPTX tables, charts, SmartArt and embedded objects', () => {
     expect(named('Embedded sheet').fills[0]?.type).toBe('IMAGE')
     expect(layers.some((layer) => layer.name === 'Radar')).toBe(false)
     expect(skipped).toEqual({ chart: 1 })
+  })
+
+  test('the inner shadow a run casts on its letters stays on the text', async () => {
+    const { named } = await read()
+    const text = named('Engraved')
+    expect(text.type).toBe('TEXT')
+    const [shadow] = text.effects
+    expect(shadow).toMatchObject({ type: 'INNER_SHADOW', radius: 4 })
+    expect(shadow.color.a).toBeCloseTo(0.5, 2)
+    // 2 px at 45°, down and to the right.
+    expect(shadow.offset.x).toBeCloseTo(shadow.offset.y, 2)
+    expect(shadow.offset.x).toBeGreaterThan(0)
   })
 })

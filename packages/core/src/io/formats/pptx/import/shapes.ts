@@ -264,6 +264,20 @@ function textInherited(
     )
 }
 
+/**
+ * Shadows the text itself casts (`a:rPr/a:effectLst`: inner and outer shadows on the letters),
+ * from the first run that sets them; a text layer has one set of effects for all its runs.
+ */
+function textEffects(ctx: ShapeContext, txBody: Element | undefined) {
+  for (const paragraph of children(txBody, 'p')) {
+    for (const run of children(paragraph, 'r')) {
+      const effects = readEffects(ctx, child(run, 'rPr'))
+      if (effects.length > 0) return effects
+    }
+  }
+  return []
+}
+
 function isLine(preset: string | null | undefined, kind: string): boolean {
   return (
     preset === 'line' ||
@@ -351,7 +365,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
       ...textNodeProps(body, fontColor),
       name,
       visible,
-      effects,
+      effects: [...effects, ...textEffects(ctx, txBody)],
       x: Math.round((cx - textBox.width / 2) * 100) / 100,
       y: Math.round((cy - textBox.height / 2) * 100) / 100,
       ...textBox,
@@ -388,6 +402,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
   ctx.graph.createNode('TEXT', group.id, {
     ...textNodeProps(body, fontColor),
     name: `${name} text`,
+    effects: textEffects(ctx, txBody),
     x: Math.round(left * 100) / 100,
     y: Math.round(top * 100) / 100,
     ...textBox
