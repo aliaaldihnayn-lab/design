@@ -416,6 +416,11 @@ export class FontManager {
   private async loadStandIn(family: string, style: string): Promise<ArrayBuffer | null> {
     const standIn = fontStandIn(family)
     if (!standIn) return null
+    if (standIn.metricCompatible) {
+      // Its open twin has the family's own widths and line box, so it is drawn as it is.
+      const twin = await this.loadRemoteFont(standIn.metricCompatible, style).catch(() => null)
+      if (twin) return this.registerAndCache(family, style, twin.slice(0), 'stand-in')
+    }
     try {
       const file = await this.fetchBundledFont(standIn.file)
       if (!file) return null
