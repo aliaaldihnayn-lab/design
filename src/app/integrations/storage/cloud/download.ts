@@ -3,6 +3,7 @@ import { fromUint8Array } from 'js-base64'
 
 import type { DocumentDownload, DocumentImageLink } from '@lawha/cloud/contract'
 
+import { storageErrorText } from '../errors'
 import type { StorageTransferProgress } from '../types'
 import { assembleCloudDocument } from './images'
 
@@ -26,13 +27,14 @@ async function fetchVerified(
     headers: target.headers,
     signal
   })
-  if (!response.ok) throw new Error(`Cloud document download failed with HTTP ${response.status}`)
+  if (!response.ok)
+    throw new Error(storageErrorText((t) => t.cloudDownloadFailed({ status: response.status })))
   const bytes = new Uint8Array(await response.arrayBuffer())
   if (
     bytes.byteLength !== expected.byteSize ||
     (await cloudChecksum(bytes)) !== expected.checksum
   ) {
-    throw new Error('The downloaded Cloud document does not match what the server stored')
+    throw new Error(storageErrorText((t) => t.cloudDownloadMismatch))
   }
   return bytes
 }
@@ -87,14 +89,14 @@ async function readExactly(response: Response, length: number): Promise<Uint8Arr
       if (done) break
       if (received + value.byteLength > length) {
         await reader.cancel()
-        throw new Error(`Cloud document range read sent more than the ${length} bytes asked for`)
+        throw new Error(storageErrorText((t) => t.cloudRangeTooLong({ length })))
       }
       bytes.set(value, received)
       received += value.byteLength
     }
   }
   if (received !== length) {
-    throw new Error(`Cloud document range read sent ${received} of the ${length} bytes asked for`)
+    throw new Error(storageErrorText((t) => t.cloudRangeShort({ received, length })))
   }
   return bytes
 }

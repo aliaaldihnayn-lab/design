@@ -95,5 +95,12 @@
   "importPlugin": "从文件夹导入插件…",
   "removePlugin": "移除插件",
   "prototypeConnections": "原型连接",
-  "userStories": "用户故事"
+  "userStories": "用户故事",
+  "developerTools": "开发者工具",
+  "aboutLawha": "关于 Lawha",
+  "quitLawha": "退出 Lawha",
+  "services": "服务",
+  "hideLawha": "隐藏 Lawha",
+  "hideOthers": "隐藏其他",
+  "showAll": "全部显示"
 }

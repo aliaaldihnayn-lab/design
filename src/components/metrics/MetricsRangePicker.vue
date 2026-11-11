@@ -3,6 +3,8 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatDay } from '@/app/metrics/format'
 import { METRICS_RANGE_PRESETS, presetRange, rangeLabel } from '@/app/metrics/range'
 import type { MetricsRange, MetricsRangePreset } from '@/app/metrics/range'
@@ -22,10 +24,11 @@ const { today, earliest } = defineProps<{ today: string; earliest: string }>()
 const range = defineModel<MetricsRange>({ required: true })
 
 const open = ref(false)
+const t = useMetricsMessages()
 const ui = metricsRangePicker()
 const popover = usePopoverUI({ content: 'p-0' })
 
-const label = computed(() => rangeLabel(range.value))
+const label = computed(() => rangeLabel(range.value, t.value))
 const span = computed(() =>
   range.value.start === range.value.end
     ? formatDay(range.value.start)
@@ -59,7 +62,7 @@ function choose(preset: Exclude<MetricsRangePreset, 'custom'>) {
     <PopoverPortal>
       <PopoverContent :class="popover.content" align="end" :side-offset="6">
         <div :class="ui.body()">
-          <ul :class="ui.presets()" aria-label="Date range">
+          <ul :class="ui.presets()" :aria-label="t.dateRange">
             <li v-for="preset in METRICS_RANGE_PRESETS" :key="preset.value">
               <button
                 type="button"
@@ -67,13 +70,13 @@ function choose(preset: Exclude<MetricsRangePreset, 'custom'>) {
                 :data-selected="range.preset === preset.value"
                 @click="choose(preset.value)"
               >
-                <span>{{ preset.label }}</span>
+                <span>{{ t[preset.label] }}</span>
                 <icon-lucide-check v-if="range.preset === preset.value" class="size-3.5" />
               </button>
             </li>
           </ul>
           <div :class="ui.calendar()">
-            <AppRangeCalendar v-model="days" label="Custom range" :min="earliest" :max="today" />
+            <AppRangeCalendar v-model="days" :label="t.customRange" :min="earliest" :max="today" />
           </div>
         </div>
       </PopoverContent>

@@ -26,7 +26,10 @@ export type FramePresetCategoryLabelKey =
 
 export interface FramePreset {
   id: string
-  /** Canonical Figma preset label, kept verbatim across locales. */
+  /**
+   * Figma's preset label. Device and product names show as written; generic ones, such as
+   * Desktop or Instagram post, show in the reader's language (`framePresetLabel`).
+   */
   name: string
   width: number
   height: number
@@ -261,4 +264,21 @@ export function findFrameResizePreset(
   preferredName?: string
 ): FramePreset | undefined {
   return findPreset(FRAME_RESIZE_PRESETS, width, height, preferredName)
+}
+
+/** The message key a preset's translated name lives under: its id in camelCase. */
+export function framePresetMessageKey(preset: Pick<FramePreset, 'id'>): string {
+  return preset.id.replace(/-([a-z0-9])/g, (_, next: string) => next.toUpperCase())
+}
+
+/**
+ * A preset's name in the reader's language, from the `framePresets` messages, or as Figma
+ * writes it for device and product names, which have no message.
+ */
+export function framePresetLabel(
+  preset: Pick<FramePreset, 'id' | 'name'>,
+  messages: Readonly<Record<string, unknown>>
+): string {
+  const label: unknown = messages[framePresetMessageKey(preset)]
+  return typeof label === 'string' ? label : preset.name
 }

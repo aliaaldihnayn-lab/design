@@ -17,11 +17,14 @@ import editor from './editor.json'
 import figjam from './figjam.json'
 import files from './files.json'
 import fonts from './fonts.json'
+import framePresets from './frame-presets.json'
 import history from './history.json'
 import inspect from './inspect.json'
 import media from './media.json'
 import menu from './menu.json'
+import metrics from './metrics.json'
 import pages from './pages.json'
+import paths from './paths.json'
 import panels from './panels.json'
 import photo from './photo.json'
 import plugins from './plugins.json'
@@ -32,8 +35,9 @@ import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
 import statuses from './statuses.json'
-import stories from './stories.json'
+import storageErrors from './storage-errors.json'
 import storage from './storage.json'
+import stories from './stories.json'
 import tools from './tools.json'
 import updates from './updates.json'
 import variables from './variables/panel.json'
@@ -60,10 +64,13 @@ export default {
   figjam,
   files,
   fonts,
+  framePresets,
   history,
+  metrics,
   media,
   menu,
   pages,
+  paths,
   panels,
   photo,
   print,
@@ -74,6 +81,7 @@ export default {
   settings,
   shapes,
   statuses,
+  storageErrors,
   stories,
   storage,
   tools,

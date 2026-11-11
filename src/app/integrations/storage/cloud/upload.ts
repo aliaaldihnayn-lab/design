@@ -3,6 +3,7 @@ import { limitAsync, retry } from 'es-toolkit'
 import type { CloudAPIClient } from '@lawha/cloud/client'
 import type { ObjectUploadTarget } from '@lawha/cloud/contract'
 
+import { storageErrorText } from '../errors'
 import type { StorageTransferProgress } from '../types'
 
 const MULTIPART_CONCURRENCY = 4
@@ -77,7 +78,7 @@ async function putPart(
       })
       if (!response.ok) throw new ObjectUploadError(response.status)
       const etag = response.headers.get('etag')
-      if (!etag) throw new Error('Cloud multipart upload response did not include an ETag')
+      if (!etag) throw new Error(storageErrorText((t) => t.cloudUploadIncomplete))
       return etag
     },
     {

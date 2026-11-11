@@ -95,5 +95,12 @@
   "importPlugin": "Импортировать плагин из папки…",
   "removePlugin": "Удалить плагин",
   "prototypeConnections": "Связи прототипа",
-  "userStories": "Пользовательские истории"
+  "userStories": "Пользовательские истории",
+  "developerTools": "Инструменты разработчика",
+  "aboutLawha": "О программе Lawha",
+  "quitLawha": "Завершить Lawha",
+  "services": "Службы",
+  "hideLawha": "Скрыть Lawha",
+  "hideOthers": "Скрыть остальные",
+  "showAll": "Показать все"
 }

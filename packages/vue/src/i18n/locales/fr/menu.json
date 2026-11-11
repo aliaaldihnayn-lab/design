@@ -95,5 +95,12 @@
   "importPlugin": "Importer un plugin depuis un dossier…",
   "removePlugin": "Supprimer un plugin",
   "prototypeConnections": "Connexions du prototype",
-  "userStories": "User stories"
+  "userStories": "User stories",
+  "developerTools": "Outils de développement",
+  "aboutLawha": "À propos de Lawha",
+  "quitLawha": "Quitter Lawha",
+  "services": "Services",
+  "hideLawha": "Masquer Lawha",
+  "hideOthers": "Masquer les autres",
+  "showAll": "Tout afficher"
 }

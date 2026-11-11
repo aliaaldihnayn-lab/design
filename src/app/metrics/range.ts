@@ -1,6 +1,7 @@
 import { parseDate } from '@internationalized/date'
 
 import { MAX_METRICS_RANGE_DAYS } from '@lawha/feedback/contract'
+import type { useMetricsMessages } from '@lawha/vue/i18n'
 
 import { formatDay } from './format'
 
@@ -13,15 +14,21 @@ export interface MetricsRange {
   end: string
 }
 
+type MetricsMessages = ReturnType<typeof useMetricsMessages>['value']
+type PresetMessage = 'rangeToday' | 'range7d' | 'range30d' | 'range90d' | 'rangeAll'
+type PhraseMessage = 'phraseToday' | 'phrase7d' | 'phrase30d' | 'phrase90d' | 'phraseAll'
+
 export const METRICS_RANGE_PRESETS: {
   value: Exclude<MetricsRangePreset, 'custom'>
-  label: string
+  /** Its name in the picker, and the end of a sentence it makes ("+374 in the last 7 days"). */
+  label: PresetMessage
+  phrase: PhraseMessage
 }[] = [
-  { value: 'today', label: 'Today' },
-  { value: '7d', label: 'Last 7 days' },
-  { value: '30d', label: 'Last 30 days' },
-  { value: '90d', label: 'Last 90 days' },
-  { value: 'all', label: 'All time' }
+  { value: 'today', label: 'rangeToday', phrase: 'phraseToday' },
+  { value: '7d', label: 'range7d', phrase: 'phrase7d' },
+  { value: '30d', label: 'range30d', phrase: 'phrase30d' },
+  { value: '90d', label: 'range90d', phrase: 'phrase90d' },
+  { value: 'all', label: 'rangeAll', phrase: 'phraseAll' }
 ]
 
 // "All time" is as long as the API answers; the history is far shorter for now.
@@ -49,25 +56,18 @@ export function presetRange(
   return { preset, start: earliest && start < earliest ? earliest : start, end: today }
 }
 
-export function rangeLabel(range: MetricsRange): string {
+export function rangeLabel(range: MetricsRange, t: MetricsMessages): string {
   const preset = METRICS_RANGE_PRESETS.find((option) => option.value === range.preset)
-  if (preset) return preset.label
+  if (preset) return t[preset.label]
   if (range.start === range.end) return formatDay(range.start)
   return `${formatDay(range.start)} – ${formatDay(range.end)}`
 }
 
-const RANGE_PHRASES: Record<Exclude<MetricsRangePreset, 'custom'>, string> = {
-  today: 'today',
-  '7d': 'in the last 7 days',
-  '30d': 'in the last 30 days',
-  '90d': 'in the last 90 days',
-  all: 'in total'
-}
-
 /** The range as the end of a sentence: "+374 in the last 7 days". */
-export function rangePhrase(range: MetricsRange): string {
-  if (range.preset !== 'custom') return RANGE_PHRASES[range.preset]
+export function rangePhrase(range: MetricsRange, t: MetricsMessages): string {
+  const preset = METRICS_RANGE_PRESETS.find((option) => option.value === range.preset)
+  if (preset) return t[preset.phrase]
   return range.start === range.end
-    ? `on ${formatDay(range.start)}`
+    ? t.phraseOn({ day: formatDay(range.start) })
     : `${formatDay(range.start)} – ${formatDay(range.end)}`
 }

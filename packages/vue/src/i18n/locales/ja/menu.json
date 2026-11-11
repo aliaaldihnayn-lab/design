@@ -95,5 +95,12 @@
   "importPlugin": "フォルダーからプラグインを読み込む…",
   "removePlugin": "プラグインを削除",
   "prototypeConnections": "プロトタイプの接続",
-  "userStories": "ユーザーストーリー"
+  "userStories": "ユーザーストーリー",
+  "developerTools": "開発者ツール",
+  "aboutLawha": "Lawha について",
+  "quitLawha": "Lawha を終了",
+  "services": "サービス",
+  "hideLawha": "Lawha を隠す",
+  "hideOthers": "ほかを隠す",
+  "showAll": "すべてを表示"
 }

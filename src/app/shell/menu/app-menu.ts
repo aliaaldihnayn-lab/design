@@ -35,6 +35,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { APP_MENU_LABEL_KEYS } from '@/app/shell/menu/labels'
 import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
@@ -106,67 +107,7 @@ export function useAppMenu() {
   const { theme, setTheme } = useAppTheme()
   const plugins = usePluginMenu(store)
 
-  const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
-    new: 'new',
-    'new-tab': 'newTab',
-    open: 'open',
-    'open-tour': 'openTour',
-    diagnostics: 'diagnostics',
-    save: 'save',
-    'save-as': 'saveAs',
-    'save-to': 'saveTo',
-    'save-version': 'saveToVersionHistory',
-    'version-history': 'showVersionHistory',
-    'export-selection': 'exportSelection',
-    autosave: 'autosave',
-    close: 'closeTab',
-    'previous-tab': 'selectPreviousTab',
-    'next-tab': 'selectNextTab',
-    copy: 'copy',
-    cut: 'cut',
-    paste: 'paste',
-    'paste-to-replace': 'pasteToReplace',
-    'selection.rename': 'renameSelection',
-    'selection.moveToPage': 'moveToPage',
-    'arrange-layout': 'autoArrange',
-    language: 'language',
-    preferences: 'preferences',
-    settings: 'settings',
-    variables: 'variables',
-    'insert-icon': 'insertIcon',
-    'plugins-import': 'importPlugin',
-    'plugins-remove': 'removePlugin',
-    'view-rulers': 'rulers',
-    'view-pixel-grid': 'pixelGrid',
-    'view-multiplayer-cursors': 'multiplayerCursors',
-    'view-design-issues': 'designIssues',
-    'view-prototype-connections': 'prototypeConnections',
-    'view-comments': 'comments',
-    'view-user-stories': 'userStories',
-    'snap-geometry': 'snapToGeometry',
-    'snap-objects': 'snapToObjects',
-    'snap-pixel-grid': 'snapToPixelGrid',
-    profiler: 'profiler',
-    'toggle-ui': 'toggleUI',
-    'toggle-preview': 'togglePreview',
-    theme: 'theme',
-    'theme-light': 'themeLight',
-    'theme-dark': 'themeDark',
-    'theme-auto': 'themeAuto',
-    'zoom-in': 'zoomIn',
-    'zoom-out': 'zoomOut',
-    'view-split-right': 'splitRight',
-    'view-split-down': 'splitDown',
-    'text.bold': 'bold',
-    'text.italic': 'italic',
-    'text.underline': 'underline',
-    'arrange.align-left': 'arrangeAlignLeft',
-    'arrange.align-center': 'arrangeAlignCenter',
-    'arrange.align-right': 'arrangeAlignRight',
-    'arrange.align-top': 'arrangeAlignTop',
-    'arrange.align-middle': 'arrangeAlignMiddle',
-    'arrange.align-bottom': 'arrangeAlignBottom'
-  }
+  const translatedMenuItemLabels = APP_MENU_LABEL_KEYS
 
   const languageMenu = computed<MenuEntry[]>(() =>
     availableLocales.map((code) => ({

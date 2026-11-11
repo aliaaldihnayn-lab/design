@@ -25,6 +25,8 @@ const LOCALE_FILE_NAMES: Record<string, string> = {
   cloudPortal: 'cloud/portal',
   designCheck: 'design-check',
   designSystem: 'design-system',
+  framePresets: 'frame-presets',
+  storageErrors: 'storage-errors',
   variables: 'variables/panel',
   variableTypes: 'variables/types'
 }
@@ -138,6 +140,14 @@ for (const [locale, dir] of expectedLocaleDirs) {
     .map((entry) => relative(localeDir, join(entry.parentPath, entry.name)).split(sep).join('/'))
   if (!files.includes(REQUIRED_INDEX_FILE)) {
     report(`\n${locale}: missing ${REQUIRED_INDEX_FILE}`)
+  } else {
+    // A namespace the index leaves out never loads, and the locale then stays loading in English.
+    const index = readFileSync(join(localeDir, REQUIRED_INDEX_FILE), 'utf8')
+    for (const namespace of namespaces) {
+      if (!index.includes(`from './${localeFileName(namespace)}.json'`)) {
+        report(`${locale}: ${REQUIRED_INDEX_FILE} does not import ${localeFileName(namespace)}.json`)
+      }
+    }
   }
 
   const jsonFiles = files.filter((file) => file.endsWith('.json'))
