@@ -52,6 +52,7 @@ export type Tool =
   | 'PEN'
   | 'PENCIL'
   | 'SHAPE_BUILDER'
+  | 'WIDTH'
   | 'BRUSH'
   | 'ERASER'
   | 'FILL_BUCKET'

@@ -81,6 +81,7 @@ describe('normalizeToolbarLayout', () => {
       SHAPES,
       ['PEN', 'PENCIL'],
       ['SHAPE_BUILDER'],
+      ['WIDTH'],
       ['HAND'],
       ['COMMENT'],
       ['insert-icon']

@@ -99,7 +99,7 @@ export function moveDrag(d: DragState, e: MouseEvent, at: DragPointer, ctx: Drag
     handleDrawMove(d, cx, cy, e.shiftKey)
     return
   }
-  if (d.type === 'sticky-draw' || d.type === 'shape-builder') {
+  if (d.type === 'sticky-draw' || d.type === 'shape-builder' || d.type === 'live-effect') {
     d.move(cx, cy)
     return
   }

@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
-import IconShapeBuilder from '~icons/lucide/blend'
 import IconBandage from '~icons/lucide/bandage'
+import IconShapeBuilder from '~icons/lucide/blend'
 import IconCircle from '~icons/lucide/circle'
 import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconColumns from '~icons/lucide/columns-3'
@@ -58,6 +58,7 @@ export const toolIcons: Record<Tool, Component> = {
   PEN: IconPenTool,
   PENCIL: IconPencil,
   SHAPE_BUILDER: IconShapeBuilder,
+  WIDTH: IconSpline,
   BRUSH: IconPaintbrush,
   ERASER: IconEraser,
   FILL_BUCKET: IconPaintBucket,

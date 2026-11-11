@@ -7,6 +7,7 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import { FIG_COMPRESSIONS } from '../fig-compression'
 import { iconSchema, iconTintSchema } from '../icons/schema'
+import { liveBlendSchema, pathEffectSchema } from '../path-effects/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
 import { nodeStatusSchema, statusWorkflowSchema } from '../statuses/schema'
@@ -181,6 +182,17 @@ const imageAdjustmentsSchema = v.record(
   })
 )
 
+/** Where each pattern fill's tiles sit, by fill index: Figma's pattern paint has no offset or turn. */
+const patternPlacementSchema = v.record(
+  v.pipe(v.string(), v.regex(/^\d+$/)),
+  v.object({
+    offset: v.optional(
+      v.object({ x: v.pipe(v.number(), v.finite()), y: v.pipe(v.number(), v.finite()) })
+    ),
+    rotation: v.optional(v.pipe(v.number(), v.finite()))
+  })
+)
+
 const paintLayerSchema = v.object({ hash: v.pipe(v.string(), v.minLength(1)) })
 
 const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
@@ -215,6 +227,8 @@ export const LAWHA_PLUGIN_DATA = {
    * and vibrance have no Figma field, so this keeps every one exactly.
    */
   imageAdjustments: jsonPluginDataField('imageAdjustments', 'format', imageAdjustmentsSchema),
+  /** Each pattern fill's offset and turn by fill index, which Figma's pattern paint cannot hold. */
+  patternPlacement: jsonPluginDataField('patternPlacement', 'format', patternPlacementSchema),
   /**
    * The image fill that holds what was painted on the layer with the brush, eraser and fill
    * bucket, by its image's hash, so its other fills stay as they were (Affinity's pixel layer).
@@ -291,7 +305,14 @@ export const LAWHA_PLUGIN_DATA = {
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */
   iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema),
   /** One entry per paint that draws a shader, matched to its image paint by the frame's hash. */
-  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
+  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema),
+  /**
+   * A live warp, envelope mesh, or width profile on the vector it made, with the outline it was
+   * made from, so it can be edited again, expanded, or released.
+   */
+  pathEffect: jsonPluginDataField('pathEffect', 'content', pathEffectSchema),
+  /** A live blend, on the group holding its ends and the steps it made between them. */
+  liveBlend: jsonPluginDataField('liveBlend', 'content', liveBlendSchema)
 } satisfies Record<string, PluginDataKey>
 
 const NOT_CONTENT = Object.values(LAWHA_PLUGIN_DATA).filter((field) => field.role !== 'content')

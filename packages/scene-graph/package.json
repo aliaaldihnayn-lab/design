@@ -236,6 +236,12 @@
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
     },
+    "./path-effects": {
+      "types": "./dist/path-effects/index.d.ts",
+      "bun": "./src/path-effects/index.ts",
+      "import": "./dist/path-effects/index.js",
+      "default": "./dist/path-effects/index.js"
+    },
     "./plugin-data": {
       "types": "./dist/plugin-data/index.d.ts",
       "bun": "./src/plugin-data/index.ts",

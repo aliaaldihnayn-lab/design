@@ -38,6 +38,7 @@ export default defineConfig({
     'order-keys': './src/order-keys.ts',
     'paints/index': './src/paints/index.ts',
     'parse-path': './src/parse-path.ts',
+    'path-effects/index': './src/path-effects/index.ts',
     'plugin-data/index': './src/plugin-data/index.ts',
     clipping: './src/clipping.ts',
     polygon: './src/polygon.ts',

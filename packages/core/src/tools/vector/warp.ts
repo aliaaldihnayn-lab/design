@@ -1,13 +1,15 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@lawha/scene-graph'
+import { MAX_MESH_CELLS, WARP_PRESETS } from '@lawha/scene-graph/path-effects'
 
+import { applyLiveEffect } from '#core/canvas/live-effects'
 import { canWarp, meshedVectorProps, warpBox, warpedVectorProps } from '#core/canvas/warp'
 import { replaceWithVector } from '#core/editor/structure/swap'
 import type { FigmaAPI } from '#core/figma-api'
 import { measuringRenderer } from '#core/figma-api/measure'
 import { defineTool } from '#core/tools/schema'
-import { flatMesh, WARP_PRESETS } from '#core/vector/warp'
+import { flatMesh, flatMeshPoints } from '#core/vector/warp'
 
 const NO_RENDERER = 'Warping needs path geometry, which this host cannot measure'
 
@@ -46,7 +48,7 @@ function reshapeAll(
 
 export const warpShape = defineTool({
   name: 'warp_shape',
-  description: `Bend layers with one of Illustrator's Warp presets (${WARP_PRESETS.join(', ')}), as Object → Envelope Distort → Make with Warp, expanded: each layer becomes a vector of its warped outline, keeping its paint, stroke and effects. bend, horizontal and vertical distortion run from -1 to 1 (Illustrator's -100%…100%).`,
+  description: `Bend layers with one of Illustrator's Warp presets (${WARP_PRESETS.join(', ')}), as Object → Envelope Distort → Make with Warp: each layer becomes a vector of its warped outline, keeping its paint, stroke and effects. The warp stays live (edit it with edit_path_effect, expand or release it with expand_path_effect or release_path_effect) unless expand is true. bend, horizontal and vertical distortion run from -1 to 1 (Illustrator's -100%…100%).`,
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Layers to warp')),
@@ -54,7 +56,8 @@ export const warpShape = defineTool({
     bend: v.pipe(v.number(), v.minValue(-1), v.maxValue(1), v.description('Bend, -1…1')),
     horizontal: amountSchema('Horizontal distortion, -1…1'),
     vertical: amountSchema('Vertical distortion, -1…1'),
-    direction: v.optional(v.picklist(['horizontal', 'vertical']), 'horizontal')
+    direction: v.optional(v.picklist(['horizontal', 'vertical']), 'horizontal'),
+    expand: v.optional(v.pipe(v.boolean(), v.description('Expand at once: no live warp')), false)
   }),
   execute: (figma, args) => {
     const renderer = measuringRenderer(figma)
@@ -64,41 +67,44 @@ export const warpShape = defineTool({
     const options = {
       preset: args.preset,
       bend: args.bend,
-      horizontal: args.horizontal,
-      vertical: args.vertical,
+      horizontal: args.horizontal ?? 0,
+      vertical: args.vertical ?? 0,
       vertically: args.direction === 'vertical'
     }
     return reshapeAll(figma, found.nodes, (node) =>
-      warpedVectorProps(renderer, figma.graph, node, options)
+      args.expand
+        ? warpedVectorProps(renderer, figma.graph, node, options)
+        : applyLiveEffect(renderer, figma.graph, node, { kind: 'warp', ...options })
     )
   }
 })
 
-const MAX_MESH = 16
-
 export const envelopeMesh = defineTool({
   name: 'envelope_mesh',
   description:
-    "Distort a layer with an envelope mesh, as Illustrator's Object → Envelope Distort → Make with Mesh, expanded: a rows×columns grid is laid over the layer's box and the given grid points move by dx, dy (pixels); everything between follows. Row 0 is the top edge, column 0 the left edge; the grid has rows+1 by columns+1 points.",
+    "Distort a layer with an envelope mesh, as Illustrator's Object → Envelope Distort → Make with Mesh: a rows×columns grid is laid over the layer's box and the given grid points move by dx, dy (pixels); everything between follows. Row 0 is the top edge, column 0 the left edge; the grid has rows+1 by columns+1 points. The mesh stays live (edit_path_effect moves its points and handles, adds rows and columns) unless expand is true.",
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     id: v.string(),
-    rows: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH)),
-    columns: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH)),
-    moves: v.pipe(
-      v.array(
-        v.strictObject({
-          row: v.pipe(v.number(), v.integer(), v.minValue(0)),
-          column: v.pipe(v.number(), v.integer(), v.minValue(0)),
-          dx: v.number(),
-          dy: v.number()
-        })
+    rows: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS)),
+    columns: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_MESH_CELLS)),
+    moves: v.optional(
+      v.pipe(
+        v.array(
+          v.strictObject({
+            row: v.pipe(v.number(), v.integer(), v.minValue(0)),
+            column: v.pipe(v.number(), v.integer(), v.minValue(0)),
+            dx: v.number(),
+            dy: v.number()
+          })
+        ),
+        v.description('Grid points to move; none lays a flat mesh to edit later')
       ),
-      v.minLength(1),
-      v.description('Grid points to move')
-    )
+      []
+    ),
+    expand: v.optional(v.pipe(v.boolean(), v.description('Expand at once: no live mesh')), false)
   }),
-  execute: (figma, { id, rows, columns, moves }) => {
+  execute: (figma, { id, rows, columns, moves, expand }) => {
     const renderer = measuringRenderer(figma)
     if (!renderer) return { error: NO_RENDERER }
     const found = warpable(figma, [id])
@@ -107,6 +113,7 @@ export const envelopeMesh = defineTool({
     const box = warpBox(renderer, node, figma.graph)
     if (!box) return { error: `${node.name} has no outline to warp` }
     const mesh = flatMesh(box, rows, columns)
+    const unit = flatMeshPoints(rows, columns)
     for (const move of moves) {
       if (move.row > rows || move.column > columns)
         return {
@@ -117,9 +124,21 @@ export const envelopeMesh = defineTool({
         x: point.x + move.dx,
         y: point.y + move.dy
       }
+      const cell = unit[move.row * (columns + 1) + move.column]
+      unit[move.row * (columns + 1) + move.column] = {
+        x: cell.x + move.dx / Math.max(box.width, 1e-9),
+        y: cell.y + move.dy / Math.max(box.height, 1e-9)
+      }
     }
     return reshapeAll(figma, [node], (target) =>
-      meshedVectorProps(renderer, figma.graph, target, mesh)
+      expand
+        ? meshedVectorProps(renderer, figma.graph, target, mesh)
+        : applyLiveEffect(renderer, figma.graph, target, {
+            kind: 'mesh',
+            rows,
+            columns,
+            points: unit
+          })
     )
   }
 })

@@ -46,7 +46,8 @@ const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type'
   'connector-draw',
   'connector-end',
   'connector-line',
-  'line-end'
+  'line-end',
+  'live-effect'
 ])
 
 export function useCanvasInput(

@@ -28,6 +28,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getLayerTree',
   'getNode',
   'getPages',
+  'liveEffectHandleAt',
+  'liveEffectHandles',
   'getSelectedNode',
   'getSelectedNodes',
   'getShownStatus',

@@ -12,6 +12,7 @@ export const toolMessageDefaults = {
   pen: 'Pen',
   pencil: 'Pencil',
   shapeBuilder: 'Shape builder',
+  width: 'Width',
   text: 'Text',
   sticky: 'Sticky note',
   shape: 'Shape',

@@ -5,12 +5,15 @@ export { shapeBuilder, shapeBuilderRegionsTool } from './vector/shape-builder'
 export { envelopeMesh, warpShape } from './vector/warp'
 
 export {
-  blendShapes,
-  offsetPath,
-  outlineStroke,
-  setPatternFill,
-  widthProfile
-} from './vector/path-effects'
+  editPathEffect,
+  expandPathEffect,
+  getPathEffect,
+  releasePathEffect
+} from './vector/live-effects'
+
+export { blendShapes, editBlend, expandBlend, releaseBlend } from './vector/blend'
+
+export { offsetPath, outlineStroke, setPatternFill, widthProfile } from './vector/path-effects'
 
 export { imageTrace, traceSettings, TRACE_DETAIL, type TraceDetail } from './vector/trace'
 

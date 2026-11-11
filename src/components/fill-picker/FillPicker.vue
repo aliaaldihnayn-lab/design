@@ -3,18 +3,20 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
+import IconGrid3x3 from '~icons/lucide/grid-3x3'
 
 import type { Fill } from '@lawha/scene-graph'
 import type { ShaderPaint, ShaderPreset } from '@lawha/scene-graph/shaders'
 import { applySolidFillColor, type OkHCLControls } from '@lawha/vue/controls/color-model'
 import { DEFAULT_SHADER_PRESET } from '@lawha/vue/controls/shader'
-import { useI18n } from '@lawha/vue/i18n'
+import { useI18n, usePathMessages } from '@lawha/vue/i18n'
 import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 import { FillRoot } from '@lawha/vue/primitives/Fill'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
+import PatternFillPicker from '@/components/fill-picker/PatternFillPicker.vue'
 import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -69,6 +71,7 @@ const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
 const { panels } = useI18n()
+const paths = usePathMessages()
 
 /** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
 function keepOpenOnPress(event: PointerDownOutsideEvent) {
@@ -150,6 +153,17 @@ function cancelFromEscape(event: KeyboardEvent) {
                 <icon-lucide-image class="size-3.5" />
               </button>
             </Tip>
+            <Tip :label="paths.pattern">
+              <button
+                :data-active="root.category === 'PATTERN' || undefined"
+                :class="tabClass(root.category === 'PATTERN')"
+                :aria-label="paths.pattern"
+                data-test-id="fill-picker-tab-pattern"
+                @click="root.actions.toPattern"
+              >
+                <IconGrid3x3 class="size-3.5" />
+              </button>
+            </Tip>
             <Tip :label="panels.shader">
               <button
                 :data-active="shader !== null || undefined"
@@ -181,6 +195,12 @@ function cancelFromEscape(event: KeyboardEvent) {
             v-if="shader"
             :preset="shader.preset"
             @update="emit('updateShader', $event)"
+          />
+
+          <PatternFillPicker
+            v-else-if="root.category === 'PATTERN'"
+            :fill="root.fill"
+            @update="emit('update', $event)"
           />
 
           <ImageFillPicker

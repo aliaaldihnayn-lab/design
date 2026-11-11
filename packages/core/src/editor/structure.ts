@@ -23,6 +23,7 @@ import {
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
+import { createLiveEffectActions } from './structure/live-effects'
 import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
 import {
   defaultNodeName,
@@ -264,6 +265,7 @@ export function createStructureActions(ctx: EditorContext) {
     shapeBuilderSelected,
     setShapeBuilderHover,
     ...stateActions,
+    ...createLiveEffectActions(ctx),
     moveToPage,
     previewRenameSelected,
     renameSelected,

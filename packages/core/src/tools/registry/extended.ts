@@ -33,6 +33,11 @@ import {
 import { buildDesignSystemTool } from '#core/tools/design-system'
 import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
 import { inspectLayerTool } from '#core/tools/inspect'
+import {
+  addStateInteraction,
+  bindPropertyToVariable,
+  createInteractiveComponent
+} from '#core/tools/interactive-components'
 import { buildInteractiveKitTool, insertKitComponentTool } from '#core/tools/kit'
 import {
   createDeviceMockup,
@@ -74,11 +79,6 @@ import {
   setInteractions,
   setScrollBehavior
 } from '#core/tools/prototype'
-import {
-  addStateInteraction,
-  bindPropertyToVariable,
-  createInteractiveComponent
-} from '#core/tools/interactive-components'
 import {
   applyMasterPageTool,
   createMasterPageTool,
@@ -154,8 +154,15 @@ import {
   pathScale,
   pathSet,
   blendShapes,
+  editBlend,
+  editPathEffect,
   envelopeMesh,
+  expandBlend,
+  expandPathEffect,
+  getPathEffect,
   imageTrace,
+  releaseBlend,
+  releasePathEffect,
   offsetPath,
   outlineStroke,
   setPatternFill,
@@ -318,11 +325,18 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   shapeBuilder,
   warpShape,
   envelopeMesh,
+  getPathEffect,
+  editPathEffect,
+  expandPathEffect,
+  releasePathEffect,
   imageTrace,
   offsetPath,
   outlineStroke,
   widthProfile,
   blendShapes,
+  editBlend,
+  releaseBlend,
+  expandBlend,
   setPatternFill,
   pathGet,
   pathSet,

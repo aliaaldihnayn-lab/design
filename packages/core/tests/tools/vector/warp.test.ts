@@ -4,8 +4,9 @@ import { SkiaRenderer } from '@lawha/core/canvas'
 import { FigmaAPI } from '@lawha/core/figma-api'
 import { initCanvasKit } from '@lawha/core/io/formats/raster'
 import { ALL_TOOLS } from '@lawha/core/tools'
-import { flatMesh, meshFunction, warpFunction, WARP_PRESETS } from '@lawha/core/vector'
+import { flatMesh, meshFunction, warpFunction } from '@lawha/core/vector'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { WARP_PRESETS } from '@lawha/scene-graph/path-effects'
 
 const cleanups: (() => void)[] = []
 

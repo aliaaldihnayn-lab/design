@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { getNodeEditCapability } from '@lawha/core'
 import { isGeneratedFrame, layerResizes } from '@lawha/scene-graph/generated'
 import { readIcon } from '@lawha/scene-graph/icons'
+import { hasPluginData, LAWHA_PLUGIN_DATA } from '@lawha/scene-graph/plugin-data'
 import { useEditorCommands } from '@lawha/vue/editor/commands'
 import { useSelectionState } from '@lawha/vue/editor/selection-state'
 import { useI18n } from '@lawha/vue/i18n'
@@ -106,9 +107,11 @@ const PATH_EFFECT_TYPES = new Set([
 ])
 const pathEffectIds = useSceneComputed(() => {
   const nodes = store.getSelectedNodes()
-  return nodes.length > 0 && nodes.every((selected) => PATH_EFFECT_TYPES.has(selected.type))
-    ? nodes.map((selected) => selected.id)
-    : []
+  // A live blend's group takes the section too, for its blend options.
+  const takes = (selected: (typeof nodes)[number]) =>
+    PATH_EFFECT_TYPES.has(selected.type) ||
+    hasPluginData(selected.pluginData, LAWHA_PLUGIN_DATA.liveBlend)
+  return nodes.length > 0 && nodes.every(takes) ? nodes.map((selected) => selected.id) : []
 })
 const LAYOUT_GUIDE_TYPES = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
 // Figma offers layout guides while every selected layer is a frame.

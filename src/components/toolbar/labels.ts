@@ -21,6 +21,7 @@ export function useToolLabels() {
     PEN: tools.value.pen,
     PENCIL: tools.value.pencil,
     SHAPE_BUILDER: tools.value.shapeBuilder,
+    WIDTH: tools.value.width,
     BRUSH: tools.value.brush,
     ERASER: tools.value.eraser,
     FILL_BUCKET: tools.value.fillBucket,

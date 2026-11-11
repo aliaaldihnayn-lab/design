@@ -19,6 +19,8 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
   { key: 'PEN', label: 'Pen', shortcut: 'P', flyout: ['PEN', 'PENCIL'] },
   // Illustrator's Shape Builder and its key.
   { key: 'SHAPE_BUILDER', label: 'Shape builder', shortcut: 'Shift+M' },
+  // Illustrator's Width tool and its key.
+  { key: 'WIDTH', label: 'Width', shortcut: 'Shift+W' },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
   // Affinity Photo's pixel tools, on Photoshop's keys: B, E, G, and I.
   {
@@ -58,6 +60,7 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyP: 'PEN',
   'Shift+KeyP': 'PENCIL',
   'Shift+KeyM': 'SHAPE_BUILDER',
+  'Shift+KeyW': 'WIDTH',
   KeyB: 'BRUSH',
   KeyE: 'ERASER',
   KeyG: 'FILL_BUCKET',

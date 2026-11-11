@@ -1,4 +1,5 @@
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
+import { applyPatternPlacementPluginData } from '#fig/node-change/pattern-placement'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 import { compact } from 'es-toolkit/array'
 
@@ -1016,6 +1017,7 @@ export function sceneNodeToKiwiWithContext(
   serializeNodeStatus(node, nc)
   applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   applyImageAdjustmentsPluginData(node)
+  applyPatternPlacementPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {
