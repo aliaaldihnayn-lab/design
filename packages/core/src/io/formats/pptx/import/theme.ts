@@ -191,3 +191,8 @@ export function solidFillColor(el: Element | undefined, theme: PPTXTheme): Color
   const fill = child(el, 'solidFill')
   return fill ? readColor(children(fill)[0], theme) : null
 }
+
+/** A theme colour by its scheme name (`accent1`, `lt1`), when the theme defines it. */
+export function themeColor(theme: PPTXTheme, name: string): Color | undefined {
+  return Object.hasOwn(theme.colors, name) ? theme.colors[name] : undefined
+}
