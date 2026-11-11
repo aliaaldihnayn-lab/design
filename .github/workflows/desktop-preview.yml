@@ -1,6 +1,6 @@
 name: Desktop preview
 
-# Every push to the branch builds the desktop app (macOS, Windows, Linux) and the Android app and
+# Every push to the branch builds the desktop app (macOS, Windows) and the Android app and
 # publishes them as the "desktop-preview" GitHub release, with the files the apps update from:
 #
 # - latest.json: the Tauri updater manifest. Desktop apps check it at startup and install a
@@ -51,10 +51,6 @@ jobs:
             target: x86_64-pc-windows-msvc
             label: windows-x64
             updater: windows-x86_64
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            label: linux-x64
-            updater: linux-x86_64
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
     env:
@@ -75,11 +71,6 @@ jobs:
         with:
           workspaces: desktop -> target
           key: ${{ matrix.target }}
-      - name: Linux packages
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: bun install --frozen-lockfile
       - name: Build settings
         shell: bash
@@ -110,7 +101,7 @@ jobs:
         run: |
           mkdir -p out
           B=desktop/target/${{ matrix.target }}/release/bundle
-          for f in $B/dmg/*.dmg $B/nsis/*.exe $B/msi/*.msi $B/appimage/*.AppImage $B/deb/*.deb; do
+          for f in $B/dmg/*.dmg $B/nsis/*.exe $B/msi/*.msi; do
             [ -f "$f" ] || continue
             name=$(basename "$f")
             cp "$f" "out/Lawha-${{ matrix.label }}.${name##*.}"
@@ -119,7 +110,6 @@ jobs:
           case "${{ matrix.updater }}" in
             darwin-*) UPD=$(ls $B/macos/*.app.tar.gz 2>/dev/null | head -1 || true); EXT=app.tar.gz ;;
             windows-*) UPD=$(ls $B/nsis/*.exe 2>/dev/null | head -1 || true); EXT=setup.exe ;;
-            linux-*) UPD=$(ls $B/appimage/*.AppImage 2>/dev/null | head -1 || true); EXT=AppImage ;;
           esac
           if [ -n "$UPD" ] && [ -f "$UPD.sig" ]; then
             cp "$UPD" "out/update-${{ matrix.updater }}.$EXT"
@@ -248,7 +238,6 @@ jobs:
 
             - macOS: open the .dmg, drag Lawha to Applications. The first time, right-click Lawha → Open (it is not notarized).
             - Windows: run the .exe; if SmartScreen warns, choose More info → Run anyway.
-            - Linux: the .AppImage runs directly (chmod +x), or install the .deb.
             - Android: install Lawha-android.apk (allow installs from this source).
           files: dist/*
           overwrite_files: true
