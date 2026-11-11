@@ -149,4 +149,41 @@ describe('Width tool', () => {
     const effect = effectOf(editor.graph.getNode(id))
     expect(effect?.kind === 'width' ? effect.points : []).toEqual([{ t: 1, width: 1 }])
   })
+
+  test('width points show on every contour, and a press on any of them takes the point', async () => {
+    const { editor } = await createEditorWithRenderer()
+    // Two separate lines in one vector, 100 px apart.
+    const pair = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 100,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 200, y: 0 },
+          { x: 0, y: 100 },
+          { x: 200, y: 100 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: []
+      },
+      fills: [],
+      strokes: [{ ...RED, weight: 10, align: 'CENTER' }],
+      strokeWeight: 10
+    })
+    const id = editor.makeLiveWidth(pair.id)
+    if (!id) throw new Error('no width profile')
+    editor.setTool('WIDTH')
+    const handles = editor.liveEffectHandles()
+    expect(handles?.kind === 'width' ? handles.points.length : 0).toBe(4)
+    expect(editor.liveEffectHandleAt(200, 105)?.hit).toMatchObject({
+      kind: 'width-point',
+      index: 1
+    })
+    expect(editor.liveEffectHandleAt(100, 100)?.hit.kind).toBe('width-path')
+  })
 })

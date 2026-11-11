@@ -203,20 +203,35 @@ export function meshHandlesFor(
   return { kind: 'mesh', nodeId: node.id, rows, columns, points, handles, grid: data }
 }
 
-/** The first contour of a live width profile's centre line in the parent, measured. */
+/** Every contour of a live width profile's centre line in the parent, measured. */
 function measureCentre(r: SkiaRenderer, node: SceneNode) {
   const effect = pathEffectOf(node)
   if (effect?.kind !== 'width') return null
   const source = effectSourceInParent(r, node, effect)
   if (!source) return null
   const iter = new r.ck.ContourMeasureIter(source, false, 1)
-  const contour = iter.next()
+  const contours: {
+    measure: { getPosTan(distance: number): Float32Array; delete(): void }
+    length: number
+  }[] = []
+  for (let contour = iter.next(); contour; contour = iter.next()) {
+    if (contour.length() > 0) contours.push({ measure: contour, length: contour.length() })
+    else contour.delete()
+  }
   iter.delete()
-  if (!contour) {
+  if (contours.length === 0) {
     source.delete()
     return null
   }
-  return { effect, source, contour, length: contour.length() }
+  return {
+    effect,
+    source,
+    contours,
+    dispose: () => {
+      for (const contour of contours) contour.measure.delete()
+      source.delete()
+    }
+  }
 }
 
 /** The place, unit normal, and share of the length of the centre line at `t`. */
@@ -238,23 +253,26 @@ export function widthHandlesFor(
 ): WidthHandles | null {
   const measured = measureCentre(r, node)
   if (!measured) return null
-  const { effect, source, contour, length } = measured
+  const { effect, source, contours } = measured
   try {
     const world = worldOf(graph, node)
     const toCanvas = (p: Vector) => Matrix.mapPoint(world, p)
-    const points = effect.points.map((point, index): WidthPointMark => {
-      const { point: at, normal } = centreAt(contour, length, point.t)
-      const half = (effect.weight * widthAt(effect.points, point.t)) / 2
-      const centre = toCanvas(at)
-      return {
-        index,
-        t: point.t,
-        x: centre.x,
-        y: centre.y,
-        left: toCanvas({ x: at.x + normal.x * half, y: at.y + normal.y * half }),
-        right: toCanvas({ x: at.x - normal.x * half, y: at.y - normal.y * half })
-      }
-    })
+    // Each contour runs its own 0…1, so every width point shows on every contour.
+    const points = contours.flatMap(({ measure, length }) =>
+      effect.points.map((point, index): WidthPointMark => {
+        const { point: at, normal } = centreAt(measure, length, point.t)
+        const half = (effect.weight * widthAt(effect.points, point.t)) / 2
+        const centre = toCanvas(at)
+        return {
+          index,
+          t: point.t,
+          x: centre.x,
+          y: centre.y,
+          left: toCanvas({ x: at.x + normal.x * half, y: at.y + normal.y * half }),
+          right: toCanvas({ x: at.x - normal.x * half, y: at.y - normal.y * half })
+        }
+      })
+    )
     const builder = new r.ck.PathBuilder()
     builder.addPath(source, world)
     const placed = builder.detachAndDelete()
@@ -262,8 +280,7 @@ export function widthHandlesFor(
     placed.delete()
     return { kind: 'width', nodeId: node.id, centre, points }
   } finally {
-    contour.delete()
-    source.delete()
+    measured.dispose()
   }
 }
 
@@ -278,25 +295,26 @@ function near(a: Vector, b: Vector, radius: number) {
 export function nearestOnCentre(r: SkiaRenderer, node: SceneNode, point: Vector) {
   const measured = measureCentre(r, node)
   if (!measured) return null
-  const { contour, length, source, effect } = measured
+  const { contours, effect } = measured
   try {
-    const samples = Math.max(16, Math.min(2000, Math.ceil(length / 2)))
     let best = { t: 0, distance: Infinity, side: 1 }
-    for (let i = 0; i <= samples; i++) {
-      const t = i / samples
-      const at = centreAt(contour, length, t)
-      const dx = point.x - at.point.x
-      const dy = point.y - at.point.y
-      const distance = Math.hypot(dx, dy)
-      if (distance < best.distance) {
-        const side = dx * at.normal.x + dy * at.normal.y >= 0 ? 1 : -1
-        best = { t, distance, side }
+    for (const { measure, length } of contours) {
+      const samples = Math.max(16, Math.min(2000, Math.ceil(length / 2)))
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples
+        const at = centreAt(measure, length, t)
+        const dx = point.x - at.point.x
+        const dy = point.y - at.point.y
+        const distance = Math.hypot(dx, dy)
+        if (distance < best.distance) {
+          const side = dx * at.normal.x + dy * at.normal.y >= 0 ? 1 : -1
+          best = { t, distance, side }
+        }
       }
     }
     return { ...best, weight: effect.weight }
   } finally {
-    contour.delete()
-    source.delete()
+    measured.dispose()
   }
 }
 
