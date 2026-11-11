@@ -4,6 +4,7 @@ import { FigmaAPI } from '@lawha/core/figma-api'
 import { ALL_TOOLS, isToolExposed } from '@lawha/core/tools'
 import { SceneGraph } from '@lawha/scene-graph'
 
+import { artworkBleed } from '#core/io/formats/pdf/print/sheet'
 import { mmToPt, type DieLine } from '#core/tools/print/geometry'
 import { buildPrintProduct, PRINT_PRODUCT_IDS, PRINT_PRODUCTS } from '#core/tools/print/products'
 
@@ -240,6 +241,19 @@ describe('create_print_template', () => {
     const crease = figma.getNodeById(out.dieline)?.children.find((c) => c.name === 'Crease')
     close(crease?.x ?? 0, mmToPt(3 + 148.5), 1e-3)
     close(crease?.height ?? 0, mmToPt(210), 1e-3)
+  })
+
+  test('print export finds the bleed every template already holds', () => {
+    for (const product of PRINT_PRODUCT_IDS) {
+      const figma = new FigmaAPI(new SceneGraph())
+      const out = tool('create_print_template')(figma, { product }) as TemplateResult
+      const bleed = artworkBleed(figma.graph, out.id)
+      close(bleed ?? 0, mmToPt(PRINT_PRODUCTS[product].bleed), 1e-2)
+    }
+    // A plain frame is drawn to its trim.
+    const figma = new FigmaAPI(new SceneGraph())
+    const frame = figma.createFrame()
+    expect(artworkBleed(figma.graph, frame.id)).toBeNull()
   })
 })
 

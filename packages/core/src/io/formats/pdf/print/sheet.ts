@@ -3,7 +3,10 @@ import { colorToHex } from '@lawha/scene-graph/color'
 
 import type { PDFPageComposer } from '#core/io/formats/pdf/export'
 
-import { REGISTRATION_SPOT } from './color'
+import { DIELINE_SPOTS, REGISTRATION_SPOT } from './color'
+
+/** The guide a print template outlines its bleed with, named so print export can find it. */
+export const BLEED_GUIDE_NAME = 'Bleed'
 
 /** Crop marks: this long, this far out from the trim past the bleed, this thick. */
 const MARK_LENGTH = 18
@@ -26,6 +29,60 @@ interface Box {
   y: number
   width: number
   height: number
+}
+
+/** Tolerance, in points, for a guide or cut line to line up with the sheet. */
+const ALIGN_TOLERANCE = 0.5
+const HAIRLINE = 0.02
+
+function absoluteBox(graph: SceneGraph, id: string): Box | null {
+  const node = graph.getNode(id)
+  if (!node) return null
+  const at = graph.getAbsolutePosition(id)
+  return { x: at.x, y: at.y, width: node.width, height: node.height }
+}
+
+/**
+ * The bleed a print template's sheet already holds around its trim, or null for artwork drawn
+ * to its trim. A template (`create_print_template`, `convert_to_dieline`) is trim plus bleed,
+ * outlined by a bleed guide covering the sheet, with its cut lines on the trim.
+ */
+export function artworkBleed(graph: SceneGraph, nodeId: string): number | null {
+  const sheet = absoluteBox(graph, nodeId)
+  if (!sheet) return null
+  const cuts: Box[] = []
+  const guides: Box[] = []
+  const visit = (id: string, depth: number) => {
+    for (const child of graph.getChildren(id)) {
+      const box = absoluteBox(graph, child.id)
+      if (box && child.name === BLEED_GUIDE_NAME) guides.push(box)
+      // A straight cut is a hairline vector, given a hundredth of a point across.
+      if (box && child.name === DIELINE_SPOTS.cut.name)
+        cuts.push({
+          ...box,
+          width: box.width <= HAIRLINE ? 0 : box.width,
+          height: box.height <= HAIRLINE ? 0 : box.height
+        })
+      if (depth < 2) visit(child.id, depth + 1)
+    }
+  }
+  visit(nodeId, 0)
+  const guide = guides.some(
+    (box) =>
+      Math.abs(box.x - sheet.x) <= ALIGN_TOLERANCE &&
+      Math.abs(box.y - sheet.y) <= ALIGN_TOLERANCE &&
+      Math.abs(box.width - sheet.width) <= ALIGN_TOLERANCE &&
+      Math.abs(box.height - sheet.height) <= ALIGN_TOLERANCE
+  )
+  if (!guide || cuts.length === 0) return null
+  const left = Math.min(...cuts.map((box) => box.x)) - sheet.x
+  const top = Math.min(...cuts.map((box) => box.y)) - sheet.y
+  const right = sheet.x + sheet.width - Math.max(...cuts.map((box) => box.x + box.width))
+  const bottom = sheet.y + sheet.height - Math.max(...cuts.map((box) => box.y + box.height))
+  const insets = [left, top, right, bottom]
+  const bleed = Math.min(...insets)
+  if (bleed <= ALIGN_TOLERANCE || Math.max(...insets) - bleed > ALIGN_TOLERANCE) return null
+  return Math.round(bleed * 1000) / 1000
 }
 
 /** The layers' trim: the union of their boxes on the canvas. */
@@ -86,23 +143,40 @@ function svgInner(svg: string): string {
   return svg.replace(/^[\s\S]*?<svg\b[^>]*>/, '').replace(/<\/svg>\s*$/, '')
 }
 
+/** The bleed of a page whose one layer is a template that already holds its bleed. */
+export function pageArtworkBleed(graph: SceneGraph, nodeIds: readonly string[]): number | null {
+  return nodeIds.length === 1 ? artworkBleed(graph, nodeIds[0]) : null
+}
+
 /**
  * Lays each page's drawing on a sheet: the trim (the layers' own boxes) with `bleed` of artwork
  * past it on every side, and crop marks around in registration colour. What the layers draw
- * outside their box fills the bleed, and a solid background is carried out into it.
+ * outside their box fills the bleed, and a solid background is carried out into it. A template
+ * that already holds its bleed keeps it: its trim is inside, and no bleed is added again.
  */
 export function composePrintSheet(graph: SceneGraph, layout: SheetLayout): PDFPageComposer {
   return (page) => {
-    const trim = trimBox(graph, page.spec.nodeIds)
-    if (!trim) return null
+    const box = trimBox(graph, page.spec.nodeIds)
+    if (!box) return null
+    const inner = pageArtworkBleed(graph, page.spec.nodeIds)
+    const bleed = inner ?? layout.bleed
+    const trim =
+      inner === null
+        ? box
+        : {
+            x: box.x + inner,
+            y: box.y + inner,
+            width: box.width - 2 * inner,
+            height: box.height - 2 * inner
+          }
     const margin = markMargin(layout)
-    const offset = margin + layout.bleed
+    const offset = margin + bleed
     const width = trim.width + 2 * offset
     const height = trim.height + 2 * offset
     const dx = offset + page.origin.x - trim.x
     const dy = offset + page.origin.y - trim.y
-    const background = bleedBackground(graph, page.spec.nodeIds)
-    const bleedSize = `x="${margin}" y="${margin}" width="${trim.width + 2 * layout.bleed}" height="${trim.height + 2 * layout.bleed}"`
+    const background = inner === null ? bleedBackground(graph, page.spec.nodeIds) : null
+    const bleedSize = `x="${margin}" y="${margin}" width="${trim.width + 2 * bleed}" height="${trim.height + 2 * bleed}"`
     const svg = [
       `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
       `<defs><clipPath id="lawha-print-bleed"><rect ${bleedSize}/></clipPath></defs>`,
@@ -110,7 +184,7 @@ export function composePrintSheet(graph: SceneGraph, layout: SheetLayout): PDFPa
       background ? `<rect ${bleedSize} fill="${background}"/>` : '',
       `<g transform="translate(${dx} ${dy})">${svgInner(page.svg)}</g>`,
       '</g>',
-      layout.cropMarks ? cropMarks(trim, offset, layout.bleed) : '',
+      layout.cropMarks ? cropMarks(trim, offset, bleed) : '',
       '</svg>'
     ].join('')
     return { svg, width, height }

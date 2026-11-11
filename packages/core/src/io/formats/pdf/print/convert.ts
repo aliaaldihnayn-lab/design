@@ -9,8 +9,10 @@ import {
   pdfString,
   rgbToCMYK,
   spotCMYK,
+  vectorCMYK,
   type PDFOutputIntentId,
-  type PDFSpotColor
+  type PDFSpotColor,
+  type ToCMYK
 } from './color'
 import { rewriteContent, spotResourceName } from './content'
 import {
@@ -28,15 +30,23 @@ import {
   type PDFObject
 } from './file'
 import { convertImage, isImage, type PDFImageDecoder } from './images'
+import { printIssue, type PrintIssue } from './issues'
+
+export type PDFXStandard = 'PDF/X-1a:2003' | 'PDF/X-4'
 
 export interface PrintConversionOptions {
   spots: readonly PDFSpotColor[]
   outputIntent: PDFOutputIntentId
-  /** The press condition's ICC profile; with one, the file is PDF/X-4 and may keep transparency. */
+  /** The press condition's ICC profile, embedded in the output intent. */
   outputProfile?: Uint8Array
+  /** RGB to the press condition's CMYK, through its profile; the device formula without one. */
+  toCMYK?: ToCMYK
+  /** The PDF/X version to declare; PDF/X-1a by default, which allows no transparency. */
+  standard?: PDFXStandard
   /** How far inside the media box the bleed box and the trim box sit, in points. */
   bleedInset: number
-  trimInset: number
+  /** One inset for every page, or each page's in order. */
+  trimInset: number | readonly number[]
   title?: string
   decodeImage?: PDFImageDecoder
 }
@@ -44,9 +54,23 @@ export interface PrintConversionOptions {
 export interface PrintConversionResult {
   data: Uint8Array
   /** The PDF/X version the file declares, or null when something in it rules PDF/X out. */
-  pdfx: 'PDF/X-1a:2003' | 'PDF/X-4' | null
+  pdfx: PDFXStandard | null
   /** What keeps the file from being PDF/X, for the person exporting to fix. */
-  issues: string[]
+  issues: PrintIssue[]
+}
+
+/** Issues by code and subject, so one is listed once. */
+class IssueSet {
+  private readonly byKey = new Map<string, PrintIssue>()
+  add(issue: PrintIssue) {
+    this.byKey.set(`${issue.code}:${issue.subject ?? ''}`, issue)
+  }
+  get size() {
+    return this.byKey.size
+  }
+  list(): PrintIssue[] {
+    return [...this.byKey.values()]
+  }
 }
 
 const STANDARD_FONTS = /^\/(Helvetica|Courier|Times|Symbol|ZapfDingbats)/
@@ -75,7 +99,12 @@ interface Usage {
 }
 
 /** Every page, pattern and form content stream with its colours turned to CMYK and spots. */
-function convertContents(file: PDFFile, spots: readonly PDFSpotColor[], issues: Set<string>) {
+function convertContents(
+  file: PDFFile,
+  spots: readonly PDFSpotColor[],
+  issues: IssueSet,
+  toCMYK: ToCMYK
+) {
   const usage: Usage = { spots: new Set(), fonts: new Set() }
   const contentIds = new Set<number>()
   for (const object of file.objects.values()) {
@@ -88,10 +117,10 @@ function convertContents(file: PDFFile, spots: readonly PDFSpotColor[], issues: 
     if (contentIds.has(id) || isType(object, 'Pattern') || isForm) {
       const bytes = decodedStream(object)
       if (!bytes) {
-        if (object.stream) issues.add('A page uses compressed content this export cannot read')
+        if (object.stream) issues.add(printIssue('compressed-content'))
         continue
       }
-      const rewritten = rewriteContent(latin1(bytes), spots)
+      const rewritten = rewriteContent(latin1(bytes), spots, toCMYK)
       for (const spot of rewritten.spotsUsed) usage.spots.add(spot)
       for (const font of rewritten.fontsUsed) usage.fonts.add(font)
       file.objects.set(id, {
@@ -103,14 +132,14 @@ function convertContents(file: PDFFile, spots: readonly PDFSpotColor[], issues: 
   return usage
 }
 
-function convertNumbers(list: string, issues: Set<string>): string | null {
+function convertNumbers(list: string, issues: IssueSet, toCMYK: ToCMYK): string | null {
   const values = list.replace(/[[\]]/g, ' ').trim().split(/\s+/).map(Number)
   if (values.length !== 3 || values.some((v) => !Number.isFinite(v))) {
-    issues.add('A gradient uses colours this export cannot convert')
+    issues.add(printIssue('gradient-colours'))
     return null
   }
   const [r, g, b] = values
-  return `[${rgbToCMYK(r, g, b).map(formatNumber).join(' ')}]`
+  return `[${toCMYK(r, g, b).map(formatNumber).join(' ')}]`
 }
 
 function hexBytes(hex: string): Uint8Array {
@@ -121,17 +150,17 @@ function hexBytes(hex: string): Uint8Array {
 }
 
 /** A sampled (type 0) function's RGB samples as CMYK. */
-function convertSampled(object: PDFObject, issues: Set<string>): PDFObject {
+function convertSampled(object: PDFObject, issues: IssueSet, toCMYK: ToCMYK): PDFObject {
   const filter = dictValue(object.dict, 'Filter')
   const raw = object.stream ?? new Uint8Array()
   if (dictValue(object.dict, 'BitsPerSample') !== '8' || (filter && filter !== '/ASCIIHexDecode')) {
-    issues.add('A gradient uses colours this export cannot convert')
+    issues.add(printIssue('gradient-colours'))
     return object
   }
   const samples = filter ? hexBytes(latin1(raw).replace(/>.*$/s, '')) : raw
   const out: string[] = []
   for (let i = 0; i + 2 < samples.length; i += 3) {
-    const cmyk = rgbToCMYK(samples[i] / 255, samples[i + 1] / 255, samples[i + 2] / 255)
+    const cmyk = toCMYK(samples[i] / 255, samples[i + 1] / 255, samples[i + 2] / 255)
     for (const value of cmyk)
       out.push(
         Math.round(value * 255)
@@ -146,32 +175,38 @@ function convertSampled(object: PDFObject, issues: Set<string>): PDFObject {
   return { dict, stream: latin1Bytes(`${out.join('')}>`) }
 }
 
-function convertFunction(file: PDFFile, id: number, issues: Set<string>, seen: Set<number>) {
+function convertFunction(
+  file: PDFFile,
+  id: number,
+  issues: IssueSet,
+  seen: Set<number>,
+  toCMYK: ToCMYK
+) {
   if (seen.has(id)) return
   seen.add(id)
   const object = file.objects.get(id)
   if (!object) return
   const type = dictValue(object.dict, 'FunctionType')
   if (type === '0') {
-    file.objects.set(id, convertSampled(object, issues))
+    file.objects.set(id, convertSampled(object, issues, toCMYK))
   } else if (type === '2') {
     let dict = object.dict
     for (const key of ['C0', 'C1']) {
       const list = dictValue(dict, key)
-      const converted = list ? convertNumbers(list, issues) : null
+      const converted = list ? convertNumbers(list, issues, toCMYK) : null
       if (converted) dict = setDictValue(dict, key, converted)
     }
     file.objects.set(id, { ...object, dict })
   } else if (type === '3') {
     for (const child of refList(dictValue(object.dict, 'Functions')))
-      convertFunction(file, child, issues, seen)
+      convertFunction(file, child, issues, seen, toCMYK)
   } else {
-    issues.add('A gradient uses colours this export cannot convert')
+    issues.add(printIssue('gradient-colours'))
   }
 }
 
 /** RGB shadings, the gradients svg2pdf writes, as CMYK ones. */
-function convertShadings(file: PDFFile, issues: Set<string>) {
+function convertShadings(file: PDFFile, issues: IssueSet, toCMYK: ToCMYK) {
   const seen = new Set<number>()
   for (const [id, object] of file.objects) {
     if (dictValue(object.dict, 'ShadingType') === null) continue
@@ -181,17 +216,17 @@ function convertShadings(file: PDFFile, issues: Set<string>) {
       dict: setDictValue(object.dict, 'ColorSpace', '/DeviceCMYK')
     })
     for (const fn of refList(dictValue(object.dict, 'Function')))
-      convertFunction(file, fn, issues, seen)
+      convertFunction(file, fn, issues, seen, toCMYK)
   }
 }
 
-function convertImages(file: PDFFile, issues: Set<string>, decode?: PDFImageDecoder) {
+function convertImages(file: PDFFile, issues: IssueSet, toCMYK: ToCMYK, decode?: PDFImageDecoder) {
   for (const [id, object] of file.objects) {
     if (!isImage(object)) continue
-    const converted = convertImage(object, decode)
+    const converted = convertImage(object, decode, toCMYK)
     if (converted) file.objects.set(id, converted)
     else if ((dictValue(object.dict, 'ColorSpace') ?? '').includes('DeviceRGB'))
-      issues.add('An image could not be converted to CMYK')
+      issues.add(printIssue('image-not-converted'))
   }
 }
 
@@ -228,12 +263,17 @@ function updateResources(file: PDFFile, usage: Usage, spaces: Map<number, number
 }
 
 /** A Separation colour space for each spot ink used, by spot index. */
-function addSpotSpaces(file: PDFFile, spots: readonly PDFSpotColor[], used: Set<number>) {
+function addSpotSpaces(
+  file: PDFFile,
+  spots: readonly PDFSpotColor[],
+  used: Set<number>,
+  toCMYK: ToCMYK
+) {
   const spaces = new Map<number, number>()
   for (const index of [...used].sort((a, b) => a - b)) {
     const spot = spots[index]
     const tint = addObject(file, {
-      dict: `<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [${spotCMYK(spot)
+      dict: `<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [${spotCMYK(spot, toCMYK)
         .map(formatNumber)
         .join(' ')}] /N 1 >>`
     })
@@ -257,7 +297,7 @@ function isEmbedded(file: PDFFile, id: number, depth = 0): boolean {
 }
 
 /** Fonts the text is set in that the file does not carry. */
-function checkFonts(file: PDFFile, usage: Usage, issues: Set<string>) {
+function checkFonts(file: PDFFile, usage: Usage, issues: IssueSet) {
   const resources = [...file.objects.values()].filter((object) => /\/ProcSet/.test(object.dict))
   for (const font of usage.fonts) {
     for (const object of resources) {
@@ -265,9 +305,7 @@ function checkFonts(file: PDFFile, usage: Usage, issues: Set<string>) {
       if (ref === null || isEmbedded(file, ref)) continue
       const base = dictValue(file.objects.get(ref)?.dict ?? '', 'BaseFont') ?? font
       issues.add(
-        STANDARD_FONTS.test(base)
-          ? `Text uses ${base.slice(1)}, a font the file does not embed`
-          : `The font ${base.slice(1)} is not embedded`
+        printIssue(STANDARD_FONTS.test(base) ? 'standard-font' : 'font-not-embedded', base.slice(1))
       )
     }
   }
@@ -314,9 +352,13 @@ ${pdfx ? `<pdfxid:GTS_PDFXVersion>${pdfx}</pdfxid:GTS_PDFXVersion>` : ''}
 }
 
 /** Trim and bleed boxes inside each page's media box. */
-function setPageBoxes(file: PDFFile, bleedInset: number, trimInset: number) {
+function setPageBoxes(file: PDFFile, bleedInset: number, trimInsets: number | readonly number[]) {
+  let index = 0
   for (const [id, object] of file.objects) {
     if (!isType(object, 'Page')) continue
+    const perPage = typeof trimInsets === 'number' ? [trimInsets] : trimInsets
+    const trimInset = perPage[Math.min(index, perPage.length - 1)] ?? 0
+    index++
     const media = (dictValue(object.dict, 'MediaBox') ?? '')
       .replace(/[[\]]/g, ' ')
       .trim()
@@ -371,26 +413,28 @@ export function convertToPrintPDF(
   options: PrintConversionOptions
 ): PrintConversionResult {
   const file = parsePDF(bytes)
-  const issues = new Set<string>()
-  const usage = convertContents(file, options.spots, issues)
-  convertShadings(file, issues)
-  convertImages(file, issues, options.decodeImage)
-  const spaces = addSpotSpaces(file, options.spots, usage.spots)
+  const issues = new IssueSet()
+  const toCMYK = options.toCMYK ?? rgbToCMYK
+  const toVectorCMYK = vectorCMYK(toCMYK)
+  const usage = convertContents(file, options.spots, issues, toVectorCMYK)
+  convertShadings(file, issues, toCMYK)
+  convertImages(file, issues, toCMYK, options.decodeImage)
+  const spaces = addSpotSpaces(file, options.spots, usage.spots, toCMYK)
   updateResources(file, usage, spaces)
   checkFonts(file, usage, issues)
-  if (!options.outputProfile && hasTransparency(file)) {
-    issues.add('Transparency needs a press profile (PDF/X-4); without one it is not PDF/X-1a')
+  const standard = options.standard ?? 'PDF/X-1a:2003'
+  if (standard === 'PDF/X-1a:2003' && hasTransparency(file)) {
+    issues.add(printIssue('transparency'))
   }
   for (const object of file.objects.values()) {
-    if (/\/DeviceRGB\b/.test(object.dict)) issues.add('Some colours are still RGB')
+    if (/\/DeviceRGB\b/.test(object.dict)) issues.add(printIssue('rgb-remaining'))
   }
   setPageBoxes(file, options.bleedInset, options.trimInset)
-  const version = options.outputProfile ? 'PDF/X-4' : 'PDF/X-1a:2003'
-  const pdfx = issues.size === 0 ? version : null
+  const pdfx = issues.size === 0 ? standard : null
   writeIntent(file, options, pdfx)
   return {
-    data: writePDF(file, options.outputProfile ? '1.6' : '1.4'),
+    data: writePDF(file, standard === 'PDF/X-4' ? '1.6' : '1.4'),
     pdfx,
-    issues: [...issues]
+    issues: issues.list()
   }
 }

@@ -7,10 +7,16 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph, type Fill } from '@lawha/scene-graph'
 import { EXPORT_FORMAT_IDS } from '@lawha/scene-graph/export-format'
 
-import { DIELINE_SPOTS, rgbToCMYK } from '#core/io/formats/pdf/print'
+import { artworkBleed, DIELINE_SPOTS, rgbToCMYK } from '#core/io/formats/pdf/print'
 import { rewriteContent } from '#core/io/formats/pdf/print/content'
 import { convertToPrintPDF } from '#core/io/formats/pdf/print/convert'
 import { latin1, latin1Bytes, parsePDF } from '#core/io/formats/pdf/print/file'
+import {
+  createProfileTransform,
+  loadPressProfile,
+  parseICCProfile,
+  profileColor
+} from '#core/io/formats/pdf/print/icc'
 import { convertImage } from '#core/io/formats/pdf/print/images'
 
 setDefaultTimeout(120_000)
@@ -134,7 +140,15 @@ describe('print PDF export', () => {
       .map((o) => latin1(o.stream ?? new Uint8Array()))
       .join('\n')
     expect(contents).not.toMatch(/\brg\b|\bRG\b/)
-    expect(contents).toContain('0 1 1 0 k')
+    // The red square through the FOGRA39 profile: magenta and yellow, no cyan or black.
+    const fills = [...contents.matchAll(/([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) k\b/g)].map((m) =>
+      m.slice(1, 5).map(Number)
+    )
+    expect(
+      fills.some(([c, m, y, k]) => c < 0.02 && m > 0.9 && m < 0.99 && y > 0.9 && k < 0.02)
+    ).toBe(true)
+    // Black text prints in black ink alone.
+    expect(contents).toContain('0 0 0 1 k')
     expect(pdf).toMatch(/\/ShadingType 2\s*\/ColorSpace \/DeviceCMYK/)
 
     // The cut line is the CutContour ink; the crop marks print on every plate.
@@ -144,6 +158,14 @@ describe('print PDF export', () => {
 
     // PDF/X: the press condition, its version, trapping, and the text's font embedded.
     expect(pdf).toContain('/OutputConditionIdentifier (FOGRA39)')
+    // The profile colours were converted with is embedded with the output intent.
+    const intent = expectDefined(
+      [...file.objects.values()].find((o) => /\/Type\s*\/OutputIntent/.test(o.dict))
+    )
+    const profileRef = Number(/\/DestOutputProfile (\d+) 0 R/.exec(intent.dict)?.[1])
+    const profile = expectDefined(file.objects.get(profileRef)?.stream)
+    expect(latin1(profile.subarray(36, 40))).toBe('acsp')
+    expect(parseICCProfile(profile)?.description).toBe('FOGRA39L Coated')
     expect(pdf).toContain('/S /GTS_PDFX')
     expect(pdf).toContain('/Trapped /False')
     expect(result.warnings).toBeUndefined()
@@ -182,7 +204,29 @@ describe('print PDF export', () => {
     expect(numbers(/\/TrimBox\s*\[([^\]]*)\]/.exec(page.dict)?.[1])).toEqual([0, 0, 200, 100])
   })
 
-  test('says why a file with transparency is not PDF/X-1a, and declares no version', async () => {
+  test('flattens transparency into an opaque image, so the file is still PDF/X-1a', async () => {
+    const { graph, frame } = card()
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 15,
+      y: 15,
+      width: 20,
+      height: 20,
+      opacity: 0.5,
+      fills: [solid(0, 0, 1)]
+    })
+    const result = await exportPrint(graph, [frame.id])
+    const pdf = latin1(result.data as Uint8Array)
+    expect(result.warnings?.map((warning) => warning.code)).toEqual(['transparency-flattened'])
+    expect(result.warnings?.[0]).toMatchObject({ subject: '1' })
+    expect(pdf).toContain('/GTS_PDFXVersion (PDF/X-1a:2003)')
+    expect(pdf).not.toMatch(/\/ca\s+0\.\d/)
+    expect(pdf).not.toMatch(/\/SMask\s+\d/)
+    // The flattened area is an image, in CMYK; the rest of the card stays vector.
+    expect(pdf).toMatch(/\/Subtype \/Image[\s\S]*?\/ColorSpace \/DeviceCMYK/)
+    expect(pdf).toMatch(/\/FontFile2/)
+  })
+
+  test('PDF/X-4 keeps transparency live', async () => {
     const { graph, frame } = card()
     graph.createNode('RECTANGLE', frame.id, {
       width: 20,
@@ -190,9 +234,64 @@ describe('print PDF export', () => {
       opacity: 0.5,
       fills: [solid(0, 0, 1)]
     })
-    const result = await exportPrint(graph, [frame.id])
-    expect(result.warnings?.some((warning) => warning.includes('Transparency'))).toBe(true)
-    expect(latin1(result.data as Uint8Array)).not.toContain('GTS_PDFXVersion (')
+    const result = await exportPrint(graph, [frame.id], { standard: 'PDF/X-4' })
+    const pdf = latin1(result.data as Uint8Array)
+    expect(pdf.startsWith('%PDF-1.6')).toBe(true)
+    expect(result.warnings).toBeUndefined()
+    expect(pdf).toContain('/GTS_PDFXVersion (PDF/X-4)')
+    expect(pdf).toMatch(/\/ca\s+0\.5/)
+  })
+
+  test('a print template that holds its bleed is not given bleed again', async () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const bleed = 3 * MM
+    // As create_print_template builds one: 200 × 100 pt trim plus bleed, its die-line inside.
+    const sheet = graph.createNode('FRAME', pageId, {
+      name: 'Card',
+      width: 200 + 2 * bleed,
+      height: 100 + 2 * bleed,
+      fills: [],
+      clipsContent: false
+    })
+    graph.createNode('FRAME', sheet.id, {
+      name: 'Artwork',
+      width: sheet.width,
+      height: sheet.height,
+      fills: [solid(0.2, 0.4, 0.8)]
+    })
+    const dieline = graph.createNode('FRAME', sheet.id, {
+      name: 'Dieline (do not print)',
+      width: sheet.width,
+      height: sheet.height,
+      fills: []
+    })
+    graph.createNode('VECTOR', dieline.id, {
+      name: 'Bleed',
+      width: sheet.width,
+      height: sheet.height
+    })
+    graph.createNode('VECTOR', dieline.id, {
+      name: 'CutContour',
+      x: bleed,
+      y: bleed,
+      width: 200,
+      height: 100,
+      strokes: [{ ...solid(0.925, 0, 0.549), weight: 0.5, align: 'CENTER' }]
+    })
+    const result = await exportPrint(graph, [sheet.id])
+    const page = expectDefined(
+      [...parsePDF(result.data as Uint8Array).objects.values()].find((o) =>
+        /\/Type\s*\/Page\b/.test(o.dict)
+      )
+    )
+    const trim = numbers(/\/TrimBox\s*\[([^\]]*)\]/.exec(page.dict)?.[1])
+    const bleedBox = numbers(/\/BleedBox\s*\[([^\]]*)\]/.exec(page.dict)?.[1])
+    expect(trim[2] - trim[0]).toBeCloseTo(200, 1)
+    expect(trim[3] - trim[1]).toBeCloseTo(100, 1)
+    expect(bleedBox[2] - bleedBox[0]).toBeCloseTo(200 + 2 * bleed, 1)
+    expect(result.warnings?.map((warning) => warning.code)).toContain('bleed-in-artwork')
+    expect(artworkBleed(graph, sheet.id)).toBeCloseTo(bleed, 3)
   })
 
   test('named spot colours become Separations', async () => {
@@ -298,5 +397,49 @@ describe('print PDF colour conversion', () => {
     })
     const startxref = Number(/startxref\n(\d+)/.exec(text)?.[1])
     expect(text.slice(startxref).startsWith('xref')).toBe(true)
+  })
+
+  test('reads the bundled FOGRA39 profile and converts through its tables', async () => {
+    const loaded = await loadPressProfile('FOGRA39')
+    const profile = expectDefined(loaded.profile)
+    const parsed = expectDefined(parseICCProfile(profile.bytes))
+    expect(parsed).toMatchObject({ deviceClass: 'prtr', colorSpace: 'CMYK', pcs: 'Lab ' })
+    expect(Object.keys(parsed.toDevice).sort()).toEqual(['perceptual', 'relative', 'saturation'])
+    // sRGB red, green and blue as the press prints them, not the device formula's pure inks.
+    const [c, m, y, k] = profile.toCMYK(1, 0, 0)
+    expect(c).toBeLessThan(0.02)
+    expect(m).toBeGreaterThan(0.9)
+    expect(y).toBeGreaterThan(0.9)
+    expect(k).toBeLessThan(0.02)
+    const blue = profile.toCMYK(0, 0, 1)
+    expect(blue[0]).toBeGreaterThan(0.85)
+    expect(blue[1]).toBeGreaterThan(0.7)
+    expect(blue[1]).toBeLessThan(0.95)
+    // Black is a rich black within FOGRA39's 330% ink limit; white takes no ink.
+    const black = profile.toCMYK(0, 0, 0)
+    expect(black[3]).toBeGreaterThan(0.95)
+    expect(black.reduce((sum, ink) => sum + ink, 0)).toBeLessThanOrEqual(3.3)
+    expect(profile.toCMYK(1, 1, 1)).toEqual([0, 0, 0, 0])
+    // The cached grid agrees with the exact conversion between its points.
+    for (const rgb of [
+      [0.3, 0.6, 0.2],
+      [0.9, 0.75, 0.1],
+      [0.12, 0.34, 0.56]
+    ] as const) {
+      const exact = expectDefined(profileColor(parsed, ...rgb))
+      profile
+        .toCMYK(...rgb)
+        .forEach((ink, i) => expect(Math.abs(ink - exact[i])).toBeLessThan(0.01))
+    }
+  })
+
+  test('a profile that is not a CMYK output profile is refused', async () => {
+    const loaded = await loadPressProfile('FOGRA39', new Uint8Array(200))
+    expect(loaded).toEqual({ profile: null, reason: 'unreadable' })
+    expect(await loadPressProfile('GRACoL2013')).toEqual({ profile: null, reason: 'none-bundled' })
+    const parsed = expectDefined(
+      parseICCProfile(expectDefined((await loadPressProfile('FOGRA39')).profile).bytes)
+    )
+    expect(createProfileTransform({ ...parsed, colorSpace: 'RGB ' })).toBeNull()
   })
 })

@@ -491,6 +491,24 @@ export const panelMessageDefaults = {
   exportFormat: 'Export format',
   exportPreview: 'Preview',
   exportRenderingPreview: 'Rendering preview…',
+  exportWarnings: 'Export warnings',
+  printCompressedContent: 'A page uses compressed content this export cannot read.',
+  printGradientColours: 'A gradient uses colours this export cannot convert.',
+  printImageNotConverted: 'An image could not be converted to CMYK.',
+  printStandardFont: params('Text uses {font}, a font the file does not embed.'),
+  printFontNotEmbedded: params('The font {font} is not embedded.'),
+  printTransparency:
+    'Transparency remains that could not be flattened, so the file is not PDF/X-1a.',
+  printRGBRemaining: 'Some colours are still RGB.',
+  printTransparencyFlattened: params(
+    '{count} transparent areas were flattened into 300 ppi images for PDF/X-1a.'
+  ),
+  printNoPressProfile: params(
+    'No ICC profile for {condition} is bundled, so colours were converted without one.'
+  ),
+  printProfileUnreadable:
+    'The ICC profile is not a CMYK press profile this export can read, so colours were converted without it.',
+  printBleedInArtwork: 'The artwork already includes its bleed, so no bleed was added.',
   create: 'Create',
   add: 'Add',
   createVariable: 'Create variable',

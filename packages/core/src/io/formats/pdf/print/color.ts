@@ -17,6 +17,21 @@ export function rgbToCMYK(r: number, g: number, b: number): CMYK {
   return [ink(r), ink(g), ink(b), clamp(k, 0, 1)]
 }
 
+/** A device RGB colour (each 0–1) as CMYK, by a press profile or the device formula. */
+export type ToCMYK = (r: number, g: number, b: number) => CMYK
+
+/**
+ * The conversion vector paint goes through: pure neutrals, black text above all, print in black
+ * ink alone, as prepress converts them, so no plate misregistration fringes them; other colours
+ * through `toCMYK`.
+ */
+export function vectorCMYK(toCMYK: ToCMYK): ToCMYK {
+  return (r, g, b) => {
+    const neutral = Math.abs(r - g) < 1e-6 && Math.abs(g - b) < 1e-6
+    return neutral ? [0, 0, 0, clamp(1 - r, 0, 1)] : toCMYK(r, g, b)
+  }
+}
+
 /** A colour printed in an ink of its own, such as a Pantone colour or a cutter's CutContour. */
 export interface PDFSpotColor {
   /** The ink's name, as the press or cutter knows it. */
@@ -65,8 +80,8 @@ export function matchSpot(spots: readonly PDFSpotColor[], r: number, g: number, 
   )
 }
 
-export function spotCMYK(spot: PDFSpotColor): CMYK {
-  return spot.cmyk ?? rgbToCMYK(spot.color.r, spot.color.g, spot.color.b)
+export function spotCMYK(spot: PDFSpotColor, toCMYK: ToCMYK = rgbToCMYK): CMYK {
+  return spot.cmyk ?? toCMYK(spot.color.r, spot.color.g, spot.color.b)
 }
 
 /** A PDF name with the characters a name cannot hold written as `#xx`. */
