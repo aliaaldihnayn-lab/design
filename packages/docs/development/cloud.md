@@ -223,6 +223,14 @@ it, and presence updates are rewritten so others see the ticket's name and a `cl
 verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is
 not carried over the relay yet; the transport reports no media.
 
+The relay also carries who is in a room, outside any document. A room page asks for a presence
+ticket (`POST /api/rooms/:roomId/presence/ticket`), opens the relay URL it names, and only listens:
+the relay records the person in the room's presence rows while the socket stays open, renews them
+every `ROOM_PRESENCE_INTERVAL_MS` after checking they may still enter the room, and sends everyone
+on the channel the room's people as a `room-presence` message whenever someone arrives or leaves.
+Without a relay, or while the socket is down, the page checks in over HTTP on the same interval,
+so people on either path see each other.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a

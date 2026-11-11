@@ -150,7 +150,10 @@ export function createCloudApp(services: CloudServices) {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
   })
-  const rooms = createRoomService(services.database)
+  const rooms = createRoomService(services.database, {
+    authSecret: services.config.authSecret,
+    relayURL: services.relayURL
+  })
   const roomMembers = createRoomMemberService(services.database, {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL

@@ -181,7 +181,22 @@ export const roomPresenceSchema = v.object({
 })
 export type RoomPresence = v.InferOutput<typeof roomPresenceSchema>
 
-/** How often a client in a room checks in; Cloud has no realtime channel outside documents. */
+/**
+ * A ticket for the relay's live presence channel of one room: the relay checks it, records the
+ * person in the room while the socket is open, and sends everyone in it who is there on every
+ * change, as a `ROOM_PRESENCE_ACTION` message.
+ */
+export const roomPresenceTicketSchema = v.object({
+  token: v.string(),
+  serverURL: v.string(),
+  expiresAt: v.string()
+})
+export type RoomPresenceTicket = v.InferOutput<typeof roomPresenceTicketSchema>
+
+/**
+ * How often a client in a room checks in when the live channel is not available, and how often
+ * the relay refreshes the check-ins of people connected to it.
+ */
 export const ROOM_PRESENCE_INTERVAL_MS = 15_000
 /** How long a check-in counts as being in the room. */
 export const ROOM_PRESENCE_WINDOW_MS = 45_000
