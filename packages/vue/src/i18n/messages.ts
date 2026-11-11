@@ -18,10 +18,12 @@ import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor
 import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
 import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
 import { fontsMessageDefaults, fontsMessages } from '#vue/i18n/messages/fonts'
+import { framePresetMessageDefaults, framePresetMessages } from '#vue/i18n/messages/frame-presets'
 import { historyMessageDefaults, historyMessages } from '#vue/i18n/messages/history'
 import { inspectMessageDefaults, inspectMessages } from '#vue/i18n/messages/inspect'
 import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
 import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
+import { metricsMessageDefaults, metricsMessages } from '#vue/i18n/messages/metrics'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 import { pathMessageDefaults, pathMessages } from '#vue/i18n/messages/paths'
@@ -35,6 +37,10 @@ import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/se
 import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
 import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/storage'
+import {
+  storageErrorMessageDefaults,
+  storageErrorMessages
+} from '#vue/i18n/messages/storage-errors'
 import { storiesMessageDefaults, storiesMessages } from '#vue/i18n/messages/stories'
 import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/updates'
@@ -72,11 +78,14 @@ export {
   printMessages,
   prototypeMessages,
   recoveryMessages,
+  framePresetMessages,
   historyMessages,
+  metricsMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
   statusMessages,
+  storageErrorMessages,
   storiesMessages,
   storageMessages,
   toolMessages,
@@ -115,11 +124,14 @@ export const messageDefaults = {
   print: printMessageDefaults,
   prototype: prototypeMessageDefaults,
   recovery: recoveryMessageDefaults,
+  framePresets: framePresetMessageDefaults,
   history: historyMessageDefaults,
+  metrics: metricsMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
   shapes: shapeMessageDefaults,
   statuses: statusMessageDefaults,
+  storageErrors: storageErrorMessageDefaults,
   stories: storiesMessageDefaults,
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,

@@ -328,6 +328,7 @@
   },
   "packageManager": "bun@1.4.2",
   "patchedDependencies": {
-    "unifont@1.0.3": "patches/unifont@1.0.3.patch"
+    "unifont@1.0.3": "patches/unifont@1.0.3.patch",
+    "reka-ui@2.10.5": "patches/reka-ui@2.10.5.patch"
   }
 }

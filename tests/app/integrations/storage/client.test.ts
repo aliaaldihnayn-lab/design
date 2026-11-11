@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { storageErrorText } from '@/app/integrations/storage/errors'
 import {
   S3HttpError,
   getObject,
@@ -120,7 +121,7 @@ describe('S3 client', () => {
     respond = () => new Response('whole', { status: 200 })
 
     await expect(getObjectRange(config, 'document.fig', 0, 2)).rejects.toThrow(
-      'Storage provider did not honor the thumbnail byte range'
+      storageErrorText((t) => t.s3ThumbnailRangeIgnored)
     )
     expect(requests[0]?.headers.get('range')).toBe('bytes=0-1')
   })

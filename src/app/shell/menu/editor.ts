@@ -8,6 +8,7 @@ import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { watchNativeMenuFeatures } from '@/app/shell/menu/features'
 import { openFileDialog, openFileFromPath } from '@/app/shell/menu/files'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
+import { watchNativeMenuLabels } from '@/app/shell/menu/native-labels'
 import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { OPEN_RECENT_EVENT_PREFIX, watchRecentFilesMenu } from '@/app/shell/menu/recent-files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
@@ -34,6 +35,7 @@ export function useEditorMenu() {
 
   watchRecentFilesMenu()
   watchNativeMenuFeatures()
+  watchNativeMenuLabels()
 
   const { setTheme } = useAppTheme()
   const { runCommand } = useEditorCommands()

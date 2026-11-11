@@ -15,8 +15,11 @@ const PERSIST_DELAY_MS = 1500
 
 export interface HistoryControllerOptions {
   documentKind: HistoryDocumentKind
-  /** The key the document's history is kept under now; it changes when the document is saved somewhere. */
-  resolveKey: () => string | null
+  /**
+   * The key the document's history is kept under now; it changes when the document is saved
+   * somewhere. It may take a moment to find, as a browser file's identity does.
+   */
+  resolveKey: () => string | null | Promise<string | null>
   persistence: HistoryPersistence
   retention?: HistoryRetention
   maxStoredLength?: number
@@ -38,14 +41,22 @@ export function createHistoryController(options: HistoryControllerOptions) {
   let key: string | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
   let writing: Promise<void> = Promise.resolve()
+  /** Refreshes run one after another, since finding the key can wait. */
+  let refreshing: Promise<void> = Promise.resolve()
   let disposed = false
 
   const watchHistory = (target: DocumentHistory) => target.subscribe(() => triggerRef(history))
   let stopWatching = watchHistory(history.value)
 
   /** Follows the document's key: loads its history the first time, moves it when it changes. */
-  async function refresh(): Promise<void> {
-    const next = options.resolveKey()
+  function refresh(): Promise<void> {
+    const run = refreshing.then(follow)
+    refreshing = run.catch(() => undefined)
+    return run
+  }
+
+  async function follow(): Promise<void> {
+    const next = await options.resolveKey()
     if (!next || next === key) return
     const previous = key
     key = next
@@ -54,7 +65,7 @@ export function createHistoryController(options: HistoryControllerOptions) {
       options.onLoaded?.(history.value)
     }
     if (previous && previous !== next) {
-      await persistNow()
+      await write()
       await options.persistence.remove(previous)
     }
     triggerRef(history)
@@ -75,6 +86,10 @@ export function createHistoryController(options: HistoryControllerOptions) {
     if (timer) clearTimeout(timer)
     timer = null
     await refresh()
+    await write()
+  }
+
+  async function write(): Promise<void> {
     if (!key || disposed) return
     const target = key
     prune()

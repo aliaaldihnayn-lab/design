@@ -11,6 +11,7 @@ import { useJiraSync } from '@/app/stories/jira'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppCombobox, { type AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'
 
 import { stories as storiesTheme } from './ui'
 
@@ -29,6 +30,27 @@ const project = ref(sync.projectKey.value)
 watch(sync.projectKey, (key) => {
   project.value = key
 })
+
+/** The site's projects as the picker lists them, the document's own first if Jira hid it. */
+const projectOptions = computed<AppComboboxOption[]>(() => {
+  const options = sync.projects.value.map((item) => ({
+    value: item.key,
+    label: item.name,
+    meta: item.key
+  }))
+  const own = sync.projectKey.value
+  if (own && !options.some((option) => option.value === own)) {
+    options.unshift({ value: own, label: own, meta: own })
+  }
+  return options
+})
+/** The picker shows once projects loaded; typing a key stays for sites that list none. */
+const picking = computed(() => sync.projects.value.length > 0)
+
+function chooseProject(key: string) {
+  project.value = key
+  commitProject()
+}
 
 function commitProject() {
   const key = project.value.trim().toUpperCase()
@@ -65,7 +87,20 @@ const scope = computed(() => ({
       </AppButton>
     </template>
     <template v-else>
-      <label :class="ui.field()">
+      <div v-if="picking" :class="ui.field()">
+        <span :class="ui.label()">{{ t.jiraProject }}</span>
+        <AppCombobox
+          :model-value="sync.projectKey.value"
+          :options="projectOptions"
+          :label="t.jiraProject"
+          :placeholder="t.jiraChooseProject"
+          :search-placeholder="t.jiraSearchProjects"
+          :empty-label="t.jiraNoProjects"
+          data-field="jira-project-picker"
+          @update:model-value="chooseProject"
+        />
+      </div>
+      <label v-else :class="ui.field()">
         <span :class="ui.label()">{{ t.jiraProject }}</span>
         <AppInput
           v-model="project"

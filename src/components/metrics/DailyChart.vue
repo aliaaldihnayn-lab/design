@@ -12,6 +12,8 @@ import {
 } from 'vccs'
 import { computed } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatCount, formatDay } from '@/app/metrics/format'
 
 import type { Release } from './types'
@@ -47,7 +49,8 @@ const {
   height?: number
 }>()
 
-const dayLabel = (day: string) => (day === today ? 'Today' : formatDay(day))
+const t = useMetricsMessages()
+const dayLabel = (day: string) => (day === today ? t.value.chartToday : formatDay(day))
 const rows = computed(() =>
   days.map((day) => ({ ...day, label: dayLabel(day.day), partial: day.day === today }))
 )

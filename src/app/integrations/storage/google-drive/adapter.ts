@@ -1,7 +1,7 @@
 import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
+import { storageErrorText, StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import type {
   StorageAdapter,
   StorageDocument,
@@ -85,10 +85,12 @@ class DriveSession {
     const response = await fetch(url, { ...init, headers })
     if (response.status === 401) {
       this.auth.forget()
-      throw new StorageUnavailableError('Google Drive sign-in expired; reconnect in Settings')
+      throw new StorageUnavailableError(storageErrorText((t) => t.googleDriveExpired))
     }
     if (!response.ok && response.status !== 404) {
-      throw new Error(`Google Drive answered ${response.status}: ${await response.text()}`)
+      throw new Error(
+        `${storageErrorText((t) => t.googleDriveAnswered({ status: response.status }))} ${await response.text()}`
+      )
     }
     return response
   }
@@ -96,7 +98,7 @@ class DriveSession {
   async json<T>(schema: v.GenericSchema<unknown, T>, url: string, init?: RequestInit) {
     const response = await this.request(url, init)
     const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), schema), await response.text())
-    if (!parsed.success) throw new Error('Google Drive sent an unexpected answer')
+    if (!parsed.success) throw new Error(storageErrorText((t) => t.googleDriveUnexpected))
     return parsed.output
   }
 
@@ -235,7 +237,7 @@ export function createGoogleDriveStorageAdapter(
     async getDocument(id, onProgress, signal) {
       signal?.throwIfAborted()
       const file = await drive.findFile(id)
-      if (!file) throw new Error(`Document ${id} is not in Google Drive`)
+      if (!file) throw new Error(storageErrorText((t) => t.googleDriveMissing({ id })))
       const response = await drive.request(`${API}/files/${file.id}?alt=media`, { signal })
       const bytes = new Uint8Array(await response.arrayBuffer())
       onProgress?.({ transferredBytes: bytes.length, totalBytes: bytes.length })

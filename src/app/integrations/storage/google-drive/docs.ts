@@ -13,6 +13,7 @@ import {
   type WriterNode
 } from '@lawha/core/writer'
 
+import { storageErrorText } from '../errors'
 import { readStoragePreferences } from '../preferences'
 import { DEFAULT_DRIVE_CLIENT_ID, DRIVE_CLIENT_ID_FIELD } from './adapter'
 import { driveAccessToken, forgetDriveToken, GOOGLE_DOCS_SCOPE } from './auth'
@@ -122,7 +123,11 @@ export function createGoogleDocsClient(
   async function get(documentId: string, interactive: boolean): Promise<GoogleDocument> {
     const body = await request(`${DOCS_API}/${encodeURIComponent(documentId)}`, {}, interactive)
     const parsed = v.safeParse(googleDocumentSchema, body)
-    if (!parsed.success) throw new GoogleDocsError('Unexpected response from Google Docs', 0)
+    if (!parsed.success)
+      throw new GoogleDocsError(
+        storageErrorText((t) => t.googleDocsUnexpected),
+        0
+      )
     return parsed.output
   }
 

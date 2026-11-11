@@ -6,6 +6,7 @@ import {
   getJiraConnection,
   pullFromJira,
   pushToJira,
+  type JiraProject,
   type JiraScope,
   type JiraSyncResult
 } from '@lawha/core/stories'
@@ -60,6 +61,34 @@ export const useJiraSync = createGlobalState(() => {
 
   const ready = computed(() => jiraConnected.value === true && !!projectKey.value)
 
+  /** The site's projects the person can see, for the picker; empty until they load. */
+  const projects = shallowRef<JiraProject[]>([])
+  const projectsFailed = ref(false)
+  let projectsLoad = 0
+
+  /** Reads the site's projects with `searchProjects`, matching `query` when given. */
+  async function loadProjects(query = ''): Promise<void> {
+    const connection = getJiraConnection()
+    if (!connection) return
+    const load = ++projectsLoad
+    try {
+      const found = await connection.client.searchProjects(query)
+      if (load !== projectsLoad) return
+      projects.value = found
+      projectsFailed.value = false
+    } catch {
+      if (load === projectsLoad) projectsFailed.value = true
+    }
+  }
+  watch(
+    () => jiraConnected.value === true && jiraPreferences.value.site,
+    (connected) => {
+      projects.value = []
+      if (connected) void loadProjects()
+    },
+    { immediate: true }
+  )
+
   async function run(work: () => Promise<JiraSyncResult>): Promise<JiraSyncSummary | null> {
     const store = storeRef.value
     if (busy.value || !store) return null
@@ -113,5 +142,16 @@ export const useJiraSync = createGlobalState(() => {
     { immediate: true }
   )
 
-  return { busy, ready, projectKey, lastSummary, lastError, push, pull }
+  return {
+    busy,
+    ready,
+    projectKey,
+    projects,
+    projectsFailed,
+    loadProjects,
+    lastSummary,
+    lastError,
+    push,
+    pull
+  }
 })

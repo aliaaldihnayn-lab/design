@@ -22,6 +22,7 @@ import {
 } from './helpers'
 import { collectEffectProps, collectFillProps, collectStrokeProps } from './paints'
 import { collectStateProps } from './state'
+import { collectStoryProps } from './stories'
 import type { JSXProp } from './value'
 import { variableReferences, type VariableExport } from './variables'
 
@@ -367,6 +368,7 @@ export function collectProps(
   }
   collectShapeNodeProps(node, props)
   collectStateProps(node, ctx, props, variables)
+  collectStoryProps(node, graph, props)
 
   return withPropertyBindings(props, node, graph, reference)
 }

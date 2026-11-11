@@ -93,6 +93,22 @@ export const storiesMessageDefaults = {
   jiraTokenRequired: 'Enter an API token.',
   jiraCloudHolds: 'Your Lawha Cloud server keeps the API token; documents never contain it.',
   jiraDesktopHolds: 'The system credential store keeps the API token; documents never contain it.',
+  jiraConnectAtlassian: 'Connect with Atlassian',
+  jiraOAuthDescription:
+    'Sign in with your Atlassian account through your Lawha Cloud server, or use an API token below.',
+  jiraOAuthOpened: 'Allow Lawha on the Atlassian page that opened, then come back here.',
+  jiraOAuthFailed: 'Atlassian could not be reached through your Lawha Cloud server.',
+  jiraOrToken: 'Or connect with an API token',
+  jiraConnectedWithAtlassian: params('Connected to {site} with your Atlassian account'),
+  jiraChooseProject: 'Choose a project',
+  jiraSearchProjects: 'Search projects',
+  jiraNoProjects: 'No projects found',
+  draftEdit: 'Edit',
+  draftDoneEditing: 'Done',
+  copyMainComponentStories: count({
+    one: "Copy the main component's story",
+    many: "Copy the main component's {count} stories"
+  }),
   draftForFrame: 'Draft user stories for this frame',
   drafting: 'Drafting stories…',
   draftReview: params('{count} drafted stories. Keep the ones you want, then save them.'),

@@ -99,5 +99,20 @@
   "draftNoModel": "La rédaction nécessite un modèle pour « Tâches rapides » ou l’« Agent de design ».",
   "draftChooseModel": "Choisir un modèle",
   "draftUnreadable": "Le modèle n’a pas renvoyé de stories lisibles. Réessayez.",
-  "draftFailed": "Les stories n’ont pas pu être rédigées."
+  "draftFailed": "Les stories n’ont pas pu être rédigées.",
+  "jiraConnectAtlassian": "Se connecter avec Atlassian",
+  "jiraOAuthDescription": "Connectez-vous avec votre compte Atlassian via votre serveur Lawha Cloud, ou utilisez un jeton d’API ci-dessous.",
+  "jiraOAuthOpened": "Autorisez Lawha dans la page Atlassian qui s’est ouverte, puis revenez ici.",
+  "jiraOAuthFailed": "Atlassian n’a pas pu être joint via votre serveur Lawha Cloud.",
+  "jiraOrToken": "Ou connectez-vous avec un jeton d’API",
+  "jiraConnectedWithAtlassian": "Connecté à {site} avec votre compte Atlassian",
+  "jiraChooseProject": "Choisir un projet",
+  "jiraSearchProjects": "Rechercher des projets",
+  "jiraNoProjects": "Aucun projet trouvé",
+  "draftEdit": "Modifier",
+  "draftDoneEditing": "Terminé",
+  "copyMainComponentStories": {
+    "one": "Copier la story du composant principal",
+    "many": "Copier les {count} stories du composant principal"
+  }
 }

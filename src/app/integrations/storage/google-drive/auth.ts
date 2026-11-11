@@ -1,7 +1,7 @@
 import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
-import { StorageUnavailableError } from '../errors'
+import { storageErrorText, StorageUnavailableError } from '../errors'
 
 /**
  * Google sign-in for Drive storage through Google Identity Services' token client: a popup asks
@@ -72,9 +72,9 @@ function loadIdentityServices(): Promise<GoogleIdentity> {
     script.onload = () => {
       const loaded = googleIdentity()
       if (loaded) resolve(loaded)
-      else reject(new Error('Google sign-in did not load'))
+      else reject(new Error(storageErrorText((t) => t.googleSignInDidNotLoad)))
     }
-    script.onerror = () => reject(new Error('Could not reach Google sign-in'))
+    script.onerror = () => reject(new Error(storageErrorText((t) => t.googleSignInUnreachable)))
     document.head.append(script)
   })
   scriptLoading.catch(() => {
@@ -126,7 +126,7 @@ export async function driveAccessToken(
   const stored = readStoredToken(clientId, scope)
   if (stored) return stored
   if (!interactive) {
-    throw new StorageUnavailableError('Sign in to Google Drive again to keep syncing')
+    throw new StorageUnavailableError(storageErrorText((t) => t.googleDriveSignInAgain))
   }
   const google = await loadIdentityServices()
   return new Promise<string>((resolve, reject) => {

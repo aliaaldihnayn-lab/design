@@ -98,5 +98,19 @@
   "draftNoModel": "起草需要为“快速任务”或“设计代理”配置模型。",
   "draftChooseModel": "选择模型",
   "draftUnreadable": "模型没有返回可读取的故事。请重试。",
-  "draftFailed": "无法起草故事。"
+  "draftFailed": "无法起草故事。",
+  "jiraConnectAtlassian": "通过 Atlassian 连接",
+  "jiraOAuthDescription": "通过你的 Lawha Cloud 服务器使用 Atlassian 账号登录，或在下方使用 API 令牌。",
+  "jiraOAuthOpened": "请在打开的 Atlassian 页面中允许 Lawha，然后回到这里。",
+  "jiraOAuthFailed": "无法通过你的 Lawha Cloud 服务器连接 Atlassian。",
+  "jiraOrToken": "或使用 API 令牌连接",
+  "jiraConnectedWithAtlassian": "已通过 Atlassian 账号连接到 {site}",
+  "jiraChooseProject": "选择项目",
+  "jiraSearchProjects": "搜索项目",
+  "jiraNoProjects": "未找到项目",
+  "draftEdit": "编辑",
+  "draftDoneEditing": "完成",
+  "copyMainComponentStories": {
+    "many": "复制主组件的 {count} 个故事"
+  }
 }

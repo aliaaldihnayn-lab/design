@@ -6,6 +6,7 @@ import {
   roomFileSchema,
   roomMembersSchema,
   roomPresenceSchema,
+  roomPresenceTicketSchema,
   roomSummarySchema,
   roomTreeSchema,
   type CreatedRoomInvitation,
@@ -19,6 +20,7 @@ import {
   type RoomMemberRole,
   type RoomMembers,
   type RoomPresence,
+  type RoomPresenceTicket,
   type RoomSummary,
   type UpdateRoomInput
 } from '#cloud/contract'
@@ -157,6 +159,14 @@ export function createRoomRequests(
       return parseResponse(
         room.presence.$post({ param: { roomId } }),
         roomPresenceSchema,
+        onDiagnostic
+      )
+    },
+    /** A ticket for the relay's live presence channel of the room. */
+    async roomPresenceTicket(roomId: string): Promise<RoomPresenceTicket> {
+      return parseResponse(
+        room.presence.ticket.$post({ param: { roomId } }),
+        roomPresenceTicketSchema,
         onDiagnostic
       )
     },

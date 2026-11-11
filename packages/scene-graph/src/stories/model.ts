@@ -177,6 +177,52 @@ export function pluginDataForCopy(
   return withPluginData(pluginData, storiesField, copies)
 }
 
+/**
+ * The plugin data for an instance's copy of a layer in its main component: everything but the
+ * stories, which describe the main component; an instance takes them only when asked
+ * (`copyMainComponentStories`).
+ */
+export function pluginDataWithoutStories(
+  pluginData: readonly PluginDataEntry[] | undefined
+): PluginDataEntry[] | undefined {
+  if (!pluginData || !readPluginData(pluginData, storiesField)) return pluginData && [...pluginData]
+  return withPluginData(pluginData, storiesField, undefined)
+}
+
+/**
+ * Gives an instance stories of its own copied from its main component, on the instance and on
+ * each layer inside it that corresponds to one in the component: new ids, no Jira issues, as a
+ * duplicate's. Answers how many stories were copied; layers that already have stories keep them.
+ */
+export function copyMainComponentStories(graph: SceneGraph, instanceId: string): number {
+  const instance = graph.getNode(instanceId)
+  const component = instance?.componentId ? graph.getNode(instance.componentId) : undefined
+  if (instance?.type !== 'INSTANCE' || !component) return 0
+  let copied = 0
+  const copyInto = (targetId: string, sourceId: string) => {
+    const target = graph.getNode(targetId)
+    const source = graph.getNode(sourceId)
+    if (!target || !source || hasStories(target) || !hasStories(source)) return
+    const stories = readPluginData(pluginDataForCopy(source.pluginData), storiesField) ?? []
+    writeNodeStories(graph, targetId, stories)
+    copied += stories.length
+  }
+  copyInto(instance.id, component.id)
+  // An instance's layers name the component's layer they show in `componentId`.
+  const visit = (nodeId: string) => {
+    const node = graph.getNode(nodeId)
+    if (!node) return
+    for (const childId of node.childIds) {
+      const child = graph.getNode(childId)
+      if (!child) continue
+      if (child.componentId) copyInto(child.id, child.componentId)
+      visit(child.id)
+    }
+  }
+  visit(instance.id)
+  return copied
+}
+
 /** Replaces a layer's stories; an empty list removes the entry. */
 export function writeNodeStories(
   graph: SceneGraph,

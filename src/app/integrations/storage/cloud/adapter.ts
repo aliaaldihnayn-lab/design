@@ -6,7 +6,7 @@ import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, recheckedCloudConnection } from '@/app/cloud/sessions/connection'
 
-import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
+import { storageErrorText, StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
 import { cloudChecksum, downloadCloudDocument, readCloudRevisionRange } from './download'
@@ -48,10 +48,12 @@ export type CloudStorageDependencies = {
 /** The API client of a signed-in server, asking it once more before giving up. */
 async function signedInClient(serverId: string): Promise<CloudAPIClient> {
   const server = findCloudServer(serverId)
-  if (!server) throw new StorageUnavailableError('This Cloud server was removed from the app')
+  if (!server) throw new StorageUnavailableError(storageErrorText((t) => t.cloudServerRemoved))
   const connection = await recheckedCloudConnection(server)
   if (connection.state !== 'signed-in' || !connection.discovery) {
-    throw new StorageUnavailableError(`Sign in to ${cloudServerHost(server.url)} to sync`)
+    throw new StorageUnavailableError(
+      storageErrorText((t) => t.cloudSignIn({ host: cloudServerHost(server.url) }))
+    )
   }
   return cloudAPIClient(server, connection.discovery)
 }
@@ -74,7 +76,7 @@ export function createCloudStorageAdapter(
   const client = () => dependencies.client(serverId)
 
   function workspaceId(): string {
-    if (!runtime.containerId) throw new Error('A Cloud storage location names its workspace')
+    if (!runtime.containerId) throw new Error(storageErrorText((t) => t.cloudWorkspaceMissing))
     return runtime.containerId
   }
 

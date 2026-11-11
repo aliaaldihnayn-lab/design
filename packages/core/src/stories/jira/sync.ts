@@ -15,7 +15,13 @@ import {
 import { storyReport, type ReportedStory } from '#core/stories/report'
 
 import { epicDescription, storyDescription } from './adf'
-import { jiraIssueURL, pickStoryIssueTypes, type JiraClient, type JiraIssue } from './client'
+import {
+  jiraIssueURL,
+  pickStoryIssueTypes,
+  type JiraClient,
+  type JiraCreateField,
+  type JiraIssue
+} from './client'
 
 /** A change a sync makes to the document: an epic's or a story's Jira link and state. */
 export type JiraLinkUpdate =
@@ -157,6 +163,11 @@ interface PushContext {
   client: JiraClient
   options: JiraPushOptions
   types: ReturnType<typeof pickStoryIssueTypes>
+  /**
+   * The Story type's priority field when its create screen has one, with the priorities it
+   * allows; null when the screen leaves priority out, so a story is created without one.
+   */
+  priority: JiraCreateField | null
   result: JiraSyncResult
   /** Each epic's issue key, as the stories' parent. */
   epicKeys: Map<string, string>
@@ -198,6 +209,49 @@ async function pushEpic(context: PushContext, epic: Epic): Promise<void> {
   }
 }
 
+/** Jira's default priority scheme names the five priorities as stories do. */
+const JIRA_PRIORITY_NAMES: Record<UserStory['priority'], string> = {
+  highest: 'Highest',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+  lowest: 'Lowest'
+}
+
+/**
+ * The story's priority as the create screen takes it: the allowed priority of the same name by
+ * its id, or its name when the screen lists none; nothing when the screen has no priority or the
+ * scheme has no priority of that name.
+ */
+function priorityField(context: PushContext, story: UserStory): Record<string, unknown> {
+  const field = context.priority
+  if (!field) return {}
+  const name = JIRA_PRIORITY_NAMES[story.priority]
+  if (!field.allowedValues) return { priority: { name } }
+  const allowed = field.allowedValues.find(
+    (value) => value.name?.toLowerCase() === name.toLowerCase()
+  )
+  if (!allowed) return {}
+  return { priority: allowed.id ? { id: allowed.id } : { name } }
+}
+
+/** The Story type's priority field, when its create screen has one. */
+async function storyPriorityField(
+  client: JiraClient,
+  projectKey: string,
+  types: ReturnType<typeof pickStoryIssueTypes>
+): Promise<JiraCreateField | null> {
+  if (!types.story) return null
+  try {
+    const fields = await client.createFields(projectKey, types.story.id)
+    return fields.find((field) => field.fieldId === 'priority') ?? null
+  } catch (error) {
+    // Without the screen's fields, stories are created without a priority rather than refused.
+    console.warn('[Jira] Could not read the create screen:', error)
+    return null
+  }
+}
+
 async function pushStory(context: PushContext, placed: ReportedStory): Promise<void> {
   const { client, options, types, result, epicKeys } = context
   const { nodeId, story, path, pageName } = placed
@@ -217,6 +271,7 @@ async function pushStory(context: PushContext, placed: ReportedStory): Promise<v
     if (!types.story) throw new Error(`Project ${options.projectKey} has no Story issue type`)
     const created = await client.createIssue({
       ...fields,
+      ...priorityField(context, story),
       project: { key: options.projectKey },
       issuetype: { id: types.story.id }
     })
@@ -277,10 +332,13 @@ export async function pushToJira(
   const { stories, epics } = scope(graph, options)
   const result: JiraSyncResult = { updates: [], items: [] }
   if (stories.length === 0 && epics.length === 0) return result
+  const types = pickStoryIssueTypes(await client.issueTypes(options.projectKey))
+  const needsPriority = stories.some((placed) => !placed.story.jiraKey)
   const context: PushContext = {
     client,
     options,
-    types: pickStoryIssueTypes(await client.issueTypes(options.projectKey)),
+    types,
+    priority: needsPriority ? await storyPriorityField(client, options.projectKey, types) : null,
     result,
     epicKeys: new Map()
   }

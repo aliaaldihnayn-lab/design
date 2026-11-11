@@ -3,6 +3,8 @@ import { tv } from 'tailwind-variants'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'vccs'
 import { computed } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatCount, formatPercent } from '@/app/metrics/format'
 import { pooledRetention } from '@/app/metrics/retention'
 import type { RetentionCohort } from '@/app/metrics/retention'
@@ -17,10 +19,11 @@ const metricsRetention = tv(metricsRetentionTheme)
 const { cohorts } = defineProps<{ cohorts: RetentionCohort[] }>()
 
 const ui = metricsRetention()
+const t = useMetricsMessages()
 const points = computed(() =>
   pooledRetention(cohorts).map((point) => ({
     ...point,
-    label: point.day === 0 ? 'First day' : `Day ${point.day}`
+    label: point.day === 0 ? t.value.firstDay : t.value.retentionDay({ day: point.day })
   }))
 )
 const HEADLINE_DAYS = [1, 7, 30]
@@ -29,7 +32,7 @@ const headline = computed(() =>
     const point = points.value.find((candidate) => candidate.day === day)
     return point
       ? { day, value: formatPercent(point.share), empty: false }
-      : { day, value: day === 1 ? 'needs 1 day' : `needs ${day} days`, empty: true }
+      : { day, value: t.value.needsDays(day), empty: true }
   })
 )
 const formatShare = (value: unknown) => (typeof value === 'number' ? formatPercent(value) : '')
@@ -39,14 +42,17 @@ const installsOf = (row: unknown) =>
     ? row.installs
     : 0
 const tooltipValue = (value: unknown, _name: unknown, item: { payload?: unknown }) =>
-  `${formatShare(value)} of ${formatCount(installsOf(item.payload))} installs`
+  t.value.retentionTooltip({
+    share: formatShare(value),
+    count: formatCount(installsOf(item.payload))
+  })
 </script>
 
 <template>
   <div :class="ui.root()">
     <dl :class="ui.stats()">
       <div v-for="stat in headline" :key="stat.day" :class="ui.stat()">
-        <dt :class="ui.statLabel()">Day {{ stat.day }}</dt>
+        <dt :class="ui.statLabel()">{{ t.retentionDay({ day: stat.day }) }}</dt>
         <dd :class="ui.statValue()" :data-empty="stat.empty">{{ stat.value }}</dd>
       </div>
     </dl>
@@ -56,7 +62,7 @@ const tooltipValue = (value: unknown, _name: unknown, item: { payload?: unknown 
       :margin="{ top: 8, right: 8, bottom: 0, left: 0 }"
       :is-animation-active="false"
       class="text-[11px]"
-      title="Share of installs that came back, by days since first seen"
+      :title="t.retentionChart"
     >
       <CartesianGrid :vertical="false" />
       <XAxis data-key="label" :tick-line="false" :axis-line="false" :tick-margin="8" />
@@ -71,7 +77,7 @@ const tooltipValue = (value: unknown, _name: unknown, item: { payload?: unknown 
       <Tooltip :formatter="tooltipValue" />
       <Line
         data-key="share"
-        name="Came back"
+        :name="t.cameBack"
         type="monotone"
         stroke="var(--color-chart-1)"
         :stroke-width="2"

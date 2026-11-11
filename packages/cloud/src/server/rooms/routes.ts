@@ -227,6 +227,11 @@ export function createRoomRoutes(
         context.json(await rooms.heartbeat(actorId(context), context.req.param('roomId')))
       )
     )
+    .post('/:roomId/presence/ticket', (context) =>
+      roomRoute(context, async () =>
+        context.json(await rooms.presenceTicket(actorId(context), context.req.param('roomId')))
+      )
+    )
     .delete('/:roomId/presence', (context) =>
       roomRoute(context, async () => {
         await rooms.leavePresence(actorId(context), context.req.param('roomId'))

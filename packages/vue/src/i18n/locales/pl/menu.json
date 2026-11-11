@@ -95,5 +95,12 @@
   "importPlugin": "Importuj wtyczkę z folderu…",
   "removePlugin": "Usuń wtyczkę",
   "prototypeConnections": "Połączenia prototypu",
-  "userStories": "Historyjki użytkownika"
+  "userStories": "Historyjki użytkownika",
+  "developerTools": "Narzędzia dla programistów",
+  "aboutLawha": "O programie Lawha",
+  "quitLawha": "Zakończ Lawha",
+  "services": "Usługi",
+  "hideLawha": "Ukryj Lawha",
+  "hideOthers": "Ukryj pozostałe",
+  "showAll": "Pokaż wszystko"
 }

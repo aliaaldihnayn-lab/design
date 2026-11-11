@@ -4,6 +4,7 @@ import { unzipSync, zipSync, type Zippable } from 'fflate'
 import type { CloudAPIClient } from '@lawha/cloud/client'
 import { CLOUD_IMAGE_NAME_PATTERN, type ObjectUploadTarget } from '@lawha/cloud/contract'
 
+import { storageErrorText } from '../errors'
 import { putCloudObject, type CloudObjectTransfer } from './upload'
 
 /** Where a `.fig` archive keeps its images, each under the name its paints refer to. */
@@ -87,7 +88,7 @@ export async function uploadCloudImages(input: {
   const uploaded = await Promise.all(
     offers.map(async (offer) => {
       const bytes = byChecksum.get(offer.checksum)
-      if (!bytes) throw new Error('The server offered an upload for an image this save lacks')
+      if (!bytes) throw new Error(storageErrorText((t) => t.cloudImageMissing))
       const multipart = await put(offer.upload, bytes)
       return { uploadId: offer.uploadId, checksum: offer.checksum, multipart }
     })

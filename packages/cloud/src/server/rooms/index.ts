@@ -14,5 +14,11 @@ export {
   type RoomInvalidReason
 } from './errors'
 export { createRoomMemberService, type RoomMemberService } from './members'
+export {
+  authorizeRoomPresenceTicket,
+  createRoomPresenceStore,
+  type RoomPresenceAuthorization,
+  type RoomPresenceStore
+} from './presence'
 export { createRoomRoutes, type RoomRouteEnvironment } from './routes'
 export { createRoomService, type RoomService } from './service'

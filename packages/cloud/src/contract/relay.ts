@@ -12,6 +12,15 @@ export const RELAY_PATH = '/api/collaboration/relay'
  */
 export const RELAY_DOCUMENT_PARAM = 'document'
 
+/** The relay URL's query parameter naming a room whose live presence the ticket is for. */
+export const RELAY_ROOM_PARAM = 'room'
+
+/**
+ * The one message the relay sends on a room's presence channel: who is in the room now, as the
+ * JSON of a `RoomPresence`. Peers on that channel send nothing but their ticket.
+ */
+export const ROOM_PRESENCE_ACTION = 'room-presence'
+
 /** The relay's public URL on the same origin as the API, unless the deployment names another. */
 export function defaultRelayURL(publicURL: string): string {
   const url = new URL(RELAY_PATH, publicURL)

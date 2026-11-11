@@ -88,7 +88,7 @@ describe('Jira connection', () => {
         .executeTakeFirstOrThrow()
       expect(row.apiTokenEncrypted).not.toContain('good-token')
       // A compact JWE: header, empty key (direct), IV, ciphertext and tag.
-      expect(row.apiTokenEncrypted.split('.')).toHaveLength(5)
+      expect(row.apiTokenEncrypted?.split('.')).toHaveLength(5)
     } finally {
       await runtime.close()
     }

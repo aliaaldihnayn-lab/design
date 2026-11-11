@@ -152,7 +152,10 @@ export function createCloudApp(services: CloudServices) {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
   })
-  const rooms = createRoomService(services.database)
+  const rooms = createRoomService(services.database, {
+    authSecret: services.config.authSecret,
+    relayURL: services.relayURL
+  })
   const roomMembers = createRoomMemberService(services.database, {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
@@ -302,6 +305,17 @@ export function createCloudApp(services: CloudServices) {
     requireActiveSession,
     authenticatedMutationLimiter
   })
+  const jira = createJiraConnectionService(services.database, {
+    secret: services.config.authSecret,
+    oauth:
+      services.config.atlassianClientId && services.config.atlassianClientSecret
+        ? {
+            clientId: services.config.atlassianClientId,
+            clientSecret: services.config.atlassianClientSecret,
+            publicURL: services.config.publicURL
+          }
+        : undefined
+  })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
     database: services.database,
@@ -318,7 +332,7 @@ export function createCloudApp(services: CloudServices) {
     resolveSession,
     signatures,
     signing,
-    jira: createJiraConnectionService(services.database, { secret: services.config.authSecret })
+    jira
   })
   const publicCloudAPI = createPublicCloudAPIRouter({
     collaboration,
@@ -332,7 +346,8 @@ export function createCloudApp(services: CloudServices) {
     roomMembers,
     resolveSession,
     signatures,
-    signing
+    signing,
+    jira
   })
 
   // Services such as billing authenticate with their own token, not a session.

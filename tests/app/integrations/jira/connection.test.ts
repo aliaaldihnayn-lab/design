@@ -6,11 +6,14 @@ import { getJiraConnection, setJiraConnection, type JiraFetch } from '@lawha/cor
 
 import {
   connectJira,
+  connectJiraWithAtlassian,
   disconnectJira,
+  refreshJiraConnection,
   JIRA_API_TOKEN_CREDENTIAL,
   jiraConnected,
   jiraPreferences,
-  type JiraConnectionDeps
+  type JiraConnectionDeps,
+  type JiraOAuthServer
 } from '@/app/integrations/jira/connection'
 import { createCredentialServices } from '@/app/settings/credentials'
 import { MemoryCredentialStore } from '@/app/settings/credentials/memory'
@@ -42,7 +45,7 @@ function desktop(fetch: JiraFetch): JiraConnectionDeps {
 afterEach(() => {
   setJiraConnection(null)
   jiraConnected.value = null
-  jiraPreferences.value = { site: '', email: '', projectKey: '' }
+  jiraPreferences.value = { site: '', email: '', projectKey: '', auth: 'token' }
 })
 
 describe('Jira connection on desktop', () => {
@@ -116,5 +119,84 @@ describe('Jira connection on desktop', () => {
         deps
       )
     ).toBe('unavailable')
+  })
+})
+
+describe('Jira connection through Atlassian OAuth', () => {
+  /** A Home server holding an OAuth connection, and the Jira site behind api.atlassian.com. */
+  function oauthSetup() {
+    const state = { issued: 0, opened: [] as string[], urls: [] as string[] }
+    const server: JiraOAuthServer = {
+      authorize: async () => 'https://auth.atlassian.com/authorize?state=s',
+      token: async () => {
+        state.issued++
+        return {
+          accessToken: `access-${state.issued}`,
+          cloudId: 'cloud-1',
+          site: 'https://lawha-test.atlassian.net',
+          expiresAt: new Date(Date.now() + 3_600_000).toISOString()
+        }
+      },
+      integration: async () => ({
+        oauth: true,
+        connection: {
+          kind: 'oauth',
+          site: 'https://lawha-test.atlassian.net',
+          email: '',
+          updatedAt: new Date(0).toISOString()
+        }
+      })
+    }
+    const fetch: JiraFetch = async (input, init) => {
+      state.urls.push(input)
+      const authorized =
+        new Headers(init.headers).get('Authorization') === `Bearer access-${state.issued}`
+      return authorized
+        ? new Response(JSON.stringify({ accountId: 'a', displayName: 'Sara' }), { status: 200 })
+        : new Response(JSON.stringify({ errorMessages: ['Unauthorized'] }), { status: 401 })
+    }
+    const deps: JiraConnectionDeps = {
+      ...desktop(fetch),
+      mode: () => 'cloud',
+      oauth: () => server,
+      openURL: async (url) => {
+        state.opened.push(url)
+      }
+    }
+    return { deps, state }
+  }
+
+  test('opens the consent page the Home server gives', async () => {
+    const { deps, state } = oauthSetup()
+    expect(await connectJiraWithAtlassian(deps)).toBe('opened')
+    expect(state.opened).toEqual(['https://auth.atlassian.com/authorize?state=s'])
+    expect(await connectJiraWithAtlassian({ ...deps, oauth: () => null })).toBe('unavailable')
+  })
+
+  test('reaches the site through api.atlassian.com with access tokens the server hands out', async () => {
+    const { deps, state } = oauthSetup()
+    await refreshJiraConnection(deps)
+    expect(jiraConnected.value).toBe(true)
+    expect(jiraPreferences.value.auth).toBe('oauth')
+    const connection = getJiraConnection()
+    if (!connection) throw new Error('not connected')
+    expect(await connection.client.myself()).toMatchObject({ displayName: 'Sara' })
+    expect(await connection.client.myself()).toMatchObject({ displayName: 'Sara' })
+    expect(state.urls.at(-1)).toBe('https://api.atlassian.com/ex/jira/cloud-1/rest/api/3/myself')
+    // The token is kept until it is about to expire.
+    expect(state.issued).toBe(1)
+  })
+
+  test('falls back to the API token once the server holds no OAuth connection', async () => {
+    const { deps } = oauthSetup()
+    await refreshJiraConnection(deps)
+    const server = deps.oauth?.()
+    if (!server) throw new Error('no server')
+    await refreshJiraConnection({
+      ...deps,
+      mode: () => 'desktop',
+      oauth: () => ({ ...server, integration: async () => ({ oauth: true, connection: null }) })
+    })
+    expect(jiraPreferences.value.auth).toBe('token')
   })
 })

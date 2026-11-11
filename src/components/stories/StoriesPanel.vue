@@ -8,6 +8,7 @@ import {
 } from 'reka-ui'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 
+import { readNodeStories } from '@lawha/scene-graph/stories'
 import { useStoriesMessages } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -45,6 +46,22 @@ const selectedNode = computed(() => {
   const id = stories.selectedNodeId.value
   return id ? store.graph.getNode(id) : undefined
 })
+
+/**
+ * An instance starts without its main component's stories, which describe the component; it
+ * offers them, copied as its own, while it has none.
+ */
+const mainStoryCount = computed(() => {
+  const node = selectedNode.value
+  if (node?.type !== 'INSTANCE' || !node.componentId) return 0
+  if (stories.selectedStories.value.length > 0) return 0
+  return readNodeStories(store.graph.getNode(node.componentId)).length
+})
+
+function copyMainStories() {
+  const node = selectedNode.value
+  if (node) store.copyMainComponentStories(node.id)
+}
 
 function addStory() {
   const id = stories.selectedNodeId.value
@@ -128,6 +145,16 @@ async function exportAs(formatId: 'stories-markdown' | 'stories-csv') {
       <p v-if="stories.selectedStories.value.length === 0" class="text-[11px] text-muted">
         {{ t.noStories }}
       </p>
+      <AppButton
+        v-if="mainStoryCount > 0"
+        variant="outline"
+        size="xs"
+        data-action="copy-main-stories"
+        @click="copyMainStories"
+      >
+        <icon-lucide-copy class="size-3" aria-hidden="true" />
+        {{ t.copyMainComponentStories(mainStoryCount) }}
+      </AppButton>
       <StoriesPanelStory
         v-for="story in stories.selectedStories.value"
         :key="story.id"

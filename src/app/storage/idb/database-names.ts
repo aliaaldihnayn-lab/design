@@ -7,6 +7,8 @@ export const APP_DATABASE_NAMES = {
   outbox: 'lawha-cloud-outbox',
   recovery: 'lawha-recovery',
   history: 'lawha-history',
+  /** Files the browser opened, by handle and content, so what is kept about them follows them. */
+  fileIdentities: 'lawha-file-identities',
   diagnostics: 'lawha-diagnostics',
   skills: 'lawha-skills',
   plugins: 'lawha-plugins',

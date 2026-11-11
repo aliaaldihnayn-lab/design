@@ -11,6 +11,7 @@ import {
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
+import { browserFileIdentities, type FileIdentityStore } from '@/app/storage/file-identity'
 
 import { localHistoryAuthor } from './author'
 import { createHistoryController, type HistoryController } from './controller'
@@ -20,8 +21,18 @@ import { provideHistoryToTools } from './tools'
 /** A pause in editing this long keeps an automatic version, as Google Docs does. */
 export const HISTORY_IDLE_CHECKPOINT_MS = 2 * 60 * 1000
 
-/** The key a design document's history is kept under, from where it is stored. */
-export function designHistoryKey(store: EditorStore): string | null {
+/**
+ * The key a design document's history is kept under, from where it is stored. A file the browser
+ * opened is known by its identity on this device, not its name, so two files of the same name keep
+ * their own histories and a renamed or dropped-in file keeps its own.
+ */
+export async function designHistoryKey(
+  store: Pick<
+    EditorStore,
+    'getStorageBinding' | 'getDocumentFilePath' | 'getSourceIdentity' | 'getRecoveryId'
+  >,
+  identities: FileIdentityStore = browserFileIdentities()
+): Promise<string | null> {
   const binding = store.getStorageBinding()
   if (binding) {
     return `storage:${binding.providerId}:${binding.profileId ?? ''}:${binding.documentId}`
@@ -29,7 +40,14 @@ export function designHistoryKey(store: EditorStore): string | null {
   const path = store.getDocumentFilePath()
   if (path) return `path:${path}`
   const handle = store.getSourceIdentity().handle
-  if (handle) return `file:${handle.name}`
+  if (handle) {
+    try {
+      return `browser-file:${await identities.resolve(handle)}`
+    } catch (error) {
+      console.warn('[History] Could not identify the opened file:', error)
+      return `file:${handle.name}`
+    }
+  }
   return `recovery:${store.getRecoveryId()}`
 }
 
@@ -60,6 +78,8 @@ export interface AttachDesignHistoryOptions {
   persistence?: HistoryPersistence
   author?: () => HistoryAuthor
   idleMs?: number
+  /** Where browser files' identities are kept; IndexedDB by default. */
+  fileIdentities?: FileIdentityStore
 }
 
 /**
@@ -79,7 +99,7 @@ export function attachDesignHistory(
 
   const controller = createHistoryController({
     documentKind: 'design',
-    resolveKey: () => designHistoryKey(store),
+    resolveKey: () => designHistoryKey(store, options.fileIdentities),
     persistence: options.persistence ?? getHistoryPersistence(),
     onLoaded: (history) => dropDuplicateOpening(history)
   })

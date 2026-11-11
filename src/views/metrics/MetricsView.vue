@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import type { MetricsSnapshot } from '@lawha/feedback/contract'
+import { useMetricsMessages } from '@lawha/vue/i18n'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
 import { useMetricsSnapshot } from '@/app/metrics/load'
@@ -14,6 +15,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 // Served from the feedback Worker's own address, so it follows the system theme as Cloud's
 // pages do; the editor's stored theme is not visible here.
 usePortalTheme()
+const t = useMetricsMessages()
 
 /** The page mounts once its first numbers have loaded, or failed to, so it never shows half. */
 const { initialRange, initialSnapshot } = defineProps<{
@@ -38,13 +40,9 @@ const reload = () => globalThis.location.reload()
     @refresh="refresh"
   >
     <template v-if="failed" #alert>
-      <AppAlert
-        tone="warning"
-        heading="These numbers could not be updated"
-        description="Your sign-in may have expired. Reload the page to sign in again."
-      >
+      <AppAlert tone="warning" :heading="t.staleHeading" :description="t.staleDetail">
         <template #actions>
-          <AppButton size="sm" variant="outline" @click="reload">Reload</AppButton>
+          <AppButton size="sm" variant="outline" @click="reload">{{ t.reload }}</AppButton>
         </template>
       </AppAlert>
     </template>
@@ -53,12 +51,12 @@ const reload = () => globalThis.location.reload()
     <AppPlaceholder
       size="page"
       label-as="h1"
-      label="The metrics could not load"
-      description="Your sign-in may have expired, or the service did not answer. Reload the page to try again."
+      :label="t.failedHeading"
+      :description="t.failedDetail"
     >
       <template #icon><icon-lucide-cloud-off class="size-5" /></template>
       <template #action>
-        <AppButton variant="outline" @click="reload">Reload</AppButton>
+        <AppButton variant="outline" @click="reload">{{ t.reload }}</AppButton>
       </template>
     </AppPlaceholder>
   </main>

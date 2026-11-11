@@ -38,6 +38,7 @@ import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
 import CloudVersionListItem from './CloudVersionListItem.vue'
+import CloudVersionSession from './CloudVersionSession.vue'
 import { cloudVersions } from './ui'
 
 /**
@@ -197,69 +198,74 @@ function setScope(value: unknown) {
         :label="t.currentVersion"
         current
         :selected="selectedId === null"
-        :last="list.versions.value.length === 0"
+        :last="list.timeline.value.length === 0"
         @select="showCurrentVersion(shown)"
       />
-      <CloudVersionListItem
-        v-for="(version, index) in list.versions.value"
-        :key="version.id"
-        :label="titleOf(version)"
-        :description="descriptionOf(version)"
-        :author="version.createdBy.name"
-        :at="version.createdAt"
-        :named="list.isNamed(version)"
-        :selected="selectedId === version.id"
-        :last="index === list.versions.value.length - 1"
-        @select="select(version)"
+      <template
+        v-for="(entry, index) in list.timeline.value"
+        :key="entry.kind === 'version' ? entry.version.id : entry.id"
       >
-        <template v-if="list.canEdit.value || linkable" #actions>
-          <DropdownMenuRoot :modal="false">
-            <DropdownMenuTrigger as-child>
-              <IconButton :label="t.versionOptions">
-                <icon-lucide-ellipsis class="size-3.5" />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
-                <MenuScrollArea>
-                  <template v-if="list.canEdit.value">
+        <CloudVersionSession v-if="entry.kind === 'session'" :session="entry" />
+        <CloudVersionListItem
+          v-else
+          :label="titleOf(entry.version)"
+          :description="descriptionOf(entry.version)"
+          :author="entry.version.createdBy.name"
+          :at="entry.version.createdAt"
+          :named="list.isNamed(entry.version)"
+          :selected="selectedId === entry.version.id"
+          :last="index === list.timeline.value.length - 1"
+          @select="select(entry.version)"
+        >
+          <template v-if="list.canEdit.value || linkable" #actions>
+            <DropdownMenuRoot :modal="false">
+              <DropdownMenuTrigger as-child>
+                <IconButton :label="t.versionOptions">
+                  <icon-lucide-ellipsis class="size-3.5" />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
+                  <MenuScrollArea>
+                    <template v-if="list.canEdit.value">
+                      <DropdownMenuItem
+                        :class="menuCls.item"
+                        @select="openVersionDialog(shown, entry.version)"
+                      >
+                        {{ entry.version.name ? t.editVersionInfo : t.addToVersionHistory }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        v-if="!entry.version.current"
+                        :class="menuCls.item"
+                        @select="restore(entry.version)"
+                      >
+                        {{ t.restoreVersion }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem :class="menuCls.item" @select="duplicate(entry.version)">
+                        {{ t.duplicateVersion }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        v-if="entry.version.name"
+                        :class="menuCls.item"
+                        @select="deleteInfo(entry.version)"
+                      >
+                        {{ t.deleteVersionInfo }}
+                      </DropdownMenuItem>
+                    </template>
                     <DropdownMenuItem
+                      v-if="linkable"
                       :class="menuCls.item"
-                      @select="openVersionDialog(shown, version)"
+                      @select="copyLink(entry.version)"
                     >
-                      {{ version.name ? t.editVersionInfo : t.addToVersionHistory }}
+                      {{ t.shareCopyLink }}
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      v-if="!version.current"
-                      :class="menuCls.item"
-                      @select="restore(version)"
-                    >
-                      {{ t.restoreVersion }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem :class="menuCls.item" @select="duplicate(version)">
-                      {{ t.duplicateVersion }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      v-if="version.name"
-                      :class="menuCls.item"
-                      @select="deleteInfo(version)"
-                    >
-                      {{ t.deleteVersionInfo }}
-                    </DropdownMenuItem>
-                  </template>
-                  <DropdownMenuItem
-                    v-if="linkable"
-                    :class="menuCls.item"
-                    @select="copyLink(version)"
-                  >
-                    {{ t.shareCopyLink }}
-                  </DropdownMenuItem>
-                </MenuScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenuPortal>
-          </DropdownMenuRoot>
-        </template>
-      </CloudVersionListItem>
+                  </MenuScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenuPortal>
+            </DropdownMenuRoot>
+          </template>
+        </CloudVersionListItem>
+      </template>
     </ul>
     <p v-if="list.failed.value" :class="ui.status()" role="alert">{{ t.versionsFailed }}</p>
     <p v-else-if="!list.loading.value && list.versions.value.length === 0" :class="ui.status()">

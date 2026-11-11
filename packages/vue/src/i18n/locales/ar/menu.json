@@ -95,5 +95,12 @@
   "importPlugin": "استيراد إضافة من مجلد…",
   "removePlugin": "إزالة إضافة",
   "prototypeConnections": "روابط النموذج الأولي",
-  "userStories": "قصص المستخدم"
+  "userStories": "قصص المستخدم",
+  "developerTools": "أدوات المطوّر",
+  "aboutLawha": "حول Lawha",
+  "quitLawha": "إنهاء Lawha",
+  "services": "الخدمات",
+  "hideLawha": "إخفاء Lawha",
+  "hideOthers": "إخفاء الآخرين",
+  "showAll": "إظهار الكل"
 }

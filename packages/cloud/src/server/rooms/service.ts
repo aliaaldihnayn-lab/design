@@ -7,10 +7,10 @@ import type {
   RoomDetail,
   RoomFile,
   RoomPresence,
+  RoomPresenceTicket,
   RoomSummary,
   UpdateRoomInput
 } from '#cloud/contract'
-import { ROOM_PRESENCE_WINDOW_MS } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { workspaceRole } from '#cloud/server/documents/repository'
@@ -33,6 +33,12 @@ import {
 import { endRoomSessions, listRoomEvents, recordRoomEvent } from './audit'
 import { RoomInvalidError, RoomNotFoundError } from './errors'
 import { requireRoom } from './guard'
+import {
+  forgetRoomPresence,
+  listRoomPresence,
+  recordRoomPresence,
+  signRoomPresenceTicket
+} from './presence'
 
 const WORKSPACE_WRITERS = new Set(['admin', 'editor'])
 
@@ -101,7 +107,10 @@ export async function roomSummaries(
  * Rooms and the files in them. Every operation checks the person's role in the room on the
  * server; someone who may not enter a room is told it does not exist.
  */
-export function createRoomService(database: Kysely<CloudDatabase>) {
+export function createRoomService(
+  database: Kysely<CloudDatabase>,
+  options: { authSecret?: string; relayURL?: string } = {}
+) {
   async function summary(userId: string, roomId: string): Promise<RoomSummary> {
     const { graph } = await requireRoom(database, userId, roomId)
     const [room] = await roomSummaries(database, graph, [roomId])
@@ -392,55 +401,29 @@ export function createRoomService(database: Kysely<CloudDatabase>) {
     /** Records that the person is in the room now, and answers who else is. */
     async heartbeat(userId: string, roomId: string): Promise<RoomPresence> {
       await requireRoom(database, userId, roomId)
-      const seenAt = new Date()
-      await database
-        .insertInto('roomPresence')
-        .values({ roomId, userId, seenAt })
-        .onConflict((conflict) => conflict.columns(['roomId', 'userId']).doUpdateSet({ seenAt }))
-        .execute()
-      return presence(database, roomId)
+      await recordRoomPresence(database, roomId, userId)
+      return listRoomPresence(database, roomId)
     },
 
     async presence(userId: string, roomId: string): Promise<RoomPresence> {
       await requireRoom(database, userId, roomId)
-      return presence(database, roomId)
+      return listRoomPresence(database, roomId)
+    },
+
+    /**
+     * A ticket for the relay's live presence channel of the room, which replaces check-ins while
+     * its socket is open; without a relay there is none, and clients keep checking in.
+     */
+    async presenceTicket(userId: string, roomId: string): Promise<RoomPresenceTicket> {
+      await requireRoom(database, userId, roomId)
+      if (!options.authSecret || !options.relayURL) throw new RoomNotFoundError()
+      return signRoomPresenceTicket(options.authSecret, options.relayURL, roomId, userId)
     },
 
     /** The person left the room's page. */
     async leavePresence(userId: string, roomId: string): Promise<void> {
-      await database
-        .deleteFrom('roomPresence')
-        .where('roomId', '=', roomId)
-        .where('userId', '=', userId)
-        .execute()
+      await forgetRoomPresence(database, roomId, userId)
     }
-  }
-}
-
-async function presence(database: RoomDatabase, roomId: string): Promise<RoomPresence> {
-  const rows = await database
-    .selectFrom('roomPresence')
-    .innerJoin('user', (join) =>
-      join.on((expression) =>
-        expression(
-          expression.cast(expression.ref('user.id'), 'text'),
-          '=',
-          expression.ref('roomPresence.userId')
-        )
-      )
-    )
-    .select(['roomPresence.userId', 'roomPresence.seenAt', 'user.name', 'user.image'])
-    .where('roomPresence.roomId', '=', roomId)
-    .where('roomPresence.seenAt', '>', new Date(Date.now() - ROOM_PRESENCE_WINDOW_MS))
-    .orderBy('user.name')
-    .execute()
-  return {
-    people: rows.map((row) => ({
-      userId: row.userId,
-      name: row.name,
-      image: row.image,
-      seenAt: dateString(row.seenAt) ?? ''
-    }))
   }
 }
 

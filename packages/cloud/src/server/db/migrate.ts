@@ -33,6 +33,7 @@ import * as rooms from './migrations/029_rooms'
 import * as documentHistory from './migrations/030_document_history'
 import * as jiraConnection from './migrations/031_jira_connection'
 import * as writerDocuments from './migrations/032_writer_documents'
+import * as jiraOAuth from './migrations/033_jira_oauth'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -67,7 +68,8 @@ const migrations: Record<string, Migration> = {
   '029_rooms': rooms,
   '030_document_history': documentHistory,
   '031_jira_connection': jiraConnection,
-  '032_writer_documents': writerDocuments
+  '032_writer_documents': writerDocuments,
+  '033_jira_oauth': jiraOAuth
 }
 
 class CloudMigrationProvider implements MigrationProvider {

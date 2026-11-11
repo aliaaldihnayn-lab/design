@@ -1,4 +1,5 @@
 import type {
+  DocumentHistoryPage,
   DocumentVersion,
   DocumentVersions,
   SaveDocumentVersionInput,
@@ -30,6 +31,15 @@ export function versionHistoryAccountId(store: EditorStore): string | null {
 export async function listVersions(store: EditorStore, before?: string): Promise<DocumentVersions> {
   const { target } = targetOf(store)
   return target.client.listDocumentVersions(target.documentId, { before })
+}
+
+/** A page of the edits made to the document, newest first, older than `before` when given. */
+export async function listEditLog(
+  store: EditorStore,
+  before?: string
+): Promise<DocumentHistoryPage> {
+  const { target } = targetOf(store)
+  return target.client.listDocumentHistory(target.documentId, { before, limit: 200 })
 }
 
 /**

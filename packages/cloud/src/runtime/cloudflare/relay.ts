@@ -1,4 +1,4 @@
-import { RELAY_DOCUMENT_PARAM } from '#cloud/contract'
+import { RELAY_DOCUMENT_PARAM, RELAY_ROOM_PARAM } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import {
   createCollaborationRelay,
@@ -24,14 +24,30 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
 
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
+/** Where a socket goes: a document's rooms, or a room's presence channel. */
+type RelayTarget = { documentId: string } | { roomId: string }
+
+function relayTarget(url: URL): RelayTarget | null {
+  const documentId = url.searchParams.get(RELAY_DOCUMENT_PARAM)
+  if (v.is(documentIdSchema, documentId)) return { documentId }
+  const roomId = url.searchParams.get(RELAY_ROOM_PARAM)
+  if (v.is(documentIdSchema, roomId)) return { roomId }
+  return null
+}
+
+/** A room's presence object, named apart from every document's. */
+function presenceRelayFor(env: CloudflareCloudEnvironment, roomId: string) {
+  return env.RELAY.get(env.RELAY.idFromName(`room-presence:${roomId}`))
+}
+
 /** The document's relay object. */
 export function relayFor(env: CloudflareCloudEnvironment, documentId: string) {
   return env.RELAY.get(env.RELAY.idFromName(documentId))
 }
 
 /**
- * Sends a relay socket to its document's relay object. The ticket's URL names the document; the
- * object refuses tickets for any other.
+ * Sends a relay socket to its document's relay object, or to its room's presence object. The
+ * ticket's URL names the document or room; the object refuses tickets for any other.
  */
 export async function routeToRelay(
   c: Context<{ Bindings: CloudflareCloudEnvironment }>
@@ -39,9 +55,11 @@ export async function routeToRelay(
   if (c.req.header('Upgrade')?.toLowerCase() !== 'websocket') {
     return c.text('Expected a WebSocket upgrade', 426)
   }
-  const documentId = c.req.query(RELAY_DOCUMENT_PARAM)
-  if (!v.is(documentIdSchema, documentId)) return c.text('Missing document', 400)
-  return relayFor(c.env, documentId).fetch(c.req.raw)
+  const target = relayTarget(new URL(c.req.url))
+  if (!target) return c.text('Missing document', 400)
+  return 'documentId' in target
+    ? relayFor(c.env, target.documentId).fetch(c.req.raw)
+    : presenceRelayFor(c.env, target.roomId).fetch(c.req.raw)
 }
 
 /** A socket message's bytes; text is passed on as bytes for the relay to refuse. */
@@ -95,12 +113,12 @@ export function createCloudflareRelayObject(
     /** Set by the first socket; restores and version changes before it have no rooms to reach. */
     #opened: CollaborationRelay | null = null
 
-    #open(documentId: string) {
+    #open(target: RelayTarget) {
       this.#relay ??= prepare(this.env).then(({ config }) => {
         const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
         this.#opened = createCollaborationRelay({
           authSecret: config.authSecret,
-          documentId,
+          ...target,
           store: createCollaborationStateStore(database),
           maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
           maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
@@ -120,9 +138,9 @@ export function createCloudflareRelayObject(
 
     /** Accepts a socket that `routeToRelay` sent here. */
     override async fetch(request: Request): Promise<Response> {
-      const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
-      if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
-      return accept(await this.#open(documentId))
+      const target = relayTarget(new URL(request.url))
+      if (!target) return new Response(null, { status: 400 })
+      return accept(await this.#open(target))
     }
 
     startOver(documentId: string) {

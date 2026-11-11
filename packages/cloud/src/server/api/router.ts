@@ -13,7 +13,11 @@ import {
   createDocumentVersionRoutes,
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
-import { createJiraRoutes, type JiraConnectionService } from '#cloud/server/jira'
+import {
+  createJiraRoutes,
+  createPublicJiraRoutes,
+  type JiraConnectionService
+} from '#cloud/server/jira'
 import type { EntitlementService } from '#cloud/server/policy'
 import { createRoomRoutes, type RoomMemberService, type RoomService } from '#cloud/server/rooms'
 import type { DocumentSharingService } from '#cloud/server/sharing'
@@ -64,6 +68,7 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
     )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
     .route('/', createPublicSigningRoutes(services.signatures, services.signing))
+    .route('/integrations/jira', createPublicJiraRoutes(services.jira))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {

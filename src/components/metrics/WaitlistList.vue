@@ -2,6 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatTime } from '@/app/metrics/format'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { metricsWaitlistTheme } from '@/theme/metrics/dashboard'
@@ -16,6 +18,7 @@ const metricsWaitlist = tv(metricsWaitlistTheme)
  */
 const { signups } = defineProps<{ signups: WaitlistSignup[] }>()
 const ui = metricsWaitlist()
+const t = useMetricsMessages()
 
 // About as many as fit beside the GitHub card, so the row has no empty space below the list.
 const COLLAPSED_ROWS = 12
@@ -31,12 +34,12 @@ const hidden = computed(() => signups.length - shown.value.length)
         <span :class="ui.domain()">{{ signup.domain }}</span>
         <span :class="ui.time()">{{ formatTime(signup.signedUpAt) }}</span>
         <span :class="ui.status()" :data-confirmed="signup.confirmed">
-          {{ signup.confirmed ? 'Confirmed' : 'Waiting' }}
+          {{ signup.confirmed ? t.confirmed : t.waiting }}
         </span>
       </li>
     </ul>
     <AppButton v-if="hidden > 0" size="sm" :class="ui.more()" @click="expanded = true">
-      Show {{ hidden }} more
+      {{ t.showMore({ count: hidden }) }}
     </AppButton>
   </div>
 </template>

@@ -10,6 +10,8 @@ import type * as S3SDK from '@/app/integrations/storage/s3/sdk'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
 import type { LibraryObjectWriteOptions } from '@/app/integrations/storage/types'
 
+import { storageErrorText } from '../errors'
+
 /** Error name the SDK gives a reply it could not parse. */
 const UNPARSED_ERROR_NAME = 'Unknown'
 
@@ -134,7 +136,7 @@ export async function getObjectRange(
     !Number.isSafeInteger(endExclusive) ||
     endExclusive <= start
   ) {
-    throw new Error('Invalid S3 byte range')
+    throw new Error(storageErrorText((t) => t.s3InvalidRange))
   }
   const output = await unlessMissing(
     send(config, (client, sdk) =>
@@ -153,7 +155,7 @@ export async function getObjectRange(
     output.$metadata.httpStatusCode === 206 ||
     output.ContentRange?.startsWith(`bytes ${start}-${endExclusive - 1}/`) === true
   if (!honored || !output.Body) {
-    throw new Error('Storage provider did not honor the thumbnail byte range')
+    throw new Error(storageErrorText((t) => t.s3ThumbnailRangeIgnored))
   }
   return output.Body.transformToByteArray()
 }
@@ -283,7 +285,7 @@ export async function listObjects(
         })
       }
       if (++pages === LIST_PAGE_LIMIT && page.IsTruncated) {
-        throw new Error('S3 listing exceeded the 50,000-object safety limit')
+        throw new Error(storageErrorText((t) => t.s3ListingTooLarge))
       }
     }
     return all

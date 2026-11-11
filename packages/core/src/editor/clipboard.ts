@@ -6,6 +6,7 @@ import { attachedConnectors } from '@lawha/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
 import { cycleSafeParent } from '@lawha/scene-graph/instances'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import { pluginDataForCopy } from '@lawha/scene-graph/stories'
 
 import { parseLawhaClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
@@ -256,6 +257,8 @@ export function createClipboardActions(ctx: EditorContext) {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),
+        // A pasted layer's stories are new work, as a duplicate's are: new ids, no Jira issue.
+        pluginData: pluginDataForCopy(rest.pluginData),
         childIds: []
       })
       copiedIds.set(source.id, node.id)

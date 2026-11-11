@@ -64,7 +64,7 @@ describe('document editor history', () => {
     const first = start(persistence).history
     await first.saveNamed('Draft', 'Before review')
     expect(persistence.keys()).toEqual(['writer:path:/docs/report.docx'])
-    expect(writerHistoryKey({ kind: 'file', handle: null, path: '/docs/report.docx' })).toBe(
+    expect(await writerHistoryKey({ kind: 'file', handle: null, path: '/docs/report.docx' })).toBe(
       'writer:path:/docs/report.docx'
     )
     first.dispose()

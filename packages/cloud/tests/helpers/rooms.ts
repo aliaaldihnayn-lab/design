@@ -71,6 +71,7 @@ export async function roomTestApp() {
     auth: createBetterAuthAdapter(config, runtime.database),
     objects: createMemoryObjectStore().store,
     transactionalEmail: email,
+    relayURL: 'wss://cloud.test/api/collaboration/relay',
     resolveSession: async () => actor
   })
   const as = (person: CloudActor) => {

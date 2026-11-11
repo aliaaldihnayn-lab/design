@@ -100,5 +100,21 @@
   "draftNoModel": "Для черновика нужна модель для «Быстрых задач» или «Дизайн-агента».",
   "draftChooseModel": "Выбрать модель",
   "draftUnreadable": "Модель не вернула историй, которые можно прочитать. Попробуйте ещё раз.",
-  "draftFailed": "Не удалось набросать истории."
+  "draftFailed": "Не удалось набросать истории.",
+  "jiraConnectAtlassian": "Подключить через Atlassian",
+  "jiraOAuthDescription": "Войдите в аккаунт Atlassian через сервер Lawha Cloud или используйте токен API ниже.",
+  "jiraOAuthOpened": "Разрешите доступ Lawha на открывшейся странице Atlassian и вернитесь сюда.",
+  "jiraOAuthFailed": "Не удалось связаться с Atlassian через сервер Lawha Cloud.",
+  "jiraOrToken": "Или подключитесь с токеном API",
+  "jiraConnectedWithAtlassian": "Подключено к {site} через аккаунт Atlassian",
+  "jiraChooseProject": "Выберите проект",
+  "jiraSearchProjects": "Поиск проектов",
+  "jiraNoProjects": "Проекты не найдены",
+  "draftEdit": "Изменить",
+  "draftDoneEditing": "Готово",
+  "copyMainComponentStories": {
+    "one": "Скопировать {count} историю главного компонента",
+    "few": "Скопировать {count} истории главного компонента",
+    "many": "Скопировать {count} историй главного компонента"
+  }
 }

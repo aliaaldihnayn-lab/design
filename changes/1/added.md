@@ -1,0 +1,26 @@
+- The interface is translated into Arabic throughout and lays out right to left, with text aligned by its own direction, shared styles, arrows and overflow fades mirrored, Arabic shaping and Google Fonts for Arabic (#1).
+- Device mockups and social post tools place a design in phone, laptop and post frames, and frame presets cover phones, tablets, desktops, print sizes and social formats, with one design adapted to several screens at once (#1).
+- A print product library offers business cards, flyers, posters, roll-ups and envelopes with die-lines, and designs export as press-ready CMYK PDF/X with bleed, crop marks and spot inks (#1).
+- Interactive prototypes link screens with transitions, Smart Animate that matches layers by name, scrolling frames and connections drawn on the canvas, share state through prototype variables and conditions, and run in a player (#1).
+- Interactive components run their states live on the canvas and in the player with Change to, and a live component kit offers ready controls that AI and MCP can author (#1).
+- A design system is built from a design in one click, with color and text styles, dark-mode variables and component sets with variants (#1).
+- A Dev Mode inspect panel shows each layer as CSS, SwiftUI and Jetpack Compose (#1).
+- Image fills take non-destructive adjustments, levels, tone curves, sharpen, film grain and vignette, and their background is removed on the device in one click (#1).
+- Image layers can be painted with a brush, eraser, fill bucket and color picker on a paint layer, selected with rectangle, ellipse and magic wand selections, masked from a selection, and retouched with the clone stamp and healing brush (#1).
+- The Shape Builder merges and removes regions of overlapping shapes, and vectors gain Warp presets, an envelope mesh, offset path, width profiles, blends and pattern fills (#1).
+- Image Trace turns images into vectors on the device, without a provider (#1).
+- Photoshop PSD files open as editable layers, layer styles, shape and fill layers included, and designs export as PSD; PDF, Illustrator and PowerPoint files open as editable layers with their text, colors and fonts; WebP imports and exports (#1).
+- Publisher documents have master pages, text threaded across frames and automatic page numbers (#1).
+- Figma plugins run with their UI from a Plugins menu (#1).
+- A document editor opens and saves Word documents in place and Google Docs back to the same Doc, with page setup, headers and footers, page numbers, find and replace, word count, comments, track changes, templates, fillable fields, a table of contents, footnotes, watermarks, passwords and PDF export (#1).
+- Signatures can be drawn, typed or uploaded and placed in a document, PDFs are signed with a PAdES digital signature, and Lawha Cloud sends documents for signature with an audit trail (#1).
+- Designs and documents keep a version history: each edit as it is made, automatic and named versions on this device across reloads, previews, comparison, restore and duplicate, and for Cloud documents an edit log on the server listed as each person's sessions between versions (#1).
+- A file the browser opened keeps its version history by its identity on the device, its handle and its content, so two files of the same name stay apart and a renamed or dropped-in file keeps its own history (#1).
+- Lawha Cloud rooms hold files with members, access rules and invitations on Home, and show who is in a room live over the collaboration relay, falling back to check-ins when the relay is unreachable (#1).
+- Layers carry user stories and epics, edited in a Stories tab and pinned on the canvas, drafted for a frame by the AI model and editable before they are saved, written back out by JSX export, and exported as Markdown or CSV; a duplicated or pasted layer gets stories of its own without the original's Jira issues, and an instance takes its main component's stories only when asked (#1).
+- User stories and epics are created and kept in sync as Jira issues, with the project chosen from the site's projects and the story's priority sent when the create screen has one; Jira connects with an API token or, through a Lawha Cloud server, with an Atlassian account over OAuth (#1).
+- AI and MCP read and write documents, rooms, version history, user stories and Jira issues, and author interactive components (#1).
+- Google Drive stores documents without any setup (#1).
+- A Claude Code handoff package exports a design with a pixel verifier that checks the built screens against it (#1).
+- An Android app and an iOS shell open designs with pinch zoom, two-finger pan, a long-press canvas menu, touch-sized handles, phone sheets and safe areas, and the desktop and Android apps update from the preview release (#1).
+- The desktop menu, frame preset names, the team metrics dashboard and storage errors are shown in the app's language (#1).

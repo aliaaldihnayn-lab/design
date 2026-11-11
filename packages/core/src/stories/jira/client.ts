@@ -25,7 +25,7 @@ export type JiraFetch = (input: string, init: RequestInit) => Promise<Response>
 
 /** The REST paths Lawha calls; transports and proxies refuse any other. */
 export const JIRA_API_PATH_PATTERN =
-  /^\/rest\/api\/3\/(myself|project\/search(\?[^#]*)?|project\/[A-Za-z0-9_]+|issue\/createmeta\/[A-Za-z0-9_]+\/issuetypes(\?[^#]*)?|issue|issue\/[A-Z][A-Z0-9_]*-\d+|search\/jql)$/
+  /^\/rest\/api\/3\/(myself|project\/search(\?[^#]*)?|project\/[A-Za-z0-9_]+|issue\/createmeta\/[A-Za-z0-9_]+\/issuetypes(\/[0-9]+)?(\?[^#]*)?|issue|issue\/[A-Z][A-Z0-9_]*-\d+|search\/jql)$/
 
 export function isJiraAPIPath(path: string): boolean {
   return JIRA_API_PATH_PATTERN.test(path)
@@ -154,6 +154,32 @@ const issueTypePageSchema = v.union([
   v.object({ values: v.array(issueTypeSchema) })
 ])
 
+const createFieldSchema = v.object({
+  fieldId: v.string(),
+  name: v.fallback(v.string(), ''),
+  required: v.fallback(v.boolean(), false),
+  allowedValues: v.fallback(
+    v.optional(
+      v.array(
+        v.object({
+          id: v.fallback(v.optional(v.string()), undefined),
+          name: v.fallback(v.optional(v.string()), undefined)
+        })
+      )
+    ),
+    undefined
+  )
+})
+/** A field on an issue type's create screen, as `createmeta` lists it. */
+export type JiraCreateField = v.InferOutput<typeof createFieldSchema>
+
+// Jira's docs have named the list `fields`, `results` and `values` over the endpoint's versions.
+const createFieldPageSchema = v.union([
+  v.object({ fields: v.array(createFieldSchema) }),
+  v.object({ results: v.array(createFieldSchema) }),
+  v.object({ values: v.array(createFieldSchema) })
+])
+
 const createdIssueSchema = v.object({ id: v.string(), key: v.string() })
 
 const issueSchema = v.object({
@@ -225,6 +251,22 @@ export class JiraClient {
       issueTypePageSchema
     )
     return 'issueTypes' in page ? page.issueTypes : page.values
+  }
+
+  /**
+   * The fields on an issue type's create screen in a project, so a request sends only fields
+   * the screen has: Jira refuses an issue with a field the screen leaves out.
+   */
+  async createFields(projectKey: string, issueTypeId: string): Promise<JiraCreateField[]> {
+    const page = await this.call(
+      {
+        method: 'GET',
+        path: `/rest/api/3/issue/createmeta/${projectKey}/issuetypes/${issueTypeId}?maxResults=200`
+      },
+      createFieldPageSchema
+    )
+    if ('fields' in page) return page.fields
+    return 'results' in page ? page.results : page.values
   }
 
   createIssue(fields: Record<string, unknown>): Promise<{ id: string; key: string }> {

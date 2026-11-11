@@ -475,9 +475,20 @@ export interface JiraConnectionTable {
   userId: string
   site: string
   email: string
-  apiTokenEncrypted: string
+  apiTokenEncrypted: string | null
+  authKind: ColumnType<'token' | 'oauth', 'token' | 'oauth' | undefined, 'token' | 'oauth'>
+  cloudId: string | null
+  accessTokenEncrypted: string | null
+  refreshTokenEncrypted: string | null
+  accessTokenExpiresAt: ColumnType<Date | null, Date | string | null, Date | string | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+export interface JiraOAuthStateTable {
+  stateDigest: string
+  userId: string
+  expiresAt: ColumnType<Date, Date | string, Date | string>
 }
 
 export interface CloudDatabase {
@@ -523,6 +534,7 @@ export interface CloudDatabase {
   roomAuditEvent: RoomAuditEventTable
   roomPresence: RoomPresenceTable
   jiraConnection: JiraConnectionTable
+  jiraOAuthState: JiraOAuthStateTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

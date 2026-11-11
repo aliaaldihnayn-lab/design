@@ -920,6 +920,7 @@
     },
   },
   "patchedDependencies": {
+    "reka-ui@2.10.5": "patches/reka-ui@2.10.5.patch",
     "unifont@1.0.3": "patches/unifont@1.0.3.patch",
   },
   "overrides": {

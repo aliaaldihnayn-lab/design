@@ -1,4 +1,4 @@
-export { createJiraRoutes } from './routes'
+export { createJiraRoutes, createPublicJiraRoutes } from './routes'
 export {
   createJiraConnectionService,
   isJiraCloudSite,

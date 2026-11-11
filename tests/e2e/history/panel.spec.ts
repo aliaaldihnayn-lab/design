@@ -176,3 +176,23 @@ test('keeps the history of an unsaved design across a reload', async ({ page }) 
     page.locator('[data-slot="history-version"]', { hasText: 'Kept across reloads' })
   ).toBeVisible()
 })
+
+test('leaves the editor reachable after opening the history from the palette on another tab', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  await page.getByTestId('tabbar-new').click()
+  const tabs = page.getByTestId('tabbar-tab')
+  await expect(tabs).toHaveCount(2)
+  await tabs.first().click()
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true')
+
+  await runCommand(page, /Show version history/i)
+  const panel = page.locator('[data-slot="history-panel"]')
+  await expect(panel).toBeVisible()
+  await expect(page.locator('#app')).not.toHaveAttribute('aria-hidden', 'true')
+  await panel.getByRole('button', { name: 'Close version history' }).click()
+  await expect(panel).not.toBeVisible()
+  await expect(page.locator('#app')).not.toHaveAttribute('aria-hidden', 'true')
+})

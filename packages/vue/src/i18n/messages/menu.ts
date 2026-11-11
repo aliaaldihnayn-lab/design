@@ -59,6 +59,14 @@ export const menuMessageDefaults = {
   snapToObjects: 'Snap to objects',
   snapToPixelGrid: 'Snap to pixel grid',
   checkUpdates: 'Check for updates…',
+  /** Only the desktop menu shows these, its own items and the macOS application menu's. */
+  developerTools: 'Developer tools',
+  aboutLawha: 'About Lawha',
+  quitLawha: 'Quit Lawha',
+  services: 'Services',
+  hideLawha: 'Hide Lawha',
+  hideOthers: 'Hide others',
+  showAll: 'Show all',
 
   moveToPage: 'Move to page',
   autoArrange: 'Auto arrange',

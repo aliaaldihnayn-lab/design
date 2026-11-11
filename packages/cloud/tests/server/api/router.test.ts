@@ -143,7 +143,8 @@ function services() {
       audit: notUsed,
       heartbeat: notUsed,
       presence: notUsed,
-      leavePresence: notUsed
+      leavePresence: notUsed,
+      presenceTicket: notUsed
     },
     roomMembers: {
       list: notUsed,

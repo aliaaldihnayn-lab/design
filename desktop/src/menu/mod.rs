@@ -50,13 +50,16 @@ pub struct NativePlugin {
     pub commands: Vec<NativePluginCommand>,
 }
 
-/// What the schema menu is built from besides the schema: recent files, enabled features, and
-/// installed plugins.
+/// What the schema menu is built from besides the schema: recent files, enabled features,
+/// installed plugins, and the labels in the app's language (`set_native_menu_labels`).
 #[derive(Default)]
 pub struct NativeMenuInputs {
     pub recent_files: Vec<String>,
     pub features: Vec<String>,
     pub plugins: Vec<NativePlugin>,
+    /// Translated labels by item id, and by `group:<English label>` for the top menus; the
+    /// schema's English label shows for anything missing.
+    pub labels: HashMap<String, String>,
 }
 
 /// The event a plugin command sends, matching the browser menu's `plugin:<id>:<command>`; a
@@ -79,6 +82,15 @@ pub struct NativeMenuState(pub Mutex<NativeMenuInputs>);
 struct MenuBuild<'a> {
     inputs: &'a NativeMenuInputs,
     checked: HashMap<String, bool>,
+}
+
+impl MenuBuild<'_> {
+    /// The label in the app's language for `key`, or `fallback` as the schema writes it.
+    fn label(&self, key: Option<&str>, fallback: &str) -> String {
+        key.and_then(|key| self.inputs.labels.get(key))
+            .cloned()
+            .unwrap_or_else(|| fallback.to_string())
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -143,7 +155,11 @@ fn build_submenu<R: tauri::Runtime>(
             continue;
         }
 
-        let label = entry.label.as_deref().unwrap_or_default();
+        let label = build.label(
+            entry.id.as_deref(),
+            entry.label.as_deref().unwrap_or_default(),
+        );
+        let label = label.as_str();
         if entry.id.as_deref() == Some("open-recent") {
             let submenu = build_recent_files_submenu(app, label, &build.inputs.recent_files)?;
             builder = builder.item(&submenu);
@@ -332,7 +348,10 @@ fn build_schema_menus<R: tauri::Runtime>(
     let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../../generated/menu.json"))?;
     groups
         .iter()
-        .map(|group| build_submenu(app, &group.label, &group.items, build))
+        .map(|group| {
+            let label = build.label(Some(&format!("group:{}", group.label)), &group.label);
+            build_submenu(app, &label, &group.items, build)
+        })
         .collect()
 }
 
@@ -429,33 +448,49 @@ pub fn install_app_menu<R: tauri::Runtime>(
     let app_menu = {
         let items = app_menu_file()?;
         let mut check_updates =
-            MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
+            MenuItemBuilder::new(build.label(Some("check-updates"), &items.check_updates.label))
+                .id("check-updates");
         if let Some(accelerator) = &items.check_updates.accelerator {
             check_updates = check_updates.accelerator(accelerator);
         }
-        let mut settings = MenuItemBuilder::new(&items.settings.label).id("settings");
+        let mut settings =
+            MenuItemBuilder::new(build.label(Some("settings"), &items.settings.label))
+                .id("settings");
         if let Some(accelerator) = &items.settings.accelerator {
             settings = settings.accelerator(accelerator);
         }
-        let mut quit = MenuItemBuilder::new(&items.quit.label).id("quit");
+        let mut quit =
+            MenuItemBuilder::new(build.label(Some("quit"), &items.quit.label)).id("quit");
         if let Some(accelerator) = &items.quit.accelerator {
             quit = quit.accelerator(accelerator);
         }
         SubmenuBuilder::new(app, tauri::Manager::package_info(app).name.clone())
             .item(&PredefinedMenuItem::about(
                 app,
-                Some(&items.about.label),
+                Some(&build.label(Some("about"), &items.about.label)),
                 None,
             )?)
             .item(&check_updates.build(app)?)
             .separator()
             .item(&settings.build(app)?)
             .separator()
-            .item(&PredefinedMenuItem::services(app, None)?)
+            .item(&PredefinedMenuItem::services(
+                app,
+                build.inputs.labels.get("app.services").map(String::as_str),
+            )?)
             .separator()
-            .item(&PredefinedMenuItem::hide(app, None)?)
-            .item(&PredefinedMenuItem::hide_others(app, None)?)
-            .item(&PredefinedMenuItem::show_all(app, None)?)
+            .item(&PredefinedMenuItem::hide(
+                app,
+                build.inputs.labels.get("app.hide").map(String::as_str),
+            )?)
+            .item(&PredefinedMenuItem::hide_others(
+                app,
+                build.inputs.labels.get("app.hide-others").map(String::as_str),
+            )?)
+            .item(&PredefinedMenuItem::show_all(
+                app,
+                build.inputs.labels.get("app.show-all").map(String::as_str),
+            )?)
             .separator()
             .item(&quit.build(app)?)
             .build()?
@@ -489,6 +524,16 @@ pub fn update_app_menu<R: tauri::Runtime>(
         .map_err(|_| "Menu state is unavailable".to_string())?;
     change(&mut inputs);
     install_app_menu(app, &inputs).map_err(|error| error.to_string())
+}
+
+/// Names the menu's items in the app's language; the menu is rebuilt with them, its check
+/// states kept, and anything missing keeps the schema's English label.
+#[tauri::command]
+pub fn set_native_menu_labels<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    labels: HashMap<String, String>,
+) -> Result<(), String> {
+    update_app_menu(&app, |inputs| inputs.labels = labels)
 }
 
 #[tauri::command]

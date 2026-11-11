@@ -6,9 +6,12 @@ import {
   roomAuditSchema,
   roomDetailSchema,
   roomMembersSchema,
+  RELAY_ROOM_PARAM,
   roomPresenceSchema,
+  roomPresenceTicketSchema,
   roomTreeSchema
 } from '#cloud/contract'
+import { authorizeRoomPresenceTicket, createRoomPresenceStore } from '#cloud/server/rooms/presence'
 import * as v from 'valibot'
 
 describe('rooms', () => {
@@ -484,6 +487,40 @@ describe('rooms', () => {
       )
       expect(none.people).toEqual([])
       expect((await as(people.carol)(`/api/rooms/${top.id}/presence`)).status).toBe(404)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('issues live presence tickets to room members and stops recording people who left it', async () => {
+    const { runtime, as, createRoom, invite, accept } = await testApp()
+    try {
+      const top = await createRoom(people.alice, { name: 'Clients' })
+      const invited = await invite(people.alice, top.id, {
+        email: 'bob@example.com',
+        role: 'viewer'
+      })
+      await accept(people.bob, invited.acceptanceURL)
+      const issued = await responseJSON(
+        await as(people.bob)(`/api/rooms/${top.id}/presence/ticket`, { method: 'POST' }),
+        roomPresenceTicketSchema
+      )
+      expect(new URL(issued.serverURL).searchParams.get(RELAY_ROOM_PARAM)).toBe(top.id)
+      const authorization = await authorizeRoomPresenceTicket(
+        issued.token,
+        'integration-test-secret-at-least-32-characters'
+      )
+      expect(authorization).toMatchObject({ roomId: top.id, userId: people.bob.userId })
+      expect(
+        (await as(people.carol)(`/api/rooms/${top.id}/presence/ticket`, { method: 'POST' })).status
+      ).toBe(404)
+
+      const store = createRoomPresenceStore(runtime.database)
+      expect(await store.seen(top.id, people.bob.userId)).toBe(true)
+      expect(await store.seen(top.id, people.carol.userId)).toBe(false)
+      expect((await store.list(top.id)).people.map((person) => person.name)).toEqual(['Bob'])
+      await store.left(top.id, people.bob.userId)
+      expect((await store.list(top.id)).people).toEqual([])
     } finally {
       await runtime.close()
     }
