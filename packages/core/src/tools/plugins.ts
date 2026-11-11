@@ -43,9 +43,7 @@ export const runFigmaPlugin = defineTool({
       }
     })
     // Let the code and its run event finish before the window "sends" anything.
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0)
-    })
+    await session.ready
     for (const message of ui_messages) {
       if (!session.running) break
       await session.receiveFromUI(message)
