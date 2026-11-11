@@ -2,6 +2,7 @@ import { afterEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { createEditor } from '@lawha/core'
 import { SkiaRenderer } from '@lawha/core/canvas'
+import { createSceneGeometry } from '@lawha/core/geometry'
 import { createCanvasKitRasterCodec, initCanvasKit } from '@lawha/core/io/formats/raster'
 
 setDefaultTimeout(60_000)
@@ -112,5 +113,36 @@ describe('pixel selections on a layer', () => {
     editor.undo.undo()
     expect(editor.graph.getNode(node.id)?.parentId).toBe(editor.state.currentPageId)
     expect(editor.graph.getNode(maskId)).toBeUndefined()
+  })
+
+  test('a marquee on a rotated layer selects its exact turned shape', async () => {
+    const { editor, codec, node } = await twoColourLayer()
+    editor.graph.updateNode(node.id, { rotation: 45 })
+    const turned = editor.graph.getNode(node.id)
+    if (!turned) throw new Error('No layer')
+    const centre = createSceneGeometry(editor.graph).toWorld(turned, { x: 50, y: 50 })
+    editor.setTool('MARQUEE_RECT')
+    editor.pixelSelectBegin('rect', centre.x - 20, centre.y - 20)
+    editor.pixelSelectMove(centre.x + 20, centre.y + 20)
+    expect(editor.pixelSelectEnd()).toBe(true)
+    // Fill everything the selection lets through, then read where the paint went.
+    editor.setPixelTools({ tolerance: 1, contiguous: false, color: { r: 0, g: 1, b: 0, a: 1 } })
+    expect(editor.pixelFillAt(centre.x, centre.y)).toBe(true)
+    const fill = editor.graph.getNode(node.id)?.fills.at(-1)
+    const bytes = fill?.imageHash ? editor.graph.images.get(fill.imageHash) : undefined
+    const paint = bytes ? codec.decode(bytes) : null
+    if (!paint) throw new Error('Nothing painted')
+    const alpha = (x: number, y: number) => paint.data[(y * paint.width + x) * 4 + 3]
+    // The canvas square is a diamond on the layer: its centre and tips are in, the corners of the
+    // box two mapped corners would give are out.
+    expect(alpha(50, 50)).toBe(255)
+    expect(alpha(50, 26)).toBe(255)
+    expect(alpha(74, 50)).toBe(255)
+    expect(alpha(33, 33)).toBe(0)
+    expect(alpha(67, 67)).toBe(0)
+    let covered = 0
+    for (let i = 3; i < paint.data.length; i += 4) covered += paint.data[i] / 255
+    // A 40 × 40 square of canvas covers 1600 of the layer's pixels, however it is turned.
+    expect(Math.abs(covered - 1600)).toBeLessThan(40)
   })
 })

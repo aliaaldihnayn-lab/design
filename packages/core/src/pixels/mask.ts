@@ -1,3 +1,4 @@
+import Matrix, { type Mat3 } from '@lawha/scene-graph/matrix'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
 /**
@@ -214,4 +215,78 @@ export function resampleMask(mask: PixelMask, width: number, height: number): Pi
     }
   }
   return out
+}
+
+/** Samples per pixel side where a transformed shape's edge crosses a pixel. */
+const EDGE_SAMPLES = 4
+
+/**
+ * A rectangle or the ellipse inscribed in it, given in another space (the canvas) and drawn into a
+ * `width` × `height` grid that `toGrid` maps that space onto, rotated, skewed, or flipped as the
+ * matrix says, as a marquee dragged on the canvas falls on a rotated layer. Pixels the edge
+ * crosses are covered as far as it covers them, sampled on a 4 × 4 grid.
+ */
+export function transformedShapeMask(
+  width: number,
+  height: number,
+  kind: 'rect' | 'ellipse',
+  rect: Rect,
+  toGrid: Mat3
+): PixelMask {
+  const mask = createMask(width, height)
+  const toShape = Matrix.invert(toGrid)
+  if (!toShape || rect.width <= 0 || rect.height <= 0) return mask
+  const corners = Matrix.mapPoints(toGrid, [
+    rect.x,
+    rect.y,
+    rect.x + rect.width,
+    rect.y,
+    rect.x + rect.width,
+    rect.y + rect.height,
+    rect.x,
+    rect.y + rect.height
+  ])
+  const xs = corners.filter((_, i) => i % 2 === 0)
+  const ys = corners.filter((_, i) => i % 2 === 1)
+  const x0 = Math.max(0, Math.floor(Math.min(...xs)))
+  const y0 = Math.max(0, Math.floor(Math.min(...ys)))
+  const x1 = Math.min(width, Math.ceil(Math.max(...xs)))
+  const y1 = Math.min(height, Math.ceil(Math.max(...ys)))
+  // How far a pixel's corners can lie from its centre, in the shape's space.
+  const reach =
+    0.5 * (Math.hypot(toShape[0], toShape[3]) + Math.hypot(toShape[1], toShape[4])) + 1e-6
+  const rx = rect.width / 2
+  const ry = rect.height / 2
+  const cx = rect.x + rx
+  const cy = rect.y + ry
+  /** Signed distance into the shape from a point in its space, roughly for the ellipse. */
+  const depth = (sx: number, sy: number) =>
+    kind === 'rect'
+      ? Math.min(sx - rect.x, rect.x + rect.width - sx, sy - rect.y, rect.y + rect.height - sy)
+      : (1 - Math.hypot((sx - cx) / rx, (sy - cy) / ry)) * Math.min(rx, ry)
+  const at = (gx: number, gy: number) => ({
+    x: toShape[0] * gx + toShape[1] * gy + toShape[2],
+    y: toShape[3] * gx + toShape[4] * gy + toShape[5]
+  })
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const centre = at(x + 0.5, y + 0.5)
+      const d = depth(centre.x, centre.y)
+      let cover: number
+      if (d >= reach) cover = 1
+      else if (d <= -reach) cover = 0
+      else {
+        let hits = 0
+        for (let j = 0; j < EDGE_SAMPLES; j++) {
+          for (let i = 0; i < EDGE_SAMPLES; i++) {
+            const p = at(x + (i + 0.5) / EDGE_SAMPLES, y + (j + 0.5) / EDGE_SAMPLES)
+            if (depth(p.x, p.y) >= 0) hits++
+          }
+        }
+        cover = hits / (EDGE_SAMPLES * EDGE_SAMPLES)
+      }
+      mask.data[y * width + x] = Math.round(cover * 255)
+    }
+  }
+  return mask
 }

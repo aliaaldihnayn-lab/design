@@ -8,7 +8,8 @@ import {
   invertMask,
   maskBounds,
   maskOutline,
-  rectMask
+  rectMask,
+  transformedShapeMask
 } from '#core/pixels/mask'
 
 const count = (mask: { data: Uint8Array }) => mask.data.reduce((n, v) => n + (v >= 128 ? 1 : 0), 0)
@@ -50,5 +51,41 @@ describe('pixel selections', () => {
   test('a rectangle outlines as four merged edges', () => {
     const outline = maskOutline(rectMask(10, 10, { x: 2, y: 2, width: 3, height: 3 }))
     expect(outline.length).toBe(16)
+  })
+})
+
+describe('transformed shape masks', () => {
+  test('an unturned rectangle covers its pixels, its edges partly', () => {
+    const mask = transformedShapeMask(
+      10,
+      10,
+      'rect',
+      { x: 2, y: 2, width: 4.5, height: 3 },
+      [1, 0, 0, 0, 1, 0, 0, 0, 1]
+    )
+    expect(mask.data[3 * 10 + 3]).toBe(255)
+    expect(mask.data[3 * 10 + 6]).toBe(128)
+    expect(mask.data[3 * 10 + 7]).toBe(0)
+  })
+
+  test('a rotated ellipse keeps its area', () => {
+    const angle = Math.PI / 6
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+    // Rotate about (50, 50).
+    const toGrid = [c, -s, 50 - 50 * c + 50 * s, s, c, 50 - 50 * s - 50 * c, 0, 0, 1]
+    const mask = transformedShapeMask(
+      100,
+      100,
+      'ellipse',
+      { x: 20, y: 35, width: 60, height: 30 },
+      toGrid
+    )
+    let area = 0
+    for (const value of mask.data) area += value / 255
+    expect(Math.abs(area - Math.PI * 30 * 15)).toBeLessThan(15)
+    // The long axis is turned: its end now sits off the horizontal.
+    expect(mask.data[50 * 100 + 78]).toBe(0)
+    expect(mask.data[Math.round(50 + 25 * s) * 100 + Math.round(50 + 25 * c)]).toBe(255)
   })
 })
