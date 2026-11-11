@@ -12,6 +12,7 @@ import {
   reachable,
   readingOrder,
   screensOf,
+  pinnedLayerOf,
   scrollRegions,
   scrollTarget,
   start,
@@ -33,6 +34,7 @@ import {
   renderScreen,
   renderSmartAnimate,
   revokeSmartFrames,
+  screenImageURLs,
   type ScreenImages,
   type SmartFrames
 } from '@/app/prototype/frames'
@@ -43,6 +45,7 @@ import {
   transitionFrames,
   transitionTiming
 } from '@/app/prototype/player'
+import PrototypeScrollRegion from '@/components/prototype/PrototypeScrollRegion.vue'
 
 const store = useEditorStore()
 const t = usePrototypeMessages()
@@ -57,7 +60,6 @@ const images = shallowRef(new Map<string, ScreenImages>())
 /** Smart Animate's frame images while it runs, drawn over the stage. */
 const smart = shallowRef<SmartFrames | null>(null)
 const smartEl = ref<HTMLElement | null>(null)
-const regionEls = ref<HTMLElement[]>([])
 const flashHotspots = ref(false)
 const currentEl = ref<HTMLElement | null>(null)
 const leavingEl = ref<HTMLElement | null>(null)
@@ -109,8 +111,7 @@ const flows = computed(() => {
 const pixelScale = () => Math.min(window.devicePixelRatio || 1, 2)
 
 function revokeScreen(entry: ScreenImages) {
-  for (const url of [entry.screen, ...entry.regions.map((r) => r.image)])
-    if (url) URL.revokeObjectURL(url)
+  for (const url of screenImageURLs(entry)) if (url) URL.revokeObjectURL(url)
 }
 
 async function imageFor(id: string): Promise<string> {
@@ -129,18 +130,37 @@ function regionsFor(id: string) {
   return images.value.get(id)?.regions ?? []
 }
 
+/** The scrolling frames placed on the screen itself; nested ones draw inside them. */
+function topRegionsFor(id: string) {
+  return regionsFor(id).filter((entry) => entry.region.parent === null)
+}
+
 /** The screen's hotspots, less those inside a scrolling frame, which scroll with its content. */
 function spotsFor(id: string): Hotspot[] {
   const regions = scrollRegions(graph(), id)
   return hotspots(graph(), id).filter((spot) => !scrollTarget(graph(), regions, spot.node))
 }
 
-/** Hotspots inside a scrolling frame, placed in its content. */
+/** Hotspots inside a scrolling frame, placed in its content; pinned layers place their own. */
 function regionSpots(screenId: string, regionNode: string): Hotspot[] {
   const regions = scrollRegions(graph(), screenId)
   return hotspots(graph(), screenId).flatMap((spot) => {
     const target = scrollTarget(graph(), regions, spot.node)
-    return target?.region.node === regionNode ? [{ ...spot, x: target.x, y: target.y }] : []
+    if (target?.region.node !== regionNode) return []
+    if (pinnedLayerOf(graph(), target.region, spot.node)) return []
+    return [{ ...spot, x: target.x, y: target.y }]
+  })
+}
+
+/** Hotspots on a fixed or sticky layer of a scrolling frame, placed in that layer. */
+function pinnedSpots(screenId: string, regionNode: string, layerNode: string): Hotspot[] {
+  const regions = scrollRegions(graph(), screenId)
+  return hotspots(graph(), screenId).flatMap((spot) => {
+    const target = scrollTarget(graph(), regions, spot.node)
+    if (target?.region.node !== regionNode) return []
+    const layer = pinnedLayerOf(graph(), target.region, spot.node)
+    if (layer?.node !== layerNode) return []
+    return [{ ...spot, x: target.x - layer.x, y: target.y - layer.y }]
   })
 }
 
@@ -148,7 +168,8 @@ function scrollTo(nodeId: string) {
   const current = state.value
   if (!current) return
   const target = scrollTarget(graph(), scrollRegions(graph(), current.screen), nodeId)
-  const el = target && regionEls.value.find((e) => e.dataset.scroll === target.region.node)
+  const el =
+    target && currentEl.value?.querySelector<HTMLElement>(`[data-scroll="${target.region.node}"]`)
   if (!target || !el) return
   el.scrollTo({ left: target.x * scale.value, top: target.y * scale.value, behavior: 'smooth' })
 }
@@ -444,62 +465,18 @@ const screenIndex = computed(() => journey.value.findIndex((s) => s.id === state
             class="pointer-events-none size-full select-none"
             draggable="false"
           />
-          <div
-            v-for="{ region, image } in live ? [] : regionsFor(state.screen)"
-            :key="region.node"
-            ref="regionEls"
-            class="absolute"
-            :class="{
-              'overflow-y-auto overflow-x-hidden': region.direction === 'vertical',
-              'overflow-x-auto overflow-y-hidden': region.direction === 'horizontal',
-              'overflow-auto': region.direction === 'both'
-            }"
-            :data-scroll="region.node"
-            :style="{
-              left: `${region.x * scale}px`,
-              top: `${region.y * scale}px`,
-              width: `${region.width * scale}px`,
-              height: `${region.height * scale}px`
-            }"
-            @click.self="onMiss"
-          >
-            <div
-              class="relative"
-              :style="{
-                width: `${region.contentWidth * scale}px`,
-                height: `${region.contentHeight * scale}px`
-              }"
-              @click.self="onMiss"
-            >
-              <img
-                :src="image"
-                alt=""
-                class="pointer-events-none size-full select-none"
-                draggable="false"
-              />
-              <button
-                v-for="spot in regionSpots(state.screen, region.node)"
-                :key="spot.node"
-                type="button"
-                class="absolute rounded-sm transition-colors"
-                :class="
-                  flashHotspots
-                    ? 'bg-[rgb(56_189_248/0.3)] ring-2 ring-[#38bdf8]'
-                    : 'bg-transparent'
-                "
-                :data-hotspot="spot.node"
-                :style="{
-                  left: `${spot.x * scale}px`,
-                  top: `${spot.y * scale}px`,
-                  width: `${spot.width * scale}px`,
-                  height: `${spot.height * scale}px`
-                }"
-                @click.stop="onHotspot(spot, 'click')"
-                @mouseenter="onHotspot(spot, 'hover')"
-                @pointerdown="onHotspot(spot, 'press')"
-              />
-            </div>
-          </div>
+          <PrototypeScrollRegion
+            v-for="entry in live ? [] : topRegionsFor(state.screen)"
+            :key="entry.region.node"
+            :entry="entry"
+            :regions="regionsFor(state.screen)"
+            :scale="scale"
+            :flash="flashHotspots"
+            :spots-in="(region) => regionSpots(state?.screen ?? '', region)"
+            :spots-on-pinned="(region, layer) => pinnedSpots(state?.screen ?? '', region, layer)"
+            @hotspot="onHotspot"
+            @miss="onMiss"
+          />
           <button
             v-for="spot in live ? [] : spotsFor(state.screen)"
             :key="spot.node"

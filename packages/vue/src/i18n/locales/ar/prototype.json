@@ -120,5 +120,9 @@
   "kitProgress": "شريط التقدم",
   "kitSpinner": "مؤشر تحميل",
   "kitRating": "نجوم التقييم",
-  "retargetHandle": "اسحب إلى شاشة أخرى لإعادة الربط، أو خارج الشاشات لحذف الاتصال"
+  "retargetHandle": "اسحب إلى شاشة أخرى لإعادة الربط، أو خارج الشاشات لحذف الاتصال",
+  "position": "عند التمرير",
+  "positionScrolls": "يتمرّر مع الأصل",
+  "positionFixed": "ثابت",
+  "positionSticky": "ملتصق"
 }

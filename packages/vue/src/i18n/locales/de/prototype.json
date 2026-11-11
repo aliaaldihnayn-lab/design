@@ -120,5 +120,9 @@
   "kitProgress": "Fortschrittsbalken",
   "kitSpinner": "Ladeanzeige",
   "kitRating": "Sternebewertung",
-  "retargetHandle": "Auf einen anderen Bildschirm ziehen, um neu zu verknüpfen, oder neben die Bildschirme, um die Verbindung zu entfernen"
+  "retargetHandle": "Auf einen anderen Bildschirm ziehen, um neu zu verknüpfen, oder neben die Bildschirme, um die Verbindung zu entfernen",
+  "position": "Beim Scrollen",
+  "positionScrolls": "Mit Eltern scrollen",
+  "positionFixed": "Fixiert",
+  "positionSticky": "Haftend"
 }

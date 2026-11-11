@@ -35,6 +35,7 @@ export {
   CONDITION_OPERATORS,
   POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
+  SCROLL_POSITIONS,
   TRANSITION_TYPES,
   TRIGGERS
 } from './schema'
@@ -53,9 +54,15 @@ export {
 export {
   contentExtent,
   readScroll,
+  pinnedLayerGraph,
+  pinnedLayerOf,
+  POSITION_KEY,
+  readPosition,
   scrollContentGraph,
   scrollRegions,
   scrollTarget,
+  type PinnedLayer,
+  type ScrollPosition,
   SCROLL_KEY,
   type ScrollDirection,
   type ScrollRegion

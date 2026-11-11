@@ -1,5 +1,6 @@
 import { renderNodesToImage } from '@lawha/core/io/formats/raster'
 import {
+  pinnedLayerGraph,
   rectMapping,
   scrollContentGraph,
   scrollRegions,
@@ -30,10 +31,26 @@ function draw(
   return bytes ? URL.createObjectURL(new Blob([bytes], { type: 'image/png' })) : ''
 }
 
+/** A scrolling frame as the player draws it: its content, and its fixed and sticky layers. */
+export interface RegionImages {
+  region: ScrollRegion
+  image: string
+  /** Each pinned layer's image, by node id. */
+  pinned: Record<string, string>
+}
+
 /** A screen as the player draws it: the screen, and the content of each frame that scrolls. */
 export interface ScreenImages {
   screen: string
-  regions: { region: ScrollRegion; image: string }[]
+  regions: RegionImages[]
+}
+
+/** Every object URL a screen's images hold. */
+export function screenImageURLs(entry: ScreenImages): string[] {
+  return [
+    entry.screen,
+    ...entry.regions.flatMap((region) => [region.image, ...Object.values(region.pinned)])
+  ]
 }
 
 /** Renders a screen; content in scrolling frames is drawn apart so the player can scroll it. */
@@ -50,7 +67,13 @@ export function renderScreen(store: EditorStore, screenId: string, scale: number
     ),
     regions: regions.map((region) => ({
       region,
-      image: draw(store, scrollContentGraph(graph, region), region.node, scale)
+      image: draw(store, scrollContentGraph(graph, region, regions), region.node, scale),
+      pinned: Object.fromEntries(
+        region.pinned.map((layer) => [
+          layer.node,
+          draw(store, pinnedLayerGraph(graph, layer), layer.node, scale)
+        ])
+      )
     }))
   }
 }

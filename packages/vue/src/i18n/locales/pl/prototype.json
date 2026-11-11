@@ -120,5 +120,9 @@
   "kitProgress": "Pasek postępu",
   "kitSpinner": "Wskaźnik ładowania",
   "kitRating": "Ocena gwiazdkowa",
-  "retargetHandle": "Przeciągnij na inny ekran, aby połączyć ponownie, lub poza ekrany, aby usunąć połączenie"
+  "retargetHandle": "Przeciągnij na inny ekran, aby połączyć ponownie, lub poza ekrany, aby usunąć połączenie",
+  "position": "Podczas przewijania",
+  "positionScrolls": "Przewijaj z rodzicem",
+  "positionFixed": "Stały",
+  "positionSticky": "Przyklejony"
 }

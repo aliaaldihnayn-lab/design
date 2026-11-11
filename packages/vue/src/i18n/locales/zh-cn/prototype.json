@@ -120,5 +120,9 @@
   "kitProgress": "进度条",
   "kitSpinner": "加载指示器",
   "kitRating": "星级评分",
-  "retargetHandle": "拖到另一个屏幕以重新连接，或拖到屏幕之外以删除连接"
+  "retargetHandle": "拖到另一个屏幕以重新连接，或拖到屏幕之外以删除连接",
+  "position": "滚动时",
+  "positionScrolls": "随父级滚动",
+  "positionFixed": "固定",
+  "positionSticky": "吸附"
 }

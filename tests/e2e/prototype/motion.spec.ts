@@ -294,3 +294,76 @@ test('a noodle is selected by clicking it, deleted with Delete, and retargeted b
   )
   expect(cardLeft).toBe(true)
 })
+
+test('a fixed layer stays put and a sticky one sticks while its frame scrolls; nested frames scroll on their own', async ({
+  page
+}) => {
+  const ids = await build(page)
+  const extra = await page.evaluate((listId) => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    const graph = store.graph
+    const list = graph.getNode(listId)
+    if (!list) throw new Error('missing')
+    const [header, , , sticky] = list.childIds
+    const set = (id: string, key: string, value: string) => {
+      const node = graph.getNode(id)
+      if (!node) return
+      graph.updateNode(id, {
+        pluginData: [
+          ...node.pluginData.filter((entry) => entry.key !== key),
+          { pluginId: 'lawha', key, value }
+        ]
+      })
+    }
+    set(header, 'prototype.position', 'fixed')
+    set(sticky, 'prototype.position', 'sticky')
+    const carousel = graph.createNode('FRAME', list.childIds[5], {
+      name: 'Carousel',
+      x: 0,
+      y: 0,
+      width: 390,
+      height: 90,
+      clipsContent: true
+    })
+    for (let i = 0; i < 4; i++)
+      graph.createNode('FRAME', carousel.id, {
+        name: `Card ${i}`,
+        x: i * 300,
+        width: 280,
+        height: 90,
+        fills: [
+          { type: 'SOLID', color: { r: 0.9, g: 0.6, b: 0.1 * i, a: 1 }, opacity: 1, visible: true }
+        ]
+      })
+    set(carousel.id, 'prototype.scroll', 'horizontal')
+    return { header, sticky, carousel: carousel.id }
+  }, ids.list)
+
+  await page.getByTestId('prototype-present').click()
+  const list = page.locator(`[data-scroll="${ids.list}"]`)
+  await expect(list).toBeVisible()
+  const header = page.locator(`[data-pinned="${extra.header}"]`)
+  const sticky = page.locator(`[data-pinned="${extra.sticky}"]`)
+  const listBox = await list.boundingBox()
+  const headerBefore = await header.boundingBox()
+  if (!listBox || !headerBefore) throw new Error('not drawn')
+
+  await list.evaluate((el) => el.scrollTo({ top: el.scrollHeight }))
+  await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(300)
+  // The fixed header has not moved; the sticky row sits at the top of the frame.
+  expect(await header.boundingBox()).toEqual(headerBefore)
+  await expect
+    .poll(async () => Math.round((await sticky.boundingBox())?.y ?? -1))
+    .toBe(Math.round(listBox.y))
+
+  // The carousel scrolls sideways by itself, leaving the list where it is.
+  await list.evaluate((el) => el.scrollTo({ top: el.scrollHeight / 4 }))
+  const listTop = await list.evaluate((el) => Math.round(el.scrollTop))
+  const carousel = page.locator(`[data-scroll="${extra.carousel}"]`)
+  await expect(carousel).toBeVisible()
+  expect(await carousel.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
+  await carousel.evaluate((el) => el.scrollTo({ left: 400 }))
+  await expect.poll(() => carousel.evaluate((el) => el.scrollLeft)).toBeGreaterThan(300)
+  expect(await list.evaluate((el) => Math.round(el.scrollTop))).toBe(listTop)
+})

@@ -120,5 +120,9 @@
   "kitProgress": "Barra di avanzamento",
   "kitSpinner": "Indicatore di caricamento",
   "kitRating": "Valutazione a stelle",
-  "retargetHandle": "Trascina su un’altra schermata per ricollegare, o fuori dalle schermate per rimuovere il collegamento"
+  "retargetHandle": "Trascina su un’altra schermata per ricollegare, o fuori dalle schermate per rimuovere il collegamento",
+  "position": "Durante lo scorrimento",
+  "positionScrolls": "Scorri con il genitore",
+  "positionFixed": "Fisso",
+  "positionSticky": "Ancorato"
 }

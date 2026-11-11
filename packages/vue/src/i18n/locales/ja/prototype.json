@@ -120,5 +120,9 @@
   "kitProgress": "プログレスバー",
   "kitSpinner": "スピナー",
   "kitRating": "星評価",
-  "retargetHandle": "別の画面へドラッグして接続し直すか、画面の外へドラッグして接続を削除します"
+  "retargetHandle": "別の画面へドラッグして接続し直すか、画面の外へドラッグして接続を削除します",
+  "position": "スクロール時",
+  "positionScrolls": "親と一緒にスクロール",
+  "positionFixed": "固定",
+  "positionSticky": "スティッキー"
 }

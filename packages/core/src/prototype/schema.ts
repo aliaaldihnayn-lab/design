@@ -209,3 +209,10 @@ export const flowListSchema = v.array(flowSchema)
 /** Which way a frame's content scrolls in the prototype, as Figma's overflow behaviour. */
 export const SCROLL_DIRECTIONS = ['none', 'vertical', 'horizontal', 'both'] as const
 export const scrollDirectionSchema = v.picklist(SCROLL_DIRECTIONS)
+
+/**
+ * How a layer behaves while the frame it is in scrolls, as Figma's scroll behaviour: it scrolls
+ * with the content, stays fixed in place, or scrolls until it reaches the frame's top and sticks.
+ */
+export const SCROLL_POSITIONS = ['scrolls', 'fixed', 'sticky'] as const
+export const scrollPositionSchema = v.picklist(SCROLL_POSITIONS)
