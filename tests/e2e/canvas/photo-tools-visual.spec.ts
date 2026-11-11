@@ -82,3 +82,13 @@ test('the healing brush blends a patch into the shading around it', async () => 
   await stroke([226, 100], [236, 100])
   await snapshot('healing-brush.png')
 })
+
+test('an enlarged paint layer shows its pixels as crisp blocks', async () => {
+  const id = await photo.showPhoto()
+  await photo.resize(id, 30, 20)
+  await photo.setTool('BRUSH', { color: RED, size: 3, hardness: 1, opacity: 1 })
+  await stroke([5, 5], [25, 15])
+  await photo.resize(id, 300, 200)
+  await photo.setTool('SELECT')
+  await snapshot('enlarged-paint-layer.png')
+})

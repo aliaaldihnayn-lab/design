@@ -70,6 +70,19 @@ export function photoDriver(page: () => Page) {
       })
     },
 
+    /** Resizes a layer, as dragging its handles ends. */
+    resize(id: string, width: number, height: number) {
+      return page().evaluate(
+        ({ id, width, height }) => {
+          const store = window.lawha?.getStore?.()
+          if (!store) throw new Error('Lawha store not initialized')
+          store.graph.updateNode(id, { width, height })
+          store.requestRender()
+        },
+        { id, width, height }
+      )
+    },
+
     /** How many fills a layer has, its paint layer included. */
     fillCount(id: string) {
       return page().evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.fills.length, id)
