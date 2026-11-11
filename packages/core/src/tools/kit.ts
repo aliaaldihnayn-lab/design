@@ -101,24 +101,35 @@ export const insertKitComponentTool = defineTool({
 export const buildInteractiveKitTool = defineTool({
   name: 'build_interactive_kit',
   description:
-    'Draw the interactive kit’s components on its own page (“Interactive kit”), themed by the document’s design-system variables, so they appear in the assets panel and can be instanced: every control’s states are variants of one component wired to run live. Run it after build_design_system to style the kit with the new tokens. Pass kinds to draw only some.',
+    'Draw the interactive kit’s components on its own page (“Interactive kit”), themed by the document’s design-system variables, so they appear in the assets panel and can be instanced: every control’s states are variants of one component wired to run live. Run it after build_design_system: controls already drawn are restyled to the new tokens in place, and their instances keep working. Pass kinds to draw only some.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     kinds: v.optional(v.pipe(v.array(kindSchema), v.minLength(1))),
+    restyle: v.optional(
+      v.pipe(
+        v.boolean(),
+        v.description(
+          'Restyle controls drawn earlier to the current tokens in place, keeping their instances working (default true)'
+        )
+      ),
+      true
+    ),
     ...kitOptions
   }),
   execute: async (figma, args) => {
     const built = await buildKit(figma.graph, args.kinds ?? KIT_KINDS, {
       rtl: args.rtl,
       calendar: args.calendar,
-      hourCycle: args.hour_cycle
+      hourCycle: args.hour_cycle,
+      restyle: args.restyle
     })
     return {
       components: built.map((item) => ({
         kind: item.kind,
         id: item.id,
         name: item.name,
-        created: item.created
+        created: item.created,
+        restyled: item.restyled
       }))
     }
   }

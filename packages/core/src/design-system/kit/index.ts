@@ -16,6 +16,7 @@ import { FIELD_KITS } from './fields'
 import { KIT_KINDS, type KitDefinition, type KitKind } from './jsx'
 import { NAVIGATION_KITS } from './navigation'
 import { OVERLAY_KITS } from './overlays'
+import { restyleComponent } from './restyle'
 import { kitTheme, type KitOptions } from './theme'
 import { KitWiring } from './wire'
 
@@ -38,6 +39,11 @@ export interface KitBuildOptions extends KitOptions, Omit<DateKitOptions, 'calen
   hourCycle?: 12 | 24
   /** Where the kit's components are drawn; its own page when unset. */
   pageId?: string
+  /**
+   * Restyle components drawn earlier to the current tokens, keeping their layers, so their
+   * instances keep working; otherwise they are reused as they are.
+   */
+  restyle?: boolean
   icons?: IconProvider
 }
 
@@ -113,6 +119,8 @@ export interface BuiltKitComponent {
   /** The variant an inserted instance shows. */
   insertId: string
   created: boolean
+  /** The layers a restyle gave the current tokens' look; 0 when none was asked for. */
+  restyled: number
 }
 
 /** The variant or component a control's instances show when inserted. */
@@ -136,33 +144,47 @@ export async function buildKitComponent(
   if (!definition) throw new Error(`Unknown kit control ${kind}`)
   const page = kitPage(graph, options)
   const existing = componentsBelow(graph, page.childIds).get(definition.name)
-  if (existing)
+  const theme = kitTheme(graph, options)
+  const { renderJSX } = designJSXRenderer(options.icons)
+  const draw = async () => {
+    const roots = await renderJSX(graph, definition.jsx(theme), {
+      parentId: page.id,
+      ...nextSlot(graph, page)
+    })
+    const sets = componentsBelow(
+      graph,
+      roots.map((root) => root.id)
+    )
+    const main = sets.get(definition.name)
+    if (!main) throw new Error(`The kit's ${kind} drew no ${definition.name}`)
+    return { roots, sets, main }
+  }
+  if (existing) {
+    let restyled = 0
+    if (options.restyle) {
+      // A fresh drawing lends its look to the one in place, then goes.
+      const fresh = await draw()
+      restyled = restyleComponent(graph, existing, fresh.main).restyled
+      for (const root of fresh.roots) graph.deleteNode(root.id)
+    }
     return {
       kind,
       name: definition.name,
       id: existing.id,
       insertId: insertTarget(graph, existing, definition).id,
-      created: false
+      created: false,
+      restyled
     }
-  const theme = kitTheme(graph, options)
-  const { renderJSX } = designJSXRenderer(options.icons)
-  const roots = await renderJSX(graph, definition.jsx(theme), {
-    parentId: page.id,
-    ...nextSlot(graph, page)
-  })
-  const sets = componentsBelow(
-    graph,
-    roots.map((root) => root.id)
-  )
-  const main = sets.get(definition.name)
-  if (!main) throw new Error(`The kit's ${kind} drew no ${definition.name}`)
+  }
+  const { sets, main } = await draw()
   definition.wire?.(new KitWiring(graph, main), theme, sets)
   return {
     kind,
     name: definition.name,
     id: main.id,
     insertId: insertTarget(graph, main, definition).id,
-    created: true
+    created: true,
+    restyled: 0
   }
 }
 

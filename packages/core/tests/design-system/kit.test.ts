@@ -381,4 +381,34 @@ describe('interactive kit', () => {
       expect(findLayerByPath(graph, open.id, 'Menu/Option 12/Label')?.text).toBe(last)
     }
   })
+
+  test('rebuilding the kit restyles its components to the current tokens in place', async () => {
+    const { graph, screen, instance, component } = await screenWith('button')
+    const variantIds = graph.getChildren(component.id).map((child) => child.id)
+    const collection = graph.createCollection('Tokens')
+    const primary = graph.createVariable('color/primary', 'COLOR', collection.id, {
+      r: 0.9,
+      g: 0.1,
+      b: 0.2,
+      a: 1
+    })
+    const [again] = await buildKit(graph, ['button'], { today: TODAY, restyle: true })
+    expect(again.created).toBe(false)
+    expect(again.id).toBe(component.id)
+    expect(again.restyled).toBeGreaterThan(0)
+    // Same variants, now painted with the token; the instance follows and still runs.
+    expect(graph.getChildren(component.id).map((child) => child.id)).toEqual(variantIds)
+    const rest = graph.getChildren(component.id).find((child) => child.name === 'State=Default')
+    expect(rest?.boundVariables['fills/0/color']).toBe(primary.id)
+    expect(graph.getNode(instance.id)?.boundVariables['fills/0/color']).toBe(primary.id)
+    const page = graph.getPages().find((item) => item.name === KIT_PAGE_NAME)
+    expect(graph.getChildren(page?.id ?? '').length).toBe(1)
+    const result = dispatchStateEvent(
+      resolvePlayState(graph, screen.id, new Map()),
+      screen.id,
+      instance.name,
+      'click'
+    )
+    expect(result.changes.length).toBe(1)
+  })
 })
