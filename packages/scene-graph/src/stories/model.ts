@@ -4,7 +4,7 @@ import type { SceneGraph } from '../graph'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { LAWHA_PLUGIN_DATA } from '../plugin-data/fields'
 import { randomHex } from '../random'
-import type { SceneNode } from '../types'
+import type { PluginDataEntry, SceneNode } from '../types'
 import type {
   acceptanceCriterionSchema,
   epicSchema,
@@ -153,6 +153,28 @@ export function removeEpic(graph: SceneGraph, epicId: string): boolean {
 /** A layer's stories, in the order it lists them. */
 export function readNodeStories(node: Pick<SceneNode, 'pluginData'> | undefined): UserStory[] {
   return readPluginData(node?.pluginData, storiesField) ?? []
+}
+
+/**
+ * The plugin data for a copy of a layer: its stories become stories of the copy's own, with new
+ * story and criterion ids and without the Jira issues, which stay with the original's stories.
+ */
+export function pluginDataForCopy(
+  pluginData: readonly PluginDataEntry[] | undefined
+): PluginDataEntry[] | undefined {
+  const stories = readPluginData(pluginData, storiesField)
+  if (!pluginData || !stories?.length) return pluginData && [...pluginData]
+  const copies = stories.map(
+    ({ id: _id, jiraKey: _key, jiraUrl: _url, jira: _jira, acceptanceCriteria, ...story }) => ({
+      ...structuredClone(story),
+      id: createStoryId(),
+      acceptanceCriteria: acceptanceCriteria.map((criterion) => ({
+        ...criterion,
+        id: createStoryId()
+      }))
+    })
+  )
+  return withPluginData(pluginData, storiesField, copies)
 }
 
 /** Replaces a layer's stories; an empty list removes the entry. */
