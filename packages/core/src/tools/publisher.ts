@@ -1,18 +1,25 @@
 import * as v from 'valibot'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, withPluginData } from '@lawha/scene-graph/plugin-data'
 
 import {
   applyMasterPage as applyMaster,
+  arrangePages,
   canvasOf,
   createMasterPage as createMaster,
+  formatNumber,
   isMasterPage,
   linkTextFrames,
   makePageNumber,
+  pagesAnchor,
+  publicationPages,
+  publicationSettings,
   reflowStories,
   refreshPageNumbers,
   removeMasterPage,
-  unlinkTextFrame
+  unlinkTextFrame,
+  type PublicationSettings
 } from '#core/publisher'
 import { defineTool, nodeIdInputSchema } from '#core/tools/schema'
 
@@ -94,7 +101,7 @@ export const insertPageNumberTool = defineTool({
 export const linkTextFramesTool = defineTool({
   name: 'link_text_frames',
   description:
-    "Thread text frames into one story, as Affinity Publisher links frames: text that overflows a frame runs on into the next, in the order given, and flows back as text is removed. The frames become fixed size; the story takes the first frame's style. unlink: true takes each frame out of its story instead, its text going back to the frames left.",
+    'Thread text frames into one story, as Affinity Publisher links frames: text that overflows a frame runs on into the next, in the order given, and flows back as text is removed. The frames become fixed size; character styles (bold, colour, size runs) travel with their text from frame to frame. Deleting a frame in the editor flows its text into the rest. unlink: true takes each frame out of its story instead, its text going back to the frames left.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ids: v.pipe(v.array(nodeIdInputSchema), v.minLength(1)),
@@ -124,6 +131,72 @@ export const linkTextFramesTool = defineTool({
     return {
       story,
       frames: texts.map((frame) => ({ id: frame.id, text: graph.getNode(frame.id)?.text }))
+    }
+  }
+})
+
+export const setPublicationLayoutTool = defineTool({
+  name: 'set_publication_layout',
+  description:
+    "Set how the current canvas page reads as a publication, as Affinity Publisher's Pages panel and document setup do: number_start is the first page's number, number_format the digits page numbers use (western 1 2 3, arabic-indic ١ ٢ ٣ for Arabic books, roman i ii iii, roman-upper I II III), direction rtl reads pages from the right as Arabic books do, and spreads pairs the pages after the first into facing spreads. page_order lists page frame ids in a new reading order; the pages are laid out again in it, as are they when direction or spreads change.",
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    number_start: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100_000))),
+    number_format: v.optional(v.picklist(['western', 'arabic-indic', 'roman', 'roman-upper'])),
+    direction: v.optional(v.picklist(['ltr', 'rtl'])),
+    spreads: v.optional(v.boolean()),
+    page_order: v.optional(v.array(nodeIdInputSchema))
+  }),
+  execute: (figma, args) => {
+    const graph = figma.graph
+    const canvasId = figma.currentPageId
+    const canvas = graph.getNode(canvasId)
+    if (!canvas) return { error: 'No current page' }
+    const before = publicationSettings(graph, canvasId)
+    const current = publicationPages(graph, canvasId)
+    let order = current
+    if (args.page_order) {
+      const known = new Map(current.map((page) => [page.id, page]))
+      const listed = args.page_order.flatMap((id) => known.get(id) ?? [])
+      if (listed.length !== args.page_order.length)
+        return { error: 'page_order lists a layer that is not a page' }
+      order = [...listed, ...current.filter((page) => !args.page_order?.includes(page.id))]
+    }
+    const settings: PublicationSettings = {
+      numberStart: args.number_start ?? before.numberStart,
+      numberFormat: args.number_format ?? before.numberFormat,
+      direction: args.direction ?? before.direction,
+      spreads: args.spreads ?? before.spreads
+    }
+    graph.updateNode(canvasId, {
+      pluginData: withPluginData(canvas.pluginData, LAWHA_PLUGIN_DATA.publication, settings)
+    })
+    const first = current.at(0)
+    const relayout =
+      args.page_order ||
+      settings.direction !== before.direction ||
+      settings.spreads !== before.spreads
+    if (first && relayout) {
+      const anchor = pagesAnchor(current, before.direction)
+      const flipped = settings.direction !== before.direction
+      arrangePages(
+        graph,
+        order,
+        settings,
+        flipped || !anchor
+          ? { x: settings.direction === 'rtl' ? first.x + first.width : first.x, y: first.y }
+          : anchor
+      )
+    }
+    refreshPageNumbers(graph, canvasId)
+    reflowStories(graph, canvasId)
+    return {
+      settings,
+      pages: publicationPages(graph, canvasId).map((page, index) => ({
+        id: page.id,
+        name: page.name,
+        number: formatNumber(index + settings.numberStart, settings.numberFormat)
+      }))
     }
   }
 })

@@ -192,6 +192,8 @@ ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsPrintPDF
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
+ja:pages.numberFormatRoman
+ja:pages.numberFormatRomanUpper
 ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
 ja:panels.colorHintHsl
@@ -414,6 +416,8 @@ zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsPrintPDF
 zh-cn:menu.exportSelectionAsSVG
+zh-cn:pages.numberFormatRoman
+zh-cn:pages.numberFormatRomanUpper
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl

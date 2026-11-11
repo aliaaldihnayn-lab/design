@@ -501,4 +501,3 @@ export function createPixelActions(
 
 export { DEFAULT_PIXEL_TOOL_SETTINGS }
 export type { PixelOverlay, PixelToolSettings }
-export type { PixelSampleScope } from './sample'

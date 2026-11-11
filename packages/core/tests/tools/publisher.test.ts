@@ -69,3 +69,29 @@ describe('publisher tools for agents', () => {
     expect(graph.getNode(a.id)?.text).toBe('a b c d e f g h i j')
   })
 })
+
+describe('publication layout tools', () => {
+  test('number pages in Arabic-Indic digits, right to left, in a new order', () => {
+    const graph = new SceneGraph()
+    const canvas = graph.getPages()[0].id
+    const pages = [0, 400, 800].map((x, i) =>
+      graph.createNode('FRAME', canvas, { name: `P${i + 1}`, x, y: 0, width: 300, height: 400 })
+    )
+    const figma = new FigmaAPI(graph)
+    const result = tool('set_publication_layout')(figma, {
+      number_start: 3,
+      number_format: 'arabic-indic',
+      direction: 'rtl',
+      page_order: [pages[2].id, pages[0].id]
+    })
+    expect(result.pages).toEqual([
+      { id: pages[2].id, name: 'P3', number: '٣' },
+      { id: pages[0].id, name: 'P1', number: '٤' },
+      { id: pages[1].id, name: 'P2', number: '٥' }
+    ])
+    // Right to left: the first page is furthest right.
+    const x = (id: string) => graph.getNode(id)?.x ?? 0
+    expect(x(pages[2].id)).toBeGreaterThan(x(pages[0].id))
+    expect(x(pages[0].id)).toBeGreaterThan(x(pages[1].id))
+  })
+})

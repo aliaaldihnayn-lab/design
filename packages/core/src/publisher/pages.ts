@@ -1,11 +1,38 @@
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
+import type { Vector } from '@lawha/scene-graph/primitives'
+
+/** How a canvas page is laid out as a publication. */
+export interface PublicationSettings {
+  numberStart: number
+  numberFormat: PageNumberFormat
+  direction: 'ltr' | 'rtl'
+  spreads: boolean
+}
+
+/** The digits a page number is written in: 1 2 3, ١ ٢ ٣, i ii iii, or I II III. */
+export type PageNumberFormat = 'western' | 'arabic-indic' | 'roman' | 'roman-upper'
+
+export const DEFAULT_PUBLICATION_SETTINGS: PublicationSettings = {
+  numberStart: 1,
+  numberFormat: 'western',
+  direction: 'ltr',
+  spreads: false
+}
+
+/** A canvas page's publication settings, with defaults for what it does not set. */
+export function publicationSettings(graph: SceneGraph, canvasId: string): PublicationSettings {
+  const stored = readPluginData(graph.getNode(canvasId)?.pluginData, LAWHA_PLUGIN_DATA.publication)
+  return { ...DEFAULT_PUBLICATION_SETTINGS, ...stored }
+}
 
 /**
  * A publication's pages are the frames placed directly on a canvas page, in reading order: rows
- * from the top, each row from the left. Master pages, being components, are not pages.
+ * from the top, each row from the left, or from the right in a right-to-left publication. Master
+ * pages, being components, are not pages.
  */
 export function publicationPages(graph: SceneGraph, canvasId: string): SceneNode[] {
+  const rtl = publicationSettings(graph, canvasId).direction === 'rtl'
   const canvas = graph.getNode(canvasId)
   if (!canvas) return []
   const frames = canvas.childIds.flatMap((id) => {
@@ -21,7 +48,7 @@ export function publicationPages(graph: SceneGraph, canvasId: string): SceneNode
     if (row && first && frame.y < first.y + first.height / 2) row.push(frame)
     else rows.push([frame])
   }
-  return rows.flatMap((row) => row.toSorted((a, b) => a.x - b.x))
+  return rows.flatMap((row) => row.toSorted((a, b) => (rtl ? b.x - a.x : a.x - b.x)))
 }
 
 export function isMasterPage(node: SceneNode | undefined): boolean {
@@ -67,9 +94,130 @@ export function canvasOf(graph: SceneGraph, node: SceneNode): SceneNode | undefi
   return top?.parentId ? graph.getNode(top.parentId) : undefined
 }
 
-/** A page number template filled in: `{page}` is the number, `{pages}` the page count. */
-export function formatPageNumber(template: string, page: number | null, pages: number): string {
+const ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
+const ROMAN: ReadonlyArray<readonly [number, string]> = [
+  [1000, 'm'],
+  [900, 'cm'],
+  [500, 'd'],
+  [400, 'cd'],
+  [100, 'c'],
+  [90, 'xc'],
+  [50, 'l'],
+  [40, 'xl'],
+  [10, 'x'],
+  [9, 'ix'],
+  [5, 'v'],
+  [4, 'iv'],
+  [1, 'i']
+]
+
+/** `value` written in `format`; Roman numerals fall back to digits outside 1–3999. */
+export function formatNumber(value: number, format: PageNumberFormat = 'western'): string {
+  if (format === 'arabic-indic') {
+    return String(value).replaceAll(/\d/g, (digit) => ARABIC_INDIC_DIGITS[Number(digit)])
+  }
+  if ((format === 'roman' || format === 'roman-upper') && value >= 1 && value < 4000) {
+    let rest = value
+    let out = ''
+    for (const [amount, numeral] of ROMAN) {
+      while (rest >= amount) {
+        out += numeral
+        rest -= amount
+      }
+    }
+    return format === 'roman-upper' ? out.toUpperCase() : out
+  }
+  return String(value)
+}
+
+/**
+ * A page number template filled in: `{page}` is the number, `{pages}` the page count, both in
+ * `format`; a master page shows `#` for its number.
+ */
+export function formatPageNumber(
+  template: string,
+  page: number | null,
+  pages: number,
+  format: PageNumberFormat = 'western'
+): string {
   return template
-    .replaceAll('{page}', page === null ? '#' : String(page))
-    .replaceAll('{pages}', String(pages))
+    .replaceAll('{page}', page === null ? '#' : formatNumber(page, format))
+    .replaceAll('{pages}', formatNumber(pages, format))
+}
+
+/** Where a page sits in its spread: alone, or on the left or right of two facing pages. */
+export type SpreadSide = 'single' | 'left' | 'right'
+
+/**
+ * How pages in reading order pair into spreads: the first page alone, then two at a time, as a
+ * bound book opens. In a left-to-right book the first page is a right-hand page and each spread
+ * reads left then right; right to left, the other way round.
+ */
+export function spreadLayout(
+  count: number,
+  settings: Pick<PublicationSettings, 'spreads' | 'direction'>
+): Array<{ spread: number; side: SpreadSide }> {
+  const rtl = settings.direction === 'rtl'
+  return Array.from({ length: count }, (_, index) => {
+    if (!settings.spreads) return { spread: index, side: 'single' }
+    if (index === 0) return { spread: 0, side: rtl ? 'left' : 'right' }
+    const first = index % 2 === 1
+    return { spread: Math.ceil(index / 2), side: first === rtl ? 'right' : 'left' }
+  })
+}
+
+/** Space between spreads, or between pages that do not face each other. */
+export const PAGE_GAP = 100
+
+/**
+ * Where a publication's pages start: the first page's outer edge in reading order, its left in a
+ * left-to-right publication and its right in a right-to-left one, and its top.
+ */
+export function pagesAnchor(
+  pages: readonly SceneNode[],
+  direction: PublicationSettings['direction']
+): Vector | null {
+  if (pages.length === 0) return null
+  const first = pages[0]
+  return { x: direction === 'rtl' ? first.x + first.width : first.x, y: first.y }
+}
+
+/**
+ * Lays `pages` out on the canvas in that reading order from `anchor` (where the first page
+ * starts, by default where it is now): side by side in one row, or with spreads, each spread on
+ * a row of its own with its two pages meeting at the spine, the first page on the side a book
+ * opens to. Right to left, pages run leftwards from the anchor.
+ */
+export function arrangePages(
+  graph: SceneGraph,
+  pages: readonly SceneNode[],
+  settings: Pick<PublicationSettings, 'spreads' | 'direction'>,
+  anchor = pagesAnchor(pages, settings.direction)
+): void {
+  if (!anchor || pages.length === 0) return
+  const rtl = settings.direction === 'rtl'
+  if (!settings.spreads) {
+    let edge = anchor.x
+    for (const page of pages) {
+      graph.updateNode(page.id, { x: rtl ? edge - page.width : edge, y: anchor.y })
+      edge = rtl ? edge - page.width - PAGE_GAP : edge + page.width + PAGE_GAP
+    }
+    return
+  }
+  const layout = spreadLayout(pages.length, settings)
+  // A book opens to its first page: the spine is that page's inner edge.
+  const spine = anchor.x
+  let y = anchor.y
+  let row = 0
+  let rowHeight = 0
+  pages.forEach((page, index) => {
+    const { spread, side } = layout[index]
+    if (spread !== row) {
+      y += rowHeight + PAGE_GAP
+      row = spread
+      rowHeight = 0
+    }
+    rowHeight = Math.max(rowHeight, page.height)
+    graph.updateNode(page.id, { x: side === 'right' ? spine : spine - page.width, y })
+  })
 }

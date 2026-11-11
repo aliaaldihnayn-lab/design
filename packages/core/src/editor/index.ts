@@ -60,6 +60,10 @@ export type { NodePreview } from './node-preview'
 export type { PixelMarquee, PixelOverlay, PixelToolSettings } from './pixels/types'
 export { selectionModeFor } from './pixels/select'
 export type { SelectionMode } from '#core/pixels/mask'
+export type { PaintResample } from '#core/pixels/composite'
+export type { PixelSampleScope } from './pixels/sample'
+export type { PublicationPage } from './publisher/pages'
+export type { PageNumberFormat, PublicationSettings, SpreadSide } from '#core/publisher'
 export {
   BOARD_TOOL_SHORTCUTS,
   BOARD_TOOLS,
