@@ -99,6 +99,12 @@ export class KitWiring {
     return existing?.id ?? graph.createVariable(name, type, collection.id, value).id
   }
 
+  /** Keeps Lawha data on a layer, such as the suggestions a variant filters. */
+  data(node: SceneNode, key: string, value: unknown): void {
+    const current = this.graph.getNode(node.id)
+    if (current) setPluginData(this.graph, current, key, JSON.stringify(value))
+  }
+
   /** Shows a variable's value in a text layer, or shows the layer only while it is true. */
   bind(node: SceneNode, field: 'text' | 'visible', variableId: string): void {
     this.graph.bindVariable(node.id, field, variableId)

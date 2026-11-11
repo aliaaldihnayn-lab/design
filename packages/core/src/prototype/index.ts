@@ -107,3 +107,11 @@ export {
   type PlayVariables,
   type PropertyBinding
 } from './variables'
+export {
+  matchesQuery,
+  readSuggestions,
+  searchKey,
+  showSuggestions,
+  SUGGESTIONS_KEY,
+  type SuggestionsSpec
+} from './suggestions'

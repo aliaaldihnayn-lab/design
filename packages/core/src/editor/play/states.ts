@@ -8,6 +8,7 @@ import { resolvedPaintBindings } from '@lawha/scene-graph/variables'
 
 import { extractPageContext, findPageId } from '#core/io/subgraph'
 import { computeAllLayouts } from '#core/layout'
+import { showSuggestions } from '#core/prototype/suggestions'
 import { showPlayVariables, type PlayVariables } from '#core/prototype/variables'
 
 /** How one instance of an island is shown: the variant, properties, and layers it displays. */
@@ -108,7 +109,9 @@ export function resolvePlayState(
   rootId: string,
   states: ReadonlyMap<string, InstanceState>,
   /** Prototype variables the running design has set, which bound text and visibility show. */
-  variables: PlayVariables = new Map()
+  variables: PlayVariables = new Map(),
+  /** What each text field holds while it runs, by its layer path, which suggestions filter by. */
+  typed: ReadonlyMap<string, string> = new Map()
 ): SceneGraph {
   // The root's page context with every variant its instances can switch to, reading the
   // document's own variables and images, since a state never changes them.
@@ -129,6 +132,7 @@ export function resolvePlayState(
     if (instance?.type === 'INSTANCE') applyState(graph, rootId, instance, state)
   }
   for (const id of showPlayVariables(graph, rootId, variables)) reflow(graph, id)
+  for (const id of showSuggestions(graph, rootId, (path) => typed.get(path))) reflow(graph, id)
   computeAllLayouts(graph, rootId)
   return graph
 }

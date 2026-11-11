@@ -201,4 +201,34 @@ describe('interactive kit', () => {
       )[0]?.id
     )
   })
+
+  test('a combobox filters its suggestions by what its field holds', async () => {
+    for (const rtl of [false, true]) {
+      const { graph, screen, instance } = await screenWith('combobox', { rtl })
+      const path = instance.name
+      const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open variant')
+      const shownWith = (query: string) => {
+        const shown = resolvePlayState(
+          graph,
+          screen.id,
+          new Map([[path, { variants: variantValues(graph, open.id) }]]),
+          new Map(),
+          new Map([[`${path}/Trigger/Field`, query]])
+        )
+        const menu = shown
+          .getChildren(shown.getChildren(screen.id)[0]?.id ?? '')
+          .find((child) => child.name === 'Menu')
+        if (!menu) throw new Error('no menu')
+        return shown
+          .getChildren(menu.id)
+          .filter((row) => row.visible)
+          .map((row) => row.name)
+      }
+      expect(shownWith('')).toEqual(['Option 1', 'Option 2', 'Option 3', 'Option 4'])
+      expect(shownWith(rtl ? 'جده' : 'JED')).toEqual(['Option 2'])
+      expect(shownWith(rtl ? 'القاهرة' : 'Cairo')).toEqual(['Empty'])
+    }
+  })
 })

@@ -1,6 +1,7 @@
 import type { SceneNode } from '@lawha/scene-graph'
 
 import type { Action } from '#core/prototype/model'
+import { SUGGESTIONS_KEY } from '#core/prototype/suggestions'
 
 import { glyph, label, setAttrs, type KitDefinition } from './jsx'
 import type { KitTheme } from './theme'
@@ -27,6 +28,11 @@ interface ListOptions {
   closeOnTrigger?: boolean
   /** Whether focusing the trigger opens the list, as a combobox's field does. */
   openOnFocus?: boolean
+  /**
+   * The text field, by path in a variant, whose typing filters the options, as a combobox's
+   * suggestions; the list then shows a no-results row when nothing matches.
+   */
+  filterField?: string
 }
 
 const OPEN = 'State=Open'
@@ -58,8 +64,11 @@ function listJSX(list: ListOptions): (theme: KitTheme) => string {
     const options = list.options(theme)
     const trigger = (open: boolean) =>
       list.trigger?.(theme, open) ?? defaultTrigger(theme, list.placeholder(theme), open)
+    const empty = list.filterField
+      ? `<Frame name="Empty" visible={false} flex="row" px={12} py={8} w="fill">${label(theme, 'Label', theme.labels.noResults, { color: theme.muted })}</Frame>`
+      : ''
     const menu = (active: number) =>
-      `<Frame name="Menu" flex="col" gap={2} p={4} w="fill" rounded={8} bg=${theme.surface} stroke=${theme.border} shadow="0 8 24 #0000001F">${options.map((option, index) => optionRow(theme, option, index, index === active, list.picks)).join('')}</Frame>`
+      `<Frame name="Menu" flex="col" gap={2} p={4} w="fill" rounded={8} bg=${theme.surface} stroke=${theme.border} shadow="0 8 24 #0000001F">${options.map((option, index) => optionRow(theme, option, index, index === active, list.picks)).join('')}${empty}</Frame>`
     const variant = (name: string, active: number | null) =>
       `<Component name="${name}" flex="col" gap={4} w={260}>${trigger(active !== null)}${active !== null ? menu(active) : ''}</Component>`
     return `<ComponentSet ${setAttrs(list.name)}>${[
@@ -115,6 +124,12 @@ function wireList(list: ListOptions) {
       w.on(w.layer(CLOSED, 'Trigger'), { type: 'focus' }, [w.changeTo(OPEN, QUICK)])
     for (const [position, name] of openNames.entries()) {
       bindTrigger(name)
+      if (list.filterField)
+        w.data(w.layer(name), SUGGESTIONS_KEY, {
+          field: list.filterField,
+          options: options.map((_, index) => `Menu/Option ${index + 1}`),
+          empty: 'Menu/Empty'
+        })
       const active = position - 1
       const root = w.layer(name)
       if (list.closeOnTrigger ?? true)
@@ -182,6 +197,7 @@ const COMBOBOX: ListOptions = {
   valuePath: 'Trigger/Caption/Value',
   closeOnTrigger: false,
   openOnFocus: true,
+  filterField: 'Trigger/Field',
   trigger: (theme) =>
     `<Frame name="Trigger" flex="col" gap={4} w="fill"><Instance of={field} name="Field" w="fill" /><Frame name="Caption" flex="row" w="fill">${label(theme, 'Value', theme.labels.choose, { size: 12, color: theme.muted })}</Frame></Frame>`
 }
