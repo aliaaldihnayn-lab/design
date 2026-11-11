@@ -71,13 +71,18 @@ export function createPublicationPageActions(ctx: EditorContext, edit: Edit) {
   }
 
   /** Lays the pages out in `order`, from where the publication starts now. */
-  function arrange(order: readonly SceneNode[], anchor = pagesAnchor(pages(), direction())) {
+  function arrange(
+    order: readonly SceneNode[],
+    anchor = pagesAnchor(pages(), direction()),
+    follow: ReadonlySet<string> = new Set()
+  ) {
     const settings = getPublicationSettings()
     arrangePages(
       ctx.graph,
       order.flatMap((page) => ctx.graph.getNode(page.id) ?? []),
       settings,
-      anchor
+      anchor,
+      follow
     )
   }
 
@@ -87,7 +92,8 @@ export function createPublicationPageActions(ctx: EditorContext, edit: Edit) {
 
   /**
    * Changes how the publication is numbered and laid out. Changing the reading direction or
-   * spreads lays the pages out again in the same reading order. One undo step.
+   * spreads lays the pages out again in the same reading order, apart from pages placed by
+   * hand. One undo step.
    */
   function setPublicationSettings(changes: Partial<PublicationSettings>): void {
     const before = getPublicationSettings()
@@ -196,7 +202,8 @@ export function createPublicationPageActions(ctx: EditorContext, edit: Edit) {
     if (from === to) return false
     const anchor = pagesAnchor(order, direction())
     const moved = order.toSpliced(from, 1).toSpliced(to, 0, order[from])
-    edit('Move page', () => arrange(moved, anchor))
+    // A page moved in the panel joins the layout, even one placed by hand before.
+    edit('Move page', () => arrange(moved, anchor, new Set([pageId])))
     return true
   }
 

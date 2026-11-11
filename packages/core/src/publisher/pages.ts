@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
-import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
+import { LAWHA_PLUGIN_DATA, readPluginData, withPluginData } from '@lawha/scene-graph/plugin-data'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 /** How a canvas page is laid out as a publication. */
@@ -170,7 +170,7 @@ export function spreadLayout(
 export const PAGE_GAP = 100
 
 /**
- * Where a publication's pages start: the first page's outer edge in reading order, its left in a
+ * Where a publication's pages start: the first laid-out page's outer edge in reading order, its left in a
  * left-to-right publication and its right in a right-to-left one, and its top.
  */
 export function pagesAnchor(
@@ -178,39 +178,59 @@ export function pagesAnchor(
   direction: PublicationSettings['direction']
 ): Vector | null {
   if (pages.length === 0) return null
-  const first = pages[0]
+  // Pages placed by hand stand apart; the layout starts at the first page it placed.
+  const first = pages.find((page) => !isManuallyPlaced(page)) ?? pages[0]
   return { x: direction === 'rtl' ? first.x + first.width : first.x, y: first.y }
+}
+
+/**
+ * Whether a page was placed by hand: moved away from where the Pages panel last laid it out. A
+ * page the panel never placed joins the layout.
+ */
+export function isManuallyPlaced(page: SceneNode): boolean {
+  const placed = readPluginData(page.pluginData, LAWHA_PLUGIN_DATA.pagePlacement)
+  return !!placed && (Math.abs(placed.x - page.x) > 0.5 || Math.abs(placed.y - page.y) > 0.5)
 }
 
 /**
  * Lays `pages` out on the canvas in that reading order from `anchor` (where the first page
  * starts, by default where it is now): side by side in one row, or with spreads, each spread on
  * a row of its own with its two pages meeting at the spine, the first page on the side a book
- * opens to. Right to left, pages run leftwards from the anchor.
+ * opens to. Right to left, pages run leftwards from the anchor. Pages placed by hand keep their
+ * place and take no slot; `ids` given in `follow` join the layout whatever their place.
  */
 export function arrangePages(
   graph: SceneGraph,
   pages: readonly SceneNode[],
   settings: Pick<PublicationSettings, 'spreads' | 'direction'>,
-  anchor = pagesAnchor(pages, settings.direction)
+  anchor = pagesAnchor(pages, settings.direction),
+  follow: ReadonlySet<string> = new Set()
 ): void {
-  if (!anchor || pages.length === 0) return
+  const placed = pages.filter((page) => follow.has(page.id) || !isManuallyPlaced(page))
+  if (!anchor || placed.length === 0) return
+  const place = (page: SceneNode, x: number, y: number) => {
+    graph.updateNode(page.id, {
+      x,
+      y,
+      pluginData: withPluginData(page.pluginData, LAWHA_PLUGIN_DATA.pagePlacement, { x, y })
+    })
+  }
   const rtl = settings.direction === 'rtl'
   if (!settings.spreads) {
     let edge = anchor.x
-    for (const page of pages) {
-      graph.updateNode(page.id, { x: rtl ? edge - page.width : edge, y: anchor.y })
+    for (const page of placed) {
+      place(page, rtl ? edge - page.width : edge, anchor.y)
       edge = rtl ? edge - page.width - PAGE_GAP : edge + page.width + PAGE_GAP
     }
     return
   }
-  const layout = spreadLayout(pages.length, settings)
+  const layout = spreadLayout(placed.length, settings)
   // A book opens to its first page: the spine is that page's inner edge.
   const spine = anchor.x
   let y = anchor.y
   let row = 0
   let rowHeight = 0
-  pages.forEach((page, index) => {
+  placed.forEach((page, index) => {
     const { spread, side } = layout[index]
     if (spread !== row) {
       y += rowHeight + PAGE_GAP
@@ -218,6 +238,6 @@ export function arrangePages(
       rowHeight = 0
     }
     rowHeight = Math.max(rowHeight, page.height)
-    graph.updateNode(page.id, { x: side === 'right' ? spine : spine - page.width, y })
+    place(page, side === 'right' ? spine : spine - page.width, y)
   })
 }

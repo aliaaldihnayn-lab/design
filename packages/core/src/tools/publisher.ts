@@ -187,7 +187,8 @@ export const setPublicationLayoutTool = defineTool({
         settings,
         flipped || !anchor
           ? { x: settings.direction === 'rtl' ? first.x + first.width : first.x, y: first.y }
-          : anchor
+          : anchor,
+        new Set(args.page_order)
       )
     }
     refreshPageNumbers(graph, canvasId)

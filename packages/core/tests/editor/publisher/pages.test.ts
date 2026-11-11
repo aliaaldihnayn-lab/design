@@ -169,3 +169,26 @@ describe('master pages from frames', () => {
     expect(editor.publicationPageList()[0].masterId).toBe(masterId)
   })
 })
+
+describe('pages placed by hand', () => {
+  test('keep their place when the panel lays the other pages out again', () => {
+    const { editor, pages, node } = publication(4)
+    // The panel lays the pages out once; then the last page is dragged away by hand.
+    editor.movePublicationPage(pages[1].id, 1)
+    editor.movePublicationPage(pages[0].id, 1)
+    editor.movePublicationPage(pages[0].id, 0)
+    editor.graph.updateNode(pages[3].id, { x: 2000, y: 900 })
+
+    editor.addPublicationPage(pages[0].id, 'New')
+    expect(node(pages[3])).toMatchObject({ x: 2000, y: 900 })
+    editor.setPublicationSettings({ spreads: true })
+    expect(node(pages[3])).toMatchObject({ x: 2000, y: 900 })
+    editor.deletePublicationPage(pages[1].id)
+    expect(node(pages[3])).toMatchObject({ x: 2000, y: 900 })
+
+    // Moving it in the panel brings it back into the layout.
+    const index = editor.publicationPageList().findIndex((page) => page.id === pages[3].id)
+    editor.movePublicationPage(pages[3].id, index === 0 ? 1 : 0)
+    expect(node(pages[3])?.y).toBeLessThan(900)
+  })
+})

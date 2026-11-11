@@ -193,6 +193,8 @@ const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
 
 const pageNumberSchema = v.object({ template: v.pipe(v.string(), v.maxLength(200)) })
 
+const pagePlacementSchema = v.object({ x: v.number(), y: v.number() })
+
 const publicationSchema = v.object({
   /** The number the first page shows. */
   numberStart: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100_000))),
@@ -247,6 +249,11 @@ export const LAWHA_PLUGIN_DATA = {
    * which way the pages read, and whether they face each other in spreads.
    */
   publication: jsonPluginDataField('publication', 'content', publicationSchema),
+  /**
+   * Where the Pages panel last laid a page out; a page moved away from it by hand keeps its own
+   * place when the panel lays the pages out again.
+   */
+  pagePlacement: jsonPluginDataField('pagePlacement', 'content', pagePlacementSchema),
   /** A text that shows its page's number: `{page}` and `{pages}` in the template are filled in. */
   pageNumber: jsonPluginDataField('pageNumber', 'content', pageNumberSchema),
   /**
