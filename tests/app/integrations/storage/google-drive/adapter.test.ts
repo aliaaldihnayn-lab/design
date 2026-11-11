@@ -6,6 +6,8 @@ import { StorageRevisionConflictError } from '@/app/integrations/storage/errors'
 import { createGoogleDriveStorageAdapter } from '@/app/integrations/storage/google-drive/adapter'
 import type { StorageAdapter } from '@/app/integrations/storage/types'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 const testAuth = { token: () => Promise.resolve('test-token'), forget: () => undefined }
 
 const recordSchema = v.record(v.string(), v.unknown())
@@ -79,8 +81,8 @@ function fakeDrive() {
       const id = `f${next++}`
       files.set(id, {
         id,
-        name: meta.name,
-        mimeType: meta.mimeType,
+        name: String(meta.name),
+        mimeType: String(meta.mimeType),
         parents: [],
         modifiedTime: new Date().toISOString(),
         version: 1,
@@ -118,7 +120,7 @@ function fakeDrive() {
     if (one) {
       const file = files.get(one[1])
       if (!file) return new Response('', { status: 404 })
-      if (url.searchParams.get('alt') === 'media') return new Response(file.bytes)
+      if (url.searchParams.get('alt') === 'media') return new Response(new Uint8Array(file.bytes))
       if (request.method === 'PATCH') {
         file.trashed = parseRecord(await request.text()).trashed === true
         return json(view(file))
@@ -135,7 +137,7 @@ let adapter: StorageAdapter
 
 beforeEach(() => {
   drive = fakeDrive()
-  globalThis.fetch = drive.handler
+  globalThis.fetch = fetchStub(drive.handler)
   adapter = createGoogleDriveStorageAdapter(
     {
       preferences: { 'client-id': 'client.apps.googleusercontent.com', folder: 'Lawha' },

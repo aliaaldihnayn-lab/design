@@ -8,7 +8,7 @@ import { isImportableRasterFile, imageHeader } from '@lawha/scene-graph/images'
 import { getCanvasKit } from '#core/canvaskit'
 
 /** A real W×H WebP, encoded by CanvasKit, filled with one colour. */
-async function webp(width: number, height: number): Promise<Uint8Array> {
+async function webp(width: number, height: number): Promise<Uint8Array<ArrayBuffer>> {
   const ck = await getCanvasKit()
   const surface = ck.MakeSurface(width, height)
   if (!surface) throw new Error('no surface')
@@ -18,7 +18,7 @@ async function webp(width: number, height: number): Promise<Uint8Array> {
   image.delete()
   surface.delete()
   if (!bytes) throw new Error('WebP encoding failed')
-  return bytes
+  return new Uint8Array(bytes)
 }
 
 const isWebP = (b: Uint8Array) =>
