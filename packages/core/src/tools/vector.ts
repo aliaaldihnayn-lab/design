@@ -10,7 +10,7 @@ export {
   outlineStroke,
   setPatternFill,
   widthProfile
-} from './vector/path-effects'
+} from './vector/effects'
 
 export { imageTrace, traceSettings, TRACE_DETAIL, type TraceDetail } from './vector/trace'
 

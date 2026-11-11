@@ -9,6 +9,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /** `page` builds from the whole page; `selection` from the selected layers only. */
@@ -88,19 +89,20 @@ async function build() {
 
 <template>
   <PanelSection :label="t.section" data-test-id="design-system-section">
-    <AppButton
-      variant="outline"
-      class="w-full justify-start"
-      data-test-id="design-system-build"
-      :title="t.buildHint"
-      :disabled="busy"
-      @click="build"
-    >
-      <icon-lucide-swatch-book class="size-3.5" aria-hidden="true" />
-      <span class="truncate">{{ t.build }}</span>
-      <span class="ms-auto truncate text-muted">
-        {{ scope === 'page' ? t.buildPage : t.buildSelection }}
-      </span>
-    </AppButton>
+    <Tip :label="t.buildHint">
+      <AppButton
+        variant="outline"
+        class="w-full justify-start"
+        data-test-id="design-system-build"
+        :disabled="busy"
+        @click="build"
+      >
+        <icon-lucide-swatch-book class="size-3.5" aria-hidden="true" />
+        <span class="truncate">{{ t.build }}</span>
+        <span class="ms-auto truncate text-muted">
+          {{ scope === 'page' ? t.buildPage : t.buildSelection }}
+        </span>
+      </AppButton>
+    </Tip>
   </PanelSection>
 </template>

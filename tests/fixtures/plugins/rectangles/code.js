@@ -23,6 +23,7 @@ if (figma.command === 'three') {
   figma.ui.onmessage = (msg) => {
     if (msg.type === 'create-rectangles') {
       const nodes = createRectangles(msg.count)
+      // oxlint-disable-next-line unicorn/require-post-message-target-origin -- Figma's figma.ui.postMessage takes no target origin.
       figma.ui.postMessage({ type: 'created', count: nodes.length })
     }
     if (msg.type === 'cancel') figma.closePlugin()

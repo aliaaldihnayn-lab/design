@@ -13,6 +13,7 @@ import { usePathMessages } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import NumberField from '@/components/inputs/NumberField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -157,17 +158,18 @@ function applyWarp() {
           />
         </PanelFieldGroup>
       </PanelGrid>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="apply-warp"
-        :title="paths.applyWarpHint"
-        :disabled="busy"
-        @click="applyWarp"
-      >
-        <icon-lucide-waves class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ paths.applyWarp }}</span>
-      </AppButton>
+      <Tip :label="paths.applyWarpHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-warp"
+          :disabled="busy"
+          @click="applyWarp"
+        >
+          <icon-lucide-waves class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyWarp }}</span>
+        </AppButton>
+      </Tip>
 
       <PanelGrid :columns="2" class="mt-2">
         <PanelFieldGroup :label="paths.offset">
@@ -184,17 +186,18 @@ function applyWarp() {
           <AppSelect v-model="join" :options="joinOptions" :label="paths.join" />
         </PanelFieldGroup>
       </PanelGrid>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="apply-offset"
-        :title="paths.applyOffsetHint"
-        :disabled="busy"
-        @click="applyOffset"
-      >
-        <icon-lucide-square-dashed class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ paths.applyOffset }}</span>
-      </AppButton>
+      <Tip :label="paths.applyOffsetHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-offset"
+          :disabled="busy"
+          @click="applyOffset"
+        >
+          <icon-lucide-square-dashed class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyOffset }}</span>
+        </AppButton>
+      </Tip>
 
       <PanelFieldGroup :label="paths.widthProfile" class="mt-2">
         <AppSelect
@@ -204,17 +207,18 @@ function applyWarp() {
           data-test-id="width-profile"
         />
       </PanelFieldGroup>
-      <AppButton
-        variant="outline"
-        class="w-full justify-start"
-        data-test-id="apply-width"
-        :title="paths.applyWidthHint"
-        :disabled="busy"
-        @click="applyWidth"
-      >
-        <icon-lucide-pen-line class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ paths.applyWidth }}</span>
-      </AppButton>
+      <Tip :label="paths.applyWidthHint">
+        <AppButton
+          variant="outline"
+          class="w-full justify-start"
+          data-test-id="apply-width"
+          :disabled="busy"
+          @click="applyWidth"
+        >
+          <icon-lucide-pen-line class="size-3.5" aria-hidden="true" />
+          <span class="truncate">{{ paths.applyWidth }}</span>
+        </AppButton>
+      </Tip>
 
       <template v-if="pair">
         <PanelFieldGroup :label="paths.blendSteps" class="mt-2">
@@ -227,28 +231,30 @@ function applyWarp() {
             data-test-id="blend-steps"
           />
         </PanelFieldGroup>
-        <AppButton
-          variant="outline"
-          class="w-full justify-start"
-          data-test-id="make-blend"
-          :title="paths.makeBlendHint"
-          :disabled="busy"
-          @click="makeBlend"
-        >
-          <icon-lucide-git-merge class="size-3.5" aria-hidden="true" />
-          <span class="truncate">{{ paths.makeBlend }}</span>
-        </AppButton>
-        <AppButton
-          variant="outline"
-          class="w-full justify-start"
-          data-test-id="make-pattern"
-          :title="paths.makePatternHint"
-          :disabled="busy"
-          @click="makePattern"
-        >
-          <IconGrid3x3 class="size-3.5" aria-hidden="true" />
-          <span class="truncate">{{ paths.makePattern }}</span>
-        </AppButton>
+        <Tip :label="paths.makeBlendHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-blend"
+            :disabled="busy"
+            @click="makeBlend"
+          >
+            <icon-lucide-git-merge class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makeBlend }}</span>
+          </AppButton>
+        </Tip>
+        <Tip :label="paths.makePatternHint">
+          <AppButton
+            variant="outline"
+            class="w-full justify-start"
+            data-test-id="make-pattern"
+            :disabled="busy"
+            @click="makePattern"
+          >
+            <IconGrid3x3 class="size-3.5" aria-hidden="true" />
+            <span class="truncate">{{ paths.makePattern }}</span>
+          </AppButton>
+        </Tip>
       </template>
     </div>
   </PanelSection>

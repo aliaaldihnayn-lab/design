@@ -93,40 +93,43 @@ const strictToolsLayout = createFileRule('lawha/strict-tools-layout', (sourceRel
   return TOOL_LAYOUT_MESSAGE
 })
 
-const strictTestFilePlacement = createFileRule(
-  'lawha/strict-test-file-placement',
-  (sourceRel) => {
-    if (!sourceRel.startsWith('tests/')) return null
-    if (!TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
-    const name = path.basename(sourceRel)
-    if (name.includes('.tmp.') || name.includes('.profile.')) {
-      return 'Temporary/profile test files must not be committed. Move exploratory specs to scratch/ or delete them.'
-    }
-    if (sourceRel.startsWith('tests/e2e/')) {
-      if (sourceRel.endsWith('.spec.ts') || sourceRel.endsWith('/fixtures.ts')) return null
-      return 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
-    }
-    if (sourceRel.startsWith('tests/figma/')) {
-      return sourceRel.endsWith('.spec.ts')
-        ? null
-        : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
-    }
-    if (sourceRel.startsWith('tests/engine/')) {
-      if (sourceRel.endsWith('.test.ts')) return null
-      if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
-      if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
-      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
-    }
-    // Canonical unit-test homes from packages/docs/development/testing.md.
-    if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
-      return sourceRel.endsWith('.test.ts')
-        ? null
-        : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
-    }
-    if (sourceRel.startsWith('tests/helpers/')) return null
-    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
+/** Shared helpers, and fixture data such as a sample Figma plugin's code.js; TypeScript support belongs in helpers. */
+function isSharedTestSupport(sourceRel: string): boolean {
+  if (sourceRel.startsWith('tests/helpers/')) return true
+  return sourceRel.startsWith('tests/fixtures/') && !sourceRel.endsWith('.ts')
+}
+
+const strictTestFilePlacement = createFileRule('lawha/strict-test-file-placement', (sourceRel) => {
+  if (!sourceRel.startsWith('tests/')) return null
+  if (!TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
+  const name = path.basename(sourceRel)
+  if (name.includes('.tmp.') || name.includes('.profile.')) {
+    return 'Temporary/profile test files must not be committed. Move exploratory specs to scratch/ or delete them.'
   }
-)
+  if (sourceRel.startsWith('tests/e2e/')) {
+    if (sourceRel.endsWith('.spec.ts') || sourceRel.endsWith('/fixtures.ts')) return null
+    return 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
+  }
+  if (sourceRel.startsWith('tests/figma/')) {
+    return sourceRel.endsWith('.spec.ts')
+      ? null
+      : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
+  }
+  if (sourceRel.startsWith('tests/engine/')) {
+    if (sourceRel.endsWith('.test.ts')) return null
+    if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
+    if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
+    return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
+  }
+  // Canonical unit-test homes from packages/docs/development/testing.md.
+  if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
+    return sourceRel.endsWith('.test.ts')
+      ? null
+      : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
+  }
+  if (isSharedTestSupport(sourceRel)) return null
+  return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
+})
 
 const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   from: string
@@ -219,15 +222,12 @@ const noE2EImportsInEngineTests = createImportRule(
   }
 )
 
-const noRootMarkdownClutter = createFileRule(
-  'lawha/no-root-markdown-clutter',
-  (sourceRel) => {
-    if (sourceRel.includes('/')) return null
-    if (!sourceRel.endsWith('.md')) return null
-    if (ROOT_MARKDOWN_ALLOWLIST.has(sourceRel)) return null
-    return 'Do not add ad hoc root Markdown files. Put durable docs under packages/docs/** or update the root allowlist deliberately.'
-  }
-)
+const noRootMarkdownClutter = createFileRule('lawha/no-root-markdown-clutter', (sourceRel) => {
+  if (sourceRel.includes('/')) return null
+  if (!sourceRel.endsWith('.md')) return null
+  if (ROOT_MARKDOWN_ALLOWLIST.has(sourceRel)) return null
+  return 'Do not add ad hoc root Markdown files. Put durable docs under packages/docs/** or update the root allowlist deliberately.'
+})
 
 const noPrototypeOrGeneratedImports = createImportRule(
   'lawha/no-prototype-or-generated-imports',
