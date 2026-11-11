@@ -10,6 +10,8 @@ import {
   type WriterNode
 } from '@lawha/core/writer'
 
+import type { StorageDocumentBinding } from '@/app/integrations/storage'
+
 /** Where the open document came from, so Save writes back to the same place. */
 export type WriterSource =
   | {
@@ -20,6 +22,14 @@ export type WriterSource =
       package?: Uint8Array | null
     }
   | { kind: 'google'; documentId: string; revisionId: string | null }
+  | {
+      /** A document kept by a storage provider, such as a Lawha Cloud workspace or room. */
+      kind: 'storage'
+      binding: StorageDocumentBinding
+      /** The revision this copy is based on, so a save made over another one is refused. */
+      revision: string | null
+      package: Uint8Array | null
+    }
 
 /**
  * The document the document editor shows. The editor view owns the Tiptap instance; this holds

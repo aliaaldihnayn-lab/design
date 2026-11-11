@@ -48,9 +48,7 @@ function isSerializedElement(value: unknown): value is SerializedDesignJSXElemen
 }
 
 function isHelper(value: unknown): value is DesignJSXHelperDescriptor {
-  return (
-    isRecord(value) && typeof value.__lawhaHelper === 'string' && Array.isArray(value.args)
-  )
+  return isRecord(value) && typeof value.__lawhaHelper === 'string' && Array.isArray(value.args)
 }
 
 /** A collection as the sandbox's `defineVars` writes it, with the modes `defineMode` added. */

@@ -145,6 +145,12 @@ const rawCloudServerConfigSchema = v.object({
     10 * 60
   ),
   billingPortalURL: v.optional(httpURLSchema),
+  /**
+   * The server's own signing certificate and key, as a base64 PKCS #12, that seals every
+   * completed signature envelope's final PDF; without one final PDFs are not sealed.
+   */
+  signatureSealPKCS12: optionalTextSchema,
+  signatureSealPassword: v.optional(v.string()),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32)))
 })
@@ -276,6 +282,8 @@ const DEFAULT_SECRET_NAMES = {
   smtpPassword: 'LAWHA_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
   aiSigningKey: 'LAWHA_CLOUD_AI_SIGNING_KEY',
+  signatureSealPKCS12: 'LAWHA_CLOUD_SIGNATURE_SEAL_P12',
+  signatureSealPassword: 'LAWHA_CLOUD_SIGNATURE_SEAL_PASSWORD',
   internalServiceToken: 'LAWHA_CLOUD_SERVICE_TOKEN'
 } as const
 
@@ -501,6 +509,17 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     })
   ),
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
+  signatures: v.optional(
+    v.strictObject({
+      /** Seals completed envelopes' final PDFs with this certificate. */
+      seal: v.optional(
+        v.strictObject({
+          pkcs12: defaultReference(DEFAULT_SECRET_NAMES.signatureSealPKCS12),
+          password: defaultReference(DEFAULT_SECRET_NAMES.signatureSealPassword)
+        })
+      )
+    })
+  ),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
   )

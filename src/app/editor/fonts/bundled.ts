@@ -4,8 +4,8 @@ import caveatVariable from '@lawha/core/assets/CaveatVariable.woff2?url'
 import interSemiBold from '@lawha/core/assets/Inter-SemiBold.ttf?url'
 import interVariableItalic from '@lawha/core/assets/InterVariable-Italic.ttf?url'
 import interVariable from '@lawha/core/assets/InterVariable.ttf?url'
-import notoNaskhArabic from '@lawha/core/assets/NotoNaskhArabic-Regular.ttf?url'
 import emojiMetrics from '@lawha/core/assets/LawhaEmojiMetrics-Regular.ttf?url'
+import notoNaskhArabic from '@lawha/core/assets/NotoNaskhArabic-Regular.ttf?url'
 import { fontManager, setHarfBuzzSubsetLocator } from '@lawha/core/text'
 
 /**

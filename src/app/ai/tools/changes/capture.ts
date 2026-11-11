@@ -1,11 +1,7 @@
 import { diffLines, type ChangeObject } from 'diff'
 import { compact, uniq } from 'es-toolkit/array'
 
-import {
-  graphFromDocumentChange,
-  isEmptyDocumentChange,
-  type DocumentChange
-} from '@lawha/core'
+import { graphFromDocumentChange, isEmptyDocumentChange, type DocumentChange } from '@lawha/core'
 import { diffPageLayersJSX } from '@lawha/core/tools'
 import type { SceneGraph } from '@lawha/scene-graph'
 

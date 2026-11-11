@@ -410,5 +410,6 @@
   "joinRoom": "Rejoindre la salle",
   "roomsExpand": "Afficher les sous-salles",
   "roomsCollapse": "Masquer les sous-salles",
-  "roomsRenameHeading": "Renommer la salle"
+  "roomsRenameHeading": "Renommer la salle",
+  "roomsNewText": "Nouveau document texte"
 }

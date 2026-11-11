@@ -2,11 +2,7 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
-import {
-  cloudDocumentPath,
-  cloudDocumentURL,
-  parseCloudLinkPath
-} from '@lawha/cloud/contract'
+import { cloudDocumentPath, cloudDocumentURL, parseCloudLinkPath } from '@lawha/cloud/contract'
 import { cloudMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'

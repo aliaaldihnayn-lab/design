@@ -410,5 +410,6 @@
   "joinRoom": "Raum beitreten",
   "roomsExpand": "Unterräume anzeigen",
   "roomsCollapse": "Unterräume ausblenden",
-  "roomsRenameHeading": "Raum umbenennen"
+  "roomsRenameHeading": "Raum umbenennen",
+  "roomsNewText": "Neues Textdokument"
 }

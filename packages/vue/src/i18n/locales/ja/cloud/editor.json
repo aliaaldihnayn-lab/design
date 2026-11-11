@@ -407,5 +407,6 @@
   "joinRoom": "ルームに参加",
   "roomsExpand": "サブルームを表示",
   "roomsCollapse": "サブルームを隠す",
-  "roomsRenameHeading": "ルーム名を変更"
+  "roomsRenameHeading": "ルーム名を変更",
+  "roomsNewText": "新しいテキストドキュメント"
 }

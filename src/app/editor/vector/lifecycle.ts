@@ -3,10 +3,7 @@ import { vectorChangesFromPagePath } from '@lawha/core/vector'
 import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
 import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
 import { slotScope } from '@lawha/scene-graph/slots'
-import {
-  transformVectorNetwork,
-  vectorNetworksEqual
-} from '@lawha/scene-graph/vector-network'
+import { transformVectorNetwork, vectorNetworksEqual } from '@lawha/scene-graph/vector-network'
 
 import { getLiveNetwork } from './network'
 import type { VectorEditState } from './types'

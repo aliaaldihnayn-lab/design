@@ -1,10 +1,5 @@
 import type { EditorState, ResumedPath } from '@lawha/core'
-import type {
-  SceneNode,
-  VectorNetwork,
-  VectorSegment,
-  VectorVertex
-} from '@lawha/scene-graph'
+import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '@lawha/scene-graph'
 import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
 import type { Vector } from '@lawha/scene-graph/primitives'
 

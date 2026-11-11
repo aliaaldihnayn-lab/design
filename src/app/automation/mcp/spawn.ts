@@ -8,11 +8,7 @@ import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@lawha/core/constants'
 import type { DiscoveryInfo } from '@lawha/mcp/discovery'
-import {
-  parseToolDescriptor,
-  serializeDisabledTools,
-  type ToolDescriptor
-} from '@lawha/mcp/tools'
+import { parseToolDescriptor, serializeDisabledTools, type ToolDescriptor } from '@lawha/mcp/tools'
 import { randomHex } from '@lawha/scene-graph/random'
 
 import { APP_VERSION } from '@/app/runtime/version'

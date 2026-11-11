@@ -10,7 +10,7 @@ import { StorageRevisionConflictError, StorageUnavailableError } from '../errors
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
 import { cloudChecksum, downloadCloudDocument, readCloudRevisionRange } from './download'
-import { splitCloudDocument, uploadCloudImages } from './images'
+import { isWordPackage, splitCloudDocument, uploadCloudImages } from './images'
 import { uploadCloudObject } from './upload'
 
 function revisionConflict(error: unknown): boolean {
@@ -136,8 +136,8 @@ export function createCloudStorageAdapter(
       const cloud = await client()
       const baseRevision = options?.baseRevision ?? null
       const name = cloudDocumentName(metadata.name)
-      // The file says whether it is a board, as its header does for Figma.
-      const kind = figArchiveKind(bytes) ?? 'design'
+      // The file says whether it is a board, as its header does for Figma, or a Word file.
+      const kind = figArchiveKind(bytes) ?? (isWordPackage(bytes) ? 'writer' : 'design')
       // Without a revision this is the first save; the document may not exist on the server yet.
       if (!baseRevision && !(await exists(id))) {
         await cloud.createDocument(workspaceId(), { id, name, kind })

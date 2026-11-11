@@ -470,7 +470,8 @@ export const cloudMessageDefaults = {
   joinRoom: 'Join room',
   roomsExpand: 'Show sub-rooms',
   roomsCollapse: 'Hide sub-rooms',
-  roomsRenameHeading: 'Rename room'
+  roomsRenameHeading: 'Rename room',
+  roomsNewText: 'New text document'
 } as const
 
 export const cloudMessages = i18n('cloud', cloudMessageDefaults)

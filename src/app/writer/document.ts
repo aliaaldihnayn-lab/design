@@ -21,6 +21,7 @@ import {
   writerName,
   writerSource
 } from './session'
+import { saveStoredWriterDocument } from './storage'
 
 /** What a file action did, for the view to report; errors carry a reason to show. */
 export type WriterFileOutcome =
@@ -34,6 +35,7 @@ export type WriterFileOutcome =
         | 'wrong-password'
         | 'invalid-google-doc'
         | 'google'
+        | 'conflict'
         | 'error'
       detail: string
     }
@@ -112,7 +114,7 @@ function currentBytes(): Uint8Array {
   const source = writerSource.value
   return writeDocx(
     { ...writerDocument.value, title: writerName.value || writerDocument.value.title },
-    { source: source?.kind === 'file' ? source.package : null }
+    { source: source && source.kind !== 'google' ? source.package : null }
   )
 }
 
@@ -140,6 +142,7 @@ export async function saveWriterDocument(
 ): Promise<WriterFileOutcome> {
   const source = writerSource.value
   if (source?.kind === 'google') return saveGoogleDocument(source, client)
+  if (source?.kind === 'storage') return saveStoredWriterDocument(source)
   if (source?.kind !== 'file' || (!source.handle && !source.path)) return saveWriterDocumentAs()
   try {
     const bytes = currentBytes()

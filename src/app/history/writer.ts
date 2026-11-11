@@ -33,6 +33,10 @@ export const WRITER_CHANGE_DELAY_MS = 1500
 export function writerHistoryKey(source: WriterSource | null): string | null {
   if (!source) return null
   if (source.kind === 'google') return `writer:google:${source.documentId}`
+  if (source.kind === 'storage') {
+    const { providerId, profileId, containerId, documentId } = source.binding
+    return `writer:storage:${providerId}:${profileId ?? ''}:${containerId ?? ''}:${documentId}`
+  }
   if (source.path) return `writer:path:${source.path}`
   if (source.handle) return `writer:file:${source.handle.name}`
   return null

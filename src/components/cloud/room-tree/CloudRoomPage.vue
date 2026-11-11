@@ -9,12 +9,11 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import type { RoomDetail, RoomFile, RoomPresence } from '@lawha/cloud/contract'
-import type { DocumentKind } from '@lawha/scene-graph'
+import type { CloudDocumentKind, RoomDetail, RoomFile, RoomPresence } from '@lawha/cloud/contract'
 import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
-import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
+import { DOCUMENT_KIND_ICONS, STORED_DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -57,7 +56,7 @@ const emit = defineEmits<{
   retry: []
   members: []
   newSubRoom: []
-  newFile: [kind: DocumentKind]
+  newFile: [kind: CloudDocumentKind]
   rename: []
   move: []
   archive: [archived: boolean]
@@ -215,6 +214,14 @@ const empty = computed(
                   <component :is="DOCUMENT_KIND_ICONS.board" :class="menuUI.icon()" />
                   {{ t.roomsNewBoard }}
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  :class="menuUI.item({ justify: 'start' })"
+                  data-test-id="room-new-text"
+                  @select="emit('newFile', 'writer')"
+                >
+                  <component :is="STORED_DOCUMENT_KIND_ICONS.writer" :class="menuUI.icon()" />
+                  {{ t.roomsNewText }}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator :class="menuUI.separator()" />
                 <DropdownMenuItem
                   :class="menuUI.item({ justify: 'start' })"
@@ -319,7 +326,7 @@ const empty = computed(
           <li v-for="file in files" :key="file.document.id" :class="ui.file()">
             <button type="button" :class="ui.fileOpen()" @click="emit('openFile', file)">
               <component
-                :is="DOCUMENT_KIND_ICONS[file.document.kind]"
+                :is="STORED_DOCUMENT_KIND_ICONS[file.document.kind]"
                 class="size-4 shrink-0 text-muted"
               />
               <span :class="ui.fileName()">{{ file.document.name }}</span>

@@ -1,11 +1,7 @@
 import { computed } from 'vue'
 
 import type { SceneNode } from '@lawha/scene-graph'
-import {
-  STATUS_NODE_TYPES,
-  statusPlacement,
-  type StatusState
-} from '@lawha/scene-graph/statuses'
+import { STATUS_NODE_TYPES, statusPlacement, type StatusState } from '@lawha/scene-graph/statuses'
 import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'

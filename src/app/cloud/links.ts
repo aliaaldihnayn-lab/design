@@ -2,11 +2,7 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
-import {
-  cloudDesktopLinkURL,
-  parseCloudLinkPath,
-  type CloudLinkKind
-} from '@lawha/cloud/contract'
+import { cloudDesktopLinkURL, parseCloudLinkPath, type CloudLinkKind } from '@lawha/cloud/contract'
 import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
 import { cloudMessages } from '@lawha/vue/i18n'
 

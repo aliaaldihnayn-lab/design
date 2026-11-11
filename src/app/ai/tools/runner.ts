@@ -1,11 +1,6 @@
 import { executeAtomicTool, isEmptyDocumentChange, type DocumentChange } from '@lawha/core'
 import type { FigmaAPI } from '@lawha/core/figma-api'
-import {
-  isAtomicTool,
-  toolChangesDocument,
-  toolFailure,
-  type ToolDef
-} from '@lawha/core/tools'
+import { isAtomicTool, toolChangesDocument, toolFailure, type ToolDef } from '@lawha/core/tools'
 
 import {
   AI_UNDO_PREFIX,

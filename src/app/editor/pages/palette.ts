@@ -5,10 +5,7 @@ import IconFiles from '~icons/lucide/files'
 
 import type { SceneNode } from '@lawha/scene-graph'
 import { usePageMessages } from '@lawha/vue/i18n'
-import type {
-  CommandPaletteGroup,
-  CommandPaletteItem
-} from '@lawha/vue/primitives/CommandPalette'
+import type { CommandPaletteGroup, CommandPaletteItem } from '@lawha/vue/primitives/CommandPalette'
 import { isPageDivider } from '@lawha/vue/primitives/PageList'
 
 import type { EditorStore } from '@/app/editor/active-store'

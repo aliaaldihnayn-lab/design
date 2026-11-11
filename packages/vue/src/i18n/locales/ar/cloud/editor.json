@@ -422,5 +422,6 @@
   "joinRoom": "الانضمام إلى الغرفة",
   "roomsExpand": "إظهار الغرف الفرعية",
   "roomsCollapse": "إخفاء الغرف الفرعية",
-  "roomsRenameHeading": "إعادة تسمية الغرفة"
+  "roomsRenameHeading": "إعادة تسمية الغرفة",
+  "roomsNewText": "مستند نصي جديد"
 }
