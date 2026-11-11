@@ -16,6 +16,7 @@ import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'
+import { releaseDeletedFrames } from '#core/publisher/threads'
 
 import { prepareFollowedFieldEdit, fitGroupsAround } from './accessor-utils'
 import { installBasicNodeProxyAccessors } from './accessors/basic'
@@ -474,6 +475,8 @@ export class FigmaNodeProxy {
     const parentId = this._raw().parentId
     // Connectors go with a layer they attach to, as Figma removes them.
     const attached = attachedConnectors(this[INTERNAL_GRAPH], [this[INTERNAL_ID]])
+    // Threaded text frames give their text back to their story's frames that stay.
+    releaseDeletedFrames(this[INTERNAL_GRAPH], [this[INTERNAL_ID]])
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
     for (const connector of attached) this[INTERNAL_GRAPH].deleteNode(connector.id)
     fitGroupsAround(this[INTERNAL_GRAPH], parentId, this[INTERNAL_API].groupFitOptions)

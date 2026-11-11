@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@lawha/core/figma-api'
 import { ALL_TOOLS } from '@lawha/core/tools'
-import { SceneGraph } from '@lawha/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+
+import { withTextMeasurer } from '#core/layout/text-measurement'
 
 type ToolResult = { [key: string]: unknown }
 
@@ -108,5 +110,45 @@ describe('publication layout tools', () => {
       detached: [page.id]
     })
     expect(graph.getNode(graph.getNode(page.id)?.childIds[0] ?? '')?.type).toBe('FRAME')
+  })
+})
+
+/** Ten pixels a character on lines as wide as the frame, twenty pixels a line. */
+function measure(node: SceneNode, maxWidth?: number) {
+  const perLine = Math.max(1, Math.floor((maxWidth ?? 1000) / 10))
+  const lines = node.text
+    .split('\n')
+    .reduce((n, line) => n + Math.max(1, Math.ceil(line.length / perLine)), 0)
+  return { width: maxWidth ?? node.text.length * 10, height: lines * 20 }
+}
+
+describe('deleting threaded frames through the API', () => {
+  test('node.remove() and delete_node flow a frame’s text into the frames left', () => {
+    withTextMeasurer(measure, () => {
+      const graph = new SceneGraph()
+      const canvas = graph.getPages()[0].id
+      const story = 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj'
+      const frames = [0, 200, 400].map((x, i) =>
+        graph.createNode('TEXT', canvas, {
+          x,
+          y: 0,
+          width: 100,
+          height: 40,
+          text: i === 0 ? story : '',
+          textAutoResize: 'NONE'
+        })
+      )
+      const figma = new FigmaAPI(graph)
+      tool('link_text_frames')(figma, { ids: frames.map((frame) => frame.id) })
+      const text = (id: string) => graph.getNode(id)?.text
+      expect(text(frames[1].id)).toBe('eeee ffff gggg hhhh')
+
+      expect(tool('delete_node')(figma, { id: frames[1].id })).toEqual({ deleted: frames[1].id })
+      expect(text(frames[0].id)).toBe('aaaa bbbb cccc dddd')
+      expect(text(frames[2].id)).toBe('eeee ffff gggg hhhh iiii jjjj')
+
+      figma.getNodeById(frames[0].id)?.remove()
+      expect(text(frames[2].id)).toBe(story)
+    })
   })
 })
