@@ -244,4 +244,30 @@ describe('interactive kit', () => {
     expect(behaviour?.numbers.value).toEqual({ min: 0, max: 100, step: 5, default: 25 })
     expect(behaviour?.numbers.end).toEqual({ min: 0, max: 100, step: 5, default: 75 })
   })
+  test('each instance of a control keeps its own value', async () => {
+    const { graph, screen, instance } = await screenWith('select')
+    const second = graph.createInstance(instance.componentId ?? '', screen.id, { x: 20, y: 300 })
+    if (!second) throw new Error('no second select')
+    graph.updateNode(second.id, { name: 'Other select' })
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    const run = (target: string) => {
+      const result = dispatchStateEvent(
+        show(graph, screen.id, states, variables),
+        screen.id,
+        target,
+        'click',
+        variables
+      )
+      for (const change of result.changes) states = new Map(states).set(change.instance, change.to)
+      variables = result.variables
+    }
+    run(`${instance.name}/Trigger`)
+    run(`${instance.name}/Menu/Option 2`)
+    run('Other select/Trigger')
+    run('Other select/Menu/Option 4')
+    const shown = show(graph, screen.id, states, variables)
+    const values = shown.getChildren(screen.id).map((child) => textOf(shown, child, 'Value'))
+    expect(values).toEqual(['Jeddah', 'Mecca'])
+  })
 })

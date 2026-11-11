@@ -33,6 +33,11 @@ import {
 import { buildDesignSystemTool } from '#core/tools/design-system'
 import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
 import { inspectLayerTool } from '#core/tools/inspect'
+import {
+  addStateInteraction,
+  bindPropertyToVariable,
+  createInteractiveComponent
+} from '#core/tools/interactive-components'
 import { buildInteractiveKitTool, insertKitComponentTool } from '#core/tools/kit'
 import {
   createDeviceMockup,
@@ -72,13 +77,9 @@ import {
   getPrototype,
   setFlow,
   setInteractions,
-  setScrollBehavior
+  setScrollBehavior,
+  setVariableScope
 } from '#core/tools/prototype'
-import {
-  addStateInteraction,
-  bindPropertyToVariable,
-  createInteractiveComponent
-} from '#core/tools/interactive-components'
 import {
   applyMasterPageTool,
   createMasterPageTool,
@@ -220,6 +221,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setFlow,
   autoPrototype,
   setScrollBehavior,
+  setVariableScope,
   // Interactive components
   createInteractiveComponent,
   addStateInteraction,

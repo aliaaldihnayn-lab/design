@@ -1,11 +1,16 @@
 import * as v from 'valibot'
 
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type {
+  ComponentPropertyDefinition,
+  SceneGraph,
+  SceneNode,
+  Variable
+} from '@lawha/scene-graph'
 import { findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
 import { componentPropertyDefinitions } from '@lawha/scene-graph/components'
 import { resolveVariable, variableText, variableTruthy } from '@lawha/scene-graph/variables'
 
-import { getPluginData } from '#core/figma-api/plugin-data'
+import { getPluginData, LAWHA_PLUGIN_DATA_NAMESPACE } from '#core/figma-api/plugin-data'
 
 import type { Action } from './model'
 import type { conditionSchema, playValueSchema } from './schema'
@@ -36,13 +41,67 @@ const propertyBindingsSchema = v.record(v.string(), propertyBindingSchema)
 
 export type PropertyBinding = v.InferOutput<typeof propertyBindingSchema>
 
-/** A variable's value while the prototype runs: as set, else the document's in its mode. */
+/**
+ * A variable's scope while the prototype runs, as Lawha data on the variable: `instance` keeps a
+ * value for each instance that sets or shows it, so two selects hold their own picks; otherwise
+ * one value is shared by every layer that uses it.
+ */
+export const VARIABLE_SCOPE_KEY = 'prototype.scope'
+
+export type VariableScope = 'instance' | 'shared'
+
+/** Whether a variable keeps a value per instance while the prototype runs. */
+export function variableScope(variable: Variable | undefined): VariableScope {
+  const entry = variable?.pluginData?.find(
+    (item) => item.pluginId === LAWHA_PLUGIN_DATA_NAMESPACE && item.key === VARIABLE_SCOPE_KEY
+  )
+  return entry?.value === 'instance' ? 'instance' : 'shared'
+}
+
+/** A variable's plugin data with its scope set: per instance, or shared, the default. */
+export function withVariableScope(
+  variable: Variable,
+  scope: VariableScope
+): Variable['pluginData'] {
+  const kept = (variable.pluginData ?? []).filter(
+    (item) => !(item.pluginId === LAWHA_PLUGIN_DATA_NAMESPACE && item.key === VARIABLE_SCOPE_KEY)
+  )
+  return scope === 'instance'
+    ? [...kept, { pluginId: LAWHA_PLUGIN_DATA_NAMESPACE, key: VARIABLE_SCOPE_KEY, value: scope }]
+    : kept
+}
+
+/**
+ * The instance a layer's per-instance variables belong to: the layer, if it is an instance,
+ * or its nearest instance ancestor below the root, by root and layer path; null outside one.
+ */
+export function instanceScope(graph: SceneGraph, rootId: string, layerId: string): string | null {
+  let current = graph.getNode(layerId)
+  while (current && current.id !== rootId) {
+    if (current.type === 'INSTANCE') return `${rootId}\u0000${layerPath(graph, rootId, current.id)}`
+    current = current.parentId ? graph.getNode(current.parentId) : undefined
+  }
+  return null
+}
+
+/** Where a running variable's value is kept: its id, with the instance for a per-instance one. */
+export function playKey(graph: SceneGraph, variableId: string, scope?: string | null): string {
+  if (!scope || variableScope(graph.variables.get(variableId)) !== 'instance') return variableId
+  return `${variableId}\u0000${scope}`
+}
+
+/**
+ * A variable's value while the prototype runs: as set, in the instance `scope` names for a
+ * per-instance variable, else the document's in its mode.
+ */
 export function playValue(
   graph: SceneGraph,
   variables: PlayVariables,
-  variableId: string
+  variableId: string,
+  scope?: string | null
 ): PlayValue | undefined {
-  if (variables.has(variableId)) return variables.get(variableId)
+  const key = playKey(graph, variableId, scope)
+  if (variables.has(key)) return variables.get(key)
   const value = resolveVariable(graph, variableId)
   return typeof value === 'object' ? undefined : value
 }
@@ -71,10 +130,11 @@ function compare(op: Condition['op'], left: PlayValue | undefined, right: PlayVa
 export function conditionsHold(
   graph: SceneGraph,
   variables: PlayVariables,
-  conditions: readonly Condition[]
+  conditions: readonly Condition[],
+  scope?: string | null
 ): boolean {
   return conditions.every((condition) =>
-    compare(condition.op, playValue(graph, variables, condition.variable), condition.value)
+    compare(condition.op, playValue(graph, variables, condition.variable, scope), condition.value)
   )
 }
 
@@ -82,9 +142,10 @@ export function conditionsHold(
 function setValue(
   graph: SceneGraph,
   variables: PlayVariables,
-  action: Extract<Action, { type: 'set-variable' }>
+  action: Extract<Action, { type: 'set-variable' }>,
+  scope?: string | null
 ): PlayValue | undefined {
-  const current = playValue(graph, variables, action.variable)
+  const current = playValue(graph, variables, action.variable, scope)
   if (action.toggle) return !(variableTruthy(current) ?? false)
   if (action.add !== undefined) return (Number(current) || 0) + action.add
   return action.value
@@ -98,17 +159,23 @@ function setValue(
 export function runVariableActions(
   graph: SceneGraph,
   variables: PlayVariables,
-  actions: readonly Action[]
+  actions: readonly Action[],
+  /** The instance the actions run in, which per-instance variables are kept for. */
+  scope?: string | null
 ): { actions: Action[]; variables: Map<string, PlayValue> } {
   const next = new Map(variables)
   const out: Action[] = []
   const visit = (list: readonly Action[]) => {
     for (const action of list) {
       if (action.type === 'set-variable') {
-        const value = setValue(graph, next, action)
-        if (value !== undefined) next.set(action.variable, value)
+        const value = setValue(graph, next, action, scope)
+        if (value !== undefined) next.set(playKey(graph, action.variable, scope), value)
       } else if (action.type === 'conditional')
-        visit(conditionsHold(graph, next, action.when) ? action.actions : (action.otherwise ?? []))
+        visit(
+          conditionsHold(graph, next, action.when, scope)
+            ? action.actions
+            : (action.otherwise ?? [])
+        )
       else out.push(action)
     }
   }
@@ -179,7 +246,8 @@ export function boundInstanceStates(
           ? bindings[definition.name]
           : undefined
         const variableId = typeof binding === 'string' ? binding : binding?.variable
-        const value = variableId ? playValue(graph, variables, variableId) : undefined
+        const scope = instanceScope(graph, rootId, node.id)
+        const value = variableId ? playValue(graph, variables, variableId, scope) : undefined
         if (value === undefined) continue
         showBoundProperty(state, definition, binding, value)
       }
@@ -204,10 +272,11 @@ export function showPlayVariables(
   variables: PlayVariables
 ): string[] {
   const changed: string[] = []
-  const walk = (node: SceneNode) => {
+  const walk = (node: SceneNode, scope: string | null) => {
+    const own = node.type === 'INSTANCE' ? instanceScope(graph, rootId, node.id) : scope
     const text = node.boundVariables.text
     if (node.type === 'TEXT' && text) {
-      const shown = variableText(playValue(graph, variables, text))
+      const shown = variableText(playValue(graph, variables, text, own))
       if (shown !== undefined && shown !== node.text) {
         graph.updateNode(node.id, { text: shown, styleRuns: [], derivedTextGlyphs: null })
         changed.push(node.id)
@@ -215,15 +284,15 @@ export function showPlayVariables(
     }
     const visible = node.boundVariables.visible
     if (visible) {
-      const shown = variableTruthy(playValue(graph, variables, visible))
+      const shown = variableTruthy(playValue(graph, variables, visible, own))
       if (shown !== undefined && shown !== node.visible) {
         graph.updateNode(node.id, { visible: shown })
         changed.push(node.id)
       }
     }
-    for (const child of graph.getChildren(node.id)) walk(child)
+    for (const child of graph.getChildren(node.id)) walk(child, own)
   }
   const root = findLayerByPath(graph, rootId, '')
-  if (root) walk(root)
+  if (root) walk(root, null)
   return changed
 }

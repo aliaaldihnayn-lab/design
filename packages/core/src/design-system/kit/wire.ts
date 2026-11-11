@@ -9,6 +9,7 @@ import {
   type Interaction,
   type Transition
 } from '#core/prototype/model'
+import { withVariableScope } from '#core/prototype/variables'
 
 /** The collection the kit keeps its controls' shared state in, such as a select's value. */
 export const KIT_STATE_COLLECTION = 'Kit state'
@@ -96,7 +97,11 @@ export class KitWiring {
     const existing = [...graph.variables.values()].find(
       (variable) => variable.collectionId === collection.id && variable.name === name
     )
-    return existing?.id ?? graph.createVariable(name, type, collection.id, value).id
+    if (existing) return existing.id
+    // Each instance of the control keeps its own value, as two selects hold their own picks.
+    const created = graph.createVariable(name, type, collection.id, value)
+    created.pluginData = withVariableScope(created, 'instance')
+    return created.id
   }
 
   /** Keeps Lawha data on a layer, such as the suggestions a variant filters. */

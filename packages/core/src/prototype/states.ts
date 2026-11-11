@@ -3,7 +3,7 @@ import { findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
 import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
 import { readInteractions, type Action, type Interaction, type Transition } from './model'
-import { runVariableActions, type PlayVariables } from './variables'
+import { instanceScope, runVariableActions, type PlayVariables } from './variables'
 
 /**
  * Interactive components: while a prototype runs, each instance can show another variant of
@@ -151,7 +151,12 @@ export function runInteraction(
   const actions: Action[] = []
   const holds: StateHold[] = []
   // Variables are set and conditionals decided first, in order, so a branch can Change to.
-  const expanded = runVariableActions(graph, variables, actionsOf(interaction))
+  const expanded = runVariableActions(
+    graph,
+    variables,
+    actionsOf(interaction),
+    instanceScope(graph, rootId, layer.id)
+  )
   for (const action of expanded.actions) {
     if (action.type !== 'change-to') {
       actions.push(action)

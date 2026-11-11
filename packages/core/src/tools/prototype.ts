@@ -21,6 +21,7 @@ import {
   triggerSchema
 } from '#core/prototype/schema'
 import { readScroll, SCROLL_KEY } from '#core/prototype/scroll'
+import { variableScope, withVariableScope } from '#core/prototype/variables'
 import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
@@ -223,5 +224,25 @@ export const setScrollBehavior = defineTool({
     if (args.direction !== 'none' && !raw.clipsContent)
       figma.graph.updateNode(args.id, { clipsContent: true })
     return { id: args.id, direction: args.direction }
+  }
+})
+
+export const setVariableScope = defineTool({
+  name: 'set_variable_scope',
+  description:
+    'Choose whether a prototype variable keeps one value per instance or one shared value while the design runs. Per instance (the kit’s controls use it): each instance that sets or shows the variable holds its own, so two selects keep their own picks and two checkboxes check apart. Shared (the default): every layer that uses it sees the same value, so one control can drive another.',
+  execution: { kind: 'sync', mutation: 'document' },
+  input: v.strictObject({
+    variable: v.pipe(v.string(), v.description('Variable id or name')),
+    scope: v.picklist(['instance', 'shared'])
+  }),
+  execute: (figma, args) => {
+    const variable =
+      figma.graph.variables.get(args.variable) ??
+      [...figma.graph.variables.values()].find((item) => item.name === args.variable)
+    if (!variable) return { error: `No variable ${args.variable}` }
+    if (variableScope(variable) !== args.scope)
+      variable.pluginData = withVariableScope(variable, args.scope)
+    return { variable: variable.id, scope: args.scope }
   }
 })
