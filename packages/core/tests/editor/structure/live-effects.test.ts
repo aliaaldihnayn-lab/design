@@ -211,3 +211,39 @@ describe('Width tool', () => {
     expect(editor.liveEffectHandleAt(100, 100)?.hit.kind).toBe('width-path')
   })
 })
+
+describe('live blends', () => {
+  test('moving an end makes the steps again between the ends as they are now', async () => {
+    const { editor, figma } = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const from = editor.graph.createNode('ELLIPSE', pageId, {
+      x: 0,
+      y: 0,
+      width: 20,
+      height: 20,
+      fills: [RED]
+    })
+    const to = editor.graph.createNode('ELLIPSE', pageId, {
+      x: 180,
+      y: 0,
+      width: 20,
+      height: 20,
+      fills: [RED]
+    })
+    const def = ALL_TOOLS.find((t) => t.name === 'blend_shapes')
+    const result = await def?.execute(figma, { from_id: from.id, to_id: to.id, steps: 1 })
+    const groupId = (result as { id: string }).id
+    const step = () => {
+      const group = editor.graph.getNode(groupId)
+      const blend = group && readPluginData(group.pluginData, LAWHA_PLUGIN_DATA.liveBlend)
+      return blend ? editor.graph.getNode(blend.stepIds[0]) : undefined
+    }
+    const before = step()
+    expect(Math.round(before?.y ?? -1)).toBe(0)
+    editor.updateNode(to.id, { y: to.y + 100 })
+    await Promise.resolve()
+    // The one step sits halfway: 50 px down.
+    expect(step()?.id).not.toBe(before?.id)
+    expect(Math.round(step()?.y ?? -1) - Math.round(editor.graph.getNode(from.id)?.y ?? 0)).toBe(50)
+  })
+})

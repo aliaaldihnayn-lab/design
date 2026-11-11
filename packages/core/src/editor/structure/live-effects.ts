@@ -25,6 +25,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorContext } from '#core/editor/types'
 import { widthAt } from '#core/vector/width'
 
+import { watchLiveBlends } from './blend-sync'
 import { placeOf, recordLayerSwap } from './swap'
 
 /** How near, in screen pixels, a press must be to take hold of a live effect's handle. */
@@ -82,6 +83,8 @@ function draggedSettings(
 
 /** The live effect actions the canvas uses: its handles, what a press takes, and drags. */
 export function createLiveEffectActions(ctx: EditorContext) {
+  watchLiveBlends(ctx)
+
   function handles(): LiveEffectHandles | null {
     const renderer = ctx.getRenderer()
     return renderer ? liveEffectHandlesForState(renderer, ctx.graph, ctx.state) : null
