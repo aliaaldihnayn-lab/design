@@ -4,23 +4,31 @@ import { computed } from 'vue'
 
 import { twipsToPx, type PageSetup } from '@lawha/core/writer'
 
+import { PAGE_GAP } from '@/app/writer/editor/pagination/regions'
+
 import { writer } from './ui'
 
-/** The page as it prints: its size and margins, with the header and footer in the margins. */
+/**
+ * The pages as they print: their size and margins, the first page's header and the last page's
+ * footer editable in the margins, and the pages between drawn by the body's pagination.
+ */
 const {
   editor,
   page,
+  pages = 1,
   watermark = null
 } = defineProps<{
   editor: Editor
   page: PageSetup
+  /** How many pages the body fills; the paper is that many sheets tall. */
+  pages?: number
   watermark?: string | null
 }>()
 const ui = writer()
 
 const paperStyle = computed(() => ({
   width: `${twipsToPx(page.width)}px`,
-  minHeight: `${twipsToPx(page.height)}px`,
+  minHeight: `${pages * twipsToPx(page.height) + (pages - 1) * PAGE_GAP}px`,
   paddingInline: `${twipsToPx(page.margins.left)}px ${twipsToPx(page.margins.right)}px`
 }))
 const topStyle = computed(() => ({

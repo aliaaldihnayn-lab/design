@@ -38,6 +38,10 @@ export const PageBreak = Node.create({
     'div',
     mergeAttributes(HTMLAttributes, { 'data-page-break': '', class: 'writer-page-break' })
   ],
+  // Word's shortcut for a page break.
+  addKeyboardShortcuts() {
+    return { 'Mod-Enter': () => this.editor.commands.setPageBreak() }
+  },
   addCommands() {
     return {
       setPageBreak:

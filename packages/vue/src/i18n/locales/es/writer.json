@@ -217,5 +217,7 @@
   "previousPage": "Página anterior",
   "nextPage": "Página siguiente",
   "pageOf": "Página {page} de {count}",
-  "signatureField": "Campo de firma {name}"
+  "signatureField": "Campo de firma {name}",
+  "exportFailed": "No se pudo exportar el PDF: {error}",
+  "saveConflict": "Alguien guardó este documento después de que lo abrieras. Descarga tu copia y abre la versión más reciente."
 }

@@ -217,5 +217,7 @@
   "previousPage": "Poprzednia strona",
   "nextPage": "Następna strona",
   "pageOf": "Strona {page} z {count}",
-  "signatureField": "Pole podpisu {name}"
+  "signatureField": "Pole podpisu {name}",
+  "exportFailed": "Nie udało się wyeksportować PDF: {error}",
+  "saveConflict": "Ktoś zapisał ten dokument po jego otwarciu. Pobierz swoją kopię, a potem otwórz najnowszą wersję."
 }

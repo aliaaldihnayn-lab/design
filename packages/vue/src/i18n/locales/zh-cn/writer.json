@@ -217,5 +217,7 @@
   "previousPage": "上一页",
   "nextPage": "下一页",
   "pageOf": "第 {page} 页，共 {count} 页",
-  "signatureField": "签名字段 {name}"
+  "signatureField": "签名字段 {name}",
+  "exportFailed": "无法导出 PDF：{error}",
+  "saveConflict": "在你打开后有人保存了此文档。请下载你的副本，然后打开最新版本。"
 }

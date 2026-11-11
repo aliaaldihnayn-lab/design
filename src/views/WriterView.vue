@@ -23,6 +23,7 @@ import {
   type WriterFileOutcome
 } from '@/app/writer/document'
 import { WRITER_FONTS_STYLESHEET } from '@/app/writer/fonts'
+import { saveWriterPDF } from '@/app/writer/pdf'
 import { printableHTML, printHTML } from '@/app/writer/print'
 import {
   newWriterDocument,
@@ -65,7 +66,7 @@ useHead({
   link: [{ rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }]
 })
 
-const editor = useWriterEditor(() => t.value.untitled)
+const { editor, pages } = useWriterEditor(() => t.value.untitled)
 const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
 const findOpen = ref(false)
@@ -113,6 +114,7 @@ function report(outcome: WriterFileOutcome, failed: (detail: string) => string) 
   else if (outcome.reason === 'encrypted') error.value = t.value.encrypted
   else if (outcome.reason === 'wrong-password') error.value = t.value.wrongPassword
   else if (outcome.reason === 'invalid-google-doc') error.value = t.value.invalidGoogleDoc
+  else if (outcome.reason === 'conflict') error.value = t.value.saveConflict
   else if (outcome.reason === 'google')
     error.value = t.value.googleFailed({ error: outcome.detail })
   else error.value = failed(outcome.detail)
@@ -131,7 +133,26 @@ async function run(action: () => Promise<WriterFileOutcome>, failed: (detail: st
 const openFailed = (detail: string) => t.value.openFailed({ error: detail })
 const saveFailed = (detail: string) => t.value.saveFailed({ error: detail })
 
-/** Opens the print dialog on the document as it prints; its Save as PDF exports the PDF. */
+/** Lays the document out and saves it as a PDF file, its text in embedded fonts. */
+async function exportPDF() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await saveWriterPDF(
+      { ...writerDocument.value, title: writerTitle.value },
+      writerTitle.value || t.value.untitled
+    )
+    error.value = null
+  } catch (cause) {
+    error.value = t.value.exportFailed({
+      error: cause instanceof Error ? cause.message : String(cause)
+    })
+  } finally {
+    busy.value = false
+  }
+}
+
+/** Opens the print dialog on the document as it prints. */
 async function printDocument() {
   const instance = editor.value
   if (!instance) return
@@ -217,7 +238,10 @@ onBeforeUnmount(() => editor.value?.destroy())
         >
           <icon-lucide-download class="size-3.5" />
         </IconButton>
-        <IconButton :label="t.exportPDF" data-test-id="writer-print" @click="printDocument">
+        <IconButton :label="t.exportPDF" data-test-id="writer-export-pdf" @click="exportPDF">
+          <icon-lucide-file-down class="size-3.5" />
+        </IconButton>
+        <IconButton :label="t.print" data-test-id="writer-print" @click="printDocument">
           <icon-lucide-printer class="size-3.5" />
         </IconButton>
         <IconButton :label="t.signPDF" data-test-id="writer-sign-pdf" @click="signPDFOpen = true">
@@ -312,6 +336,7 @@ onBeforeUnmount(() => editor.value?.destroy())
           v-show="!previewedVersion"
           :editor="editor"
           :page="page"
+          :pages="pages.pages"
           :watermark="writerDocument.watermark?.text"
         >
           <template #header><WriterRegion kind="header" /></template>

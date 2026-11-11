@@ -217,5 +217,7 @@
   "previousPage": "Page précédente",
   "nextPage": "Page suivante",
   "pageOf": "Page {page} sur {count}",
-  "signatureField": "Champ de signature {name}"
+  "signatureField": "Champ de signature {name}",
+  "exportFailed": "Impossible d’exporter le PDF : {error}",
+  "saveConflict": "Quelqu’un a enregistré ce document depuis que vous l’avez ouvert. Téléchargez votre copie, puis ouvrez la dernière version."
 }

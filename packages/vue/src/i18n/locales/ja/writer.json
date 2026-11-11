@@ -217,5 +217,7 @@
   "previousPage": "前のページ",
   "nextPage": "次のページ",
   "pageOf": "{count} ページ中 {page} ページ",
-  "signatureField": "署名フィールド {name}"
+  "signatureField": "署名フィールド {name}",
+  "exportFailed": "PDF を書き出せませんでした: {error}",
+  "saveConflict": "開いた後に他の人がこのドキュメントを保存しました。手元のコピーをダウンロードしてから、最新版を開いてください。"
 }

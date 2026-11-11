@@ -217,5 +217,7 @@
   "previousPage": "الصفحة السابقة",
   "nextPage": "الصفحة التالية",
   "pageOf": "الصفحة {page} من {count}",
-  "signatureField": "حقل التوقيع {name}"
+  "signatureField": "حقل التوقيع {name}",
+  "exportFailed": "تعذّر تصدير ملف PDF: {error}",
+  "saveConflict": "حفظ شخص آخر هذا المستند بعد أن فتحته. نزّل نسختك، ثم افتح أحدث إصدار."
 }

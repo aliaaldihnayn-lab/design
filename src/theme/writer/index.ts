@@ -3,7 +3,7 @@
  * Paper stays white with black text in both themes, as printed pages are.
  */
 const content = [
-  '[&_.ProseMirror]:min-h-[2em] [&_.ProseMirror]:outline-none min-h-full text-[11pt] leading-[1.4] text-black',
+  '[&_.ProseMirror]:relative [&_.ProseMirror]:min-h-[2em] [&_.ProseMirror]:outline-none min-h-full text-[11pt] leading-[1.4] text-black',
   '[&_p]:mt-0 [&_p]:mb-[8pt] [&_p]:min-h-[1.4em]',
   '[&_h1]:mt-[18pt] [&_h1]:mb-[4pt] [&_h1]:text-[16pt] [&_h1]:font-bold',
   '[&_h2]:mt-[12pt] [&_h2]:mb-[4pt] [&_h2]:text-[13pt] [&_h2]:font-bold',
@@ -18,6 +18,9 @@ const content = [
   '[&_img]:inline [&_img]:max-w-full [&_.ProseMirror-selectednode]:outline-2 [&_.ProseMirror-selectednode]:outline-accent',
   '[&_.writer-page-break]:my-[12pt] [&_.writer-page-break]:h-0 [&_.writer-page-break]:border-t-2 [&_.writer-page-break]:border-dashed [&_.writer-page-break]:border-black/30',
   '[&_.writer-section-break]:my-[12pt] [&_.writer-section-break]:h-1 [&_.writer-section-break]:border-y [&_.writer-section-break]:border-dashed [&_.writer-section-break]:border-black/30',
+  '[&_.writer-page-gap]:relative [&_.writer-page-gap]:flex [&_.writer-page-gap]:flex-col [&_.writer-page-gap]:select-none [&_.writer-page-gap_p]:mb-0',
+  '[&_.writer-page-footer]:flex [&_.writer-page-footer]:flex-col [&_.writer-page-footer]:justify-end [&_.writer-page-footer]:text-[9pt] [&_.writer-page-footer]:text-black/70 [&_.writer-page-header]:text-[9pt] [&_.writer-page-header]:text-black/70',
+  '[&_.writer-page-between]:-mx-px [&_.writer-page-between]:bg-canvas [&_.writer-page-between]:shadow-[inset_0_1px_3px_rgb(0_0_0/0.2)]',
   '[&_.writer-page-field]:rounded-sm [&_.writer-page-field]:bg-black/10 [&_.writer-page-field]:px-0.5',
   '[&_.writer-comment]:bg-warning/30 [&_.writer-comment]:border-b-2 [&_.writer-comment]:border-warning',
   '[&_.writer-insertion]:text-chart-1 [&_.writer-insertion]:underline [&_.writer-deletion]:text-error-fill [&_.writer-deletion]:line-through',

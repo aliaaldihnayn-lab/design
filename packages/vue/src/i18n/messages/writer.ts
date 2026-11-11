@@ -225,7 +225,9 @@ export const writerMessageDefaults = {
   previousPage: 'Previous page',
   nextPage: 'Next page',
   pageOf: params('Page {page} of {count}'),
-  signatureField: params('Signature field {name}')
+  signatureField: params('Signature field {name}'),
+  exportFailed: params('Could not export the PDF: {error}'),
+  saveConflict: 'Someone saved this document since you opened it. Download your copy, then open the latest version.'
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

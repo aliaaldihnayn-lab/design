@@ -37,4 +37,11 @@ export {
   setFootnoteContent,
   type NumberedFootnote
 } from './footnotes'
+export {
+  DEFAULT_FALLBACK_FAMILIES,
+  exportWriterPDF,
+  type WriterFontRequest,
+  type WriterFontResolver,
+  type WriterPDFOptions
+} from './pdf'
 export { WRITER_TEMPLATE_IDS, writerTemplate, type WriterTemplateId } from './templates'
