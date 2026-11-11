@@ -48,6 +48,12 @@ const shown = computed(
 )
 /** Whether pixels are selected, which the selection's outline on the canvas shows. */
 const hasSelection = computed(() => !!store.state.pixelOverlay?.outline)
+/** How the selected layer's paint follows it when resized; null when it has no paint. */
+const paintResample = computed(() => {
+  void store.state.sceneVersion
+  void store.state.selectedIds
+  return store.pixelPaintResample()
+})
 /** Whether a mask made from the selection hides the selection rather than the rest. */
 const invertMask = ref(false)
 
@@ -124,6 +130,10 @@ function setContiguous(value: boolean) {
   store.setPixelTools({ contiguous: value })
 }
 
+function setSmoothResize(value: boolean) {
+  store.setPixelPaintResample(value ? 'smooth' : 'nearest')
+}
+
 function setSampleAll(value: boolean) {
   store.setPixelTools({ sampleScope: value ? 'all' : 'layer' })
 }
@@ -184,6 +194,18 @@ function maskFromSelection() {
         @update:model-value="setContiguous"
       />
       {{ t.contiguous }}
+    </label>
+    <label
+      v-if="BRUSHES.has(tool) && paintResample"
+      class="flex items-center gap-1.5 text-muted"
+      data-test-id="pixel-smooth-resize"
+    >
+      <AppCheckbox
+        :model-value="paintResample === 'smooth'"
+        :ariaLabel="t.smoothResize"
+        @update:model-value="setSmoothResize"
+      />
+      {{ t.smoothResize }}
     </label>
     <label
       v-if="SAMPLING.has(tool)"

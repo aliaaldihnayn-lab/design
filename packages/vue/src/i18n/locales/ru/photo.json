@@ -38,5 +38,6 @@
   "invertMask": "Инвертировать маску",
   "feather": "Растушёвка",
   "cloneSourceHint": "Alt-щелчок задаёт источник",
-  "sampleAllLayers": "Образец со всех слоёв"
+  "sampleAllLayers": "Образец со всех слоёв",
+  "smoothResize": "Сглаживать при изменении размера"
 }

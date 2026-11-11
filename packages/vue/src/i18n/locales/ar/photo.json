@@ -38,5 +38,6 @@
   "invertMask": "عكس القناع",
   "feather": "تنعيم الحواف",
   "cloneSourceHint": "انقر مع Alt لتحديد المصدر",
-  "sampleAllLayers": "أخذ العيّنة من كل الطبقات"
+  "sampleAllLayers": "أخذ العيّنة من كل الطبقات",
+  "smoothResize": "تنعيم عند تغيير الحجم"
 }

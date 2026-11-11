@@ -38,5 +38,6 @@
   "invertMask": "Invertir máscara",
   "feather": "Calado",
   "cloneSourceHint": "Alt+clic para fijar el origen",
-  "sampleAllLayers": "Muestrear todas las capas"
+  "sampleAllLayers": "Muestrear todas las capas",
+  "smoothResize": "Suavizar al redimensionar"
 }

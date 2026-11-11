@@ -181,7 +181,13 @@ const imageAdjustmentsSchema = v.record(
   })
 )
 
-const paintLayerSchema = v.object({ hash: v.pipe(v.string(), v.minLength(1)) })
+const paintLayerSchema = v.object({
+  hash: v.pipe(v.string(), v.minLength(1)),
+  /** Paint pixels to one unit of the layer, which a resized layer's paint keeps. */
+  density: v.optional(v.pipe(v.number(), v.gtValue(0), v.maxValue(64))),
+  /** How the paint is resampled when the layer is resized: pixel for pixel, or smoothly. */
+  resample: v.optional(v.picklist(['nearest', 'smooth']))
+})
 
 const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
 

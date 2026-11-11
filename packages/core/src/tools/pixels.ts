@@ -66,7 +66,7 @@ export function savePaint(
   const png = codec.encodePNG(surface.paint)
   if (!png) return { error: 'Could not encode the paint layer' }
   const hash = storeImage(figma.graph, png)
-  figma.graph.updateNode(node.id, paintedLayerChanges(node, surface.paintIndex, hash))
+  figma.graph.updateNode(node.id, paintedLayerChanges(node, surface, hash))
   return null
 }
 

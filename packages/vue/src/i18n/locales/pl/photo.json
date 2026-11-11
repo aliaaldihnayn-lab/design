@@ -38,5 +38,6 @@
   "invertMask": "Odwróć maskę",
   "feather": "Wtapianie",
   "cloneSourceHint": "Alt+klik ustawia źródło",
-  "sampleAllLayers": "Próbkuj wszystkie warstwy"
+  "sampleAllLayers": "Próbkuj wszystkie warstwy",
+  "smoothResize": "Wygładzaj przy zmianie rozmiaru"
 }

@@ -38,5 +38,6 @@
   "invertMask": "反转蒙版",
   "feather": "羽化",
   "cloneSourceHint": "按住 Alt 单击设置源",
-  "sampleAllLayers": "从所有图层取样"
+  "sampleAllLayers": "从所有图层取样",
+  "smoothResize": "调整大小时平滑"
 }
