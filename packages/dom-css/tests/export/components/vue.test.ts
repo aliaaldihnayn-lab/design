@@ -11,6 +11,7 @@ import {
   numberFieldComponent,
   plainBadgeSet,
   progressComponent,
+  rangeSliderComponent,
   sliderComponent,
   textareaComponent,
   textFieldSet,
@@ -304,6 +305,13 @@ describe('generated Vue shader backdrops', () => {
 })
 
 describe('generated Vue form controls', () => {
+  test('a range slider keeps its end beside its model and places its range between both', async () => {
+    const { files, component } = await generate(rangeSliderComponent())
+    const range = (html: string) => /style="([^"]*)" class="price__range"/.exec(html)?.[1]
+    expect(range(await render(component))).toBe('left:20%;right:20%;')
+    expect(fileText(files, 'Price.vue')).toContain('ref(80)')
+  })
+
   test('a slider binds one number within its range, the thumb and range placed by Reka', async () => {
     const { files, component } = await generate(sliderComponent())
     // Reka shows its thumb once mounted; its range already reaches the value on the server.

@@ -32,6 +32,7 @@ export {
   DIRECTIONS,
   EASINGS,
   OVERLAY_POSITIONS,
+  CALENDAR_OPS,
   CONDITION_OPERATORS,
   POINTER_TRIGGERS,
   SCROLL_DIRECTIONS,
@@ -106,11 +107,17 @@ export {
 export {
   boundInstanceStates,
   conditionsHold,
+  instanceScope,
+  playKey,
   playValue,
   PROPERTY_BINDINGS_KEY,
   readPropertyBindings,
   runVariableActions,
   showPlayVariables,
+  VARIABLE_SCOPE_KEY,
+  variableScope,
+  withVariableScope,
+  type VariableScope,
   type BoundInstanceState,
   type Condition,
   type PlayValue,
@@ -123,3 +130,28 @@ export {
   overlayOrigin,
   type GeometryStyle
 } from './smart-geometry'
+  matchesQuery,
+  readSuggestions,
+  searchKey,
+  showSuggestions,
+  SUGGESTIONS_KEY,
+  type SuggestionsSpec
+} from './suggestions'
+export {
+  CALENDAR_KEY,
+  CALENDAR_LAYERS,
+  CALENDARS,
+  calendarOf,
+  calendarView,
+  dayEnabled,
+  formatPickedDate,
+  monthDays,
+  readCalendar,
+  readCalendarOverrides,
+  runCalendarAction,
+  showCalendars,
+  type CalendarAction,
+  type CalendarOverrides,
+  type CalendarSpec,
+  type CalendarSystem
+} from './calendar'

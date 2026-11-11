@@ -70,7 +70,10 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const states = interactions.mergeStates(instanceStates(controls.value, state.value))
-  const graph = resolvePlayState(editor.graph, rootId, states, variables.value)
+  const typed = new Map(
+    [...state.value].map(([path, control]) => [path, control.texts.value ?? ''])
+  )
+  const graph = resolvePlayState(editor.graph, rootId, states, variables.value, typed)
   const [root] = sceneNodeToDesignDocument(graph, rootId, { vectorElement }).children
   return { graph, root }
 })

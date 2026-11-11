@@ -68,7 +68,7 @@ const RADIX: Record<GeneratedKind, { namespace: string; parts: Record<string, st
   },
   slider: {
     namespace: 'Slider',
-    parts: { root: 'Root', track: 'Track', range: 'Range', thumb: 'Thumb' }
+    parts: { root: 'Root', track: 'Track', range: 'Range', thumb: 'Thumb', endThumb: 'Thumb' }
   },
   progress: { namespace: 'Progress', parts: { root: 'Root', indicator: 'Indicator' } },
   // Radix has no number or text field; these are native inputs in the design's own elements.
@@ -201,7 +201,15 @@ function rootAttributes(uses: MarkupUses): es.SyntaxNode[] {
     ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : []),
     ...(range && uses.kind === 'slider'
       ? [
-          jsx.attribute('defaultValue', jsx.container(es.array([es.number(range.default)]))),
+          jsx.attribute(
+            'defaultValue',
+            jsx.container(
+              es.array([
+                es.number(range.default),
+                ...(range.end === undefined ? [] : [es.number(range.end)])
+              ])
+            )
+          ),
           numeric('min', range.min),
           numeric('max', range.max),
           numeric('step', range.step)

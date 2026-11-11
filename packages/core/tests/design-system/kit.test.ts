@@ -3,8 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { CalendarDate } from '@internationalized/date'
 
+import { behaviourControls } from '@lawha/dom-css/export'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
-import { readBehaviour } from '@lawha/scene-graph/behaviours'
+import { findLayerByPath, readBehaviour } from '@lawha/scene-graph/behaviours'
 
 import {
   buildKit,
@@ -165,10 +166,12 @@ describe('interactive kit', () => {
     const set = graph.getNode(built.id)
     expect(set?.name).toBe('Kit/Date picker (Hijri)')
     const current =
-      set && graph.getChildren(set.id).find((variant) => variant.name === 'State=Month 2')
-    if (!current) throw new Error('no current month')
+      set && graph.getChildren(set.id).find((variant) => variant.name === 'State=Open')
+    if (!current) throw new Error('no open calendar')
     // 11 November 2026 is in Jumada al-Akhirah 1448.
-    expect(textOf(graph, current, 'Title')).toContain('1448')
+    expect(textOf(graph, current, 'Label')).toBeDefined()
+    const year = findLayerByPath(graph, current.id, 'Calendar/Header/Title/Year/Label')
+    expect(year?.text).toContain('1448')
   })
 
   test('picking a date range sets its start, then its end, which closes it', async () => {
@@ -200,5 +203,235 @@ describe('interactive kit', () => {
         graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')?.id ?? ''
       )[0]?.id
     )
+  })
+
+  test('a combobox filters its suggestions by what its field holds', async () => {
+    for (const rtl of [false, true]) {
+      const { graph, screen, instance } = await screenWith('combobox', { rtl })
+      const path = instance.name
+      const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open variant')
+      const shownWith = (query: string) => {
+        const shown = resolvePlayState(
+          graph,
+          screen.id,
+          new Map([[path, { variants: variantValues(graph, open.id) }]]),
+          new Map(),
+          new Map([[`${path}/Trigger/Field`, query]])
+        )
+        const menu = shown
+          .getChildren(shown.getChildren(screen.id)[0]?.id ?? '')
+          .find((child) => child.name === 'Menu')
+        if (!menu) throw new Error('no menu')
+        return shown
+          .getChildren(menu.id)
+          .filter((row) => row.visible)
+          .map((row) => row.name)
+      }
+      expect(shownWith('')).toEqual(['Option 1', 'Option 2', 'Option 3', 'Option 4'])
+      expect(shownWith(rtl ? 'جده' : 'JED')).toEqual(['Option 2'])
+      expect(shownWith(rtl ? 'القاهرة' : 'Cairo')).toEqual(['Empty'])
+    }
+  })
+
+  test('the range slider is one slider with two thumbs that step through its range', async () => {
+    const graph = new SceneGraph()
+    const built = await buildKitComponent(graph, 'range-slider')
+    const set = graph.getNode(built.id)
+    const behaviour = set && readBehaviour(set)
+    expect(behaviour?.kind).toBe('slider')
+    expect(Object.keys(behaviour?.parts ?? {}).sort()).toEqual(
+      ['endThumb', 'range', 'thumb', 'track'].sort()
+    )
+    expect(behaviour?.numbers.value).toEqual({ min: 0, max: 100, step: 5, default: 25 })
+    expect(behaviour?.numbers.end).toEqual({ min: 0, max: 100, step: 5, default: 75 })
+  })
+
+  test('each instance of a control keeps its own value', async () => {
+    const { graph, screen, instance } = await screenWith('select')
+    const second = graph.createInstance(instance.componentId ?? '', screen.id, { x: 20, y: 300 })
+    if (!second) throw new Error('no second select')
+    graph.updateNode(second.id, { name: 'Other select' })
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    const run = (target: string) => {
+      const result = dispatchStateEvent(
+        show(graph, screen.id, states, variables),
+        screen.id,
+        target,
+        'click',
+        variables
+      )
+      for (const change of result.changes) states = new Map(states).set(change.instance, change.to)
+      variables = result.variables
+    }
+    run(`${instance.name}/Trigger`)
+    run(`${instance.name}/Menu/Option 2`)
+    run('Other select/Trigger')
+    run('Other select/Menu/Option 4')
+    const shown = show(graph, screen.id, states, variables)
+    const values = shown.getChildren(screen.id).map((child) => textOf(shown, child, 'Value'))
+    expect(values).toEqual(['Jeddah', 'Mecca'])
+  })
+
+  /** Clicks layers of a screen in turn, as the running prototype does. */
+  function clicker(graph: SceneGraph, screen: SceneNode) {
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    return {
+      click(target: string) {
+        const result = dispatchStateEvent(
+          show(graph, screen.id, states, variables),
+          screen.id,
+          target,
+          'click',
+          variables
+        )
+        for (const change of result.changes)
+          states = new Map(states).set(change.instance, change.to)
+        variables = result.variables
+      },
+      text(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.text
+      },
+      opacity(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.opacity
+      },
+      variant(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        const node = findLayerByPath(shown, screen.id, path)
+        return node?.componentId ? shown.getNode(node.componentId)?.name : undefined
+      }
+    }
+  }
+
+  test('a date picker moves to any month and year through its month and year grids', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker')
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('November')
+    ui.click(`${path}/Calendar/Header/Next`)
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('January')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2027')
+    // The year grid shows twelve years; picking one opens its months, then a month its days.
+    ui.click(`${path}/Calendar/Header/Title/Year`)
+    expect(ui.variant(path)).toBe('State=Years')
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2016')
+    ui.click(`${path}/Calendar/Header/Previous`)
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2004')
+    ui.click(`${path}/Calendar/Years/Year 7`)
+    expect(ui.variant(path)).toBe('State=Months')
+    ui.click(`${path}/Calendar/Months/Month 3`)
+    expect(ui.variant(path)).toBe('State=Open')
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('March')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2010')
+    // 1 March 2010 was a Monday, so the grid starts on Sunday 28 February.
+    ui.click(`${path}/Calendar/Days/Day 2`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Mar 1, 2010')
+  })
+
+  test('days outside the minimum and maximum, or disabled, cannot be picked', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      minDate: '2026-11-05',
+      maxDate: '2026-11-20',
+      disabledDates: ['2026-11-10'],
+      disabledWeekdays: [5]
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    // November 2026 starts on a Sunday, so Day n is the nth.
+    for (const day of [3, 10, 13, 25]) {
+      ui.click(`${path}/Calendar/Days/Day ${day}`)
+      expect(ui.variant(path)).toBe('State=Open')
+      expect(ui.opacity(`${path}/Calendar/Days/Day ${day}/Number`)).toBeLessThan(0.5)
+    }
+    ui.click(`${path}/Calendar/Days/Day 12`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Nov 12, 2026')
+  })
+
+  test('a Hijri date picker moves through Umm al-Qura months', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      calendar: 'islamic-umalqura'
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Jumada II')
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Rajab')
+  })
+
+  test('the time picker shows a 12 or 24 hour clock', async () => {
+    for (const [hourCycle, last] of [
+      [24, '14:30'],
+      [12, '2:30 PM']
+    ] as const) {
+      const graph = new SceneGraph()
+      const built = await buildKitComponent(graph, 'time-picker', { hourCycle })
+      const set = graph.getNode(built.id)
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open list')
+      expect(findLayerByPath(graph, open.id, 'Menu/Option 12/Label')?.text).toBe(last)
+    }
+  })
+
+  test('rebuilding the kit restyles its components to the current tokens in place', async () => {
+    const { graph, screen, instance, component } = await screenWith('button')
+    const variantIds = graph.getChildren(component.id).map((child) => child.id)
+    const collection = graph.createCollection('Tokens')
+    const primary = graph.createVariable('color/primary', 'COLOR', collection.id, {
+      r: 0.9,
+      g: 0.1,
+      b: 0.2,
+      a: 1
+    })
+    const [again] = await buildKit(graph, ['button'], { today: TODAY, restyle: true })
+    expect(again.created).toBe(false)
+    expect(again.id).toBe(component.id)
+    expect(again.restyled).toBeGreaterThan(0)
+    // Same variants, now painted with the token; the instance follows and still runs.
+    expect(graph.getChildren(component.id).map((child) => child.id)).toEqual(variantIds)
+    const rest = graph.getChildren(component.id).find((child) => child.name === 'State=Default')
+    expect(rest?.boundVariables['fills/0/color']).toBe(primary.id)
+    expect(graph.getNode(instance.id)?.boundVariables['fills/0/color']).toBe(primary.id)
+    const page = graph.getPages().find((item) => item.name === KIT_PAGE_NAME)
+    expect(graph.getChildren(page?.id ?? '').length).toBe(1)
+    const result = dispatchStateEvent(
+      resolvePlayState(graph, screen.id, new Map()),
+      screen.id,
+      instance.name,
+      'click'
+    )
+    expect(result.changes.length).toBe(1)
+  })
+
+  test('a filtered combobox runs its field live and its arrow keys skip hidden options', async () => {
+    const { graph, screen, instance } = await screenWith('combobox')
+    const path = instance.name
+    expect([...behaviourControls(graph, screen.id).keys()]).toContain(`${path}/Trigger/Field`)
+    const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+    const variant = (name: string) =>
+      set && graph.getChildren(set.id).find((child) => child.name === name)?.id
+    const typed = new Map([[`${path}/Trigger/Field`, 'jed']])
+    const press = (shown: string) => {
+      const showing = resolvePlayState(
+        graph,
+        screen.id,
+        new Map([[path, { variants: variantValues(graph, shown) }]]),
+        new Map(),
+        typed
+      )
+      return dispatchStateKey(showing, screen.id, 'ArrowDown').changes.map((change) => change.to)
+    }
+    expect(press(variant('State=Open') ?? '')).toEqual([variant('State=Option 2')])
+    expect(press(variant('State=Option 2') ?? '')).toEqual([])
   })
 })

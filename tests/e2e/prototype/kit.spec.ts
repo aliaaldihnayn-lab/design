@@ -74,6 +74,76 @@ test('a kit text input takes real typing and counts it', async () => {
   await leaveLiveMode()
 })
 
+test('a kit combobox filters its suggestions as you type, in any case', async () => {
+  const id = await insertFromAssets('Combobox')
+  await startLiveMode()
+
+  const field = island(id).getByRole('textbox')
+  await field.click()
+  await expect(layer(id, 'Menu')).toBeVisible()
+  await editor.page.keyboard.type('JED')
+  await expect(layer(id, 'Menu/Option 2')).toBeVisible()
+  for (const other of [1, 3, 4]) await expect(layer(id, `Menu/Option ${other}`)).toBeHidden()
+  await expect(layer(id, 'Menu/Empty')).toBeHidden()
+  await field.fill('Cairo')
+  await expect(layer(id, 'Menu/Empty')).toBeVisible()
+  await expect(layer(id, 'Menu/Option 2')).toBeHidden()
+  await field.fill('jed')
+  // The arrow keys skip the options the filter hides.
+  await editor.page.keyboard.press('ArrowDown')
+  await editor.page.keyboard.press('Enter')
+  await expect(layer(id, 'Trigger/Caption/Value')).toHaveText('Jeddah')
+  await leaveLiveMode()
+})
+
+test('a kit range slider drags and steps both of its thumbs', async () => {
+  const id = await insertFromAssets('Range slider')
+  await startLiveMode()
+
+  const thumbs = island(id).getByRole('slider')
+  await expect(thumbs).toHaveCount(2)
+  await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '25')
+  await expect(thumbs.nth(1)).toHaveAttribute('aria-valuenow', '75')
+  await thumbs.nth(0).focus()
+  await editor.page.keyboard.press('ArrowRight')
+  await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '30')
+  await editor.page.keyboard.press('ArrowLeft')
+  await expect(thumbs.nth(0)).toHaveAttribute('aria-valuenow', '25')
+
+  // Dragging moves continuously and lands on a step.
+  const box = await thumbs.nth(1).boundingBox()
+  if (!box) throw new Error('no end thumb')
+  await editor.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await editor.page.mouse.down()
+  for (let step = 1; step <= 5; step++)
+    await editor.page.mouse.move(box.x + box.width / 2 - step * 8, box.y + box.height / 2)
+  await editor.page.mouse.up()
+  const end = Number(await thumbs.nth(1).getAttribute('aria-valuenow'))
+  expect(end).toBeLessThan(75)
+  expect(end % 5).toBe(0)
+  await leaveLiveMode()
+})
+
+test('a kit date picker jumps to another year and month from its header', async () => {
+  const id = await insertFromAssets('Date picker')
+  await startLiveMode()
+
+  await layer(id, 'Field').click()
+  await expect(layer(id, 'Calendar/Days')).toBeVisible()
+  await layer(id, 'Calendar/Header/Title/Year').click()
+  await expect(layer(id, 'Calendar/Years')).toBeVisible()
+  const year = (await layer(id, 'Calendar/Years/Year 1/Number').textContent()) ?? ''
+  await layer(id, 'Calendar/Years/Year 1').click()
+  await expect(layer(id, 'Calendar/Months')).toBeVisible()
+  await layer(id, 'Calendar/Months/Month 1').click()
+  await expect(layer(id, 'Calendar/Days')).toBeVisible()
+  await expect(layer(id, 'Calendar/Header/Title/Month/Label')).toHaveText('January')
+  await expect(layer(id, 'Calendar/Header/Title/Year/Label')).toHaveText(year)
+  await layer(id, 'Calendar/Header/Next').click()
+  await expect(layer(id, 'Calendar/Header/Title/Month/Label')).toHaveText('February')
+  await leaveLiveMode()
+})
+
 test('a kit modal opens over the canvas and closes from Cancel', async () => {
   const id = await insertFromAssets('Modal dialog')
   await startLiveMode()

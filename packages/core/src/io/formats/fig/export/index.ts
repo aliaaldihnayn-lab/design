@@ -209,7 +209,8 @@ async function writeFigFile(
     nodeChanges,
     setup.nodeIdToGuid,
     setup.assignedGuidValues,
-    localIdCounter
+    localIdCounter,
+    setup.varIdToGuid
   )
 
   const msg: Record<string, unknown> = {

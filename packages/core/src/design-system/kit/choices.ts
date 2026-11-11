@@ -1,6 +1,9 @@
+import { CalendarDateTime, DateFormatter } from '@internationalized/date'
+
 import type { SceneNode } from '@lawha/scene-graph'
 
 import type { Action } from '#core/prototype/model'
+import { SUGGESTIONS_KEY } from '#core/prototype/suggestions'
 
 import { glyph, label, setAttrs, type KitDefinition } from './jsx'
 import type { KitTheme } from './theme'
@@ -27,6 +30,11 @@ interface ListOptions {
   closeOnTrigger?: boolean
   /** Whether focusing the trigger opens the list, as a combobox's field does. */
   openOnFocus?: boolean
+  /**
+   * The text field, by path in a variant, whose typing filters the options, as a combobox's
+   * suggestions; the list then shows a no-results row when nothing matches.
+   */
+  filterField?: string
 }
 
 const OPEN = 'State=Open'
@@ -58,8 +66,11 @@ function listJSX(list: ListOptions): (theme: KitTheme) => string {
     const options = list.options(theme)
     const trigger = (open: boolean) =>
       list.trigger?.(theme, open) ?? defaultTrigger(theme, list.placeholder(theme), open)
+    const empty = list.filterField
+      ? `<Frame name="Empty" visible={false} flex="row" px={12} py={8} w="fill">${label(theme, 'Label', theme.labels.noResults, { color: theme.muted })}</Frame>`
+      : ''
     const menu = (active: number) =>
-      `<Frame name="Menu" flex="col" gap={2} p={4} w="fill" rounded={8} bg=${theme.surface} stroke=${theme.border} shadow="0 8 24 #0000001F">${options.map((option, index) => optionRow(theme, option, index, index === active, list.picks)).join('')}</Frame>`
+      `<Frame name="Menu" flex="col" gap={2} p={4} w="fill" rounded={8} bg=${theme.surface} stroke=${theme.border} shadow="0 8 24 #0000001F">${options.map((option, index) => optionRow(theme, option, index, index === active, list.picks)).join('')}${empty}</Frame>`
     const variant = (name: string, active: number | null) =>
       `<Component name="${name}" flex="col" gap={4} w={260}>${trigger(active !== null)}${active !== null ? menu(active) : ''}</Component>`
     return `<ComponentSet ${setAttrs(list.name)}>${[
@@ -115,6 +126,13 @@ function wireList(list: ListOptions) {
       w.on(w.layer(CLOSED, 'Trigger'), { type: 'focus' }, [w.changeTo(OPEN, QUICK)])
     for (const [position, name] of openNames.entries()) {
       bindTrigger(name)
+      if (list.filterField)
+        w.data(w.layer(name), SUGGESTIONS_KEY, {
+          field: list.filterField,
+          options: options.map((_, index) => `Menu/Option ${index + 1}`),
+          empty: 'Menu/Empty',
+          highlights: options.map((_, index) => highlighted(index))
+        })
       const active = position - 1
       const root = w.layer(name)
       if (list.closeOnTrigger ?? true)
@@ -161,14 +179,30 @@ const menu = listKit('menu', {
     `<Frame name="Trigger" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={6} px={14} py={8} items="center" rounded={8} bg=${open ? theme.subtle : theme.surface} stroke=${theme.border}>${label(theme, 'Value', theme.labels.menu, { weight: 600 })}${glyph('chevronDown', theme.text, { layer: 'Chevron' })}</Frame>`
 })
 
-const TIMES = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30'] as const
+/** The times the time picker lists: every half hour from nine. */
+const TIMES = Array.from({ length: 12 }, (_, index) => ({
+  hour: 9 + Math.floor(index / 2),
+  minute: (index % 2) * 30
+}))
 
-const timePicker = listKit('time-picker', {
-  name: 'Kit/Time picker',
-  placeholder: (theme) => theme.labels.pickTime,
-  options: () => TIMES,
-  picks: true
-})
+/** A time as the picker shows it, on a 12 or 24 hour clock in the theme's language. */
+function timeLabel(theme: KitTheme, hourCycle: 12 | 24, time: (typeof TIMES)[number]): string {
+  return new DateFormatter(theme.rtl ? 'ar-SA' : 'en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hourCycle: hourCycle === 12 ? 'h12' : 'h23',
+    timeZone: 'UTC'
+  }).format(new CalendarDateTime(2026, 1, 1, time.hour, time.minute).toDate('UTC'))
+}
+
+function timePicker(hourCycle: 12 | 24): KitDefinition {
+  return listKit('time-picker', {
+    name: hourCycle === 12 ? 'Kit/Time picker (12h)' : 'Kit/Time picker',
+    placeholder: (theme) => theme.labels.pickTime,
+    options: (theme) => TIMES.map((time) => timeLabel(theme, hourCycle, time)),
+    picks: true
+  })
+}
 
 /**
  * A combobox: the trigger is a real text field, which takes typing, and focusing it opens the
@@ -182,6 +216,7 @@ const COMBOBOX: ListOptions = {
   valuePath: 'Trigger/Caption/Value',
   closeOnTrigger: false,
   openOnFocus: true,
+  filterField: 'Trigger/Field',
   trigger: (theme) =>
     `<Frame name="Trigger" flex="col" gap={4} w="fill"><Instance of={field} name="Field" w="fill" /><Frame name="Caption" flex="row" w="fill">${label(theme, 'Value', theme.labels.choose, { size: 12, color: theme.muted })}</Frame></Frame>`
 }
@@ -252,10 +287,7 @@ const multiSelect: KitDefinition = {
   }
 }
 
-export const CHOICE_KITS: readonly KitDefinition[] = [
-  select,
-  menu,
-  combobox,
-  multiSelect,
-  timePicker
-]
+/** The kit's lists, the time picker on the clock the options ask for. */
+export function choiceKits(options: { hourCycle?: 12 | 24 } = {}): KitDefinition[] {
+  return [select, menu, combobox, multiSelect, timePicker(options.hourCycle ?? 24)]
+}

@@ -2,8 +2,10 @@ import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
 import { instanceMainComponent } from '@lawha/scene-graph/instances'
 
+import { runCalendarAction } from './calendar'
 import { readInteractions, type Action, type Interaction, type Transition } from './model'
-import { runVariableActions, type PlayVariables } from './variables'
+import { shownHighlight } from './suggestions'
+import { instanceScope, runVariableActions, type PlayVariables } from './variables'
 
 /**
  * Interactive components: while a prototype runs, each instance can show another variant of
@@ -151,7 +153,7 @@ export function runInteraction(
   const actions: Action[] = []
   const holds: StateHold[] = []
   // Variables are set and conditionals decided first, in order, so a branch can Change to.
-  const expanded = runVariableActions(graph, variables, actionsOf(interaction))
+  const expanded = runLayerActions(graph, rootId, layer, variables, actionsOf(interaction))
   for (const action of expanded.actions) {
     if (action.type !== 'change-to') {
       actions.push(action)
@@ -159,12 +161,14 @@ export function runInteraction(
     }
     const instance = changeTarget(graph, layer, action.destination)
     const from = instance && instanceMainComponent(graph, instance)
-    if (!instance || !from || from.id === action.destination) continue
+    // A highlight on a filtered list skips the options it hides.
+    const to = instance && shownHighlight(graph, instance, action.destination)
+    if (!instance || !from || !to || from.id === to) continue
     const instancePath = layerPath(graph, rootId, instance.id)
     changes.push({
       instance: instancePath,
       from: from.id,
-      to: action.destination,
+      to,
       transition: action.transition
     })
     const release = interaction.trigger.type
@@ -172,6 +176,41 @@ export function runInteraction(
       holds.push({ instance: instancePath, variant: from.id, release })
   }
   return { changes, actions, holds, handledBy: path, variables: expanded.variables }
+}
+
+/**
+ * Runs the variable and calendar actions of a layer's list in order, in the instance the layer
+ * sits in, and returns the actions left for the player and the variables as they end up.
+ */
+function runLayerActions(
+  graph: SceneGraph,
+  rootId: string,
+  layer: SceneNode,
+  variables: PlayVariables,
+  list: readonly Action[]
+): { actions: Action[]; variables: PlayVariables } {
+  const scope = instanceScope(graph, rootId, layer.id)
+  let current = variables
+  const actions: Action[] = []
+  let pending: Action[] = []
+  const flush = () => {
+    const run = runVariableActions(graph, current, pending, scope)
+    actions.push(...run.actions)
+    current = run.variables
+    pending = []
+  }
+  for (const action of list) {
+    if (action.type !== 'calendar') {
+      pending.push(action)
+      continue
+    }
+    flush()
+    const run = runCalendarAction(graph, rootId, layer, current, action)
+    current = run.variables
+    pending.push(...run.actions)
+  }
+  flush()
+  return { actions, variables: current }
 }
 
 /** The layer paths from `path` up to the root, deepest first. */

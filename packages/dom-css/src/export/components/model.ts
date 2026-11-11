@@ -137,6 +137,8 @@ export interface RangeModel {
   max: number
   step: number
   default: number
+  /** A range slider's second end, where its end thumb starts. */
+  end?: number
 }
 
 /**

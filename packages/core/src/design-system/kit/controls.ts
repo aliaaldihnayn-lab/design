@@ -139,43 +139,28 @@ const slider: KitDefinition = {
     `<Slider.Root ${setAttrs('Kit/Slider')} min={0} max={100} step={1} defaultValue={66}>${sliderVariant(theme, false)}</Slider.Root>`
 }
 
-/** Two thumbs on one track: each end moves in steps, a variant per selected span. */
-const RANGE_SPANS = [
-  [0, 2],
-  [1, 3],
-  [0, 4],
-  [2, 4]
-] as const
-
+/**
+ * Two thumbs on one track: a range slider, each end dragged continuously or moved with the
+ * arrow keys in steps, the lower end never passing the upper.
+ */
 const rangeSlider: KitDefinition = {
   kind: 'range-slider',
   name: 'Kit/Range slider',
-  insert: 'Span=1-3',
+  insert: 'Range slider',
   jsx: (theme) => {
-    const at = (step: number) => (theme.rtl ? 220 - step * 55 : step * 55)
-    const variants = RANGE_SPANS.map(([from, to]) => {
-      const left = Math.min(at(from), at(to))
-      return `<Component name="Span=${from}-${to}" w={240} h={20}>
-        <Frame name="Track" x={0} y={8} w={240} h={4} rounded={2} bg=${theme.border} />
-        <Frame name="Range" x={${left + 10}} y={8} w={${Math.abs(at(to) - at(from))}} h={4} bg=${theme.primary} />
-        <Frame name="Start" x={${at(from)}} y={0} w={20} h={20} rounded={10} bg="#FFFFFF" stroke=${theme.primary} strokeWidth={2} />
-        <Frame name="End" x={${at(to)}} y={0} w={20} h={20} rounded={10} bg="#FFFFFF" stroke=${theme.primary} strokeWidth={2} />
-      </Component>`
-    })
-    return `<ComponentSet ${setAttrs('Kit/Range slider')}>${variants.join('')}</ComponentSet>`
-  },
-  wire: (w) => {
-    // Clicking a thumb moves that end to the next span the set draws, smoothly.
-    for (const [index, [from, to]] of RANGE_SPANS.entries()) {
-      const next = RANGE_SPANS[(index + 1) % RANGE_SPANS.length]
-      const previous = RANGE_SPANS[(index + RANGE_SPANS.length - 1) % RANGE_SPANS.length]
-      const name = `Span=${from}-${to}`
-      w.on(w.layer(name, 'End'), { type: 'click' }, [w.changeTo(`Span=${next[0]}-${next[1]}`)])
-      w.on(w.layer(name, 'Start'), { type: 'click' }, [
-        w.changeTo(`Span=${previous[0]}-${previous[1]}`)
-      ])
-      w.on(w.layer(name, 'Track'), { type: 'drag' }, [w.changeTo(`Span=${next[0]}-${next[1]}`)])
-    }
+    // 25 to 75 of 0 to 100, drawn on a 240 wide track whose thumbs are 20 wide.
+    const at = (value: number) => (theme.rtl ? 220 - value * 2.2 : value * 2.2)
+    const thumb = (part: 'Thumb' | 'EndThumb', name: string, value: number) =>
+      `<Slider.${part} name="${name}" x={${at(value)}} y={0} w={20} h={20} rounded={10} bg="#FFFFFF" stroke=${theme.primary} strokeWidth={2} />`
+    return `<Slider.Root ${setAttrs('Kit/Range slider')} min={0} max={100} step={5} defaultValue={25} defaultEnd={75}>
+      <Component name="Range slider" w={240} h={20}>
+        <Slider.Track name="Track" x={0} y={8} w={240} h={4} rounded={2} bg=${theme.border}>
+          <Slider.Range name="Range" x={${Math.min(at(25), at(75)) + 10}} y={0} w={110} h={4} rounded={2} bg=${theme.primary} />
+        </Slider.Track>
+        ${thumb('Thumb', 'Start', 25)}
+        ${thumb('EndThumb', 'End', 75)}
+      </Component>
+    </Slider.Root>`
   }
 }
 

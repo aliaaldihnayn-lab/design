@@ -1,9 +1,17 @@
+import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { GUID } from '@lawha/kiwi/fig'
 import { guidToString } from '@lawha/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
+import {
+  conditionalFromFig,
+  conditionalToFig,
+  setVariableFromFig,
+  setVariableToFig,
+  type FigVariableIds
+} from './fig-variables'
 import type { Action, Interaction, Transition } from './model'
 import { DIRECTIONS, EASINGS, triggerSchema } from './schema'
 
@@ -15,8 +23,9 @@ const pointerTriggerSchema = v.pipe(
 
 /**
  * Figma's own prototype interactions, as a `.fig` record keeps them (`prototypeInteractions`),
- * read into Lawha's and written back. Interactions Figma has no equivalent for, such as focus
- * triggers, stay in Lawha's plugin data only.
+ * read into Lawha's and written back, Set variable and conditionals included. Interactions
+ * Figma has no equivalent for, such as focus triggers and calendars, stay in Lawha's plugin
+ * data only.
  */
 
 type Direction = (typeof DIRECTIONS)[number]
@@ -191,8 +200,16 @@ function transitionFromFigAction(action: FigAction): Transition {
   }
 }
 
+/** How actions find what they point at in the written file. */
+interface FigTargets {
+  graph?: SceneGraph
+  guidOf: (id: string) => GUID | undefined
+  variables?: FigVariableIds
+}
+
 /** A Lawha action as a Figma action, or null when Figma has no equivalent. */
-function actionToFig(action: Action, guidOf: (id: string) => GUID | undefined): object | null {
+function actionToFig(action: Action, targets: FigTargets): object | null {
+  const { guidOf, graph, variables } = targets
   const internal = (destination: string, navigationType: string, transition?: Transition) => {
     const guid = guidOf(destination)
     if (!guid) return null
@@ -221,15 +238,43 @@ function actionToFig(action: Action, guidOf: (id: string) => GUID | undefined): 
       return { connectionType: 'CLOSE' }
     case 'open-url':
       return { connectionType: 'URL', connectionURL: action.url }
+    case 'set-variable':
+      return graph && variables ? setVariableToFig(graph, action, variables) : null
+    case 'conditional':
+      return graph && variables
+        ? conditionalToFig(graph, action, variables, (list) => actionsToFig(list, targets))
+        : null
     default:
       return null
   }
 }
 
-function actionFromFig(
-  action: FigAction,
+function actionsToFig(list: readonly Action[], targets: FigTargets): object[] {
+  return list.map((action) => actionToFig(action, targets)).filter((action) => action !== null)
+}
+
+/** How read actions find what they point at in the document. */
+interface FigSources {
   nodeOf: (guid: GUID) => string | undefined
-): Action | null {
+  variables?: FigVariableIds
+}
+
+function actionsFromFig(raw: unknown, sources: FigSources): Action[] {
+  const parsed = v.safeParse(v.array(figActionSchema), raw)
+  if (!parsed.success) return []
+  return parsed.output
+    .map((action) => actionFromFig(action, sources))
+    .filter((action) => action !== null)
+}
+
+function actionFromFig(action: FigAction, sources: FigSources): Action | null {
+  const { nodeOf, variables } = sources
+  if (action.connectionType === 'SET_VARIABLE')
+    return variables ? setVariableFromFig(action, variables) : null
+  if (action.connectionType === 'CONDITIONAL')
+    return variables
+      ? conditionalFromFig(action, variables, (list) => actionsFromFig(list, sources))
+      : null
   const destination = action.transitionNodeID ? nodeOf(action.transitionNodeID) : undefined
   const transition = transitionFromFigAction(action)
   switch (action.connectionType) {
@@ -266,6 +311,27 @@ function actionFromFig(
   return null
 }
 
+/** One interaction as Figma's, or null when its trigger or every action has no Figma form. */
+function interactionToFig(
+  interaction: Interaction,
+  targets: FigTargets,
+  nextGuid: () => GUID
+): object | null {
+  const { trigger } = interaction
+  const interactionType = TRIGGER_TO_FIG[trigger.type]
+  if (!interactionType) return null
+  const actions = actionsToFig([interaction.action, ...(interaction.andThen ?? [])], targets)
+  if (actions.length === 0) return null
+  const event: Record<string, unknown> = { interactionType }
+  if (trigger.type === 'after-delay') event.transitionTimeout = trigger.delay / 1000
+  else if (trigger.type === 'key') {
+    const code = keyToCode(trigger.key)
+    if (code === undefined) return null
+    event.keyTrigger = { keyCodes: [code], triggerDevice: 'KEYBOARD' }
+  } else if ('delay' in trigger && trigger.delay) event.transitionTimeout = trigger.delay / 1000
+  return { id: nextGuid(), event, actions }
+}
+
 /**
  * Lawha's interactions as Figma's `prototypeInteractions`: those with a Figma trigger and at
  * least one action Figma can run. `guidOf` gives a destination's GUID in the written file and
@@ -274,25 +340,77 @@ function actionFromFig(
 export function figPrototypeInteractions(
   interactions: readonly Interaction[],
   guidOf: (id: string) => GUID | undefined,
-  nextGuid: () => GUID
+  nextGuid: () => GUID,
+  graph?: SceneGraph,
+  variables?: FigVariableIds
 ): object[] {
-  const out: object[] = []
-  for (const interaction of interactions) {
-    const { trigger } = interaction
-    const interactionType = TRIGGER_TO_FIG[trigger.type]
-    if (!interactionType) continue
-    const actions = [interaction.action, ...(interaction.andThen ?? [])]
-      .map((action) => actionToFig(action, guidOf))
-      .filter((action) => action !== null)
-    if (actions.length === 0) continue
-    const event: Record<string, unknown> = { interactionType }
-    if (trigger.type === 'after-delay') event.transitionTimeout = trigger.delay / 1000
-    else if (trigger.type === 'key') {
-      const code = keyToCode(trigger.key)
-      if (code === undefined) continue
-      event.keyTrigger = { keyCodes: [code], triggerDevice: 'KEYBOARD' }
-    } else if ('delay' in trigger && trigger.delay) event.transitionTimeout = trigger.delay / 1000
-    out.push({ id: nextGuid(), event, actions })
+  return splitForFig(interactions, { guidOf, graph, variables }, nextGuid).figma
+}
+
+/** An interaction Figma's form loses, which Lawha keeps beside Figma's. */
+export interface KeptInteraction {
+  /** Its place in the layer's list. */
+  at: number
+  interaction: Interaction
+  /** Whether Figma's list holds a part of it, which reading it back replaces. */
+  figma: boolean
+}
+
+/**
+ * Lawha's interactions as Figma's, and the ones Figma's form loses something of, such as a
+ * focus trigger, an overlay's position, or a calendar action, which Lawha keeps in its own data.
+ * An interaction is Figma's alone when reading its Figma form back gives it again.
+ */
+export function splitForFig(
+  interactions: readonly Interaction[],
+  targets: FigTargets,
+  nextGuid: () => GUID
+): { figma: object[]; kept: KeptInteraction[] } {
+  const figma: object[] = []
+  const kept: KeptInteraction[] = []
+  const back = new Map<string, string>()
+  const sources: FigSources = {
+    nodeOf: (guid) => back.get(guidToString(guid)),
+    variables: targets.variables
+  }
+  const remember: FigTargets = {
+    ...targets,
+    guidOf: (id) => {
+      const guid = targets.guidOf(id)
+      if (guid) back.set(guidToString(guid), id)
+      return guid
+    }
+  }
+  for (const [at, interaction] of interactions.entries()) {
+    const written = interactionToFig(interaction, remember, nextGuid)
+    if (written) figma.push(written)
+    const read = written ? interactionsFromFig([written], sources).at(0) : undefined
+    if (!read || !isEqual(read, interaction)) kept.push({ at, interaction, figma: !!written })
+  }
+  return { figma, kept }
+}
+
+/** Figma's interactions with the ones Lawha kept beside them put back in their places. */
+export function mergeKeptInteractions(
+  figma: readonly Interaction[],
+  kept: readonly KeptInteraction[]
+): Interaction[] {
+  const out: Interaction[] = []
+  const byPlace = new Map(kept.map((item) => [item.at, item]))
+  let next = 0
+  while (next < figma.length || byPlace.size > 0) {
+    const own = byPlace.get(out.length)
+    if (own) {
+      byPlace.delete(out.length)
+      out.push(own.interaction)
+      if (own.figma) next++
+    } else if (next < figma.length) out.push(figma[next++])
+    else {
+      // Places past Figma's list, as when a Figma user removed interactions, go at the end.
+      for (const item of [...byPlace.values()].sort((a, b) => a.at - b.at))
+        out.push(item.interaction)
+      break
+    }
   }
   return out
 }
@@ -319,8 +437,9 @@ function triggerFromFig(interaction: FigInteraction): Interaction['trigger'] | n
 /** Figma's interactions as Lawha's, their destinations found with `nodeOf`. */
 export function interactionsFromFig(
   raw: unknown,
-  nodeOf: (guid: GUID) => string | undefined
+  nodeOf: ((guid: GUID) => string | undefined) | FigSources
 ): Interaction[] {
+  const sources = typeof nodeOf === 'function' ? { nodeOf } : nodeOf
   const parsed = v.safeParse(v.array(figInteractionSchema), raw)
   if (!parsed.success) return []
   const out: Interaction[] = []
@@ -328,7 +447,7 @@ export function interactionsFromFig(
     if (interaction.isDeleted) continue
     const trigger = triggerFromFig(interaction)
     const actions = (interaction.actions ?? [])
-      .map((action) => actionFromFig(action, nodeOf))
+      .map((action) => actionFromFig(action, sources))
       .filter((action) => action !== null)
     if (!trigger || actions.length === 0) continue
     const [action, ...andThen] = actions
@@ -351,9 +470,21 @@ function nodeBySourceGuid(graph: SceneGraph, guid: GUID): string | undefined {
   return index.get(key) ?? (graph.getNode(key) ? key : undefined)
 }
 
+/** A variable's id by the GUID a `.fig` file gives it, which reading keeps as its id. */
+function variableByGuid(graph: SceneGraph, guid: GUID): string | undefined {
+  const id = guidToString(guid)
+  return graph.variables.has(id) ? id : undefined
+}
+
 /** The interactions a layer read from a `.fig` file keeps in Figma's own form. */
 export function figInteractionsOf(graph: SceneGraph, node: SceneNode): Interaction[] {
   const raw = node.source.fig.rawNodeFields.prototypeInteractions
   if (raw === undefined) return []
-  return interactionsFromFig(raw, (guid) => nodeBySourceGuid(graph, guid))
+  return interactionsFromFig(raw, {
+    nodeOf: (guid) => nodeBySourceGuid(graph, guid),
+    variables: {
+      variableOf: (guid) => variableByGuid(graph, guid),
+      guidOf: () => undefined
+    }
+  })
 }

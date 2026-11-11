@@ -141,15 +141,21 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     values: [{ id: 'disabled', type: 'boolean', required: false }],
     parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
+  /**
+   * A slider: one thumb, or with `endThumb` bound a range of two, whose second end is `end`.
+   * Both move continuously in `step`s, by pointer and arrow keys.
+   */
   slider: {
     values: [
       { id: 'value', type: 'number', required: false },
+      { id: 'end', type: 'number', required: false },
       { id: 'disabled', type: 'boolean', required: false }
     ],
     parts: [
       { id: 'track', required: true },
       { id: 'range', required: false },
-      { id: 'thumb', required: true }
+      { id: 'thumb', required: true },
+      { id: 'endThumb', required: false }
     ]
   },
   tabs: {

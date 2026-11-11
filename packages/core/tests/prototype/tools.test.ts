@@ -6,7 +6,7 @@ import { SceneGraph } from '@lawha/scene-graph'
 
 import { resolvePlayState } from '#core/editor/play/states'
 import { dispatchStateEvent, variantValues } from '#core/prototype/states'
-import { boundInstanceStates, readPropertyBindings } from '#core/prototype/variables'
+import { boundInstanceStates, readPropertyBindings, variableScope } from '#core/prototype/variables'
 
 function tool(name: string) {
   const found = ALL_TOOLS.find((item) => item.name === name)
@@ -189,5 +189,19 @@ describe('interactive component tools', () => {
       expect(isToolExposed(def, 'ai')).toBe(true)
       expect(isToolExposed(def, 'mcp')).toBe(true)
     }
+  })
+
+  test('set_variable_scope keeps a variable per instance or shared, by id or name', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const collection = graph.createCollection('State')
+    const open = graph.createVariable('open', 'BOOLEAN', collection.id, false)
+    await tool('set_variable_scope')(figma, { variable: 'open', scope: 'instance' })
+    expect(variableScope(graph.variables.get(open.id))).toBe('instance')
+    await tool('set_variable_scope')(figma, { variable: open.id, scope: 'shared' })
+    expect(variableScope(graph.variables.get(open.id))).toBe('shared')
+    expect(
+      fields(await tool('set_variable_scope')(figma, { variable: 'x', scope: 'shared' })).error
+    ).toBe('No variable x')
   })
 })

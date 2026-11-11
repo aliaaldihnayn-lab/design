@@ -62,7 +62,13 @@ const REKA: Record<
     parts: { root: 'AccordionItem', trigger: 'AccordionTrigger', content: 'AccordionContent' }
   },
   slider: {
-    parts: { root: 'SliderRoot', track: 'SliderTrack', range: 'SliderRange', thumb: 'SliderThumb' },
+    parts: {
+      root: 'SliderRoot',
+      track: 'SliderTrack',
+      range: 'SliderRange',
+      thumb: 'SliderThumb',
+      endThumb: 'SliderThumb'
+    },
     model: 'modelValue'
   },
   progress: {
@@ -172,6 +178,8 @@ interface TemplateUses {
   kind: GeneratedKind
   /** The list a slider's root binds, standing in for its single value. */
   sliderValues: string | null
+  /** A range slider's end, kept beside its model. */
+  sliderEnd: string | null
   /** Reka components. */
   reka: Set<string>
   /** Other generated components. */
@@ -348,6 +356,18 @@ const OPEN_CHOICE_MODEL = es.parseModule('const $model = defineModel<$Type>($nam
 const VALUE_MODEL = es.parseModule(
   'const $model = defineModel<$Type>($name, { default: $default })'
 )
+/** A range slider's list: the model's value, then its end, which the component keeps. */
+const RANGE_VALUES = es.parseModule(dedent`
+  const $end = ref($endDefault)
+  const $values = computed({
+    get: () => [$model.value, $end.value],
+    set: (next: number[] | undefined) => {
+      $model.value = next?.[0] ?? $model.value
+      $end.value = next?.[1] ?? $end.value
+    }
+  })
+`)
+
 const SLIDER_VALUES = es.parseModule(dedent`
   const $values = computed({
     get: () => [$model.value],
@@ -375,7 +395,10 @@ const MODEL_REF = es.parseModule('const $name = ref(true)')
 
 /** What the script imports: Vue's helpers, Iconify, Reka, and other generated components. */
 function scriptImports(uses: TemplateUses): es.SyntaxNode[] {
-  const helpers = compact([uses.sliderValues && 'computed', uses.models.length > 0 && 'ref'])
+  const helpers = compact([
+    uses.sliderValues && 'computed',
+    (uses.models.length > 0 || uses.sliderEnd) && 'ref'
+  ])
   return [
     ...(helpers.length > 0 ? [namedImport(helpers, 'vue')] : []),
     ...(uses.icons ? [namedImport(['Icon'], '@iconify/vue', () => ICONIFY)] : []),
@@ -410,8 +433,12 @@ function modelDeclaration(component: ComponentModel, uses: TemplateUses): es.Syn
     $default: range ? es.number(range.default) : es.string(text?.default ?? '')
   }).body
   const values = uses.sliderValues
-    ? es.fill(SLIDER_VALUES, { $values: identifier(uses.sliderValues), $model: identifier(name) })
-        .body
+    ? es.fill(uses.sliderEnd && range?.end !== undefined ? RANGE_VALUES : SLIDER_VALUES, {
+        $values: identifier(uses.sliderValues),
+        $model: identifier(name),
+        $end: uses.sliderEnd ? identifier(uses.sliderEnd) : es.OMIT,
+        $endDefault: es.number(range?.end ?? 0)
+      }).body
     : []
   return [...model, ...values]
 }
@@ -450,6 +477,10 @@ export const vueComponent: ComponentGenerator = async (component, options = {}) 
     kind: component.kind,
     sliderValues:
       component.kind === 'slider' && component.model ? claimName('values', taken) : null,
+    sliderEnd:
+      component.kind === 'slider' && component.model && component.range?.end !== undefined
+        ? claimName('end', taken)
+        : null,
     reka: new Set(),
     components: new Set(),
     icons: false,

@@ -22,6 +22,7 @@ import {
   triggerSchema
 } from '#core/prototype/schema'
 import { POSITION_KEY, readPosition, readScroll, SCROLL_KEY } from '#core/prototype/scroll'
+import { variableScope, withVariableScope } from '#core/prototype/variables'
 import { defineTool, requireNode } from '#core/tools/schema'
 
 function writeInteractions(figma: FigmaAPI, id: string, list: readonly Interaction[]): void {
@@ -287,5 +288,6 @@ export const setScrollPosition = defineTool({
       position: readPosition(raw),
       ...(scrolls ? {} : { note: 'Its parent does not scroll yet: set_scroll_behavior on it' })
     }
+import { variableScope, withVariableScope } from '#core/prototype/variables'
   }
 })

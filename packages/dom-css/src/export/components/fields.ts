@@ -30,7 +30,11 @@ export const inputValue = (kind: GeneratedKind): string | undefined => INPUT_VAL
 /** The number a ranged kind binds, starting where the design's behaviour does. */
 export function rangeModel(kind: GeneratedKind, behaviour: Behaviour): RangeModel | null {
   if (!RANGED.has(kind)) return null
-  return { ...(numberSettings(behaviour, 'value') ?? DEFAULT_NUMBER_SETTINGS) }
+  const range: RangeModel = { ...(numberSettings(behaviour, 'value') ?? DEFAULT_NUMBER_SETTINGS) }
+  // A slider with its end thumb bound holds two values, the end where that thumb starts.
+  if (kind === 'slider' && behaviour.parts.endThumb)
+    range.end = numberSettings(behaviour, 'end')?.default ?? range.max
+  return range
 }
 
 /**
@@ -97,7 +101,11 @@ export function inputLayers(bound: readonly StateElement[]): InputLayers | null 
 
 /** What the library sets on a part it places itself, which the design's drawn place gives way to. */
 const PLACED: Partial<Record<GeneratedKind, Record<string, readonly string[]>>> = {
-  slider: { range: ['left', 'right', 'width'], thumb: ['left', 'right', 'transform'] },
+  slider: {
+    range: ['left', 'right', 'width'],
+    thumb: ['left', 'right', 'transform'],
+    endThumb: ['left', 'right', 'transform']
+  },
   progress: { indicator: ['width'] }
 }
 

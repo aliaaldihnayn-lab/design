@@ -212,7 +212,7 @@ create_interactive_component { "id": "<frame id>", "states": ["Closed", "Open"],
                    { "from": "Open", "layer": "Trigger", "trigger": { "type": "click" }, "to": "Closed" }] }
 ```
 
-`add_state_interaction` adds one more, `bind_property_to_variable` makes an instance's property follow a prototype variable that `set-variable` and `conditional` actions change, and `build_interactive_kit` draws the whole kit in the document's design-system tokens. Preview (Ctrl+Alt+Enter) runs it all on the canvas; Escape leaves.
+`add_state_interaction` adds one more, `bind_property_to_variable` makes an instance's property follow a prototype variable that `set-variable` and `conditional` actions change, `set_variable_scope` chooses whether a variable keeps one value per instance (the kit's controls do, so two selects keep their own picks) or one shared value, and `build_interactive_kit` draws the whole kit in the document's design-system tokens, restyling a kit drawn earlier in place so its instances keep working. Preview (Ctrl+Alt+Enter) runs it all on the canvas; Escape leaves.
 
 Comments people leave on the canvas are review feedback you can act on. Read the open ones, change the design, then answer and resolve each, naming yourself as the author:
 

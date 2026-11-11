@@ -10,8 +10,11 @@ import { dispatchStateEvent, variantValues } from '#core/prototype/states'
 import {
   boundInstanceStates,
   conditionsHold,
+  instanceScope,
+  playKey,
   PROPERTY_BINDINGS_KEY,
-  runVariableActions
+  runVariableActions,
+  withVariableScope
 } from '#core/prototype/variables'
 
 const INSTANT = { type: 'instant', direction: 'left', duration: 0, easing: 'linear' } as const
@@ -214,5 +217,25 @@ describe('prototype variables', () => {
     const label = shown.getChildren(screen.id).find((node) => node.name === 'Country label')
     expect(label?.text).toBe('Oman')
     expect(playIslandRoots(graph, pageId)).toEqual([screen.id])
+  })
+
+  test('a per-instance variable is kept for the instance that sets it', () => {
+    const { graph, screen, agreed } = fixture()
+    const variable = graph.variables.get(agreed.id)
+    if (!variable) throw new Error('no variable')
+    variable.pluginData = withVariableScope(variable, 'instance')
+    const result = dispatchStateEvent(
+      resolvePlayState(graph, screen.id, new Map()),
+      screen.id,
+      'Agree',
+      'click',
+      new Map()
+    )
+    const scope = instanceScope(graph, screen.id, graph.getChildren(screen.id)[0]?.id ?? '')
+    expect(result.variables.get(agreed.id)).toBeUndefined()
+    expect(result.variables.get(playKey(graph, agreed.id, scope))).toBe(true)
+    // The button, another instance, still reads the document's value.
+    const submit = boundInstanceStates(graph, screen.id, result.variables).get('Submit')
+    expect(submit?.variants.State).toBe('Disabled')
   })
 })

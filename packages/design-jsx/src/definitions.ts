@@ -208,6 +208,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'max',
   'step',
   'defaultValue',
+  'defaultEnd',
   // The layer's user stories and the epics they belong to, kept as its product spec
   'stories',
   'epics'

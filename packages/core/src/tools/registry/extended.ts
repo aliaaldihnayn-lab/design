@@ -79,7 +79,8 @@ import {
   setFlow,
   setInteractions,
   setScrollBehavior,
-  setScrollPosition
+  setScrollPosition,
+  setVariableScope
 } from '#core/tools/prototype'
 import {
   applyMasterPageTool,
@@ -236,6 +237,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   autoPrototype,
   setScrollBehavior,
   setScrollPosition,
+  setVariableScope,
   // Interactive components
   createInteractiveComponent,
   addStateInteraction,

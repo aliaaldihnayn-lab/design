@@ -142,6 +142,39 @@ export const conditionSchema = v.object({
   value: v.optional(playValueSchema)
 })
 
+const changeToSchema = v.object({
+  type: v.literal('change-to'),
+  /** A variant (component) of the same component set. */
+  destination: v.pipe(v.string(), v.minLength(1)),
+  transition: transitionSchema
+})
+
+export const CALENDAR_OPS = ['shift', 'pick-day', 'pick-month', 'pick-year'] as const
+
+/**
+ * A date picker's calendar, which Figma has no equivalent for: `shift` moves the month on show
+ * by `months`, and the picks choose the day, month, or year in grid `cell`, counted from 0. A
+ * pick that completes the choice runs `after`, such as a Change to that closes the picker.
+ */
+const calendarActionSchema = v.object({
+  type: v.literal('calendar'),
+  op: v.picklist(CALENDAR_OPS),
+  months: v.optional(v.pipe(v.number(), v.integer(), v.minValue(-1200), v.maxValue(1200))),
+  cell: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(41))),
+  after: v.optional(
+    v.pipe(
+      v.array(
+        v.variant('type', [
+          changeToSchema,
+          v.object({ type: v.literal('close-overlay') }),
+          v.object({ type: v.literal('back'), transition: v.optional(transitionSchema) })
+        ])
+      ),
+      v.maxLength(5)
+    )
+  )
+})
+
 /** The actions a step of a prototype can run, short of a conditional. */
 const simpleActions = [
   v.object({
@@ -167,13 +200,9 @@ const simpleActions = [
    * Interactive components: the instance holding the layer shows another variant of its set in
    * place, without leaving the screen, as Figma's Change to.
    */
-  v.object({
-    type: v.literal('change-to'),
-    /** A variant (component) of the same component set. */
-    destination: v.pipe(v.string(), v.minLength(1)),
-    transition: transitionSchema
-  }),
-  setVariableSchema
+  changeToSchema,
+  setVariableSchema,
+  calendarActionSchema
 ] as const
 
 const simpleActionSchema = v.variant('type', [...simpleActions])

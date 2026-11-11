@@ -71,6 +71,8 @@ function rootProps(graph: SceneGraph, owner: SceneNode): JSXProp[] {
     }
     if (range.default !== undefined) props.push(['defaultValue', range.default])
   }
+  const end = spec.numbers?.end
+  if (spec.parts?.endThumb && end?.default !== undefined) props.push(['defaultEnd', end.default])
   if (spec.states)
     props.push(['states', typeof spec.states === 'string' ? spec.states : spec.states.property])
   return props

@@ -1,18 +1,22 @@
 import type { CalendarDate } from '@internationalized/date'
+import { omitBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { designJSXRenderer } from '#core/design-jsx'
+import { setPluginData } from '#core/figma-api/plugin-data'
 import type { IconProvider } from '#core/icons'
+import { CALENDAR_KEY, calendarOf, type CalendarOverrides } from '#core/prototype/calendar'
 
-import { CHOICE_KITS } from './choices'
+import { choiceKits } from './choices'
 import { CONTROL_KITS } from './controls'
-import { dateKits, type KitCalendar } from './dates'
+import { dateKits, type DateKitOptions, type KitCalendar } from './dates'
 import { FIELD_KITS } from './fields'
 import { KIT_KINDS, type KitDefinition, type KitKind } from './jsx'
 import { NAVIGATION_KITS } from './navigation'
 import { OVERLAY_KITS } from './overlays'
+import { restyleComponent } from './restyle'
 import { kitTheme, type KitOptions } from './theme'
 import { KitWiring } from './wire'
 
@@ -26,13 +30,20 @@ export { KIT_STATE_COLLECTION } from './wire'
  * animate live on the canvas and in the player. Each is drawn once per document on the kit's
  * page, themed by the document's design-system variables, and inserted as an instance.
  */
-export interface KitBuildOptions extends KitOptions {
+export interface KitBuildOptions extends KitOptions, Omit<DateKitOptions, 'calendar' | 'today'> {
   /** The calendar the date pickers draw. */
   calendar?: KitCalendar
   /** The month the date pickers open on; today's when unset. */
   today?: CalendarDate
+  /** The time picker's clock: 24 hours, the default, or 12 with AM and PM. */
+  hourCycle?: 12 | 24
   /** Where the kit's components are drawn; its own page when unset. */
   pageId?: string
+  /**
+   * Restyle components drawn earlier to the current tokens, keeping their layers, so their
+   * instances keep working; otherwise they are reused as they are.
+   */
+  restyle?: boolean
   icons?: IconProvider
 }
 
@@ -43,11 +54,18 @@ export const KIT_RTL_PAGE_NAME = 'Interactive kit (RTL)'
 function definitions(options: KitBuildOptions): Map<KitKind, KitDefinition> {
   const all = [
     ...FIELD_KITS,
-    ...CHOICE_KITS,
+    ...choiceKits({ hourCycle: options.hourCycle }),
     ...CONTROL_KITS,
     ...OVERLAY_KITS,
     ...NAVIGATION_KITS,
-    ...dateKits({ calendar: options.calendar, today: options.today })
+    ...dateKits({
+      calendar: options.calendar,
+      today: options.today,
+      minDate: options.minDate,
+      maxDate: options.maxDate,
+      disabledDates: options.disabledDates,
+      disabledWeekdays: options.disabledWeekdays
+    })
   ]
   return new Map(KIT_KINDS.map((kind) => [kind, requireDefinition(all, kind)]))
 }
@@ -101,6 +119,8 @@ export interface BuiltKitComponent {
   /** The variant an inserted instance shows. */
   insertId: string
   created: boolean
+  /** The layers a restyle gave the current tokens' look; 0 when none was asked for. */
+  restyled: number
 }
 
 /** The variant or component a control's instances show when inserted. */
@@ -124,33 +144,47 @@ export async function buildKitComponent(
   if (!definition) throw new Error(`Unknown kit control ${kind}`)
   const page = kitPage(graph, options)
   const existing = componentsBelow(graph, page.childIds).get(definition.name)
-  if (existing)
+  const theme = kitTheme(graph, options)
+  const { renderJSX } = designJSXRenderer(options.icons)
+  const draw = async () => {
+    const roots = await renderJSX(graph, definition.jsx(theme), {
+      parentId: page.id,
+      ...nextSlot(graph, page)
+    })
+    const sets = componentsBelow(
+      graph,
+      roots.map((root) => root.id)
+    )
+    const main = sets.get(definition.name)
+    if (!main) throw new Error(`The kit's ${kind} drew no ${definition.name}`)
+    return { roots, sets, main }
+  }
+  if (existing) {
+    let restyled = 0
+    if (options.restyle) {
+      // A fresh drawing lends its look to the one in place, then goes.
+      const fresh = await draw()
+      restyled = restyleComponent(graph, existing, fresh.main).restyled
+      for (const root of fresh.roots) graph.deleteNode(root.id)
+    }
     return {
       kind,
       name: definition.name,
       id: existing.id,
       insertId: insertTarget(graph, existing, definition).id,
-      created: false
+      created: false,
+      restyled
     }
-  const theme = kitTheme(graph, options)
-  const { renderJSX } = designJSXRenderer(options.icons)
-  const roots = await renderJSX(graph, definition.jsx(theme), {
-    parentId: page.id,
-    ...nextSlot(graph, page)
-  })
-  const sets = componentsBelow(
-    graph,
-    roots.map((root) => root.id)
-  )
-  const main = sets.get(definition.name)
-  if (!main) throw new Error(`The kit's ${kind} drew no ${definition.name}`)
+  }
+  const { sets, main } = await draw()
   definition.wire?.(new KitWiring(graph, main), theme, sets)
   return {
     kind,
     name: definition.name,
     id: main.id,
     insertId: insertTarget(graph, main, definition).id,
-    created: true
+    created: true,
+    restyled: 0
   }
 }
 
@@ -177,12 +211,26 @@ export async function insertKitComponent(
   kind: KitKind,
   options: KitInsertOptions
 ): Promise<{ instanceId: string; component: BuiltKitComponent }> {
-  const component = await buildKitComponent(graph, kind, options)
+  // Which days can be picked belongs to this instance, not the component every insert shares.
+  const { minDate, maxDate, disabledDates, disabledWeekdays, ...build } = options
+  const component = await buildKitComponent(graph, kind, build)
   const instance = graph.createInstance(component.insertId, options.parentId, {
     x: options.x ?? 0,
     y: options.y ?? 0
   })
   if (!instance) throw new Error(`Could not insert ${component.name}`)
   graph.updateNode(instance.id, { name: component.name.replace(/^Kit\//, '') })
+  const overrides: CalendarOverrides = omitBy(
+    {
+      min: minDate,
+      max: maxDate,
+      disabledDates: disabledDates && [...disabledDates],
+      disabledWeekdays: disabledWeekdays && [...disabledWeekdays]
+    },
+    (value) => value === undefined
+  )
+  const inserted = graph.getNode(instance.id)
+  if (inserted && Object.keys(overrides).length > 0 && calendarOf(graph, inserted))
+    setPluginData(graph, inserted, CALENDAR_KEY, JSON.stringify(overrides))
   return { instanceId: instance.id, component }
 }

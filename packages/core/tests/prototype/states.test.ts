@@ -7,7 +7,12 @@ import { playIslandRoots } from '#core/editor/play/islands'
 import { resolvePlayState } from '#core/editor/play/states'
 import { getPluginData, setPluginData } from '#core/figma-api/plugin-data'
 import { figInteractionsOf } from '#core/prototype/fig'
-import { INTERACTIONS_KEY, readInteractions, type Interaction } from '#core/prototype/model'
+import {
+  INTERACTIONS_KEY,
+  KEPT_INTERACTIONS_KEY,
+  readInteractions,
+  type Interaction
+} from '#core/prototype/model'
 import {
   ease,
   easedKeyframes,
@@ -298,9 +303,10 @@ describe('.fig interactive components', () => {
         action: { type: 'change-to', destination: closed.id, transition: DISSOLVE }
       }
     ])
-    // Lawha's own plugin data still wins where it is kept.
-    expect(getPluginData(trigger, INTERACTIONS_KEY)).not.toBe('')
-    expect(readInteractions(trigger, read)[0]?.action.type).toBe('change-to')
+    // Figma's form holds them whole, so Lawha keeps nothing of its own beside it.
+    expect(getPluginData(trigger, INTERACTIONS_KEY)).toBe('')
+    expect(getPluginData(trigger, KEPT_INTERACTIONS_KEY)).toBe('')
+    expect(readInteractions(trigger, read)).toEqual(figInteractionsOf(read, trigger))
   })
 
   test('a spring and a slide keep their settings through .fig', async () => {
@@ -334,6 +340,73 @@ describe('.fig interactive components', () => {
       }
     ])
     expect(readInteractions(readA, read)).toHaveLength(2)
+  })
+
+  test('Set variable and conditionals go to .fig as Figma variables and conditional actions', async () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0]?.id ?? graph.rootId
+    const collection = graph.createCollection('State')
+    const agreed = graph.createVariable('agreed', 'BOOLEAN', collection.id, false)
+    const count = graph.createVariable('count', 'FLOAT', collection.id, 0)
+    const city = graph.createVariable('city', 'STRING', collection.id, 'Riyadh')
+    const a = graph.createNode('FRAME', pageId, { name: 'A', width: 100, height: 100 })
+    const b = graph.createNode('FRAME', pageId, { name: 'B', x: 200, width: 100, height: 100 })
+    const fade = { type: 'dissolve', direction: 'left', duration: 300, easing: 'ease-out' } as const
+    const list = (bId: string, ids: { agreed: string; count: string; city: string }) =>
+      [
+        {
+          trigger: { type: 'click' },
+          action: { type: 'set-variable', variable: ids.agreed, toggle: true },
+          andThen: [
+            { type: 'set-variable', variable: ids.count, add: 2 },
+            { type: 'set-variable', variable: ids.city, value: 'Jeddah' },
+            {
+              type: 'conditional',
+              when: [
+                { variable: ids.agreed, op: 'truthy' },
+                { variable: ids.count, op: 'gte', value: 4 }
+              ],
+              actions: [{ type: 'navigate', destination: bId, transition: fade }],
+              otherwise: [{ type: 'set-variable', variable: ids.city, value: 'Mecca' }]
+            }
+          ]
+        },
+        // Figma has no focus or blur trigger: these stay Lawha's alone, in their places.
+        {
+          trigger: { type: 'focus' },
+          action: { type: 'set-variable', variable: ids.agreed, value: true }
+        },
+        {
+          trigger: { type: 'mouse-leave' },
+          action: {
+            type: 'conditional',
+            when: [{ variable: ids.city, op: 'eq', value: 'Jeddah' }],
+            actions: [{ type: 'back', transition: fade }]
+          }
+        },
+        {
+          trigger: { type: 'blur' },
+          action: { type: 'set-variable', variable: ids.agreed, value: false }
+        }
+      ] satisfies Interaction[]
+    setInteractions(graph, a, list(b.id, { agreed: agreed.id, count: count.id, city: city.id }))
+    const read = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const readA = [...read.getAllNodes()].find((node) => node.name === 'A')
+    const readB = [...read.getAllNodes()].find((node) => node.name === 'B')
+    const variable = (name: string) =>
+      [...read.variables.values()].find((item) => item.name === name)?.id ?? ''
+    if (!readA || !readB) throw new Error('frames missing')
+    const ids = { agreed: variable('agreed'), count: variable('count'), city: variable('city') }
+    const expected = list(readB.id, ids)
+    // Figma's record alone holds the click and the mouse leave, variables and branches included.
+    const raw = readA.source.fig.rawNodeFields.prototypeInteractions
+    expect(JSON.stringify(raw)).toContain('SET_VARIABLE')
+    expect(JSON.stringify(raw)).toContain('CONDITIONAL')
+    expect(figInteractionsOf(read, readA)).toEqual([expected[0], expected[2]])
+    // Lawha keeps only the focus and blur ones, and reads the list back whole and in order.
+    expect(getPluginData(readA, INTERACTIONS_KEY)).toBe('')
+    expect(getPluginData(readA, KEPT_INTERACTIONS_KEY)).not.toContain('SET_VARIABLE')
+    expect(readInteractions(readA, read)).toEqual(expected)
   })
 })
 
