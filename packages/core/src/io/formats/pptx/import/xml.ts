@@ -2,6 +2,9 @@ import { DOMParser, type Element } from '@xmldom/xmldom'
 import { unzipSync } from 'fflate'
 import { dirname, join, normalize } from 'pathe'
 
+// A package relationship, as the Word reader keeps them: both read OOXML packages.
+import type { Relationship } from '#core/writer/docx/context'
+
 /** OOXML reading helpers: elements by local name, so any namespace prefix reads the same. */
 
 export function parseXML(bytes: Uint8Array | undefined): Element | null {
@@ -84,12 +87,6 @@ export function boolAttr(el: Element | null | undefined, name: string): boolean 
   const value = attr(el, name)
   if (value === null) return null
   return value === '1' || value === 'true'
-}
-
-export interface Relationship {
-  type: string
-  target: string
-  external: boolean
 }
 
 /** An unzipped OOXML package: parts by path, their relationships resolved to part paths. */

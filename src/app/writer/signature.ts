@@ -5,13 +5,9 @@
  */
 
 import { coveredCellBounds } from '@lawha/scene-graph/geometry'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
-export interface InkBounds {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+export type InkBounds = Rect
 
 /** The box around every pixel with ink (alpha above a threshold), or null for an empty canvas. */
 export function inkBounds(

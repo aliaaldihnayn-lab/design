@@ -1,15 +1,13 @@
 import { coveredCellBounds } from '@lawha/scene-graph/geometry'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
+import type { ByteGrid } from '#core/io/formats/raster/pixels'
+
 /**
  * How much of each pixel a selection or layer mask covers, 0 (none) to 255 (all), row-major over
  * a `width` × `height` grid with no padding.
  */
-export interface PixelMask {
-  width: number
-  height: number
-  data: Uint8Array
-}
+export type PixelMask = ByteGrid
 
 /** How a new selection joins the one there is, as Affinity's and Photoshop's selection modes do. */
 export type SelectionMode = 'replace' | 'add' | 'subtract' | 'intersect'

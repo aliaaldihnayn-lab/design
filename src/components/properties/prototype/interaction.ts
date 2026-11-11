@@ -1,9 +1,8 @@
 import type { Action, Interaction, Transition, Trigger } from '@lawha/core/prototype'
 
-export interface PrototypeOption {
-  value: string
-  label: string
-}
+import type { AppSelectOption } from '@/components/ui/select/select'
+
+export type PrototypeOption = AppSelectOption<string>
 
 export const DEFAULT_TRANSITION: Transition = {
   type: 'dissolve',

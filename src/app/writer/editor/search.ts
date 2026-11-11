@@ -1,4 +1,4 @@
-import { Extension } from '@tiptap/core'
+import { Extension, type Range } from '@tiptap/core'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import {
   Plugin,
@@ -10,10 +10,7 @@ import {
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 
 /** A match of the find bar's query, in document positions. */
-export interface SearchMatch {
-  from: number
-  to: number
-}
+export type SearchMatch = Range
 
 export interface SearchQuery {
   text: string

@@ -1,6 +1,7 @@
 import type { SceneGraph } from '@lawha/scene-graph'
 import { colorToHex } from '@lawha/scene-graph/color'
 import { computeBounds } from '@lawha/scene-graph/geometry'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import type { PDFPageComposer } from '#core/io/formats/pdf/export'
 
@@ -22,15 +23,8 @@ export function markMargin(layout: SheetLayout): number {
   return layout.cropMarks ? MARK_GAP + MARK_LENGTH + 3 : 0
 }
 
-interface Box {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
 /** The layers' trim: the union of their boxes on the canvas. */
-function trimBox(graph: SceneGraph, nodeIds: readonly string[]): Box | null {
+function trimBox(graph: SceneGraph, nodeIds: readonly string[]): Rect | null {
   const boxes = nodeIds.flatMap((id) => {
     const node = graph.getNode(id)
     if (!node?.visible) return []
@@ -55,7 +49,7 @@ function bleedBackground(graph: SceneGraph, nodeIds: readonly string[]): string 
   return alpha >= 1 ? hex(fill.color) : null
 }
 
-function cropMarks(trim: Box, offset: number, bleed: number): string {
+function cropMarks(trim: Rect, offset: number, bleed: number): string {
   const near = bleed + MARK_GAP
   const far = near + MARK_LENGTH
   const left = offset

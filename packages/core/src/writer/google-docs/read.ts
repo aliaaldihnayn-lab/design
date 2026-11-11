@@ -1,4 +1,4 @@
-import { buildLists } from '#core/writer/lists'
+import { buildLists, type ListedBlock, type ListPlace } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
@@ -135,20 +135,8 @@ function paragraphInlines(paragraph: GoogleParagraph, state: ReadState): Array<W
   return out
 }
 
-interface ListInfo {
-  listId: string
-  level: number
-  ordered: boolean
-  start: number
-}
-
-interface Block {
-  node: WriterNode
-  list?: ListInfo
-}
-
 /** Which list a bulleted paragraph is in; a glyph symbol means bullets, a glyph type numbers. */
-function listInfo(paragraph: GoogleParagraph, state: ReadState): ListInfo | undefined {
+function listInfo(paragraph: GoogleParagraph, state: ReadState): ListPlace | undefined {
   const listId = paragraph.bullet?.listId
   if (!listId) return undefined
   const nesting = paragraph.bullet?.nestingLevel ?? 0
@@ -156,10 +144,10 @@ function listInfo(paragraph: GoogleParagraph, state: ReadState): ListInfo | unde
   const ordered = Boolean(
     glyph?.glyphType && glyph.glyphType !== 'GLYPH_TYPE_UNSPECIFIED' && !glyph.glyphSymbol
   )
-  return { listId, level: nesting, ordered, start: glyph?.startNumber ?? 1 }
+  return { id: listId, level: nesting, ordered, start: glyph?.startNumber ?? 1 }
 }
 
-function readParagraph(paragraph: GoogleParagraph, state: ReadState): Block[] {
+function readParagraph(paragraph: GoogleParagraph, state: ReadState): ListedBlock[] {
   const style = paragraph.paragraphStyle
   const rtl = style?.direction === 'RIGHT_TO_LEFT'
   const attrs: Record<string, unknown> = { dir: rtl ? 'rtl' : 'ltr' }
@@ -174,7 +162,7 @@ function readParagraph(paragraph: GoogleParagraph, state: ReadState): Block[] {
     return merged.length ? { ...node, content: merged } : node
   }
   const list = listInfo(paragraph, state)
-  const blocks: Block[] = []
+  const blocks: ListedBlock[] = []
   let current: WriterNode[] = []
   let broke = false
   for (const item of paragraphInlines(paragraph, state)) {
@@ -213,19 +201,13 @@ function readElements(
   elements: readonly GoogleStructuralElement[],
   state: ReadState
 ): WriterNode[] {
-  const blocks: Block[] = []
+  const blocks: ListedBlock[] = []
   for (const element of elements) {
     if (element.paragraph) blocks.push(...readParagraph(element.paragraph, state))
     else if (element.table) blocks.push({ node: readTable(element, state) })
     else if (element.tableOfContents) blocks.push({ node: { type: 'tableOfContents' } })
   }
-  return buildLists(
-    blocks.map((block) =>
-      block.list
-        ? { node: block.node, list: { ...block.list, id: block.list.listId } }
-        : { node: block.node }
-    )
-  )
+  return buildLists(blocks)
 }
 
 function readPage(source: GoogleDocument): PageSetup {

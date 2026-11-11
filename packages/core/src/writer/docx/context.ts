@@ -1,7 +1,5 @@
 import { strFromU8 } from 'fflate'
 
-import type { WriterNode } from '#core/writer/model'
-
 import { attrOf, kids, parseXML, valOf } from './xml'
 
 /** The package's parts by path; a path the package lacks reads as undefined. */
@@ -31,18 +29,6 @@ export interface ReadContext {
   base: string
   styles: Map<string, string>
   numbering: Numbering
-}
-
-export interface ListInfo {
-  numId: string
-  level: number
-  ordered: boolean
-  start: number
-}
-
-export interface BlockItem {
-  node: WriterNode
-  list?: ListInfo
 }
 
 export function readText(files: PackageFiles, path: string): string | null {

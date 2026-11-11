@@ -1,7 +1,7 @@
 import type { Element } from '@xmldom/xmldom'
 import { unzipSync } from 'fflate'
 
-import { buildLists } from '#core/writer/lists'
+import { buildLists, type ListedBlock, type ListPlace } from '#core/writer/lists'
 import {
   createWriterDocument,
   defaultPageSetup,
@@ -20,9 +20,7 @@ import {
   readStyles,
   readText,
   resolvePath,
-  type BlockItem,
   type PackageFiles,
-  type ListInfo,
   type ReadContext
 } from './context'
 import { readInlines, type InlineState } from './inline'
@@ -63,7 +61,7 @@ function readAlignment(jc: string | null, rtl: boolean): string | null {
   }
 }
 
-function readParagraph(p: Element, state: InlineState): BlockItem[] {
+function readParagraph(p: Element, state: InlineState): ListedBlock[] {
   const { context } = state
   const pPr = kid(p, 'pPr')
   const bidi = toggleOf(pPr, 'bidi')
@@ -80,18 +78,18 @@ function readParagraph(p: Element, state: InlineState): BlockItem[] {
         : { type: 'paragraph', attrs: { ...attrs } }
     return merged.length ? { ...node, content: merged } : node
   }
-  let list: ListInfo | undefined
+  let list: ListPlace | undefined
   const numPr = kid(pPr, 'numPr')
   const numId = valOf(numPr, 'numId')
   if (numId && numId !== '0') {
     const ilvl = Number(valOf(numPr, 'ilvl') ?? 0)
     const levels = context.numbering.levels.get(numId)
     const info = levels?.[ilvl]
-    if (info) list = { numId, level: ilvl, ordered: info.ordered, start: info.start }
+    if (info) list = { id: numId, level: ilvl, ordered: info.ordered, start: info.start }
   }
 
   const items = readInlines(p, state, [])
-  const blocks: BlockItem[] = []
+  const blocks: ListedBlock[] = []
   let current: WriterNode[] = []
   let sawBreak = false
   for (const item of items) {
@@ -153,7 +151,7 @@ function readTable(tbl: Element, state: InlineState): WriterNode {
 }
 
 function readBlocks(parent: Element, state: InlineState): WriterNode[] {
-  const items: BlockItem[] = []
+  const items: ListedBlock[] = []
   const visit = (container: Element) => {
     for (const child of kids(container)) {
       if (child.localName === 'p' && /^toc/i.test(valOf(kid(child, 'pPr'), 'pStyle') ?? '')) {
@@ -173,13 +171,7 @@ function readBlocks(parent: Element, state: InlineState): WriterNode[] {
     }
   }
   visit(parent)
-  return buildLists(
-    items.map((item) =>
-      item.list
-        ? { node: item.node, list: { ...item.list, id: item.list.numId } }
-        : { node: item.node }
-    )
-  )
+  return buildLists(items)
 }
 
 function readSection(sectPr: Element | null): PageSetup {
