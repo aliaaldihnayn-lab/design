@@ -36,12 +36,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Both Mac builds run on Apple silicon; the Intel one cross-compiles, as build.yml does.
+        # GitHub retired the macos-13 image in December 2025, so a job on it never starts.
         include:
           - platform: macos-15
             target: aarch64-apple-darwin
             label: macos-arm64
             updater: darwin-aarch64
-          - platform: macos-13
+          - platform: macos-15
             target: x86_64-apple-darwin
             label: macos-intel
             updater: darwin-x86_64
@@ -85,13 +87,18 @@ jobs:
           echo "Signing key present: $([ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && echo yes || echo NO)"
           SIGNED=false
           [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && SIGNED=true
+          # Without an Apple certificate the Mac app is signed ad hoc ("-"): an unsigned app from
+          # the internet opens on Apple silicon only as "damaged", an ad hoc one through Open.
           cat > preview-config.json <<EOF
           {
             "version": "$APP_VERSION",
             "build": {
               "beforeBuildCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run build:packages && bunx vite build"
             },
-            "bundle": { "createUpdaterArtifacts": $SIGNED }
+            "bundle": {
+              "createUpdaterArtifacts": $SIGNED,
+              "macOS": { "signingIdentity": "-" }
+            }
           }
           EOF
           cat preview-config.json
