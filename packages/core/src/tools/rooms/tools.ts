@@ -30,6 +30,8 @@ export const listRooms = defineTool({
     'Rooms the person cannot enter are never listed.',
   execution: { kind: 'async', mutation: 'none' },
   capabilities: ['network:access'],
+  // WebMCP offers a page's agent document tools only; rooms act on the person's Cloud account.
+  exposure: { webmcp: false },
   input: v.strictObject({
     archived: v.optional(v.pipe(v.boolean(), v.description('Include archived rooms.')), false)
   }),
@@ -46,8 +48,16 @@ export const createRoom = defineTool({
     'The person becomes its owner.',
   execution: { kind: 'async', mutation: 'none' },
   capabilities: ['network:access'],
+  // WebMCP offers a page's agent document tools only; rooms act on the person's Cloud account.
+  exposure: { webmcp: false },
   input: v.strictObject({
-    name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
+    name: v.pipe(
+      v.string(),
+      v.regex(/\S/, 'Expected a nonblank name'),
+      // A transform, not v.trim(), which has no JSON Schema form for MCP to list.
+      v.transform((name) => name.trim()),
+      v.maxLength(100)
+    ),
     parentId: v.optional(
       v.pipe(v.string(), v.description('The room to put it in, from list_rooms.'))
     ),
@@ -83,9 +93,15 @@ export const inviteToRoom = defineTool({
     'expires after a week; a newer invitation to the same address replaces the older.',
   execution: { kind: 'async', mutation: 'none' },
   capabilities: ['network:access'],
+  // WebMCP offers a page's agent document tools only; rooms act on the person's Cloud account.
+  exposure: { webmcp: false },
   input: v.strictObject({
     roomId: v.string(),
-    email: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email()),
+    email: v.pipe(
+      v.string(),
+      v.transform((email) => email.trim().toLowerCase()),
+      v.email()
+    ),
     role: v.optional(v.picklist(['editor', 'viewer']), 'viewer')
   }),
   execute: async (_figma, input) =>
@@ -100,6 +116,8 @@ export const setRoomAccess = defineTool({
     'restricted. People who lose access are dropped from its open files.',
   execution: { kind: 'async', mutation: 'none' },
   capabilities: ['network:access'],
+  // WebMCP offers a page's agent document tools only; rooms act on the person's Cloud account.
+  exposure: { webmcp: false },
   input: v.strictObject({ roomId: v.string(), accessMode: accessModeSchema }),
   execute: async (_figma, input) =>
     hosted(async () => ({ room: await requireRoomsHost().setAccess(input) }))

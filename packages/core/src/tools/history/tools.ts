@@ -68,7 +68,13 @@ export const saveVersion = defineTool({
   execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     kind: kindSchema,
-    title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)),
+    title: v.pipe(
+      v.string(),
+      v.regex(/\S/, 'Expected a nonblank title'),
+      // A transform, not v.trim(), which has no JSON Schema form for MCP to list.
+      v.transform((title) => title.trim()),
+      v.maxLength(100)
+    ),
     description: v.optional(v.pipe(v.string(), v.maxLength(1000)), '')
   }),
   execute: async (_figma, args) => {

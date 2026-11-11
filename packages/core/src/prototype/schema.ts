@@ -98,8 +98,18 @@ export const triggerSchema = v.variant('type', [
   v.object({ type: v.literal('key'), key: v.pipe(v.string(), v.minLength(1)) })
 ])
 
+/**
+ * A finite number, bounded rather than `v.finite()` so the AI and MCP tools that take
+ * interactions can list their input as JSON Schema.
+ */
+const finiteNumberSchema = v.pipe(
+  v.number(),
+  v.minValue(-Number.MAX_VALUE),
+  v.maxValue(Number.MAX_VALUE)
+)
+
 /** A value a prototype variable can be set to or compared with. */
-export const playValueSchema = v.union([v.string(), v.pipe(v.number(), v.finite()), v.boolean()])
+export const playValueSchema = v.union([v.string(), finiteNumberSchema, v.boolean()])
 
 /**
  * Sets a variable while the prototype runs, as Figma's Set variable: to `value`, to its
@@ -111,7 +121,7 @@ const setVariableSchema = v.object({
   variable: v.pipe(v.string(), v.minLength(1)),
   value: v.optional(playValueSchema),
   toggle: v.optional(v.boolean()),
-  add: v.optional(v.pipe(v.number(), v.finite()))
+  add: v.optional(finiteNumberSchema)
 })
 
 export const CONDITION_OPERATORS = [
