@@ -10,13 +10,14 @@ import {
   type ProvenanceStatement
 } from '#release/provenance'
 
-// npm's attestations for @lawha/emit@0.17.0-beta.1, published by the v0.17.0-beta.1 run.
+// npm's attestations for emit@0.17.0-beta.1, published by the v0.17.0-beta.1 run. They are
+// signed, so they name the repository that built them before the project became Lawha.
 const attestations = await readFile(
   join(import.meta.dir, 'fixtures/emit-attestations.json'),
   'utf8'
 )
 const source = {
-  repository: 'lawha/lawha',
+  repository: 'open-pencil/open-pencil',
   tag: 'v0.17.0-beta.1',
   commit: 'a74fdc7e74126ff3a6062cb657b97a399fce34fc'
 }
@@ -32,14 +33,14 @@ test('reads the SLSA provenance bundle and its statement from npm attestations',
   expect(bundle.mediaType).toBe('application/vnd.dev.sigstore.bundle.v0.3+json')
   const statement = provenanceStatement(bundle)
   expect(statement.predicate.runDetails.metadata.invocationId).toBe(
-    'https://github.com/aliaaldihnayn-lab/design/actions/runs/41425172592/attempts/1'
+    'https://github.com/open-pencil/open-pencil/actions/runs/41425172592/attempts/1'
   )
   expect(provenanceMismatches(statement, integrity, source)).toEqual([])
 })
 
 test('names the release workflow at the tag as the signer', () => {
   expect(releaseSignerIdentity(source)).toBe(
-    'https://github.com/aliaaldihnayn-lab/design/.github/workflows/build.yml@refs/tags/v0.17.0-beta.1'
+    'https://github.com/open-pencil/open-pencil/.github/workflows/build.yml@refs/tags/v0.17.0-beta.1'
   )
 })
 
@@ -69,7 +70,7 @@ test('refuses a version built by another workflow or repository', () => {
 
   expect(
     provenanceMismatches(published(), integrity, { ...source, repository: 'someone/lawha' })
-  ).toEqual(['built in https://github.com/aliaaldihnayn-lab/design', 'built from commit unknown'])
+  ).toEqual(['built in https://github.com/open-pencil/open-pencil', 'built from commit unknown'])
 })
 
 test('refuses provenance for a different tarball than the registry serves', () => {
