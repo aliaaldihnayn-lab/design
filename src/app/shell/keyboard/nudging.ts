@@ -29,7 +29,8 @@ function selectionOrigin(store: EditorStore): Vector {
 
 export function bindNudgeKeys(store: EditorStore) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
-    if (isEditing(e) || store.state.editingTextId) return
+    // A live control that took the key, such as a slider thumb, keeps it.
+    if (e.defaultPrevented || isEditing(e) || store.state.editingTextId) return
     if (isReservedModShortcut(e)) e.preventDefault()
     if (e.metaKey || e.ctrlKey || e.altKey) return
 
