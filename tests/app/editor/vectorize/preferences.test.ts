@@ -12,15 +12,19 @@ afterEach(() => {
   localTraceOptions.value = { ...DEFAULT_LOCAL_TRACE_OPTIONS }
 })
 
+/** The stored choices as they read now; reading through a call keeps assignments from narrowing them. */
+const engine = () => vectorizeEngine.value
+const provider = () => vectorizeProviderID.value
+
 describe('vectorize engine preference', () => {
   test('Image Trace on this device is chosen like a provider and keeps the cloud key choice', () => {
     vectorizeProviderID.value = 'fal'
     vectorizeEngine.value = 'local'
-    expect(vectorizeEngine.value).toBe('local')
+    expect(engine()).toBe('local')
     // The cloud service whose key Settings edits is still a cloud service.
-    expect(vectorizeProviderID.value).toBe('recraft')
+    expect(provider()).toBe('recraft')
     vectorizeProviderID.value = 'quiver'
-    expect(vectorizeEngine.value).toBe('quiver')
+    expect(engine()).toBe('quiver')
   })
 
   test('trace settings are kept as set', () => {
