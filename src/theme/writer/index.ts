@@ -20,7 +20,8 @@ const content = [
   '[&_.writer-section-break]:my-[12pt] [&_.writer-section-break]:h-1 [&_.writer-section-break]:border-y [&_.writer-section-break]:border-dashed [&_.writer-section-break]:border-black/30',
   '[&_.writer-page-gap]:relative [&_.writer-page-gap]:flex [&_.writer-page-gap]:flex-col [&_.writer-page-gap]:select-none [&_.writer-page-gap_p]:mb-0',
   '[&_.writer-page-footer]:flex [&_.writer-page-footer]:flex-col [&_.writer-page-footer]:justify-end [&_.writer-page-footer]:text-[9pt] [&_.writer-page-footer]:text-black/70 [&_.writer-page-header]:text-[9pt] [&_.writer-page-header]:text-black/70',
-  '[&_.writer-page-between]:-mx-px [&_.writer-page-between]:bg-canvas [&_.writer-page-between]:shadow-[inset_0_1px_3px_rgb(0_0_0/0.2)]',
+  '[&_.writer-page-between]:bg-transparent',
+  '[&_.writer-page-gap-row>td]:border-0 [&_.writer-page-gap-row>td]:p-0 [&_.writer-page-gap-row>td]:bg-transparent',
   '[&_.writer-page-field]:rounded-sm [&_.writer-page-field]:bg-black/10 [&_.writer-page-field]:px-0.5',
   '[&_.writer-comment]:bg-warning/30 [&_.writer-comment]:border-b-2 [&_.writer-comment]:border-warning',
   '[&_.writer-insertion]:text-chart-1 [&_.writer-insertion]:underline [&_.writer-deletion]:text-error-fill [&_.writer-deletion]:line-through',
@@ -46,8 +47,9 @@ export default {
     colorSwatch: 'absolute inset-x-1 bottom-0.5 h-0.5 rounded-full',
     workspace: 'flex min-h-0 flex-1',
     scroller: 'min-w-0 flex-1 overflow-auto py-6',
-    paper:
-      'relative mx-auto flex flex-col bg-white text-black shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:shadow-none',
+    paper: 'relative isolate mx-auto flex flex-col text-black print:bg-white',
+    sheet:
+      'pointer-events-none absolute -z-10 bg-white shadow-[0_1px_4px_rgb(0_0_0/0.25)] print:hidden',
     region:
       'group/region relative text-[9pt] text-black/70 outline-none hover:bg-black/[0.03] focus-within:bg-black/[0.03]',
     regionTools:

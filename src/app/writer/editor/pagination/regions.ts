@@ -2,16 +2,18 @@ import { generateHTML } from '@tiptap/core'
 
 import { twipsToPx, type PageSetup, type WriterNode } from '@lawha/core/writer'
 
-import type { PaginationPage } from '.'
+import type { PaginationSection } from '.'
 import { writerExtensions } from '../extensions'
 
 /** Space between two sheets in the editor, in CSS pixels. */
 export const PAGE_GAP = 24
 
-/** The page's geometry in CSS pixels, as the pagination draws it. */
-export function paginationPage(page: PageSetup): PaginationPage {
+/** A section's sheet in CSS pixels, as the pagination draws it. */
+export function paginationSection(page: PageSetup): PaginationSection {
   const { margins } = page
   return {
+    width: twipsToPx(page.width),
+    height: twipsToPx(page.height),
     contentHeight: twipsToPx(page.height - margins.top - margins.bottom),
     top: twipsToPx(margins.top),
     bottom: twipsToPx(margins.bottom),

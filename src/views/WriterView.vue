@@ -68,7 +68,7 @@ useHead({
   link: [{ rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }]
 })
 
-const { editor, pages } = useWriterEditor(() => t.value.untitled)
+const { editor, pages, sheets, sections } = useWriterEditor(() => t.value.untitled)
 const page = computed(() => writerDocument.value.page)
 const busy = ref(false)
 const findOpen = ref(false)
@@ -350,6 +350,8 @@ onBeforeUnmount(() => editor.value?.destroy())
           v-show="!previewedVersion"
           :editor="editor"
           :page="page"
+          :first-page="sections[0]?.page ?? page"
+          :sheets="sheets"
           :pages="pages.pages"
           :watermark="writerDocument.watermark?.text"
         >

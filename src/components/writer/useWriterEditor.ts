@@ -1,12 +1,12 @@
 import { useEditor } from '@tiptap/vue-3'
-import { shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 
-import type { WriterNode } from '@lawha/core/writer'
+import { writerSections, type WriterNode } from '@lawha/core/writer'
 
 import { writerExtensions } from '@/app/writer/editor/extensions'
 import { Pagination } from '@/app/writer/editor/pagination'
-import type { PageLayout } from '@/app/writer/editor/pagination/layout'
-import { fillRegion, paginationPage } from '@/app/writer/editor/pagination/regions'
+import { EMPTY_LAYOUT, type PageLayout } from '@/app/writer/editor/pagination/layout'
+import { fillRegion, paginationSection } from '@/app/writer/editor/pagination/regions'
 import { setWriterBody, writerAuthor, writerDocument, writerRevision } from '@/app/writer/session'
 
 /**
@@ -14,7 +14,8 @@ import { setWriterBody, writerAuthor, writerDocument, writerRevision } from '@/a
  * the body is cut into pages with each page's header and footer.
  */
 export function useWriterEditor(placeholder: () => string) {
-  const layout = shallowRef<PageLayout>({ breaks: [], pages: 1, lastFill: 0 })
+  const layout = shallowRef<PageLayout>(EMPTY_LAYOUT)
+  const sections = computed(() => writerSections(writerDocument.value))
   const editor = useEditor({
     extensions: [
       ...writerExtensions({
@@ -25,9 +26,9 @@ export function useWriterEditor(placeholder: () => string) {
         }
       }),
       Pagination.configure({
-        page: () => paginationPage(writerDocument.value.page),
-        region: (kind, element, page, pages) =>
-          fillRegion(element, writerDocument.value[kind], page, pages),
+        sections: () => sections.value.map((section) => paginationSection(section.page)),
+        region: (kind, element, page, pages, section) =>
+          fillRegion(element, sections.value[section]?.[kind] ?? null, page, pages),
         onLayout: (next) => {
           layout.value = next
         }
@@ -49,5 +50,12 @@ export function useWriterEditor(placeholder: () => string) {
     () => [writerDocument.value.header, writerDocument.value.footer, writerDocument.value.page],
     () => editor.value?.commands.repaginate()
   )
-  return { editor, pages: layout }
+  /** Each page's sheet, in CSS pixels, for the paper to draw. */
+  const sheets = computed(() =>
+    layout.value.sections.map((section) => {
+      const page = (sections.value[section] ?? sections.value.at(-1))?.page
+      return page ? paginationSection(page) : null
+    })
+  )
+  return { editor, pages: layout, sheets, sections }
 }
