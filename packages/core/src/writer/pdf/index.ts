@@ -4,6 +4,7 @@ import { writerSections } from '#core/writer/sections'
 
 import { flowBlocks, flowContext, type FlowBlock, type InlineRun } from './flow'
 import { FontSet, type WriterFontResolver } from './fonts'
+import type { WriterImageConverter } from './images'
 import { layoutLines, loadParagraphFaces, type GlyphPiece } from './lines'
 import { paginate } from './paginate'
 import { renderPDF } from './render'
@@ -23,6 +24,8 @@ export interface WriterPDFOptions {
   /** Families for characters a run's own font lacks, in order; Arabic first, then Latin. */
   fallbackFamilies?: readonly string[]
   author?: string
+  /** Turns WebP, GIF and other images PDF cannot hold into PNG; see `canvasKitImageConverter`. */
+  convertImage?: WriterImageConverter
 }
 
 export const DEFAULT_FALLBACK_FAMILIES = ['Noto Naskh Arabic', 'Inter'] as const
@@ -122,5 +125,10 @@ export async function exportWriterPDF(
     headingPages: first.headingPages,
     pageCount: first.pages.length
   })
-  return renderPDF(pages, { title: doc.title || undefined, author: options.author, rtl })
+  return renderPDF(pages, {
+    title: doc.title || undefined,
+    author: options.author,
+    rtl,
+    convertImage: options.convertImage
+  })
 }

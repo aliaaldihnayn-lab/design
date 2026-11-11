@@ -54,4 +54,5 @@ export {
   type WriterFontResolver,
   type WriterPDFOptions
 } from './pdf'
+export { canvasKitImageConverter, type WriterImageConverter } from './pdf/images'
 export { WRITER_TEMPLATE_IDS, writerTemplate, type WriterTemplateId } from './templates'

@@ -13,6 +13,7 @@ import { uniq } from 'es-toolkit'
 import { isValid, toUint8Array } from 'js-base64'
 
 import type { Face } from './fonts'
+import type { WriterImageConverter } from './images'
 import type { GlyphPiece } from './lines'
 import type { DrawOp, LaidOutPage } from './paginate'
 
@@ -352,13 +353,31 @@ class PageWriter {
   }
 }
 
-const DATA_URL = /^data:image\/(png|jpe?g);base64,(.*)$/s
+const DATA_URL = /^data:image\/([\w.+-]+);base64,(.*)$/s
 
 export interface RenderOptions {
   title?: string
   author?: string
   /** Right-to-left documents open on their right edge in readers that honour it. */
   rtl?: boolean
+  /** Turns an image PDF cannot hold into PNG; without one such images are left out. */
+  convertImage?: WriterImageConverter
+}
+
+async function embedDataURL(
+  pdf: PDFDocument,
+  src: string,
+  convert: WriterImageConverter | undefined
+): Promise<PDFImage | null> {
+  const match = DATA_URL.exec(src)
+  const data = match?.[2] ?? ''
+  if (!match || !isValid(data)) return null
+  const bytes = toUint8Array(data)
+  const type = match[1]?.toLowerCase() ?? ''
+  if (type === 'png') return pdf.embedPng(bytes)
+  if (type === 'jpeg' || type === 'jpg') return pdf.embedJpg(bytes)
+  const png = await convert?.(bytes, `image/${type}`)
+  return png ? pdf.embedPng(png) : null
 }
 
 export async function renderPDF(pages: readonly LaidOutPage[], options: RenderOptions = {}) {
@@ -368,15 +387,7 @@ export async function renderPDF(pages: readonly LaidOutPage[], options: RenderOp
   const embedImage = (src: string) => {
     let pending = images.get(src)
     if (!pending) {
-      const match = DATA_URL.exec(src)
-      const data = match?.[2] ?? ''
-      pending =
-        match && isValid(data)
-          ? (match[1] === 'png'
-              ? pdf.embedPng(toUint8Array(data))
-              : pdf.embedJpg(toUint8Array(data))
-            ).catch(() => null)
-          : Promise.resolve(null)
+      pending = embedDataURL(pdf, src, options.convertImage).catch(() => null)
       images.set(src, pending)
     }
     return pending

@@ -1,9 +1,12 @@
+import { getCanvasKit } from '@lawha/core/canvaskit'
 import { fontManager } from '@lawha/core/text'
 import {
+  canvasKitImageConverter,
   DEFAULT_FALLBACK_FAMILIES,
   exportWriterPDF,
   type WriterDocument,
-  type WriterFontRequest
+  type WriterFontRequest,
+  type WriterImageConverter
 } from '@lawha/core/writer'
 
 import { PDF, saveFileAs } from './files'
@@ -27,9 +30,19 @@ export function loadWriterFont(request: WriterFontRequest): Promise<ArrayBuffer 
   return fontManager.loadFont(request.family, styleName(request), request.text).catch(() => null)
 }
 
+/**
+ * WebP, GIF and other pictures go in as PNG, decoded by the canvas's own CanvasKit, which loads
+ * only when a document has such a picture; one that cannot be decoded is left out.
+ */
+const convertWriterImage: WriterImageConverter = (bytes, mime) =>
+  getCanvasKit()
+    .then((canvasKit) => canvasKitImageConverter(canvasKit)(bytes, mime))
+    .catch(() => null)
+
 export function writerPDFBytes(document: WriterDocument): Promise<Uint8Array> {
   return exportWriterPDF(document, {
     fonts: loadWriterFont,
+    convertImage: convertWriterImage,
     fallbackFamilies: DEFAULT_FALLBACK_FAMILIES,
     author: writerAuthor.value || undefined
   })
