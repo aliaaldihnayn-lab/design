@@ -1,3 +1,5 @@
+import { CalendarDateTime, DateFormatter } from '@internationalized/date'
+
 import type { SceneNode } from '@lawha/scene-graph'
 
 import type { Action } from '#core/prototype/model'
@@ -176,14 +178,30 @@ const menu = listKit('menu', {
     `<Frame name="Trigger" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={6} px={14} py={8} items="center" rounded={8} bg=${open ? theme.subtle : theme.surface} stroke=${theme.border}>${label(theme, 'Value', theme.labels.menu, { weight: 600 })}${glyph('chevronDown', theme.text, { layer: 'Chevron' })}</Frame>`
 })
 
-const TIMES = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30'] as const
+/** The times the time picker lists: every half hour from nine. */
+const TIMES = Array.from({ length: 12 }, (_, index) => ({
+  hour: 9 + Math.floor(index / 2),
+  minute: (index % 2) * 30
+}))
 
-const timePicker = listKit('time-picker', {
-  name: 'Kit/Time picker',
-  placeholder: (theme) => theme.labels.pickTime,
-  options: () => TIMES,
-  picks: true
-})
+/** A time as the picker shows it, on a 12 or 24 hour clock in the theme's language. */
+function timeLabel(theme: KitTheme, hourCycle: 12 | 24, time: (typeof TIMES)[number]): string {
+  return new DateFormatter(theme.rtl ? 'ar-SA' : 'en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hourCycle: hourCycle === 12 ? 'h12' : 'h23',
+    timeZone: 'UTC'
+  }).format(new CalendarDateTime(2026, 1, 1, time.hour, time.minute).toDate('UTC'))
+}
+
+function timePicker(hourCycle: 12 | 24): KitDefinition {
+  return listKit('time-picker', {
+    name: hourCycle === 12 ? 'Kit/Time picker (12h)' : 'Kit/Time picker',
+    placeholder: (theme) => theme.labels.pickTime,
+    options: (theme) => TIMES.map((time) => timeLabel(theme, hourCycle, time)),
+    picks: true
+  })
+}
 
 /**
  * A combobox: the trigger is a real text field, which takes typing, and focusing it opens the
@@ -268,10 +286,7 @@ const multiSelect: KitDefinition = {
   }
 }
 
-export const CHOICE_KITS: readonly KitDefinition[] = [
-  select,
-  menu,
-  combobox,
-  multiSelect,
-  timePicker
-]
+/** The kit's lists, the time picker on the clock the options ask for. */
+export function choiceKits(options: { hourCycle?: 12 | 24 } = {}): KitDefinition[] {
+  return [select, menu, combobox, multiSelect, timePicker(options.hourCycle ?? 24)]
+}

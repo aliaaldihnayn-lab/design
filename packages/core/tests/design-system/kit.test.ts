@@ -4,7 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { CalendarDate } from '@internationalized/date'
 
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
-import { readBehaviour } from '@lawha/scene-graph/behaviours'
+import { findLayerByPath, readBehaviour } from '@lawha/scene-graph/behaviours'
 
 import {
   buildKit,
@@ -165,10 +165,12 @@ describe('interactive kit', () => {
     const set = graph.getNode(built.id)
     expect(set?.name).toBe('Kit/Date picker (Hijri)')
     const current =
-      set && graph.getChildren(set.id).find((variant) => variant.name === 'State=Month 2')
-    if (!current) throw new Error('no current month')
+      set && graph.getChildren(set.id).find((variant) => variant.name === 'State=Open')
+    if (!current) throw new Error('no open calendar')
     // 11 November 2026 is in Jumada al-Akhirah 1448.
-    expect(textOf(graph, current, 'Title')).toContain('1448')
+    expect(textOf(graph, current, 'Label')).toBeDefined()
+    const year = findLayerByPath(graph, current.id, 'Calendar/Header/Title/Year/Label')
+    expect(year?.text).toContain('1448')
   })
 
   test('picking a date range sets its start, then its end, which closes it', async () => {
@@ -244,6 +246,7 @@ describe('interactive kit', () => {
     expect(behaviour?.numbers.value).toEqual({ min: 0, max: 100, step: 5, default: 25 })
     expect(behaviour?.numbers.end).toEqual({ min: 0, max: 100, step: 5, default: 75 })
   })
+
   test('each instance of a control keeps its own value', async () => {
     const { graph, screen, instance } = await screenWith('select')
     const second = graph.createInstance(instance.componentId ?? '', screen.id, { x: 20, y: 300 })
@@ -269,5 +272,113 @@ describe('interactive kit', () => {
     const shown = show(graph, screen.id, states, variables)
     const values = shown.getChildren(screen.id).map((child) => textOf(shown, child, 'Value'))
     expect(values).toEqual(['Jeddah', 'Mecca'])
+  })
+
+  /** Clicks layers of a screen in turn, as the running prototype does. */
+  function clicker(graph: SceneGraph, screen: SceneNode) {
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    return {
+      click(target: string) {
+        const result = dispatchStateEvent(
+          show(graph, screen.id, states, variables),
+          screen.id,
+          target,
+          'click',
+          variables
+        )
+        for (const change of result.changes)
+          states = new Map(states).set(change.instance, change.to)
+        variables = result.variables
+      },
+      text(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.text
+      },
+      opacity(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.opacity
+      },
+      variant(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        const node = findLayerByPath(shown, screen.id, path)
+        return node?.componentId ? shown.getNode(node.componentId)?.name : undefined
+      }
+    }
+  }
+
+  test('a date picker moves to any month and year through its month and year grids', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker')
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('November')
+    ui.click(`${path}/Calendar/Header/Next`)
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('January')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2027')
+    // The year grid shows twelve years; picking one opens its months, then a month its days.
+    ui.click(`${path}/Calendar/Header/Title/Year`)
+    expect(ui.variant(path)).toBe('State=Years')
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2016')
+    ui.click(`${path}/Calendar/Header/Previous`)
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2004')
+    ui.click(`${path}/Calendar/Years/Year 7`)
+    expect(ui.variant(path)).toBe('State=Months')
+    ui.click(`${path}/Calendar/Months/Month 3`)
+    expect(ui.variant(path)).toBe('State=Open')
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('March')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2010')
+    // 1 March 2010 was a Monday, so the grid starts on Sunday 28 February.
+    ui.click(`${path}/Calendar/Days/Day 2`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Mar 1, 2010')
+  })
+
+  test('days outside the minimum and maximum, or disabled, cannot be picked', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      minDate: '2026-11-05',
+      maxDate: '2026-11-20',
+      disabledDates: ['2026-11-10'],
+      disabledWeekdays: [5]
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    // November 2026 starts on a Sunday, so Day n is the nth.
+    for (const day of [3, 10, 13, 25]) {
+      ui.click(`${path}/Calendar/Days/Day ${day}`)
+      expect(ui.variant(path)).toBe('State=Open')
+      expect(ui.opacity(`${path}/Calendar/Days/Day ${day}/Number`)).toBeLessThan(0.5)
+    }
+    ui.click(`${path}/Calendar/Days/Day 12`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Nov 12, 2026')
+  })
+
+  test('a Hijri date picker moves through Umm al-Qura months', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      calendar: 'islamic-umalqura'
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Jumada II')
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Rajab')
+  })
+
+  test('the time picker shows a 12 or 24 hour clock', async () => {
+    for (const [hourCycle, last] of [
+      [24, '14:30'],
+      [12, '2:30 PM']
+    ] as const) {
+      const graph = new SceneGraph()
+      const built = await buildKitComponent(graph, 'time-picker', { hourCycle })
+      const set = graph.getNode(built.id)
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open list')
+      expect(findLayerByPath(graph, open.id, 'Menu/Option 12/Label')?.text).toBe(last)
+    }
   })
 })

@@ -8,6 +8,7 @@ import { resolvedPaintBindings } from '@lawha/scene-graph/variables'
 
 import { extractPageContext, findPageId } from '#core/io/subgraph'
 import { computeAllLayouts } from '#core/layout'
+import { showCalendars } from '#core/prototype/calendar'
 import { showSuggestions } from '#core/prototype/suggestions'
 import { showPlayVariables, type PlayVariables } from '#core/prototype/variables'
 
@@ -132,6 +133,7 @@ export function resolvePlayState(
     if (instance?.type === 'INSTANCE') applyState(graph, rootId, instance, state)
   }
   for (const id of showPlayVariables(graph, rootId, variables)) reflow(graph, id)
+  for (const id of showCalendars(graph, rootId, variables)) reflow(graph, id)
   for (const id of showSuggestions(graph, rootId, (path) => typed.get(path))) reflow(graph, id)
   computeAllLayouts(graph, rootId)
   return graph
