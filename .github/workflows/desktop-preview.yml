@@ -88,6 +88,7 @@ jobs:
             },
             "bundle": {
               "createUpdaterArtifacts": $SIGNED,
+              "targets": ["nsis", "app", "dmg"],
               "macOS": { "signingIdentity": "-" }
             }
           }
