@@ -1,0 +1,437 @@
+import { describe, expect, test } from 'bun:test'
+
+import { expectDefined } from '#core-tests/helpers/assert'
+import { CalendarDate } from '@internationalized/date'
+
+import { behaviourControls } from '@lawha/dom-css/export'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
+import { findLayerByPath, readBehaviour } from '@lawha/scene-graph/behaviours'
+
+import {
+  buildKit,
+  buildKitComponent,
+  insertKitComponent,
+  KIT_KINDS,
+  KIT_PAGE_NAME
+} from '#core/design-system/kit'
+import { playIslandRoots } from '#core/editor/play/islands'
+import { resolvePlayState } from '#core/editor/play/states'
+import { dispatchStateEvent, dispatchStateKey, variantValues } from '#core/prototype/states'
+import type { PlayVariables } from '#core/prototype/variables'
+
+const TODAY = new CalendarDate(2026, 11, 11)
+
+/** A screen holding an instance of a kit control. */
+async function screenWith(kind: (typeof KIT_KINDS)[number], options = {}) {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0]?.id ?? graph.rootId
+  const screen = graph.createNode('FRAME', pageId, { name: 'Screen', width: 400, height: 800 })
+  const { instanceId, component } = await insertKitComponent(graph, kind, {
+    parentId: screen.id,
+    x: 20,
+    y: 20,
+    today: TODAY,
+    ...options
+  })
+  const instance = graph.getNode(instanceId)
+  if (!instance) throw new Error('no instance')
+  return { graph, pageId, screen, instance, component }
+}
+
+/** The screen as it shows with instances in the given variants and variables. */
+function show(
+  graph: SceneGraph,
+  rootId: string,
+  states: Map<string, string>,
+  variables: PlayVariables
+) {
+  return resolvePlayState(
+    graph,
+    rootId,
+    new Map([...states].map(([path, id]) => [path, { variants: variantValues(graph, id) }])),
+    variables
+  )
+}
+
+function textOf(graph: SceneGraph, root: SceneNode, name: string): string | undefined {
+  const walk = (node: SceneNode): string | undefined => {
+    if (node.type === 'TEXT' && node.name === name) return node.text
+    for (const child of graph.getChildren(node.id)) {
+      const found = walk(child)
+      if (found !== undefined) return found
+    }
+    return undefined
+  }
+  return walk(root)
+}
+
+describe('interactive kit', () => {
+  test('every control builds once, on the kit page, and is reused', async () => {
+    const graph = new SceneGraph()
+    const built = await buildKit(graph, KIT_KINDS, { today: TODAY })
+    expect(built.map((item) => item.kind)).toEqual([...KIT_KINDS])
+    expect(built.every((item) => item.created)).toBe(true)
+    const page = graph.getPages().find((item) => item.name === KIT_PAGE_NAME)
+    expect(page).toBeDefined()
+    const again = await buildKitComponent(graph, 'select', { today: TODAY })
+    expect(again.created).toBe(false)
+    expect(again.id).toBe(expectDefined(built.find((item) => item.kind === 'select')).id)
+  })
+
+  test('the button keeps every state as a variant of one set', async () => {
+    const graph = new SceneGraph()
+    const button = await buildKitComponent(graph, 'button')
+    const names = graph.getChildren(button.id).map((variant) => variant.name)
+    expect(names).toEqual([
+      'State=Default',
+      'State=Hover',
+      'State=Pressed',
+      'State=Focus',
+      'State=Disabled',
+      'State=Loading'
+    ])
+  })
+
+  test('a select opens in place, moves with the arrow keys, and shows the pick', async () => {
+    const { graph, pageId, screen, instance } = await screenWith('select')
+    expect(playIslandRoots(graph, pageId)).toEqual([screen.id])
+    const path = instance.name
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    const variant = (name: string) => {
+      const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+      const found = set && graph.getChildren(set.id).find((child) => child.name === name)
+      if (!found) throw new Error(`no ${name}`)
+      return found.id
+    }
+    const step = (result: ReturnType<typeof dispatchStateEvent>) => {
+      for (const change of result.changes) states = new Map(states).set(change.instance, change.to)
+      variables = result.variables
+    }
+
+    step(
+      dispatchStateEvent(
+        show(graph, screen.id, states, variables),
+        screen.id,
+        `${path}/Trigger`,
+        'click',
+        variables
+      )
+    )
+    expect(states.get(path)).toBe(variant('State=Open'))
+    step(
+      dispatchStateKey(show(graph, screen.id, states, variables), screen.id, 'ArrowDown', variables)
+    )
+    step(
+      dispatchStateKey(show(graph, screen.id, states, variables), screen.id, 'ArrowDown', variables)
+    )
+    expect(states.get(path)).toBe(variant('State=Option 2'))
+    step(dispatchStateKey(show(graph, screen.id, states, variables), screen.id, 'Enter', variables))
+    expect(states.get(path)).toBe(variant('State=Closed'))
+    const shown = show(graph, screen.id, states, variables)
+    const root = shown.getNode(screen.id)
+    if (!root) throw new Error('no screen')
+    expect(textOf(shown, root, 'Value')).toBe('Jeddah')
+  })
+
+  test('text fields run as Reka controls with a counter and a clear button', async () => {
+    const graph = new SceneGraph()
+    for (const kind of ['text-input', 'textarea', 'search'] as const) {
+      const built = await buildKitComponent(graph, kind)
+      const set = graph.getNode(built.id)
+      const behaviour = set && readBehaviour(set)
+      expect(behaviour?.kind).toBe(kind === 'textarea' ? 'textarea' : 'textField')
+      expect(Object.keys(behaviour?.texts ?? {}).sort()).toEqual(
+        kind === 'search' ? ['value'] : ['count', 'value']
+      )
+      if (kind === 'search') expect(Object.keys(behaviour?.parts ?? {})).toEqual(['clear'])
+    }
+  })
+
+  test('right to left lays rows out from the right with Arabic labels', async () => {
+    const { graph, instance } = await screenWith('select', { rtl: true })
+    const page = graph.getPages().find((item) => item.name === 'Interactive kit (RTL)')
+    expect(page).toBeDefined()
+    const [trigger] = graph.getChildren(instance.id)
+    expect(trigger.layoutDirection).toBe('RTL')
+    expect(textOf(graph, instance, 'Value')).toBe('اختر مدينة')
+  })
+
+  test('the Hijri date picker draws Umm al-Qura months', async () => {
+    const graph = new SceneGraph()
+    const built = await buildKitComponent(graph, 'date-picker', {
+      calendar: 'islamic-umalqura',
+      today: TODAY
+    })
+    const set = graph.getNode(built.id)
+    expect(set?.name).toBe('Kit/Date picker (Hijri)')
+    const current =
+      set && graph.getChildren(set.id).find((variant) => variant.name === 'State=Open')
+    if (!current) throw new Error('no open calendar')
+    // 11 November 2026 is in Jumada al-Akhirah 1448.
+    expect(textOf(graph, current, 'Label')).toBeDefined()
+    const year = findLayerByPath(graph, current.id, 'Calendar/Header/Title/Year/Label')
+    expect(year?.text).toContain('1448')
+  })
+
+  test('picking a date range sets its start, then its end, which closes it', async () => {
+    const { graph, screen, instance } = await screenWith('date-range-picker')
+    const path = instance.name
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    const run = (target: string) => {
+      const result = dispatchStateEvent(
+        show(graph, screen.id, states, variables),
+        screen.id,
+        target,
+        'click',
+        variables
+      )
+      for (const change of result.changes) states = new Map(states).set(change.instance, change.to)
+      variables = result.variables
+    }
+    run(`${path}/Field`)
+    run(`${path}/Calendar/Days/Day 10`)
+    run(`${path}/Calendar/Days/Day 12`)
+    const shown = show(graph, screen.id, states, variables)
+    const root = shown.getNode(screen.id)
+    if (!root) throw new Error('no screen')
+    expect(textOf(shown, root, 'Start')).toBe('Nov 10, 2026')
+    expect(textOf(shown, root, 'End')).toBe('Nov 12, 2026')
+    expect(shown.getChildren(screen.id)[0]?.componentId).toBe(
+      graph.getChildren(
+        graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')?.id ?? ''
+      )[0]?.id
+    )
+  })
+
+  test('a combobox filters its suggestions by what its field holds', async () => {
+    for (const rtl of [false, true]) {
+      const { graph, screen, instance } = await screenWith('combobox', { rtl })
+      const path = instance.name
+      const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open variant')
+      const shownWith = (query: string) => {
+        const shown = resolvePlayState(
+          graph,
+          screen.id,
+          new Map([[path, { variants: variantValues(graph, open.id) }]]),
+          new Map(),
+          new Map([[`${path}/Trigger/Field`, query]])
+        )
+        const menu = shown
+          .getChildren(shown.getChildren(screen.id)[0]?.id ?? '')
+          .find((child) => child.name === 'Menu')
+        if (!menu) throw new Error('no menu')
+        return shown
+          .getChildren(menu.id)
+          .filter((row) => row.visible)
+          .map((row) => row.name)
+      }
+      expect(shownWith('')).toEqual(['Option 1', 'Option 2', 'Option 3', 'Option 4'])
+      expect(shownWith(rtl ? 'جده' : 'JED')).toEqual(['Option 2'])
+      expect(shownWith(rtl ? 'القاهرة' : 'Cairo')).toEqual(['Empty'])
+    }
+  })
+
+  test('the range slider is one slider with two thumbs that step through its range', async () => {
+    const graph = new SceneGraph()
+    const built = await buildKitComponent(graph, 'range-slider')
+    const set = graph.getNode(built.id)
+    const behaviour = set && readBehaviour(set)
+    expect(behaviour?.kind).toBe('slider')
+    expect(Object.keys(behaviour?.parts ?? {}).sort()).toEqual(
+      ['endThumb', 'range', 'thumb', 'track'].sort()
+    )
+    expect(behaviour?.numbers.value).toEqual({ min: 0, max: 100, step: 5, default: 25 })
+    expect(behaviour?.numbers.end).toEqual({ min: 0, max: 100, step: 5, default: 75 })
+  })
+
+  test('each instance of a control keeps its own value', async () => {
+    const { graph, screen, instance } = await screenWith('select')
+    const second = graph.createInstance(instance.componentId ?? '', screen.id, { x: 20, y: 300 })
+    if (!second) throw new Error('no second select')
+    graph.updateNode(second.id, { name: 'Other select' })
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    const run = (target: string) => {
+      const result = dispatchStateEvent(
+        show(graph, screen.id, states, variables),
+        screen.id,
+        target,
+        'click',
+        variables
+      )
+      for (const change of result.changes) states = new Map(states).set(change.instance, change.to)
+      variables = result.variables
+    }
+    run(`${instance.name}/Trigger`)
+    run(`${instance.name}/Menu/Option 2`)
+    run('Other select/Trigger')
+    run('Other select/Menu/Option 4')
+    const shown = show(graph, screen.id, states, variables)
+    const values = shown.getChildren(screen.id).map((child) => textOf(shown, child, 'Value'))
+    expect(values).toEqual(['Jeddah', 'Mecca'])
+  })
+
+  /** Clicks layers of a screen in turn, as the running prototype does. */
+  function clicker(graph: SceneGraph, screen: SceneNode) {
+    let states = new Map<string, string>()
+    let variables: PlayVariables = new Map()
+    return {
+      click(target: string) {
+        const result = dispatchStateEvent(
+          show(graph, screen.id, states, variables),
+          screen.id,
+          target,
+          'click',
+          variables
+        )
+        for (const change of result.changes)
+          states = new Map(states).set(change.instance, change.to)
+        variables = result.variables
+      },
+      text(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.text
+      },
+      opacity(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        return findLayerByPath(shown, screen.id, path)?.opacity
+      },
+      variant(path: string) {
+        const shown = show(graph, screen.id, states, variables)
+        const node = findLayerByPath(shown, screen.id, path)
+        return node?.componentId ? shown.getNode(node.componentId)?.name : undefined
+      }
+    }
+  }
+
+  test('a date picker moves to any month and year through its month and year grids', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker')
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('November')
+    ui.click(`${path}/Calendar/Header/Next`)
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('January')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2027')
+    // The year grid shows twelve years; picking one opens its months, then a month its days.
+    ui.click(`${path}/Calendar/Header/Title/Year`)
+    expect(ui.variant(path)).toBe('State=Years')
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2016')
+    ui.click(`${path}/Calendar/Header/Previous`)
+    expect(ui.text(`${path}/Calendar/Years/Year 1/Number`)).toBe('2004')
+    ui.click(`${path}/Calendar/Years/Year 7`)
+    expect(ui.variant(path)).toBe('State=Months')
+    ui.click(`${path}/Calendar/Months/Month 3`)
+    expect(ui.variant(path)).toBe('State=Open')
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('March')
+    expect(ui.text(`${path}/Calendar/Header/Title/Year/Label`)).toBe('2010')
+    // 1 March 2010 was a Monday, so the grid starts on Sunday 28 February.
+    ui.click(`${path}/Calendar/Days/Day 2`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Mar 1, 2010')
+  })
+
+  test('days outside the minimum and maximum, or disabled, cannot be picked', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      minDate: '2026-11-05',
+      maxDate: '2026-11-20',
+      disabledDates: ['2026-11-10'],
+      disabledWeekdays: [5]
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    // November 2026 starts on a Sunday, so Day n is the nth.
+    for (const day of [3, 10, 13, 25]) {
+      ui.click(`${path}/Calendar/Days/Day ${day}`)
+      expect(ui.variant(path)).toBe('State=Open')
+      expect(ui.opacity(`${path}/Calendar/Days/Day ${day}/Number`)).toBeLessThan(0.5)
+    }
+    ui.click(`${path}/Calendar/Days/Day 12`)
+    expect(ui.variant(path)).toBe('State=Closed')
+    expect(ui.text(`${path}/Field/Value`)).toBe('Nov 12, 2026')
+  })
+
+  test('a Hijri date picker moves through Umm al-Qura months', async () => {
+    const { graph, screen, instance } = await screenWith('date-picker', {
+      calendar: 'islamic-umalqura'
+    })
+    const path = instance.name
+    const ui = clicker(graph, screen)
+    ui.click(`${path}/Field`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Jumada II')
+    ui.click(`${path}/Calendar/Header/Next`)
+    expect(ui.text(`${path}/Calendar/Header/Title/Month/Label`)).toBe('Rajab')
+  })
+
+  test('the time picker shows a 12 or 24 hour clock', async () => {
+    for (const [hourCycle, last] of [
+      [24, '14:30'],
+      [12, '2:30 PM']
+    ] as const) {
+      const graph = new SceneGraph()
+      const built = await buildKitComponent(graph, 'time-picker', { hourCycle })
+      const set = graph.getNode(built.id)
+      const open = set && graph.getChildren(set.id).find((child) => child.name === 'State=Open')
+      if (!open) throw new Error('no open list')
+      expect(findLayerByPath(graph, open.id, 'Menu/Option 12/Label')?.text).toBe(last)
+    }
+  })
+
+  test('rebuilding the kit restyles its components to the current tokens in place', async () => {
+    const { graph, screen, instance, component } = await screenWith('button')
+    const variantIds = graph.getChildren(component.id).map((child) => child.id)
+    const collection = graph.createCollection('Tokens')
+    const primary = graph.createVariable('color/primary', 'COLOR', collection.id, {
+      r: 0.9,
+      g: 0.1,
+      b: 0.2,
+      a: 1
+    })
+    const [again] = await buildKit(graph, ['button'], { today: TODAY, restyle: true })
+    expect(again.created).toBe(false)
+    expect(again.id).toBe(component.id)
+    expect(again.restyled).toBeGreaterThan(0)
+    // Same variants, now painted with the token; the instance follows and still runs.
+    expect(graph.getChildren(component.id).map((child) => child.id)).toEqual(variantIds)
+    const rest = graph.getChildren(component.id).find((child) => child.name === 'State=Default')
+    expect(rest?.boundVariables['fills/0/color']).toBe(primary.id)
+    expect(graph.getNode(instance.id)?.boundVariables['fills/0/color']).toBe(primary.id)
+    const page = graph.getPages().find((item) => item.name === KIT_PAGE_NAME)
+    expect(graph.getChildren(page?.id ?? '').length).toBe(1)
+    const result = dispatchStateEvent(
+      resolvePlayState(graph, screen.id, new Map()),
+      screen.id,
+      instance.name,
+      'click'
+    )
+    expect(result.changes.length).toBe(1)
+  })
+
+  test('a filtered combobox runs its field live and its arrow keys skip hidden options', async () => {
+    const { graph, screen, instance } = await screenWith('combobox')
+    const path = instance.name
+    expect([...behaviourControls(graph, screen.id).keys()]).toContain(`${path}/Trigger/Field`)
+    const set = graph.getNode(graph.getNode(instance.componentId ?? '')?.parentId ?? '')
+    const variant = (name: string) =>
+      set && graph.getChildren(set.id).find((child) => child.name === name)?.id
+    const typed = new Map([[`${path}/Trigger/Field`, 'jed']])
+    const press = (shown: string) => {
+      const showing = resolvePlayState(
+        graph,
+        screen.id,
+        new Map([[path, { variants: variantValues(graph, shown) }]]),
+        new Map(),
+        typed
+      )
+      return dispatchStateKey(showing, screen.id, 'ArrowDown').changes.map((change) => change.to)
+    }
+    expect(press(variant('State=Open') ?? '')).toEqual([variant('State=Option 2') ?? ''])
+    expect(press(variant('State=Option 2') ?? '')).toEqual([])
+  })
+})

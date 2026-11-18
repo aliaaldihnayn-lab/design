@@ -1,15 +1,17 @@
 import { uniq } from 'es-toolkit'
 
-import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
-import { CommittedGraphEventError, type SceneNode } from '@open-pencil/scene-graph'
-import { attachedConnectors } from '@open-pencil/scene-graph/connectors'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { parseFigmaClipboard } from '@lawha/fig/clipboard'
+import { CommittedGraphEventError, type SceneNode } from '@lawha/scene-graph'
+import { attachedConnectors } from '@lawha/scene-graph/connectors'
+import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
+import { cycleSafeParent } from '@lawha/scene-graph/instances'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import { pluginDataForCopy } from '@lawha/scene-graph/stories'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
+import { parseLawhaClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
+import { releaseDeletedFrames } from '#core/publisher'
 
 import { createClipboardAssetActions } from './clipboard/assets'
 import type { ClipboardSnapshot } from './clipboard/copy'
@@ -31,6 +33,7 @@ import {
   type ClipboardPlacement
 } from './clipboard/placement'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
+import { recordEdit } from './history/edit'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
 import type { EditorContext } from './types'
 
@@ -164,7 +167,7 @@ export function createClipboardActions(ctx: EditorContext) {
     let created: string[] = []
     ctx.undo.runBatch('Paste', () => {
       const dependencies = importClipboardDependenciesWithUndo(ctx, snapshot)
-      created = pasteOpenPencilNodes(
+      created = pasteLawhaNodes(
         dependencies.nodes,
         snapshot.placement,
         snapshot.images,
@@ -177,14 +180,14 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
-    const openPencil = parseOpenPencilClipboard(html)
-    if (openPencil) {
+    const lawha = parseLawhaClipboard(html)
+    if (lawha) {
       // One undo step for the paste and any slot it claims.
       const created = ctx.undo.runBatch('Paste', () =>
-        pasteOpenPencilNodes(
-          openPencil.nodes,
-          clipboardPlacement(ctx.graph, openPencil.nodes),
-          openPencil.images,
+        pasteLawhaNodes(
+          lawha.nodes,
+          clipboardPlacement(ctx.graph, lawha.nodes),
+          lawha.images,
           [],
           cursorPos,
           options
@@ -236,7 +239,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pasteOpenPencilNodes(
+  function pasteLawhaNodes(
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
@@ -254,6 +257,8 @@ export function createClipboardActions(ctx: EditorContext) {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),
+        // A pasted layer's stories are new work, as a duplicate's are: new ids, no Jira issue.
+        pluginData: pluginDataForCopy(rest.pluginData),
         childIds: []
       })
       copiedIds.set(source.id, node.id)
@@ -368,7 +373,12 @@ export function createClipboardActions(ctx: EditorContext) {
    */
   function deleteNodes(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
     // One undo step for the delete and any slot it claims.
-    ctx.undo.runBatch('Delete', () => deleteLayers(nodeIds, nextSelection))
+    ctx.undo.runBatch('Delete', () => {
+      const ids = [...nodeIds].filter(deletable)
+      // Threaded text frames give their text back to their story's other frames first.
+      recordEdit(ctx, { label: 'Delete' }, () => releaseDeletedFrames(ctx.graph, ids))
+      deleteLayers(ids, nextSelection)
+    })
   }
 
   /** Whether a delete removes this layer: one that is unlocked and may leave its parent. */

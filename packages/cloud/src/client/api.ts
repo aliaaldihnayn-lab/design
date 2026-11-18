@@ -13,6 +13,8 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  appendDocumentHistoryResponseSchema,
+  documentHistoryPageSchema,
   documentVersionDownloadSchema,
   documentVersionResponseSchema,
   documentVersionsSchema,
@@ -39,6 +41,8 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type AppendDocumentHistoryInput,
+  type DocumentHistoryPage,
   type DocumentVersion,
   type DocumentVersionDownload,
   type DocumentVersions,
@@ -59,7 +63,10 @@ import { hc } from 'hono/client'
 import * as v from 'valibot'
 
 import { createImageRequests } from './images'
+import { createJiraRequests } from './jira'
 import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
+import { createRoomRequests } from './rooms'
+import { createSignatureRequests } from './signatures'
 import { createWorkspaceRequests } from './workspaces'
 
 export { CloudAPIError, type CloudClientDiagnostic } from './response'
@@ -109,7 +116,7 @@ export type CloudUpload = v.InferOutput<typeof uploadResponseSchema>
 function apiURL(baseURL: string): string {
   const url = new URL(baseURL)
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new CloudAPIError('OpenPencil Cloud API URL must use HTTP or HTTPS', 0)
+    throw new CloudAPIError('Lawha Cloud API URL must use HTTP or HTTPS', 0)
   }
   url.pathname = url.pathname.replace(/\/$/, '')
   url.search = ''
@@ -170,7 +177,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.user
     },
     ...createWorkspaceRequests(client, options.onDiagnostic),
+    ...createRoomRequests(client, options.onDiagnostic),
     ...createImageRequests(client, publicClient, options.onDiagnostic),
+    ...createSignatureRequests(client, publicClient, options.onDiagnostic),
+    ...createJiraRequests(client, options.onDiagnostic),
     /** Documents shared with the person directly, outside their workspaces. */
     async listSharedDocuments(): Promise<SharedDocument[]> {
       const response = await parseResponse(
@@ -445,6 +455,32 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** A page of the edits made to the document, newest first, each signed by its author. */
+    async listDocumentHistory(
+      documentId: string,
+      page: { before?: string; limit?: number } = {}
+    ): Promise<DocumentHistoryPage> {
+      return parseResponse(
+        client.documents[':documentId'].history.$get({
+          param: { documentId },
+          query: pickBy(page, (value) => value !== undefined)
+        }),
+        documentHistoryPageSchema,
+        options.onDiagnostic
+      )
+    },
+    /** Adds edits made in the editor; the server signs them as the signed-in person. */
+    async appendDocumentHistory(
+      documentId: string,
+      input: AppendDocumentHistoryInput
+    ): Promise<number> {
+      const response = await parseResponse(
+        client.documents[':documentId'].history.$post({ param: { documentId }, json: input }),
+        appendDocumentHistoryResponseSchema,
+        options.onDiagnostic
+      )
+      return response.added
     },
     /** A page of the document's version history, newest first. */
     async listDocumentVersions(

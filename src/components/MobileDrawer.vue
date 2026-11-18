@@ -5,7 +5,7 @@ import type { PanInfo } from 'motion-v'
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useMotionTransition } from '@/app/shell/motion/transitions'
@@ -29,7 +29,7 @@ type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
-const { settings } = useI18n()
+const { settings, panels } = useI18n()
 
 const headerRef = ref<HTMLElement | null>(null)
 
@@ -179,7 +179,9 @@ const drawerTransition = useMotionTransition({
           <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
             <PagesPanel />
             <div class="border-t border-border" />
-            <header class="shrink-0 px-3 py-2 text-[11px] font-semibold text-muted">Layers</header>
+            <header class="shrink-0 px-3 py-2 text-[11px] font-semibold text-muted">
+              {{ panels.layers }}
+            </header>
             <LayerTree class="min-h-0 flex-1" />
           </div>
         </TabsContent>

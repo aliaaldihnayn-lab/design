@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@lawha/scene-graph'
 
 import {
   layersToOutline,
@@ -10,6 +10,8 @@ import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 import type { EditorContext } from '#core/editor/types'
 
+import type { LayerPlace } from './swap'
+
 /** A layer to outline, where it sits, and what it becomes. */
 interface Outlining {
   node: SceneNode
@@ -17,14 +19,6 @@ interface Outlining {
   index: number
   snapshot: Map<string, SceneNode>
   outlined: OutlinedLayer
-}
-
-/** Where a layer Outline stroke made sits, to put it back on redo. */
-interface Made {
-  id: string
-  parentId: string
-  index: number
-  snapshot: Map<string, SceneNode>
 }
 
 /** Creates a piece in `parentId` at `index`, with a group's glyph vectors inside it. */
@@ -36,7 +30,7 @@ function createPiece(ctx: EditorContext, piece: OutlinePiece, parentId: string, 
 }
 
 /** Restores snapshots taken in one parent, lowest index first so each lands where it was. */
-function restoreAt(ctx: EditorContext, entries: readonly Made[]) {
+function restoreAt(ctx: EditorContext, entries: readonly LayerPlace[]) {
   for (const { id, parentId, index, snapshot } of entries.toSorted((a, b) => a.index - b.index)) {
     const root = snapshot.get(id)
     if (!root) continue
@@ -79,7 +73,7 @@ export function outlineStrokeSelected(
     if (fill) madeIds.push(fill)
     madeIds.push(stroke)
   }
-  const made: Made[] = madeIds.flatMap((id) => {
+  const made: LayerPlace[] = madeIds.flatMap((id) => {
     const parentId = ctx.graph.getNode(id)?.parentId
     if (!parentId) return []
     const index = ctx.graph.getNode(parentId)?.childIds.indexOf(id) ?? 0
@@ -110,7 +104,7 @@ function pushOutlineUndo(
     prevSelection
   }: {
     plan: readonly Outlining[]
-    made: readonly Made[]
+    made: readonly LayerPlace[]
     madeIds: readonly string[]
     parentIds: ReadonlySet<string>
     prevSelection: ReadonlySet<string>

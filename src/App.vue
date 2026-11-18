@@ -2,16 +2,17 @@
 import { useHead } from '@unhead/vue'
 import { useEventListener } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
-import { TooltipProvider } from 'reka-ui'
+import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { provideEditor } from '@lawha/vue'
+import { localeDirection, useI18n } from '@lawha/vue/i18n'
 
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { startJiraConnection } from '@/app/integrations/jira/connection'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
@@ -23,6 +24,8 @@ import { CloudHosts } from '@/components/cloud/integration'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
+import PluginWindow from '@/components/plugins/PluginWindow.vue'
+import PrototypePlayer from '@/components/prototype/PrototypePlayer.vue'
 import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
 import SaveToHost from '@/components/save-to/SaveToHost.vue'
 import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
@@ -34,11 +37,14 @@ import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
 const { updates, locale } = useI18n()
 const router = useRouter()
+// Arabic mirrors the interface; the canvas keeps its own coordinates.
+const dir = computed(() => localeDirection(locale.value))
 
 useHead({
-  titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
+  titleTemplate: (title) => (title ? `${title} — Lawha` : 'Lawha'),
   htmlAttrs: {
     lang: locale,
+    dir,
     'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
   }
 })
@@ -58,26 +64,31 @@ onMounted(() => {
   onUnmounted(
     startCloud({ leaveLinkAddress: () => router.isReady().then(() => router.replace('/')) })
   )
+  onUnmounted(startJiraConnection())
 })
 </script>
 
 <template>
-  <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
-    <TooltipProvider :delay-duration="400">
-      <AppShell>
-        <RouterView />
-      </AppShell>
-      <SettingsDialog />
-      <AISetupDialog />
-      <SaveToHost />
-      <CloudHosts />
-      <RecoveryDialog />
-      <UnsavedChangesDialog />
-      <PublishLibraryDialog />
-      <LibraryUpdateReviewDialog />
-      <UsageStatsPrompt />
-      <AppToaster />
-      <VoiceCallAudio />
-    </TooltipProvider>
-  </MotionConfig>
+  <ConfigProvider :dir="dir">
+    <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
+      <TooltipProvider :delay-duration="400">
+        <AppShell>
+          <RouterView />
+        </AppShell>
+        <SettingsDialog />
+        <AISetupDialog />
+        <SaveToHost />
+        <CloudHosts />
+        <RecoveryDialog />
+        <UnsavedChangesDialog />
+        <PublishLibraryDialog />
+        <LibraryUpdateReviewDialog />
+        <UsageStatsPrompt />
+        <AppToaster />
+        <VoiceCallAudio />
+        <PrototypePlayer />
+        <PluginWindow />
+      </TooltipProvider>
+    </MotionConfig>
+  </ConfigProvider>
 </template>

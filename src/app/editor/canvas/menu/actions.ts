@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { nodeToXPath } from '@open-pencil/core/xpath'
+import { nodeToXPath } from '@lawha/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste/replace'
@@ -10,7 +10,12 @@ import {
 } from '@/app/editor/clipboard/properties'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { createTextClipboard } from '@/app/editor/clipboard/text'
-import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
+import { canRemoveBackground, removeBackgroundFromSelection } from '@/app/editor/remove-background'
+import {
+  canVectorizeImageNode,
+  traceImageNodeOnDevice,
+  vectorizeImageNode
+} from '@/app/editor/vectorize'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
@@ -90,6 +95,15 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     vectorizeImage: async () => {
       const nodeId = ids()[0]
       if (nodeId) await vectorizeImageNode(store, nodeId)
-    }
+    },
+    traceImage: async () => {
+      const nodeId = ids()[0]
+      if (nodeId) await traceImageNodeOnDevice(store, nodeId)
+    },
+    canRemoveBackground: () => {
+      void selectedIds.value
+      return canRemoveBackground(store)
+    },
+    removeBackground: () => removeBackgroundFromSelection(store)
   }
 }

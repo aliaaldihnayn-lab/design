@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -172,7 +172,7 @@ defineOptions({ inheritAttrs: false })
           @click="startCreate"
         >
           <template #leading><icon-lucide-plus class="size-3" /></template>
-          <span class="min-w-0 flex-1 truncate text-left">{{ createLabel }}</span>
+          <span class="min-w-0 flex-1 truncate text-start">{{ createLabel }}</span>
         </AppButton>
       </template>
     </AppPicker>

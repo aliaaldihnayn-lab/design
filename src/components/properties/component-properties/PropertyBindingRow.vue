@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ComponentBinding } from '@open-pencil/vue/controls/component-props'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import type { ComponentBinding } from '@lawha/vue/controls/component-props'
+import { usePanelMessages } from '@lawha/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -21,7 +21,7 @@ const panels = usePanelMessages()
       @click="$emit('select', binding.nodeId)"
     >
       <component :is="sceneNodeIcon(binding.node)" class="size-3.5 shrink-0" aria-hidden="true" />
-      <span class="min-w-0 truncate text-left"
+      <span class="min-w-0 truncate text-start"
         >{{ binding.variantName ? `${binding.variantName} / ` : '' }}{{ binding.name }}</span
       >
     </AppButton>

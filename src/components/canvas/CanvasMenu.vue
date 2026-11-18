@@ -16,11 +16,11 @@ import {
   editorCommandMetadata,
   formatShortcut,
   type EditorCommandId
-} from '@open-pencil/vue/editor/commands'
-import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
-import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { vTestId } from '@open-pencil/vue/testing'
+} from '@lawha/vue/editor/commands'
+import { useMenuModel } from '@lawha/vue/editor/menu-model'
+import { useSelectionState } from '@lawha/vue/editor/selection-state'
+import { useI18n } from '@lawha/vue/i18n'
+import { vTestId } from '@lawha/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
@@ -142,8 +142,10 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <ContextMenuSeparator v-if="item.separator" :class="cls.sep" />
           <ContextMenuSub v-else-if="item.sub">
             <ContextMenuSubTrigger v-test-id="item.testId" :class="cls.item">
-              <span>{{ item.label }}</span>
-              <IconChevronRight class="size-3.5 text-muted" />
+              <span
+                ><bdi>{{ item.label }}</bdi></span
+              >
+              <IconChevronRight class="size-3.5 text-muted rtl:-scale-x-100" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="cls.submenu">
@@ -157,7 +159,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
                       :disabled="sub.disabled"
                       @select="sub.action?.()"
                     >
-                      <span class="min-w-0 flex-1 truncate">{{ sub.label }}</span>
+                      <span class="min-w-0 flex-1 truncate"
+                        ><bdi>{{ sub.label }}</bdi></span
+                      >
                       <AppShortcutText v-if="sub.shortcut">{{ sub.shortcut }}</AppShortcutText>
                     </ContextMenuItem>
                   </template>
@@ -172,7 +176,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             :disabled="item.disabled"
             @select="item.action?.()"
           >
-            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+            <span class="min-w-0 flex-1 truncate"
+              ><bdi>{{ item.label }}</bdi></span
+            >
             <span
               v-if="item.shortcut"
               class="text-[11px]"

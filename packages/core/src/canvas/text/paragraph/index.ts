@@ -9,12 +9,12 @@ import type {
   TextHeightBehavior
 } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
-import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { SceneNode } from '@lawha/scene-graph'
+import { resolveRGBAForPreview } from '@lawha/scene-graph/color'
+import { faceStyleKey, type NamedFace } from '@lawha/scene-graph/font-style'
+import { rangeFontStyle } from '@lawha/scene-graph/shared-styles'
+import { lineHeightPixels, textLengthPixels } from '@lawha/scene-graph/text'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import {
   pushParagraphStyle,
@@ -51,20 +51,20 @@ export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ell
   return opts
 }
 
-function getParagraphTextAlign(
-  ck: CanvasKit,
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-) {
-  const direction = resolveNodeTextDirection(node)
+/**
+ * `textAlignHorizontal` is visual, as the panel's icons and Figma treat it: RIGHT sits against the
+ * right edge in RTL text too. Direction only orders the glyphs.
+ */
+function getParagraphTextAlign(ck: CanvasKit, node: Pick<SceneNode, 'textAlignHorizontal'>) {
   switch (node.textAlignHorizontal) {
     case 'CENTER':
       return ck.TextAlign.Center
     case 'RIGHT':
-      return direction === 'RTL' ? ck.TextAlign.Left : ck.TextAlign.Right
+      return ck.TextAlign.Right
     case 'JUSTIFIED':
       return ck.TextAlign.Justify
     default:
-      return direction === 'RTL' ? ck.TextAlign.Right : ck.TextAlign.Left
+      return ck.TextAlign.Left
   }
 }
 

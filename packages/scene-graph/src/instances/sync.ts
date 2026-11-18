@@ -6,6 +6,7 @@ import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
+import { pluginDataForCopy, pluginDataWithoutStories } from '../stories/model'
 import type { SceneNode } from '../types'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
@@ -180,17 +181,36 @@ export function updateSyncedProps(
   if (Object.keys(changed).length) graph.updateNode(target.id, changed)
 }
 
+/**
+ * What a copy does with the stories of the layers it copies: an instance's layers show the
+ * main component's and leave its stories behind, other copies take them as new stories.
+ */
+export type CloneStories = 'drop' | 'copy'
+
+function clonedPluginData(
+  pluginData: SceneNode['pluginData'] | undefined,
+  mode: NodeCloneMode,
+  stories: CloneStories
+) {
+  // A file's import keeps what the file holds.
+  if (mode === 'fig-import') return pluginData
+  return stories === 'drop' ? pluginDataWithoutStories(pluginData) : pluginDataForCopy(pluginData)
+}
+
 function cloneChildInCoordinates(
   graph: SceneGraph,
   src: SceneNode,
   sourceParent: SceneNode,
   targetParent: SceneNode,
-  mode: NodeCloneMode = 'deep'
+  mode: NodeCloneMode,
+  stories: CloneStories
 ): SceneNode {
   const componentScale =
     (src.componentScale * targetParent.componentScale) / sourceParent.componentScale
+  const props = cloneNodeProps(sourceInTargetCoordinates(src, componentScale), src.id, mode)
   return graph.createNode(src.type, targetParent.id, {
-    ...cloneNodeProps(sourceInTargetCoordinates(src, componentScale), src.id, mode),
+    ...props,
+    pluginData: clonedPluginData(props.pluginData, mode, stories),
     componentScale
   })
 }
@@ -199,7 +219,8 @@ export function cloneChildrenWithMapping(
   graph: SceneGraph,
   sourceParentId: string,
   destParentId: string,
-  mode: NodeCloneMode = 'deep'
+  mode: NodeCloneMode = 'deep',
+  stories: CloneStories = 'copy'
 ): void {
   // A cyclic component, such as an instance of an ancestor, would clone itself without end.
   if (sourceParentId === destParentId || graph.isDescendant(destParentId, sourceParentId)) return
@@ -212,10 +233,10 @@ export function cloneChildrenWithMapping(
     const src = graph.nodes.get(childId)
     if (!src) continue
 
-    const clone = cloneChildInCoordinates(graph, src, sourceParent, targetParent, mode)
+    const clone = cloneChildInCoordinates(graph, src, sourceParent, targetParent, mode, stories)
 
     if (src.childIds.length > 0) {
-      cloneChildrenWithMapping(graph, childId, clone.id, mode)
+      cloneChildrenWithMapping(graph, childId, clone.id, mode, stories)
     }
   }
 }
@@ -389,9 +410,10 @@ function placeMissingChildren(
     }
     const src = graph.nodes.get(compChildId)
     if (!src) continue
-    const clone = cloneChildInCoordinates(graph, src, compParent, instParent)
+    // A layer the component gained reaches its instances without its stories.
+    const clone = cloneChildInCoordinates(graph, src, compParent, instParent, 'deep', 'drop')
     if (src.childIds.length > 0 && !hasUnplacedCopiesBelow(graph, context, compChildId)) {
-      cloneChildrenWithMapping(graph, compChildId, clone.id)
+      cloneChildrenWithMapping(graph, compChildId, clone.id, 'deep', 'drop')
     }
     applyEnclosingAssignments(graph, clone)
     instChildMap.set(compChildId, clone)

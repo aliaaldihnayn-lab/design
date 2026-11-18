@@ -40,5 +40,18 @@
   "deleteDocumentDescription": "Il documento viene eliminato per tutti coloro che possono aprirlo. L’operazione non può essere annullata.",
   "deleteDocumentFailed": "Impossibile eliminare «{name}». Riprova.",
   "saveAsPrompt": "Salva con nome:",
-  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente."
+  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente.",
+  "preparingDocument": "Preparazione del documento",
+  "preparationReading": "Lettura del documento",
+  "preparationDecoding": "Decodifica del documento Figma",
+  "preparationMaterializing": "Preparazione dei livelli",
+  "preparationPopulatingPage": "Preparazione della pagina",
+  "preparationResolvingFonts": "Risoluzione dei font",
+  "preparationResolvingFallbacks": "Rifinitura della tipografia",
+  "preparationLayout": "Calcolo del layout",
+  "preparationDrawingShaders": "Disegno degli shader",
+  "preparationPreparingRender": "Preparazione della tela",
+  "preparationLoading": "Caricamento…",
+  "preparationProgress": "{completed} di {total}",
+  "createText": "Documento di testo"
 }

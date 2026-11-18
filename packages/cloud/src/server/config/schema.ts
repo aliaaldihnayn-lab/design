@@ -89,7 +89,7 @@ const rawCloudServerConfigSchema = v.object({
   passkeysEnabled: v.optional(v.boolean(), false),
   recoveryCodesEnabled: v.optional(v.boolean(), false),
   mfaTrustedDeviceDays: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14),
-  passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'OpenPencil Cloud'),
+  passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'Lawha Cloud'),
   captchaProvider: v.optional(v.literal('cloudflare-turnstile')),
   captchaSiteKey: optionalTextSchema,
   captchaSecretKey: optionalTextSchema,
@@ -145,8 +145,17 @@ const rawCloudServerConfigSchema = v.object({
     10 * 60
   ),
   billingPortalURL: v.optional(httpURLSchema),
+  /**
+   * The server's own signing certificate and key, as a base64 PKCS #12, that seals every
+   * completed signature envelope's final PDF; without one final PDFs are not sealed.
+   */
+  signatureSealPKCS12: optionalTextSchema,
+  signatureSealPassword: v.optional(v.string()),
   /** The bearer token services such as billing present to the internal API. */
-  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32)))
+  internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** The Atlassian OAuth 2.0 (3LO) app people connect Jira through; without it, API tokens only. */
+  atlassianClientId: optionalTextSchema,
+  atlassianClientSecret: optionalTextSchema
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>
@@ -196,6 +205,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     )
   }
   requireTogether(config, 'Google', ['googleClientId', 'googleClientSecret'])
+  requireTogether(config, 'Atlassian', ['atlassianClientId', 'atlassianClientSecret'])
   requireTogether(config, 'Apple', [
     'appleClientId',
     'appleTeamId',
@@ -272,11 +282,15 @@ const DEFAULT_SECRET_NAMES = {
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
-  smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
-  smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
+  smtpUser: 'LAWHA_CLOUD_SMTP_USER',
+  smtpPassword: 'LAWHA_CLOUD_SMTP_PASSWORD',
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
-  aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
-  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN'
+  aiSigningKey: 'LAWHA_CLOUD_AI_SIGNING_KEY',
+  signatureSealPKCS12: 'LAWHA_CLOUD_SIGNATURE_SEAL_P12',
+  signatureSealPassword: 'LAWHA_CLOUD_SIGNATURE_SEAL_PASSWORD',
+  internalServiceToken: 'LAWHA_CLOUD_SERVICE_TOKEN',
+  atlassianClientId: 'ATLASSIAN_CLIENT_ID',
+  atlassianClientSecret: 'ATLASSIAN_CLIENT_SECRET'
 } as const
 
 const urlSchema = v.pipe(v.string(), v.url())
@@ -403,9 +417,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     passkeys: v.optional(
       v.strictObject({
         enabled: v.optional(v.boolean(), false),
-        rp_name: v.optional(textSchema, 'OpenPencil Cloud')
+        rp_name: v.optional(textSchema, 'Lawha Cloud')
       }),
-      { enabled: false, rp_name: 'OpenPencil Cloud' }
+      { enabled: false, rp_name: 'Lawha Cloud' }
     ),
     captcha: v.optional(
       v.strictObject({
@@ -501,8 +515,33 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     })
   ),
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
+  signatures: v.optional(
+    v.strictObject({
+      /** Seals completed envelopes' final PDFs with this certificate. */
+      seal: v.optional(
+        v.strictObject({
+          pkcs12: defaultReference(DEFAULT_SECRET_NAMES.signatureSealPKCS12),
+          password: defaultReference(DEFAULT_SECRET_NAMES.signatureSealPassword)
+        })
+      )
+    })
+  ),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  integrations: v.optional(
+    v.strictObject({
+      // An OAuth 2.0 (3LO) app from developer.atlassian.com, its callback set to
+      // `<public_url>/api/public/integrations/jira/oauth/callback`.
+      jira: v.optional(
+        v.strictObject({
+          client_id: v.optional(configurableTextSchema, {
+            from_env: DEFAULT_SECRET_NAMES.atlassianClientId
+          }),
+          client_secret: defaultReference(DEFAULT_SECRET_NAMES.atlassianClientSecret)
+        })
+      )
+    })
   )
 })
 

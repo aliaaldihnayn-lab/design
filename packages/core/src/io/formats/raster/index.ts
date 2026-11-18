@@ -8,7 +8,12 @@ export {
   type ThumbnailFrame,
   type ExportFormat
 } from './render'
-export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless'
+export {
+  initCanvasKit,
+  headlessRenderLayerGrid,
+  headlessRenderNodes,
+  headlessRenderThumbnail
+} from './headless'
 export {
   createCanvasKitRasterCodec,
   reencodeImage,

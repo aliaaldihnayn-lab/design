@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useDocumentFontStatus } from '@/app/editor/fonts/status'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -23,7 +23,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         data-test-id="font-status-toggle"
-        class="min-w-0 flex-1 text-left font-medium"
+        class="min-w-0 flex-1 text-start font-medium"
         @click="expanded = !expanded"
       >
         {{ issues.length === 1 ? fonts.issueFound : fonts.issuesFound({ count: issues.length }) }}

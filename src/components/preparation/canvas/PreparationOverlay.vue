@@ -2,6 +2,8 @@
 import { ProgressIndicator, ProgressRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useFileMessages } from '@lawha/vue/i18n'
+
 import type { EditorPreparation } from '@/app/editor/preparation/types'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
@@ -11,7 +13,8 @@ const { preparation } = defineProps<{
   preparation: EditorPreparation
 }>()
 
-const label = computed(() => preparationLabel(preparation))
+const files = useFileMessages()
+const label = computed(() => preparationLabel(preparation, files.value))
 const progressValue = computed(() => preparationPercent(preparation.progress))
 const progressSteps = computed(() => Math.round(progressValue.value ?? 0))
 </script>
@@ -51,7 +54,12 @@ const progressSteps = computed(() => Math.round(progressValue.value ?? 0))
           </div>
         </ProgressRoot>
         <p v-if="progressValue !== null" class="text-xs tabular-nums text-surface/45">
-          {{ preparation.progress?.completed }} of {{ preparation.progress?.total }}
+          {{
+            files.preparationProgress({
+              completed: preparation.progress?.completed ?? 0,
+              total: preparation.progress?.total ?? 0
+            })
+          }}
         </p>
       </div>
     </div>

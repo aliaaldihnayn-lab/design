@@ -11,14 +11,15 @@ import {
 } from 'reka-ui'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { SceneNode } from '@lawha/scene-graph'
+import { cycleSafeParent } from '@lawha/scene-graph/instances'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
+import AssetsPanelKit from '@/components/assets-panel/AssetsPanelKit.vue'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
 import { nodeIcon } from '@/components/icons'
@@ -314,7 +315,7 @@ async function insertAsset(asset: LocalAsset) {
 
 function onDragStart(event: DragEvent, asset: LocalAsset) {
   if (!event.dataTransfer || !asset.componentId) return
-  event.dataTransfer.setData('application/x-openpencil-component', asset.componentId)
+  event.dataTransfer.setData('application/x-lawha-component', asset.componentId)
   event.dataTransfer.effectAllowed = 'copy'
 }
 
@@ -362,7 +363,7 @@ async function insertSelectedAsset() {
         <icon-lucide-library class="size-3.5" />
         <span
           v-if="libraryUpdateCount > 0"
-          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-on-accent"
+          class="absolute top-0.5 end-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-on-accent"
         >
           {{ libraryUpdateCount }}
         </span>
@@ -382,6 +383,7 @@ async function insertSelectedAsset() {
     </div>
 
     <div class="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+      <AssetsPanelKit />
       <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
         <h2 class="mb-1 px-1 text-[11px] font-semibold text-muted">
           {{ group.pageName }}
@@ -397,7 +399,7 @@ async function insertSelectedAsset() {
                 :draggable="!!asset.componentId"
                 :aria-busy="insertingAssetId === asset.id"
                 :class="[
-                  'group/asset rounded text-left text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
+                  'group/asset rounded text-start text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
                   assetView === 'grid'
                     ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'
                     : 'flex w-full items-center gap-2 px-1.5 py-1'

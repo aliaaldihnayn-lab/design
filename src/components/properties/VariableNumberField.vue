@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
 
-import {
-  useNumberBindingProvider,
-  type BindingTarget
-} from '@open-pencil/vue/controls/binding-provider'
-import type { NumberBindingPath } from '@open-pencil/vue/controls/number-variable-binding'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
+import { useNumberBindingProvider, type BindingTarget } from '@lawha/vue/controls/binding-provider'
+import type { NumberBindingPath } from '@lawha/vue/controls/number-variable-binding'
+import { useI18n } from '@lawha/vue/i18n'
+import { BindableValueRoot } from '@lawha/vue/primitives/BindableValue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
@@ -121,7 +118,7 @@ defineOptions({ inheritAttrs: false })
         />
       </template>
       <template #suffix>
-        <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
+        <span :class="$slots['after-variable'] ? '' : 'pe-1'" class="flex items-center">
           <VariableBindingPicker
             :trigger-label="panels.applyVariable"
             :search-placeholder="common.search"

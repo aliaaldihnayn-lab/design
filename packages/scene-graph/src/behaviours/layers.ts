@@ -1,11 +1,13 @@
 import type { SceneGraph } from '../graph'
+import { instanceMainComponent } from '../instances/main-component'
 import type { SceneNode } from '../types'
 import { behaviourOwner, readBehaviour } from './model'
 
 /** Whether an instance's main component, or its set, has a behaviour. */
 export function hasBehaviour(graph: SceneGraph, node: SceneNode): boolean {
-  if (node.type !== 'INSTANCE' || !node.componentId) return false
-  const component = graph.getNode(node.componentId)
+  if (node.type !== 'INSTANCE') return false
+  // An instance nested in another points at the instance it copies; its control is the main's.
+  const component = instanceMainComponent(graph, node)
   const owner = component && behaviourOwner(graph, component)
   return !!owner && !!readBehaviour(owner)
 }

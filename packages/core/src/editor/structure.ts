@@ -1,10 +1,12 @@
 import { pick } from 'es-toolkit'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
-import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
-import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
+import type { SceneNode } from '@lawha/scene-graph'
+import { TRANSFORM_FIELDS } from '@lawha/scene-graph/fields'
+import { generatedFrameKind } from '@lawha/scene-graph/generated'
+import { createsComponentCycle } from '@lawha/scene-graph/instances'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
+import type { ShapeBuilderMode } from '#core/canvas/shape-builder'
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 
@@ -21,6 +23,7 @@ import {
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
+import { createLiveEffectActions } from './structure/live-effects'
 import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
 import {
   defaultNodeName,
@@ -28,6 +31,10 @@ import {
   type RenameSelectionOptions
 } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
+import {
+  shapeBuilderHighlight,
+  shapeBuilderSelected as shapeBuilderSelectedImpl
+} from './structure/shape-builder'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
 
@@ -133,6 +140,29 @@ export function createStructureActions(ctx: EditorContext) {
     return outlineStrokeSelectedImpl(ctx, selectedNodes)
   }
 
+  function shapeBuilderSelected(
+    selectedNodes: SceneNode[],
+    points: readonly Vector[],
+    mode: ShapeBuilderMode = 'merge'
+  ) {
+    const made = shapeBuilderSelectedImpl(ctx, selectedNodes, points, mode)
+    setShapeBuilderHover(selectedNodes, null)
+    return made
+  }
+
+  /** Shows the regions under `points` the Shape Builder tool would merge or delete; null clears. */
+  function setShapeBuilderHover(
+    selectedNodes: SceneNode[],
+    points: readonly Vector[] | null,
+    mode: ShapeBuilderMode = 'merge'
+  ) {
+    const paths = points ? shapeBuilderHighlight(ctx, selectedNodes, points) : []
+    const next = paths.length > 0 ? { paths, mode } : null
+    if (!next && !ctx.state.shapeBuilderHover) return
+    ctx.state.shapeBuilderHover = next
+    ctx.requestRepaint()
+  }
+
   function moveToPage(pageId: string) {
     const targetPage = ctx.graph.getNode(pageId)
     if (targetPage?.type !== 'CANVAS') return
@@ -232,7 +262,10 @@ export function createStructureActions(ctx: EditorContext) {
     flattenSelected,
     outlineTextSelected,
     outlineStrokeSelected,
+    shapeBuilderSelected,
+    setShapeBuilderHover,
     ...stateActions,
+    ...createLiveEffectActions(ctx),
     moveToPage,
     previewRenameSelected,
     renameSelected,

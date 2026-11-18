@@ -4,8 +4,8 @@ import { compact } from 'es-toolkit'
 import { computed, h } from 'vue'
 import IconLayers from '~icons/lucide/layers'
 
-import type { WorkspaceRole } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { WorkspaceRole } from '@lawha/cloud/contract'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
 import { portalTable } from '@/components/cloud-portal/table/ui'
@@ -78,7 +78,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     }),
     column.accessor('memberCount', {
       header: () => messages.value.columnMembers,
-      meta: { class: 'w-24 text-right tabular-nums' }
+      meta: { class: 'w-24 text-end tabular-nums' }
     })
   ])
 })
@@ -87,7 +87,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 <template>
   <div class="flex max-w-3xl flex-col gap-6">
     <AppButton class="self-start" size="sm" variant="ghost" @click="emit('back')">
-      <template #leading><icon-lucide-arrow-left class="size-3.5" /></template>
+      <template #leading><icon-lucide-arrow-left class="size-3.5 rtl:-scale-x-100" /></template>
       {{ messages.backToPeople }}
     </AppButton>
 

@@ -51,8 +51,22 @@ export const filesMessageDefaults = {
     'The document is deleted for everyone who can open it. This can’t be undone.',
   deleteDocumentFailed: params('Couldn’t delete “{name}”. Try again.'),
   saveAsPrompt: 'Save as:',
+  /** What the canvas shows while a document opens, by the step it is on. */
+  preparingDocument: 'Preparing document',
+  preparationReading: 'Reading document',
+  preparationDecoding: 'Decoding Figma document',
+  preparationMaterializing: 'Preparing layers',
+  preparationPopulatingPage: 'Preparing page',
+  preparationResolvingFonts: 'Resolving fonts',
+  preparationResolvingFallbacks: 'Finalizing typography',
+  preparationLayout: 'Computing layout',
+  preparationDrawingShaders: 'Drawing shaders',
+  preparationPreparingRender: 'Preparing canvas',
+  preparationLoading: 'Loading…',
+  preparationProgress: params('{completed} of {total}'),
   browserFileAPINotSupported:
-    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place."
+    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place.",
+  createText: 'Text document'
 } as const
 
 export const filesMessages = i18n('files', filesMessageDefaults)

@@ -1,7 +1,7 @@
 import { omitBy, range } from 'es-toolkit'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
+import type { NodeType, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { parseColor } from '@lawha/scene-graph/color'
 
 import type { RekaScope } from '../behaviours'
 import { renderRekaNode } from '../behaviours/render'
@@ -13,6 +13,7 @@ import { placeVectorPaths } from '../overrides/vector'
 import type { LayerRefs } from '../refs'
 import { readElementProps } from '../schema'
 import type { DesignJSXServices, MarkdownService } from '../services'
+import { applyInlineEpics, applyInlineStories } from '../stories'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from '../text-content'
 import { isTreeNode } from '../tree'
 import type { TreeNode } from '../tree'
@@ -277,7 +278,9 @@ export async function renderNode<Artwork>(
   scope?: RekaScope,
   context?: RenderContext
 ): Promise<SceneNode> {
+  applyInlineEpics(graph, tree.props)
   const node = await renderNodeContent(services, graph, tree, parentId, onNode, scope, context)
+  applyInlineStories(graph, node, tree.props)
   onNode?.(tree, node)
   return node
 }

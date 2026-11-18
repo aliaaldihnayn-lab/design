@@ -5,6 +5,7 @@ import type {
   CreateInvitationContinuationInput,
   DocumentInvitation,
   InvitationPreview,
+  RoomRole,
   WorkspaceRole
 } from '#cloud/contract'
 import { cloudInvitationURL } from '#cloud/contract'
@@ -14,7 +15,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@lawha/scene-graph/random'
 
 import { requireSharingAccess } from '../access'
 import {
@@ -40,8 +41,19 @@ export type WorkspaceInvitationResolver = {
   ): Promise<{ workspaceId: string; role: WorkspaceRole } | null>
 }
 
+/** Room invitations share the invitation link too. */
+export type RoomInvitationResolver = {
+  preview(invitationId: string, token: string): Promise<InvitationPreview | null>
+  accept(
+    actor: CloudActor,
+    invitationId: string,
+    token: string
+  ): Promise<{ roomId: string; role: RoomRole } | null>
+}
+
 export type InvitationServiceOptions = {
   workspaceInvitations?: WorkspaceInvitationResolver
+  roomInvitations?: RoomInvitationResolver
   continuationSecret?: string
   delivery?: InvitationDelivery
   outbox?: InvitationOutbox
@@ -82,7 +94,7 @@ export function createInvitationService(
     return {
       kind: 'document',
       documentName: invitation.documentName,
-      inviterName: inviter?.name ?? 'An OpenPencil user',
+      inviterName: inviter?.name ?? 'An Lawha user',
       permission: invitation.permission,
       expiresAt: dateString(invitation.expiresAt) ?? '',
       recipientHint: recipientHint(invitation.emailNormalized)
@@ -153,7 +165,7 @@ export function createInvitationService(
           ? {
               deliveryId: id,
               recipientEmail: input.email,
-              inviterName: deliveryContext[0]?.name ?? 'An OpenPencil user',
+              inviterName: deliveryContext[0]?.name ?? 'An Lawha user',
               documentName: deliveryContext[1].name,
               permission: input.permission,
               expiresAt: expiresAt.toISOString(),
@@ -216,13 +228,15 @@ export function createInvitationService(
       return continuation.consume(id)
     },
 
-    /** What an invitation link offers: a document, or a workspace when the id is one of those. */
+    /** What an invitation link offers: a document, or a workspace or room when the id is one. */
     async previewInvitation(
       invitationId: string,
       input: AcceptDocumentInvitationInput
     ): Promise<InvitationPreview> {
       const workspace = await options.workspaceInvitations?.preview(invitationId, input.token)
-      return workspace ?? previewDocumentInvitation(invitationId, input)
+      if (workspace) return workspace
+      const room = await options.roomInvitations?.preview(invitationId, input.token)
+      return room ?? previewDocumentInvitation(invitationId, input)
     },
 
     async acceptInvitation(
@@ -232,6 +246,8 @@ export function createInvitationService(
     ): Promise<AcceptedInvitation> {
       const workspace = await options.workspaceInvitations?.accept(actor, invitationId, input.token)
       if (workspace) return { kind: 'workspace', ...workspace }
+      const room = await options.roomInvitations?.accept(actor, invitationId, input.token)
+      if (room) return { kind: 'room', ...room }
       const invitation = await database
         .selectFrom('documentInvitation')
         .select([

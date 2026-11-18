@@ -1,13 +1,8 @@
 import { camelCase, compact, groupBy, isEqual, mapValues, sortBy } from 'es-toolkit'
 
-import { jsx } from '@open-pencil/emit'
-import type {
-  SceneGraph,
-  Variable,
-  VariableCollection,
-  VariableValue
-} from '@open-pencil/scene-graph'
-import { modesDefaultFirst } from '@open-pencil/scene-graph/variables'
+import { jsx } from '@lawha/emit'
+import type { SceneGraph, Variable, VariableCollection, VariableValue } from '@lawha/scene-graph'
+import { modesDefaultFirst } from '@lawha/scene-graph/variables'
 
 import { DESIGN_JSX_ELEMENTS } from '../elements'
 import { layersUnder } from '../figjam/connectors'

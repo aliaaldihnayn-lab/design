@@ -9,16 +9,17 @@ import type {
   VectorNetwork,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/scene-graph'
-import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
-import type { UndoManager } from '@open-pencil/scene-graph/undo'
+} from '@lawha/scene-graph'
+import type { CanvasGuide } from '@lawha/scene-graph/guides'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import type { SnapGuide } from '@lawha/scene-graph/snap'
+import type { UndoManager } from '@lawha/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { MeshPointSelection } from '#core/canvas/live-effect-handles'
+import type { RulerTheme, ShapeBuilderHover, SkiaRenderer } from '#core/canvas/renderer'
 import type {
   MeasurementMode,
   PresenceCursor,
@@ -27,6 +28,7 @@ import type {
 } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { PixelOverlay, PixelToolSettings } from '#core/editor/pixels/types'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
@@ -50,6 +52,17 @@ export type Tool =
   | 'CONNECTOR'
   | 'PEN'
   | 'PENCIL'
+  | 'SHAPE_BUILDER'
+  | 'WIDTH'
+  | 'BRUSH'
+  | 'ERASER'
+  | 'FILL_BUCKET'
+  | 'COLOR_PICKER'
+  | 'MARQUEE_RECT'
+  | 'MARQUEE_ELLIPSE'
+  | 'MAGIC_WAND'
+  | 'CLONE_STAMP'
+  | 'HEALING_BRUSH'
   | 'HAND'
   | 'COMMENT'
 
@@ -79,6 +92,8 @@ export interface EditorSharedState {
   activeTool: Tool
   /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
   shapeWithTextKind: ShapeWithTextType
+  /** The pixel tools' brush, fill, and selection settings, shared by every pane. */
+  pixelTools: PixelToolSettings
   /**
    * What the host takes away from every canvas, such as editing for a viewer or an earlier version;
    * read through `resolveEditorProfile`, set with `setReadOnly`.
@@ -170,6 +185,12 @@ export interface EditorViewState {
   penCursorY: number | null
   /** The freehand stroke being drawn with the pencil, in canvas coordinates. */
   pencilState: PencilState | null
+  /** The regions the Shape Builder tool would merge or delete. */
+  shapeBuilderHover: ShapeBuilderHover | null
+  /** The envelope mesh points picked on the canvas, by index, whose curve handles show. */
+  meshPointSelection: MeshPointSelection | null
+  /** The pixel tools' brush cursor, selection outline, and marquee. */
+  pixelOverlay: PixelOverlay | null
   autoLayoutHover: {
     nodeId: string
     kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'
@@ -183,6 +204,11 @@ export interface EditorViewState {
   pageColor: Color
   panY: number
   zoom: number
+  /**
+   * How much larger selection handles draw and take the pointer than on a desktop, 1 there;
+   * `TOUCH_HANDLE_SCALE` where a finger is the pointer.
+   */
+  handleScale: number
   navigation: NavigationState
   renderVersion: number
   /** Bumped when the caret or selection of the text being edited moves, which changes nothing else. */

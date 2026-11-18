@@ -1,0 +1,14 @@
+{
+  "section": "Système de design",
+  "build": "Créer le système de design",
+  "buildPage": "À partir de cette page",
+  "buildSelection": "À partir de la sélection",
+  "buildHint": "Transforme les couleurs, typographies, espacements et rayons utilisés en variables avec modes clair et sombre et en styles de texte, les relie aux calques et les documente avec des composants de départ sur une page Design System",
+  "done": "{tokens} jetons créés, {bound} calques reliés",
+  "duplicates": "{count} couleurs quasi identiques trouvées : leurs calques gardent leur propre couleur",
+  "failed": "Impossible de créer le système de design : {error}",
+  "extras": "Mode sombre, {styles} styles de texte et {components} ensembles de composants ajoutés",
+  "components": "Ajouter des ensembles de composants",
+  "componentsHint": "Ajoute à cette page des ensembles de composants Bouton, Champ et Badge, liés aux variables du système de design s’il existe",
+  "componentsDone": "{count} ensembles de composants ajoutés"
+}

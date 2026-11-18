@@ -1,20 +1,28 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  Effect,
+  Fill,
+  FontVariation,
+  ImageAdjustments,
+  SceneGraph,
+  SceneNode
+} from '@lawha/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
   getDefaultRenderColorSpace,
   type RenderColorSpace
-} from '@open-pencil/scene-graph/color'
+} from '@lawha/scene-graph/color'
 import {
   gradientPoint,
   invertGradientTransform,
   isIdentityGradientTransform
-} from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/scene-graph/gradient'
+import { imageMimeType } from '@lawha/scene-graph/images'
+import type { Color } from '@lawha/scene-graph/primitives'
 
+import { hasAdjustments } from '#core/canvas/image-adjust'
 import type { FontFaceRef } from '#core/text/font/faces'
 
 import { svg, type SVGNode } from './node'
@@ -36,6 +44,9 @@ export interface SVGFontRequest extends FontFaceRef {
 /** The family to name a font face by instead of its own, or null to keep the face. */
 export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
+/** Bakes adjustments into image bytes for embedding; null keeps the original. */
+export type SVGImageAdjust = (bytes: Uint8Array, adjust: ImageAdjustments) => Uint8Array | null
+
 export interface SVGExportContext {
   defs: SVGNode[]
   defIdCounter: number
@@ -47,6 +58,7 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
+  imageAdjust?: SVGImageAdjust
   fontAlias?: SVGFontAlias
 }
 
@@ -182,8 +194,12 @@ function createImagePattern(
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
   if (!fill.imageHash) return null
-  const data = ctx.graph.images.get(fill.imageHash)
-  if (!data) return null
+  const original = ctx.graph.images.get(fill.imageHash)
+  if (!original) return null
+  const data =
+    hasAdjustments(fill.adjustments) && ctx.imageAdjust
+      ? (ctx.imageAdjust(original, fill.adjustments) ?? original)
+      : original
 
   const id = nextDefId(ctx, 'img')
   const base64 = fromUint8Array(data)

@@ -8,6 +8,18 @@ export interface AuthoringExample {
 /** Shared verbatim by runtime prompts and the installable skill; exercised in engine tests. */
 export const AUTHORING_EXAMPLES: readonly AuthoringExample[] = [
   {
+    title: 'A card with its epics and user stories',
+    jsx: dedent`<Frame name="Newsletter card" w={280} h="hug" flex="col" gap={8} p={16} bg="#FFFFFF"
+  epics={[{ title: 'Newsletter', description: 'Signing up for and managing the weekly deals email' }]}
+  stories={[{ title: 'Discover the newsletter', epic: 'Newsletter', asA: 'shopper', iWant: 'to learn about the weekly deals', soThat: 'I can decide to sign up', priority: 'medium' }]}>
+  <Text name="Title" w="fill" size={14} weight="semibold" color="#252A31">Weekly deals in your inbox</Text>
+  <Text name="Subscribe link" size={12} weight="medium" color="#3B6CF6"
+    stories={[{ title: 'Subscribe from the card', epic: 'Newsletter', asA: 'shopper', iWant: 'to subscribe in one tap', soThat: 'I never miss a deal',
+      criteria: [{ given: 'I am signed in', when: 'I tap Subscribe', then: 'I am subscribed and the link reads Subscribed' }, 'Given I am signed out, when I tap Subscribe, then sign in opens first'],
+      behaviour: 'A link; disabled while the request is pending.', states: ['default', 'hover', 'pressed', 'disabled', 'loading'], priority: 'high' }]}>Subscribe</Text>
+</Frame>`
+  },
+  {
     title: 'Content-sized review note',
     jsx: dedent`<Frame name="Review note" w={280} h="hug" flex="col" gap={8} p={16} bg="#FFFFFF">
   <Text name="Author" size={12} weight="medium" color="#252A31">June Lee</Text>

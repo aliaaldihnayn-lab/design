@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@lawha/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -76,7 +76,9 @@ const title = (server: CloudServerEntry) =>
           </template>
           {{ t.productName }}
           <template #description>{{ t.settingsOfficialDescription }}</template>
-          <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
+          <template #trailing
+            ><icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
+          /></template>
         </AppActionRow>
         <AppActionRow @click="emit('connect', 'self-hosted')">
           <template #leading>
@@ -84,7 +86,9 @@ const title = (server: CloudServerEntry) =>
           </template>
           {{ t.selfHostedLabel }}
           <template #description>{{ t.settingsSelfHostedDescription }}</template>
-          <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
+          <template #trailing
+            ><icon-lucide-chevron-right class="size-3.5 rtl:-scale-x-100"
+          /></template>
         </AppActionRow>
       </div>
 

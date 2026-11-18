@@ -1,13 +1,22 @@
-import type { Fill, Stroke } from '@open-pencil/scene-graph'
-import { WHITE } from '@open-pencil/scene-graph/constants'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Fill, Stroke } from '@lawha/scene-graph'
+import { WHITE } from '@lawha/scene-graph/constants'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { SelectionTheme } from '#core/canvas/renderer/types'
 
 export * from './ai/providers'
 
 export const IS_BROWSER = typeof window !== 'undefined'
-export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
+/** The mobile app (Android, iOS): a native WebView that runs the web editor. */
+export const IS_MOBILE_APP =
+  IS_BROWSER &&
+  '__TAURI_INTERNALS__' in window &&
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+/**
+ * The desktop app. The mobile app is left out on purpose: it has none of the desktop commands
+ * (system fonts, keychain, agents), so it runs the editor exactly as the browser does.
+ */
+export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window && !IS_MOBILE_APP
 
 export const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 export const TRANSPARENT: Color = { r: 0, g: 0, b: 0, a: 0 }
@@ -66,6 +75,11 @@ export const SIZE_FONT_SIZE = 10
 export const VALUE_FONT_SIZE = 11
 
 export const HANDLE_HALF_SIZE = 3
+/**
+ * How much larger selection handles draw, and how much farther their resize and rotation zones
+ * reach, where a finger is the pointer.
+ */
+export const TOUCH_HANDLE_SCALE = 2
 
 export const LABEL_OFFSET_Y = 8
 export const SIZE_PILL_PADDING_X = 6
@@ -116,7 +130,7 @@ export const SECTION_TITLE_FONT_SIZE = 11
  * canvas and in the page, so renaming a title shows the same glyphs and document fonts named
  * Inter cannot replace them.
  */
-export const SECTION_TITLE_FONT_FAMILY = 'OpenPencil Section Title'
+export const SECTION_TITLE_FONT_FAMILY = 'Lawha Section Title'
 export const SECTION_TITLE_FONT_URL = '/Inter-SemiBold.ttf'
 export const SECTION_TITLE_GAP = 6
 export const SECTION_HOVER_STROKE_WIDTH = 2
@@ -179,16 +193,16 @@ export const AUTOMATION_HTTP_PORT = 7600
  * Request header the app's own ACP and Pi harness chats send to the MCP server, so their sessions
  * show as those agents rather than as an outside MCP client.
  */
-export const MCP_AGENT_HEADER = 'x-openpencil-agent'
+export const MCP_AGENT_HEADER = 'x-lawha-agent'
 
-/** The name the app's chats give OpenPencil's MCP server in an agent's session. */
-export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
+/** The name the app's chats give Lawha's MCP server in an agent's session. */
+export const LAWHA_MCP_SERVER = 'lawha'
 
 /**
  * Request header naming the app chat whose agent opens an MCP session, so the app can tell that
  * this chat's agent reached its tools before it sends the prompt.
  */
-export const MCP_CHAT_HEADER = 'x-openpencil-chat'
+export const MCP_CHAT_HEADER = 'x-lawha-chat'
 
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 

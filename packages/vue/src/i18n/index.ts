@@ -19,9 +19,22 @@ export {
   usePageMessages,
   usePanelMessages,
   useRecoveryMessages,
+  useFramePresetMessages,
+  useHistoryMessages,
+  useMetricsMessages,
+  useDesignSystemMessages,
+  usePathMessages,
+  useInspectMessages,
+  usePluginMessages,
+  usePhotoMessages,
+  usePrintMessages,
+  useWriterMessages,
+  usePrototypeMessages,
   useRenameMessages,
   useSettingsMessages,
   useStatusMessages,
+  useStorageErrorMessages,
+  useStoriesMessages,
   useStorageMessages,
   useFigJamMessages,
   useShapeMessages,
@@ -40,7 +53,9 @@ export {
   AVAILABLE_LOCALES,
   TRANSLATED_LOCALES,
   LOCALE_DIR_NAMES,
-  LOCALE_LABELS
+  LOCALE_LABELS,
+  RTL_LOCALES,
+  localeDirection
 } from '#vue/i18n/locale'
 export type { Locale, TranslatedLocale } from '#vue/i18n/locale'
 export * from '#vue/i18n/messages'

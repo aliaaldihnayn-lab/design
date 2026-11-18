@@ -1,4 +1,5 @@
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents'
+import { RoomInvitationInvalidError } from '#cloud/server/rooms/errors'
 import {
   DocumentShareInvalidError,
   DocumentShareSignInRequiredError,
@@ -11,7 +12,8 @@ export function sharingDomainError(context: Context, error: unknown): Response |
   if (
     error instanceof DocumentNotFoundError ||
     error instanceof DocumentShareInvalidError ||
-    error instanceof WorkspaceInvitationInvalidError
+    error instanceof WorkspaceInvitationInvalidError ||
+    error instanceof RoomInvitationInvalidError
   ) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }

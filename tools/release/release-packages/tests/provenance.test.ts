@@ -10,7 +10,8 @@ import {
   type ProvenanceStatement
 } from '#release/provenance'
 
-// npm's attestations for @open-pencil/emit@0.17.0-beta.1, published by the v0.17.0-beta.1 run.
+// npm's attestations for emit@0.17.0-beta.1, published by the v0.17.0-beta.1 run. They are
+// signed, so they name the repository that built them before the project became Lawha.
 const attestations = await readFile(
   join(import.meta.dir, 'fixtures/emit-attestations.json'),
   'utf8'
@@ -68,7 +69,7 @@ test('refuses a version built by another workflow or repository', () => {
   ])
 
   expect(
-    provenanceMismatches(published(), integrity, { ...source, repository: 'someone/open-pencil' })
+    provenanceMismatches(published(), integrity, { ...source, repository: 'someone/lawha' })
   ).toEqual(['built in https://github.com/open-pencil/open-pencil', 'built from commit unknown'])
 })
 

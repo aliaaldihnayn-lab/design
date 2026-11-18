@@ -5,7 +5,7 @@ import IconAppWindow from '~icons/lucide/app-window'
 import IconGlobe from '~icons/lucide/globe'
 import IconLogIn from '~icons/lucide/log-in'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import { usePortalDeviceLabels } from '@/app/cloud-portal/devices'
 import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
@@ -102,7 +102,7 @@ const sessionTable = usePortalRows(() => sessions, {
     sessionColumn.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { class: 'w-px text-end', actions: true },
       cell: ({ row: { original: session } }) =>
         session.current
           ? null

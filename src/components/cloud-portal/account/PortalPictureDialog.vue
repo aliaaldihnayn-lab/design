@@ -3,8 +3,8 @@ import { useObjectUrl } from '@vueuse/core'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
-import type { Size } from '@open-pencil/scene-graph/primitives'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { Size } from '@lawha/scene-graph/primitives'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import {
   centredCrop,
@@ -158,7 +158,7 @@ async function save() {
           :src="url"
           alt=""
           draggable="false"
-          class="pointer-events-none absolute top-0 left-0 max-w-none"
+          class="pointer-events-none absolute top-0 start-0 max-w-none"
           :class="{ invisible: !size }"
           :style="placement"
           @load="loaded"

@@ -1,5 +1,5 @@
-import type { FontVariation } from '@open-pencil/scene-graph'
-import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import type { FontVariation } from '@lawha/scene-graph'
+import { parseFontStyle } from '@lawha/scene-graph/font-style'
 
 import { fontManager } from '#core/text/font/manager'
 import {
@@ -97,4 +97,19 @@ export function checkedVariation(method: string, family: string, slanted: boolea
     }
   }
   return variation
+}
+
+/**
+ * The axis tags a variable family takes in `variationSettings`, or `null` for a static family,
+ * as `getFontFamilyVariationAxes` answers. Figma answers for any family it lists; Lawha reads the
+ * axes from a file the family has loaded, so a family has to be loaded first.
+ */
+export function familyVariationAxes(family: string): string[] | null {
+  const variation = fontManager.familyVariation(family)
+  if (variation === undefined) {
+    throw new Error(
+      `in getFontFamilyVariationAxes: Font family "${family}" is not available. Load it with figma.loadFontAsync({ family: "${family}" }) first.`
+    )
+  }
+  return variation ? variationAxisTags(variation.axes) : null
 }

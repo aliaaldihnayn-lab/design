@@ -28,6 +28,12 @@ import * as accountActivity from './migrations/024_account_activity'
 import * as tableNames from './migrations/025_table_names'
 import * as userPicture from './migrations/026_user_picture'
 import * as documentKind from './migrations/027_document_kind'
+import * as signatureEnvelopes from './migrations/028_signature_envelopes'
+import * as rooms from './migrations/029_rooms'
+import * as documentHistory from './migrations/030_document_history'
+import * as jiraConnection from './migrations/031_jira_connection'
+import * as writerDocuments from './migrations/032_writer_documents'
+import * as jiraOAuth from './migrations/033_jira_oauth'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -57,7 +63,13 @@ const migrations: Record<string, Migration> = {
   '024_account_activity': accountActivity,
   '025_table_names': tableNames,
   '026_user_picture': userPicture,
-  '027_document_kind': documentKind
+  '027_document_kind': documentKind,
+  '028_signature_envelopes': signatureEnvelopes,
+  '029_rooms': rooms,
+  '030_document_history': documentHistory,
+  '031_jira_connection': jiraConnection,
+  '032_writer_documents': writerDocuments,
+  '033_jira_oauth': jiraOAuth
 }
 
 class CloudMigrationProvider implements MigrationProvider {
@@ -171,7 +183,7 @@ export async function migrateCloudDatabase(
 ): Promise<void> {
   await migrateToLatest(
     new Migrator({ db: database, provider: new CloudMigrationProvider() }),
-    'OpenPencil Cloud database migration failed'
+    'Lawha Cloud database migration failed'
   )
   if (authMigration) await migrateAuthSchema(database, authMigration)
 }

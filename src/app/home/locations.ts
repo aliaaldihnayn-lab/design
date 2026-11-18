@@ -11,11 +11,13 @@ export type HomeLocationView =
   | { kind: 'recent'; id: 'recent' }
   | { kind: 'workspace'; id: string }
   | { kind: 'shared'; id: 'shared' }
+  | { kind: 'rooms'; id: 'rooms' }
   | { kind: 'storage'; id: 'storage' }
 
 const VIEWS = {
   recent: { kind: 'recent', id: 'recent' },
   shared: { kind: 'shared', id: 'shared' },
+  rooms: { kind: 'rooms', id: 'rooms' },
   storage: { kind: 'storage', id: 'storage' }
 } as const satisfies Record<Exclude<HomeLocation['kind'], 'workspace'>, HomeLocationView>
 
@@ -42,7 +44,9 @@ export function useHomeLocations() {
     const first = workspaces.value.at(0)
     if (defaultsToWorkspace.value && first) return { kind: 'workspace', id: first.id }
     const chosen = homeLocation.value
-    if (chosen.kind === 'shared' && !cloud.signedIn.value) return { kind: 'recent' }
+    if ((chosen.kind === 'shared' || chosen.kind === 'rooms') && !cloud.signedIn.value) {
+      return { kind: 'recent' }
+    }
     if (chosen.kind === 'workspace' && !workspaces.value.some((entry) => entry.id === chosen.id)) {
       return { kind: 'recent' }
     }

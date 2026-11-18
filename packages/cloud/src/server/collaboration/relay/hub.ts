@@ -10,11 +10,17 @@ import {
   relayServerMessages,
   type RelayServerFrame
 } from '#cloud/contract'
+import {
+  authorizeRoomPresenceTicket,
+  type RoomPresenceAuthorization,
+  type RoomPresenceStore
+} from '#cloud/server/rooms/presence'
 import * as Y from 'yjs'
 
 import { authorizeRelayTicket, principalKey, type RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
 import type { CollaborationStateStore } from './persistence'
+import { createRoomPresenceRelay, type RoomPresenceMember } from './room-presence'
 
 /** One client's socket, as a runtime adapter hands it to the relay. */
 export type RelaySocket = {
@@ -36,6 +42,18 @@ export type CollaborationRelayOptions = {
    * any other document are refused.
    */
   documentId?: string
+  /**
+   * Where people on a room's live presence channel are recorded; without it the relay turns
+   * presence tickets away, and clients keep checking in over HTTP.
+   */
+  roomPresence?: RoomPresenceStore
+  /**
+   * The one room whose presence channel this relay serves, for runtimes that run a relay per
+   * room; it then turns away every other ticket, documents' included.
+   */
+  roomId?: string
+  /** How often a presence channel renews its people's check-ins and sends the room again. */
+  roomPresenceRefreshMs?: number
   /**
    * The most one socket message may carry. An editor's larger frames arrive as fragments joined
    * up to `MAX_COLLAB_MESSAGE_BYTES`; anyone else's frame must fit in one message.
@@ -95,6 +113,13 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   const persistRetryMs = options.persistRetryMs ?? 30_000
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
   const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
+  const presenceRelay = options.roomPresence
+    ? createRoomPresenceRelay({
+        store: options.roomPresence,
+        refreshMs: options.roomPresenceRefreshMs,
+        report
+      })
+    : null
 
   function send(socket: RelaySocket, frame: RelayServerFrame) {
     for (const message of relayServerMessages(frame)) socket.send(message)
@@ -346,6 +371,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   return {
     connect(socket: RelaySocket): RelayConnection {
       let peer: Peer | null = null
+      /** Set instead of `peer` when the socket is on a room's presence channel. */
+      let presence: RoomPresenceMember | null = null
       /** Read through an object, since it changes across awaits and between messages. */
       const state = { closed: false, authenticating: false }
       const isClosed = () => state.closed
@@ -363,7 +390,43 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         authTimeoutMs
       )
 
+      /** A presence ticket, when the token is one this relay serves; null otherwise. */
+      async function presenceTicket(token: string): Promise<RoomPresenceAuthorization | null> {
+        if (!presenceRelay || options.documentId !== undefined) return null
+        try {
+          const authorization = await authorizeRoomPresenceTicket(token, options.authSecret)
+          return options.roomId === undefined || authorization.roomId === options.roomId
+            ? authorization
+            : null
+        } catch {
+          return null
+        }
+      }
+
+      async function joinPresence(authorization: RoomPresenceAuthorization) {
+        if (state.closed || !presenceRelay) return
+        if (peer) {
+          socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different room or person')
+          return
+        }
+        if (presence) {
+          if (!presence.renew(authorization)) {
+            socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different room or person')
+          }
+          return
+        }
+        clearTimeout(authTimer)
+        const admitted = await presenceRelay.admit(socket, authorization)
+        if (admitted && isClosed()) admitted.leave()
+        else presence = admitted
+      }
+
       async function authenticate(token: string) {
+        const presenceAuthorization = await presenceTicket(token)
+        if (presenceAuthorization) {
+          await joinPresence(presenceAuthorization)
+          return
+        }
         let authorization: RelayAuthorization
         try {
           authorization = await authorizeRelayTicket(token, options.authSecret)
@@ -371,11 +434,19 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           socket.close(RELAY_CLOSE.unauthorized, 'Invalid collaboration ticket')
           return
         }
+        if (options.roomId !== undefined) {
+          socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different room')
+          return
+        }
         if (options.documentId !== undefined && authorization.documentId !== options.documentId) {
           socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different document')
           return
         }
         if (state.closed) return
+        if (presence) {
+          socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different room or person')
+          return
+        }
         if (peer) {
           // A refreshed ticket keeps the peer in its room as the same person; a lowered
           // permission applies from now on.
@@ -427,6 +498,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
             })
           return
         }
+        // A presence channel only listens; anything its peer sends is ignored.
+        if (presence) return
         const room = peer && rooms.get(peer.authorization.roomId)
         if (!peer || !room) {
           socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket')
@@ -465,6 +538,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           queuedBytes = 0
           clearTimeout(authTimer)
           if (peer) depart(peer)
+          presence?.leave()
+          presence = null
         }
       }
     },
@@ -507,6 +582,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     /** Saves every open room and closes its sockets, as the runtime shuts down. */
     async close() {
       shuttingDown = true
+      presenceRelay?.close()
       await Promise.all(
         [...rooms.values()].map(async (room) => {
           for (const peer of room.peers.values()) {

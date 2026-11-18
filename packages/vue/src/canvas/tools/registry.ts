@@ -1,9 +1,22 @@
 import type { Ref } from 'vue'
 
-import type { Editor, Tool } from '@open-pencil/core'
+import type { Editor, Tool } from '@lawha/core'
 
+import { startLiveEffectDrag, widthCanvasTool } from '#vue/canvas/live-effects/input'
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
+import {
+  BRUSH_TOOL,
+  CLONE_STAMP_TOOL,
+  COLOR_PICKER_TOOL,
+  ERASER_TOOL,
+  FILL_BUCKET_TOOL,
+  HEALING_BRUSH_TOOL,
+  MAGIC_WAND_TOOL,
+  MARQUEE_ELLIPSE_TOOL,
+  MARQUEE_RECT_TOOL
+} from '#vue/canvas/pixels/input'
+import { hoverShapeBuilder, startShapeBuilderDrag } from '#vue/canvas/shape-builder/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
@@ -56,23 +69,45 @@ const shape: CanvasTool = {
  * Every tool's canvas behaviour, by id. A tool added to `Tool` needs an entry here, and the
  * editor's profile decides which tools are on offer.
  */
-export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
-  SELECT: {
-    press: ({ event, cx, cy, sx, sy }, context) =>
-      handleSelectDown(
-        event,
-        cx,
-        cy,
-        sx,
-        sy,
-        context.editor,
-        context.hitFns,
-        context.tryStartRotation,
-        context.handleTextEditClick,
-        context.setDrag
-      ),
-    hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+const select: CanvasTool = {
+  press: (pointer, context) => {
+    // A selected envelope mesh's points and handles take the press before the layers do.
+    if (startLiveEffectDrag(pointer, context.editor, context.setDrag)) return
+    selectPress(pointer, context)
   },
+  hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+}
+
+function selectPress({ event, cx, cy, sx, sy }: CanvasToolPointer, context: CanvasToolContext) {
+  handleSelectDown(
+    event,
+    cx,
+    cy,
+    sx,
+    sy,
+    context.editor,
+    context.hitFns,
+    context.tryStartRotation,
+    context.handleTextEditClick,
+    context.setDrag
+  )
+}
+
+export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
+  SELECT: select,
+  // Off the selected shapes' regions it selects, so shapes can be picked without switching tools.
+  SHAPE_BUILDER: {
+    press: (pointer, context) => {
+      const { event, cx, cy } = pointer
+      if (!startShapeBuilderDrag(event, cx, cy, context.editor, context.setDrag))
+        select.press(pointer, context)
+    },
+    hover: (pointer, context) => {
+      hoverShapeBuilder(pointer.event, pointer.cx, pointer.cy, context.editor)
+      if (!context.editor.state.shapeBuilderHover) context.hoverLayers(pointer)
+    }
+  },
+  WIDTH: widthCanvasTool(select),
   HAND: pan,
   // Comments are placed by the app's comments layer above the canvas.
   COMMENT: { press: () => undefined },
@@ -84,6 +119,15 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
     }
   },
   PENCIL: { press: ({ cx, cy }, { editor, setDrag }) => startPencilInput(cx, cy, editor, setDrag) },
+  BRUSH: BRUSH_TOOL,
+  ERASER: ERASER_TOOL,
+  FILL_BUCKET: FILL_BUCKET_TOOL,
+  COLOR_PICKER: COLOR_PICKER_TOOL,
+  MARQUEE_RECT: MARQUEE_RECT_TOOL,
+  MARQUEE_ELLIPSE: MARQUEE_ELLIPSE_TOOL,
+  MAGIC_WAND: MAGIC_WAND_TOOL,
+  CLONE_STAMP: CLONE_STAMP_TOOL,
+  HEALING_BRUSH: HEALING_BRUSH_TOOL,
   TEXT: { press: ({ cx, cy }, { editor, setDrag }) => startTextDraw(cx, cy, editor, setDrag) },
   CONNECTOR: {
     press: ({ event, cx, cy, sx, sy }, { editor, setDrag }) =>

@@ -33,12 +33,16 @@
   "collapseIssues": "Ukryj problemy z czcionkami",
   "noSubstitute": "brak dostępnego zamiennika",
   "unsupportedFormatShort": "nieobsługiwany format",
-  "unsupportedFormat": "Zainstalowany, ale w formacie, którego OpenPencil jeszcze nie obsługuje",
+  "unsupportedFormat": "Zainstalowany, ale w formacie, którego Lawha jeszcze nie obsługuje",
   "settingsDesktopDescription": "Uzyskaj dostęp do czcionek systemowych, dostawców online, pakietów zapasowych i pobranych plików w pamięci podręcznej.",
   "settingsBrowserDescription": "Zezwól przeglądarce na dostęp do lokalnych czcionek i zarządzaj dostawcami czcionek online.",
   "providerEnabled": "Włączono {provider}.",
   "providerDisabled": "Wyłączono {provider}.",
   "fallbackDownloaded": "Pobrano czcionki zapasowe.",
   "fallbackDownloadFailed": "Nie udało się pobrać czcionek zapasowych.",
-  "clearCache": "Wyczyść pamięć podręczną"
+  "clearCache": "Wyczyść pamięć podręczną",
+  "localFontAccessPrompt": "Zezwól na dostęp do lokalnych czcionek, aby przeglądać zainstalowane czcionki.",
+  "localFontAccessBlocked": "Dostęp do lokalnych czcionek jest zablokowany dla tej witryny.",
+  "localFontsUnsupported": "Lokalne czcionki nie są dostępne w tej przeglądarce.",
+  "allowLocalFonts": "Zezwól na lokalne czcionki"
 }

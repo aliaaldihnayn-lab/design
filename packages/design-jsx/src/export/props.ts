@@ -1,11 +1,11 @@
 import { isEqual, omitBy, pick } from 'es-toolkit'
 
-import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
-import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import type { ArcData, SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { DEFAULT_FONT_FAMILY } from '@lawha/scene-graph/constants'
+import { layoutSizing } from '@lawha/scene-graph/layout'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
+import { vectorNetworkPaths } from '@lawha/scene-graph/vector-network'
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { textLengthJSX } from '../overrides/text'
@@ -22,6 +22,7 @@ import {
 } from './helpers'
 import { collectEffectProps, collectFillProps, collectStrokeProps } from './paints'
 import { collectStateProps } from './state'
+import { collectStoryProps } from './stories'
 import type { JSXProp } from './value'
 import { variableReferences, type VariableExport } from './variables'
 
@@ -367,6 +368,7 @@ export function collectProps(
   }
   collectShapeNodeProps(node, props)
   collectStateProps(node, ctx, props, variables)
+  collectStoryProps(node, graph, props)
 
   return withPropertyBindings(props, node, graph, reference)
 }

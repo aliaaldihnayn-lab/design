@@ -10,10 +10,10 @@ import type { Component } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconChevronDown from '~icons/lucide/chevron-down'
 
-import { layerTypeOptions, type LayerType } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { layerTypeOptions, type LayerType } from '@lawha/core'
+import type { SceneNode } from '@lawha/scene-graph'
+import { useI18n } from '@lawha/vue/i18n'
+import { useRetainedPopup } from '@lawha/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { NODE_ICONS } from '@/components/icons'
@@ -68,7 +68,7 @@ const itemCls = menuItem({ justify: 'between' })
               <component :is="item.icon" class="size-3.5 shrink-0 text-muted" />
               <span>{{ item.label() }}</span>
             </div>
-            <IconCheck v-if="item.type === node.type" class="ml-4 size-3.5" />
+            <IconCheck v-if="item.type === node.type" class="ms-4 size-3.5" />
           </DropdownMenuItem>
         </MenuScrollArea>
       </DropdownMenuContent>

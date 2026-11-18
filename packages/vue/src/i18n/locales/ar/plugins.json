@@ -1,0 +1,7 @@
+{
+  "imported": "تم تثبيت {name}",
+  "importFailed": "تعذّر استيراد الإضافة: {error}",
+  "failed": "توقفت {name}: {error}",
+  "removed": "أُزيلت {name}",
+  "close": "إغلاق الإضافة"
+}

@@ -49,13 +49,11 @@
       {
         "id": "save-version",
         "label": "Save to Version History…",
-        "accelerator": "Alt+CmdOrCtrl+S",
-        "feature": "cloud-document"
+        "accelerator": "Alt+CmdOrCtrl+S"
       },
       {
         "id": "version-history",
-        "label": "Show Version History",
-        "feature": "cloud-document"
+        "label": "Show Version History"
       },
       {
         "type": "separator"
@@ -70,12 +68,24 @@
             "label": "PNG"
           },
           {
+            "id": "export-jpg",
+            "label": "JPG"
+          },
+          {
+            "id": "export-webp",
+            "label": "WebP"
+          },
+          {
             "id": "export-svg",
             "label": "SVG"
           },
           {
             "id": "export-pptx",
             "label": "PPTX"
+          },
+          {
+            "id": "export-pdf-print",
+            "label": "PDF/X (CMYK)"
           },
           {
             "id": "export-drawio",
@@ -648,6 +658,26 @@
             "label": "Network"
           }
         ]
+      }
+    ]
+  },
+  {
+    "label": "Plugins",
+    "items": [
+      {
+        "id": "plugins-import",
+        "label": "Import Plugin from Folder…"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "plugins-installed",
+        "label": "Installed Plugins"
+      },
+      {
+        "id": "plugins-remove",
+        "label": "Remove Plugin"
       }
     ]
   }

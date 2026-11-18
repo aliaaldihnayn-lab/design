@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import {
@@ -139,7 +139,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               </template>
               <template #trailing>
                 <span
-                  class="mr-1 flex items-center gap-1 text-[11px] text-muted"
+                  class="me-1 flex items-center gap-1 text-[11px] text-muted"
                   data-test-id="settings-model-status"
                   :data-state="connectionState(profile.connectionId, profile.providerID)"
                 >
@@ -162,7 +162,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
                       : ai.modelCapabilityVisionShort
                   }}
                 </span>
-                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" />
+                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted rtl:-scale-x-100" />
               </template>
             </AppActionRow>
           </div>

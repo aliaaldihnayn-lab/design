@@ -1,5 +1,6 @@
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import type { CharacterStyleOverride, SceneNode } from '@lawha/scene-graph'
+import type { HorizontalExtent } from '@lawha/scene-graph/primitives'
+import { lineHeightPixels } from '@lawha/scene-graph/text'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
@@ -39,10 +40,7 @@ export interface SVGFallbackFace {
   file: number
 }
 
-export interface SVGCharacterEdges {
-  left: number
-  right: number
-}
+export type SVGCharacterEdges = HorizontalExtent
 
 /**
  * Measured lines of a text node, or null when this node has none. Export then keeps only the

@@ -12,21 +12,36 @@ import { commentMessageDefaults, commentMessages } from '#vue/i18n/messages/comm
 import { commonMessageDefaults, commonMessages } from '#vue/i18n/messages/common'
 import { credentialsMessageDefaults, credentialsMessages } from '#vue/i18n/messages/credentials'
 import { designCheckMessageDefaults, designCheckMessages } from '#vue/i18n/messages/design-check'
+import { designSystemMessageDefaults, designSystemMessages } from '#vue/i18n/messages/design-system'
 import { diagnosticsMessageDefaults, diagnosticsMessages } from '#vue/i18n/messages/diagnostics'
 import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor'
 import { figJamMessageDefaults, figJamMessages } from '#vue/i18n/messages/figjam'
 import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
 import { fontsMessageDefaults, fontsMessages } from '#vue/i18n/messages/fonts'
+import { framePresetMessageDefaults, framePresetMessages } from '#vue/i18n/messages/frame-presets'
+import { historyMessageDefaults, historyMessages } from '#vue/i18n/messages/history'
+import { inspectMessageDefaults, inspectMessages } from '#vue/i18n/messages/inspect'
 import { mediaMessageDefaults, mediaMessages } from '#vue/i18n/messages/media'
 import { menuMessageDefaults, menuMessages } from '#vue/i18n/messages/menu'
+import { metricsMessageDefaults, metricsMessages } from '#vue/i18n/messages/metrics'
 import { pageMessageDefaults, pageMessages } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
+import { pathMessageDefaults, pathMessages } from '#vue/i18n/messages/paths'
+import { photoMessageDefaults, photoMessages } from '#vue/i18n/messages/photo'
+import { pluginsMessageDefaults, pluginsMessages } from '#vue/i18n/messages/plugins'
+import { printMessageDefaults, printMessages } from '#vue/i18n/messages/print'
+import { prototypeMessageDefaults, prototypeMessages } from '#vue/i18n/messages/prototype'
 import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/recovery'
 import { renameMessageDefaults, renameMessages } from '#vue/i18n/messages/rename'
 import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/settings'
 import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
 import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/storage'
+import {
+  storageErrorMessageDefaults,
+  storageErrorMessages
+} from '#vue/i18n/messages/storage/errors'
+import { storiesMessageDefaults, storiesMessages } from '#vue/i18n/messages/stories'
 import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults, updatesMessages } from '#vue/i18n/messages/updates'
 import { variablesMessageDefaults, variablesMessages } from '#vue/i18n/messages/variables/panel'
@@ -34,6 +49,7 @@ import {
   variableTypeMessageDefaults,
   variableTypeMessages
 } from '#vue/i18n/messages/variables/types'
+import { writerMessageDefaults, writerMessages } from '#vue/i18n/messages/writer'
 
 export {
   aiMessages,
@@ -45,6 +61,9 @@ export {
   commonMessages,
   credentialsMessages,
   designCheckMessages,
+  designSystemMessages,
+  inspectMessages,
+  pluginsMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -54,18 +73,28 @@ export {
   menuMessages,
   pageMessages,
   panelMessages,
+  pathMessages,
+  photoMessages,
+  printMessages,
+  prototypeMessages,
   recoveryMessages,
+  framePresetMessages,
+  historyMessages,
+  metricsMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
   statusMessages,
+  storageErrorMessages,
+  storiesMessages,
   storageMessages,
   toolMessages,
   updatesMessages,
   cloudMessages,
   cloudPortalMessages,
   variablesMessages,
-  variableTypeMessages
+  variableTypeMessages,
+  writerMessages
 }
 
 export const messageDefaults = {
@@ -78,6 +107,9 @@ export const messageDefaults = {
   common: commonMessageDefaults,
   credentials: credentialsMessageDefaults,
   designCheck: designCheckMessageDefaults,
+  designSystem: designSystemMessageDefaults,
+  inspect: inspectMessageDefaults,
+  plugins: pluginsMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   figjam: figJamMessageDefaults,
@@ -87,16 +119,26 @@ export const messageDefaults = {
   menu: menuMessageDefaults,
   pages: pageMessageDefaults,
   panels: panelMessageDefaults,
+  paths: pathMessageDefaults,
+  photo: photoMessageDefaults,
+  print: printMessageDefaults,
+  prototype: prototypeMessageDefaults,
   recovery: recoveryMessageDefaults,
+  framePresets: framePresetMessageDefaults,
+  history: historyMessageDefaults,
+  metrics: metricsMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,
   shapes: shapeMessageDefaults,
   statuses: statusMessageDefaults,
+  storageErrors: storageErrorMessageDefaults,
+  stories: storiesMessageDefaults,
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,
   cloud: cloudMessageDefaults,
   cloudPortal: cloudPortalMessageDefaults,
   variables: variablesMessageDefaults,
-  variableTypes: variableTypeMessageDefaults
+  variableTypes: variableTypeMessageDefaults,
+  writer: writerMessageDefaults
 } as const

@@ -1,3 +1,4 @@
+import { DEFAULT_PIXEL_TOOL_SETTINGS } from '#core/editor/pixels/types'
 import { DEFAULT_SNAPPING_PREFERENCES } from '#core/editor/preferences'
 import type { EditorSharedState } from '#core/editor/types'
 
@@ -5,6 +6,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
   return {
     activeTool: 'SELECT',
     shapeWithTextKind: 'SQUARE',
+    pixelTools: structuredClone(DEFAULT_PIXEL_TOOL_SETTINGS),
     hostRestrictions: { readOnly: false },
     documentKind: 'design',
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },

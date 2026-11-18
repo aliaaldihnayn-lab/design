@@ -1,16 +1,16 @@
-import { compressFigDataSync, renameFigArchive } from '@open-pencil/fig'
+import { compressFigDataSync, renameFigArchive } from '@lawha/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
   type FigNodeChangeExportRuntime,
   sceneNodeToKiwi
-} from '@open-pencil/fig/node-change'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { loadFigDataCompressor, type FigFileKind } from '@open-pencil/kiwi/fig/container'
-import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
+} from '@lawha/fig/node-change'
+import { initCodec } from '@lawha/kiwi/fig/codec'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { loadFigDataCompressor, type FigFileKind } from '@lawha/kiwi/fig/container'
+import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
+import { fractionalPosition } from '@lawha/scene-graph/order-keys'
+import type { GUID } from '@lawha/scene-graph/primitives'
 
 import { IS_BROWSER } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
@@ -23,6 +23,7 @@ import {
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
+import { writePrototypeInteractions } from './prototype'
 import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
@@ -203,6 +204,14 @@ async function writeFigFile(
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
     nodeChanges.push(...slotContentRecords)
   }
+  writePrototypeInteractions(
+    graph,
+    nodeChanges,
+    setup.nodeIdToGuid,
+    setup.assignedGuidValues,
+    localIdCounter,
+    setup.varIdToGuid
+  )
 
   const msg: Record<string, unknown> = {
     type: 'NODE_CHANGES',

@@ -40,5 +40,18 @@
   "deleteDocumentDescription": "该文档将对所有可以打开它的人删除。此操作无法撤销。",
   "deleteDocumentFailed": "无法删除“{name}”。请重试。",
   "saveAsPrompt": "另存为：",
-  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。"
+  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。",
+  "preparingDocument": "正在准备文档",
+  "preparationReading": "正在读取文档",
+  "preparationDecoding": "正在解码 Figma 文档",
+  "preparationMaterializing": "正在准备图层",
+  "preparationPopulatingPage": "正在准备页面",
+  "preparationResolvingFonts": "正在解析字体",
+  "preparationResolvingFallbacks": "正在完善排版",
+  "preparationLayout": "正在计算布局",
+  "preparationDrawingShaders": "正在绘制着色器",
+  "preparationPreparingRender": "正在准备画布",
+  "preparationLoading": "正在加载…",
+  "preparationProgress": "{completed} / {total}",
+  "createText": "文本文档"
 }

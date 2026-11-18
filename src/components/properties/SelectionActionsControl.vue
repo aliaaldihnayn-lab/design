@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useEditorCommands } from '@lawha/vue/editor/commands'
 
 import BooleanOperationsControl from '@/components/properties/BooleanOperationsControl.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -13,7 +13,7 @@ const maskCommand = getCommand('selection.toggleMask')
 </script>
 
 <template>
-  <div class="ml-auto flex items-center gap-1">
+  <div class="ms-auto flex items-center gap-1">
     <IconButton
       :label="maskCommand.label"
       :disabled="!maskCommand.enabled.value"

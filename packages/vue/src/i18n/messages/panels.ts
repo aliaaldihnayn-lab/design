@@ -2,6 +2,9 @@ import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 
+import { panelPaintMessageDefaults } from './panels/paint'
+import { panelPickerMessageDefaults } from './panels/pickers'
+
 export const panelMessageDefaults = {
   untitled: 'Untitled',
   individualPadding: 'Individual padding',
@@ -157,6 +160,8 @@ export const panelMessageDefaults = {
   framePresetCategoryPresentation: 'Presentation',
   framePresetCategoryWatch: 'Watch',
   framePresetCategoryPaper: 'Paper',
+  framePresetCategoryPrint: 'Print',
+  framePresetCategoryWeb: 'Web',
   framePresetCategorySocialMedia: 'Social media',
   framePresetCategoryFigmaCommunity: 'Figma Community',
   framePresetCategoryArchive: 'Archive',
@@ -422,6 +427,15 @@ export const panelMessageDefaults = {
   addPage: 'Add page',
   toggleVisibility: 'Toggle visibility',
   independentCornerRadii: 'Independent corner radii',
+  /** Labels of the four corner radius fields, short enough to sit inside a field. */
+  radiusTopLeftShort: 'TL',
+  radiusTopRightShort: 'TR',
+  radiusBottomLeftShort: 'BL',
+  radiusBottomRightShort: 'BR',
+  radiusTopLeft: 'Top left radius',
+  radiusTopRight: 'Top right radius',
+  radiusBottomLeft: 'Bottom left radius',
+  radiusBottomRight: 'Bottom right radius',
   lockAspectRatio: 'Lock aspect ratio',
   detachVariable: 'Detach variable',
   applyVariable: 'Apply variable',
@@ -480,6 +494,24 @@ export const panelMessageDefaults = {
   exportFormat: 'Export format',
   exportPreview: 'Preview',
   exportRenderingPreview: 'Rendering preview…',
+  exportWarnings: 'Export warnings',
+  printCompressedContent: 'A page uses compressed content this export cannot read.',
+  printGradientColours: 'A gradient uses colours this export cannot convert.',
+  printImageNotConverted: 'An image could not be converted to CMYK.',
+  printStandardFont: params('Text uses {font}, a font the file does not embed.'),
+  printFontNotEmbedded: params('The font {font} is not embedded.'),
+  printTransparency:
+    'Transparency remains that could not be flattened, so the file is not PDF/X-1a.',
+  printRGBRemaining: 'Some colours are still RGB.',
+  printTransparencyFlattened: params(
+    '{count} transparent areas were flattened into 300 ppi images for PDF/X-1a.'
+  ),
+  printNoPressProfile: params(
+    'No ICC profile for {condition} is bundled, so colours were converted without one.'
+  ),
+  printProfileUnreadable:
+    'The ICC profile is not a CMYK press profile this export can read, so colours were converted without it.',
+  printBleedInArtwork: 'The artwork already includes its bleed, so no bleed was added.',
   create: 'Create',
   add: 'Add',
   createVariable: 'Create variable',
@@ -499,33 +531,9 @@ export const panelMessageDefaults = {
 
   gap: 'Gap',
 
-  solid: 'Solid',
-  linearGradient: 'Linear',
-  radialGradient: 'Radial',
-  image: 'Image',
-  shader: 'Shader',
-  addShaderEffect: 'Add effect',
-  searchShaderEffects: 'Search effects',
-  noShaderEffects: 'No effects found',
-  removeShaderEffect: 'Remove effect',
-  shaderPreset: 'Preset JSON',
-  applyShaderPreset: 'Apply',
-  invalidShaderPreset: 'Not a shaders preset',
-  shaderNeedsWebGPU: 'This browser has no WebGPU, so shaders show their saved frame.',
-  stops: 'Stops',
-  addStop: 'Add stop',
-
   alignCenter: 'Align center',
   alignMiddle: 'Align middle',
   clipContent: 'Clip content',
-  colorFormatRgb: 'RGB',
-  colorFormatHsl: 'HSL',
-  colorFormatHsb: 'HSB',
-  colorFormatOkhcl: 'OkHCL',
-  colorHintHsl: 'H hue · S saturation · L lightness',
-  colorHintHsb: 'H hue · S saturation · B brightness',
-  colorHintOkhcl: 'H hue · C chroma · L lightness · A alpha',
-  colorPreviewClipped: params('Clipped to {space} preview gamut'),
   rulers: 'Rulers',
   multiplayerCursors: 'Multiplayer cursors',
   direction: 'Direction',
@@ -600,53 +608,8 @@ export const panelMessageDefaults = {
   gridSummaryRows: params('{count} rows'),
   gridSummaryGrid: params('Grid {size}px'),
   gridSummaryFixed: params('{summary} ({size}px)'),
-  searchFonts: 'Search fonts...',
-  noFontsFound: 'No fonts found',
-  searchIcons: 'Search icons...',
-  searchingIcons: 'Searching…',
-  loadingIcons: 'Loading icons…',
-  loadingIconSets: 'Loading icon sets…',
-  noIconsFound: 'No icons found',
-  iconSearchHint: 'Type to search over 200,000 open-source icons',
-  iconSearchFailed: 'Icons could not be loaded. Check your connection.',
-  insertIconFailed: 'The icon could not be inserted.',
-  iconSet: 'Icon set',
-  allIconSets: 'All icon sets',
-  searchIconSets: 'Search icon sets...',
-  noIconSetsFound: 'No icon sets found',
-  recentIcons: 'Recent',
-  iconsInFile: 'In this file',
-  otherIconSets: 'Other',
-  /** The image fill's button that fills it with a photo from Unsplash or Pexels. */
-  stockPhoto: 'Stock photo',
-  searchPhotos: 'Search photos...',
-  noPhotosFound: 'No photos found',
-  photoSearchHint: params('Type to search free photos on {service}'),
-  photoSearchFailed: params('{service} could not be searched. Check your connection and key.'),
-  insertPhotoFailed: 'The photo could not be inserted.',
-  photoService: 'Photo service',
-  /** The picker's credit for a photo, as the services ask to be credited. */
-  photoCredit: params('Photo by {photographer} on {service}'),
-  photoKeyHeading: params('Connect {service}'),
-  photoKeyDescription: params(
-    '{service} photos are free to use. Add its free API key in Settings to search them here.'
-  ),
-  photoKeyAction: 'Open Settings',
-  iconResultCount: count({ one: '{count} result', many: '{count} results' }),
-  /** More icons match than a search returns. */
-  iconResultCountCapped: params('{count}+ results'),
-  noLocalFontsAvailable: 'No local fonts available.',
-  localFontsAccessHint: 'Use the desktop app or Chrome/Edge to access system fonts.',
-  editColor: 'Edit color',
-  red: 'Red',
-  green: 'Green',
-  blue: 'Blue',
-  hue: 'Hue',
-  saturation: 'Saturation',
-  brightness: 'Brightness',
-  lightness: 'Lightness',
-  chroma: 'Chroma',
-  alpha: 'Alpha'
+  ...panelPaintMessageDefaults,
+  ...panelPickerMessageDefaults
 } as const
 
 export const panelMessages = i18n('panels', panelMessageDefaults)

@@ -1,10 +1,7 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
-import {
-  variableBindingOwner,
-  isNumericVariableBindingField
-} from '@open-pencil/scene-graph/variables'
+import type { SceneNode } from '@lawha/scene-graph'
+import { findInstanceAncestor } from '@lawha/scene-graph/instances'
+import { cloneInstanceOverrideState } from '@lawha/scene-graph/instances/overrides'
+import { variableBindingOwner, isNumericVariableBindingField } from '@lawha/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 

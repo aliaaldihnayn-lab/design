@@ -33,12 +33,16 @@
   "collapseIssues": "Скрыть проблемы со шрифтами",
   "noSubstitute": "замена недоступна",
   "unsupportedFormatShort": "неподдерживаемый формат",
-  "unsupportedFormat": "Установлен, но в формате, который OpenPencil пока не умеет отображать",
+  "unsupportedFormat": "Установлен, но в формате, который Lawha пока не умеет отображать",
   "settingsDesktopDescription": "Доступ к системным шрифтам, онлайн-провайдерам, резервным наборам и кэшу загрузок.",
   "settingsBrowserDescription": "Разрешите браузеру доступ к локальным шрифтам и управляйте онлайн-провайдерами шрифтов.",
   "providerEnabled": "{provider} включён.",
   "providerDisabled": "{provider} отключён.",
   "fallbackDownloaded": "Резервные шрифты загружены.",
   "fallbackDownloadFailed": "Не удалось загрузить резервные шрифты.",
-  "clearCache": "Очистить кэш"
+  "clearCache": "Очистить кэш",
+  "localFontAccessPrompt": "Разрешите доступ к локальным шрифтам, чтобы просматривать установленные шрифты.",
+  "localFontAccessBlocked": "Доступ к локальным шрифтам для этого сайта заблокирован.",
+  "localFontsUnsupported": "Локальные шрифты недоступны в этом браузере.",
+  "allowLocalFonts": "Разрешить локальные шрифты"
 }

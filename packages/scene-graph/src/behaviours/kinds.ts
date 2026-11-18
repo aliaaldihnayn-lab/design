@@ -69,19 +69,21 @@ export interface BehaviourContract {
 
 /**
  * A text field or textarea: its text is a text property, and `filled`, when bound, draws the
- * empty field with its placeholder.
+ * empty field with its placeholder. `count`, when bound, is a text layer that counts the
+ * characters typed, against the limit written after a slash (`0/80`); `clear` empties it.
  */
 const TEXT_INPUT: BehaviourContract = {
   values: [
     { id: 'value', type: 'text', required: true },
     { id: 'filled', type: 'boolean', required: false },
-    { id: 'disabled', type: 'boolean', required: false }
+    { id: 'disabled', type: 'boolean', required: false },
+    { id: 'count', type: 'text', required: false }
   ],
-  parts: []
+  parts: [{ id: 'clear', required: false }]
 }
 
 /**
- * The behaviours OpenPencil knows, after Reka UI's primitives. Their states are drawn as the
+ * The behaviours Lawha knows, after Reka UI's primitives. Their states are drawn as the
  * component's variants and properties; their subcomponents (thumb, range, trigger, …) are the
  * component's slots, and the component itself is the control's root.
  */
@@ -139,15 +141,21 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     values: [{ id: 'disabled', type: 'boolean', required: false }],
     parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
+  /**
+   * A slider: one thumb, or with `endThumb` bound a range of two, whose second end is `end`.
+   * Both move continuously in `step`s, by pointer and arrow keys.
+   */
   slider: {
     values: [
       { id: 'value', type: 'number', required: false },
+      { id: 'end', type: 'number', required: false },
       { id: 'disabled', type: 'boolean', required: false }
     ],
     parts: [
       { id: 'track', required: true },
       { id: 'range', required: false },
-      { id: 'thumb', required: true }
+      { id: 'thumb', required: true },
+      { id: 'endThumb', required: false }
     ]
   },
   tabs: {

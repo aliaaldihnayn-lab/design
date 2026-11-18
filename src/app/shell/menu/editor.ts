@@ -1,4 +1,4 @@
-import { useEditorCommands, type EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { useEditorCommands, type EditorCommandId } from '@lawha/vue/editor/commands'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
@@ -8,6 +8,8 @@ import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { watchNativeMenuFeatures } from '@/app/shell/menu/features'
 import { openFileDialog, openFileFromPath } from '@/app/shell/menu/files'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
+import { watchNativeMenuLabels } from '@/app/shell/menu/native-labels'
+import { usePluginMenu } from '@/app/shell/menu/plugins'
 import { OPEN_RECENT_EVENT_PREFIX, watchRecentFilesMenu } from '@/app/shell/menu/recent-files'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
@@ -33,9 +35,12 @@ export function useEditorMenu() {
 
   watchRecentFilesMenu()
   watchNativeMenuFeatures()
+  watchNativeMenuLabels()
 
   const { setTheme } = useAppTheme()
   const { runCommand } = useEditorCommands()
+  const plugins = usePluginMenu(store)
+  plugins.watchNativeMenu()
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
@@ -46,6 +51,7 @@ export function useEditorMenu() {
     },
     'previous-tab': () => switchAdjacentTab(-1),
     'next-tab': () => switchAdjacentTab(1),
+    'plugins-import': plugins.importPlugin,
     ...createSaveMenuActions(store),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
@@ -53,11 +59,20 @@ export function useEditorMenu() {
     'export-png': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
     },
+    'export-jpg': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'jpg')
+    },
+    'export-webp': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'webp')
+    },
     'export-svg': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'svg')
     },
     'export-pptx': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'pptx')
+    },
+    'export-pdf-print': () => {
+      if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'pdf-print')
     },
     'export-drawio': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'drawio')
@@ -89,6 +104,11 @@ export function useEditorMenu() {
       return
     }
     if (SHELL_MENU_IDS.has(id)) return
+    const pluginAction = plugins.nativeAction(id)
+    if (pluginAction) {
+      pluginAction()
+      return
+    }
     if (COMMAND_MENU_IDS.has(id as EditorCommandId)) {
       runFocusedCommand(store, runCommand, id as EditorCommandId)
       return

@@ -6,7 +6,7 @@ import {
   useCommonMessages,
   useCredentialMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import type { MCPConnectionDraft } from '@/app/integrations/mcp'
 import type { MCPConnectionFieldErrors } from '@/app/integrations/mcp/settings/form'
@@ -140,7 +140,7 @@ defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
       <template #footer>
         <AppButton
           v-if="draft.id"
-          class="mr-auto"
+          class="me-auto"
           color="error"
           variant="link"
           :disabled="busy"

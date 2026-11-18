@@ -1,0 +1,7 @@
+{
+  "imported": "{name} está instalado",
+  "importFailed": "No se pudo importar el complemento: {error}",
+  "failed": "{name} se detuvo: {error}",
+  "removed": "Se quitó {name}",
+  "close": "Cerrar complemento"
+}

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { nextTick, watch } from 'vue'
 
-import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useViewportKind } from '@lawha/vue/editor/viewport-kind'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
@@ -80,7 +80,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
       :close-label="common.close"
     >
       <template #actions>
-        <AppButton color="primary" variant="link" class="ml-auto" @click="openPublish">
+        <AppButton color="primary" variant="link" class="ms-auto" @click="openPublish">
           {{ panels.publishLibrary }}
         </AppButton>
       </template>
@@ -158,7 +158,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           >
             <icon-lucide-component class="size-4 text-component" />
             <div class="min-w-0 flex-1">
-              <button type="button" class="block w-full text-left" @click="reviewUpdate(asset)">
+              <button type="button" class="block w-full text-start" @click="reviewUpdate(asset)">
                 <p class="truncate text-xs text-surface">{{ asset.name }}</p>
                 <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
                   {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}

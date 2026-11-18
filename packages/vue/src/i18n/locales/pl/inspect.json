@@ -1,0 +1,16 @@
+{
+  "tab": "Inspekcja",
+  "noSelection": "Zaznacz warstwę, aby zobaczyć jej właściwości i kod",
+  "size": "Rozmiar",
+  "limits": "Min. / maks.",
+  "layout": "Auto layout",
+  "radius": "Promień narożnika",
+  "colors": "Kolory",
+  "typography": "Typografia",
+  "code": "Kod",
+  "copy": "Kopiuj kod",
+  "sizingFixed": "Stały",
+  "sizingHug": "Dopasuj do treści",
+  "sizingFill": "Wypełnij",
+  "gradient": "Gradient kolorów"
+}

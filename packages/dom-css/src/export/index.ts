@@ -7,6 +7,12 @@ export {
 } from './projection'
 export { exportHTMLBundle } from './bundle'
 export {
+  gradientGeometry,
+  gradientToCSS,
+  gradientBackgrounds,
+  type GradientGeometry
+} from './gradient'
+export {
   designDocumentToTailwindJSX,
   sceneNodesToTailwindJSX,
   sceneNodesToTailwindJSXWithLayers,

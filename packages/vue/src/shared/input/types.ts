@@ -1,5 +1,5 @@
-import type { AttachModifiers, MovePlace, Tool } from '@open-pencil/core'
-import type { HandlePosition } from '@open-pencil/core/geometry'
+import type { AttachModifiers, MovePlace, Tool } from '@lawha/core'
+import type { HandlePosition } from '@lawha/core/geometry'
 import type {
   DerivedTextGlyph,
   GeometryPath,
@@ -8,9 +8,9 @@ import type {
   Stroke,
   TextPathData,
   VectorNetwork
-} from '@open-pencil/scene-graph'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
+} from '@lawha/scene-graph'
+import type { Rect, Vector } from '@lawha/scene-graph/primitives'
+import type { ResizeSnapshot } from '@lawha/scene-graph/resize'
 
 import type { FlowDrag } from '#vue/shared/input/flow-reorder'
 import type { LayerSizing } from '#vue/shared/input/resize/sizing'
@@ -201,6 +201,23 @@ export interface DragPen {
   knotStartY: number
 }
 
+/** A Shape Builder drag: the regions it crosses merge, or are deleted, on release. */
+export interface DragShapeBuilder {
+  type: 'shape-builder'
+  /** Adds the pointer, in canvas coordinates, to the path the drag has taken. */
+  move: (cx: number, cy: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
+/** A drag of a live effect's handle: an envelope mesh point or handle, or a width point. */
+export interface DragLiveEffect {
+  type: 'live-effect'
+  move: (cx: number, cy: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 export interface DragPencil {
   type: 'pencil-drag'
 }
@@ -271,6 +288,15 @@ export interface DragGuide {
   originalPosition?: number
 }
 
+/** A pixel tool dragged over a layer: a brush stroke, or a selection shape. */
+export interface DragPixel {
+  type: 'pixel'
+  /** Follows the pointer, in canvas coordinates; Shift constrains a selection shape. */
+  move: (cx: number, cy: number, shiftKey: boolean) => void
+  commit: () => void
+  cancel: () => void
+}
+
 /** Dragging a handle or stop of the gradient whose picker is open. */
 export interface DragGradient {
   type: 'gradient'
@@ -290,6 +316,7 @@ export interface DragShapeHandle {
 }
 
 export type DragState =
+  | DragPixel
   | DragShapeHandle
   | DragDraw
   | DragStickyDraw
@@ -306,6 +333,8 @@ export type DragState =
   | DragRotate
   | DragPen
   | DragPencil
+  | DragShapeBuilder
+  | DragLiveEffect
   | DragTextSelect
   | DragEditNode
   | DragEditHandle

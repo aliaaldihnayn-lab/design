@@ -1,5 +1,16 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type {
+  CloudSignInMethod,
+  DocumentPermission,
+  RoomAccessMode,
+  RoomAuditAction,
+  RoomMemberRole,
+  RoomRole,
+  SignatureEnvelopeStatus,
+  SignatureEventKind,
+  SignatureSignerStatus,
+  WorkspaceRole
+} from '#cloud/contract'
 import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
@@ -80,7 +91,7 @@ export interface DocumentTable {
   workspaceId: string
   name: string
   /** A design or a board; see migration 027. */
-  kind: Generated<'design' | 'board'>
+  kind: Generated<'design' | 'board' | 'writer'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
@@ -138,6 +149,22 @@ export interface DocumentVersionTable {
   description: string | null
   createdBy: string
   restoredFromVersionId: string | null
+  createdAt: TimestampColumn
+}
+
+/** An edit made to a document, as the editor's version history records it; see migration 030. */
+export interface DocumentHistoryChangeTable {
+  id: string
+  documentId: string
+  clientId: string
+  authorId: string
+  sessionId: string
+  action: string
+  changeCount: number
+  /** The names of the first few layers or paragraphs, as a JSON array of strings. */
+  names: unknown
+  label: string
+  madeAt: Date
   createdAt: TimestampColumn
 }
 
@@ -338,6 +365,132 @@ export interface AuthSchemaVersionTable {
   updatedAt: TimestampColumn
 }
 
+export interface SignatureEnvelopeTable {
+  id: string
+  ownerId: string
+  senderName: string
+  senderEmail: string
+  title: string
+  message: Generated<string>
+  status: SignatureEnvelopeStatus
+  originalPdf: Uint8Array
+  originalSha256: string
+  finalPdf: Uint8Array | null
+  finalSha256: string | null
+  createdAt: TimestampColumn
+  completedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+export interface SignatureSignerTable {
+  id: string
+  envelopeId: string
+  position: number
+  name: string
+  email: string
+  /** SHA-256 of the secret in the signer's link, hex; the secret itself is never stored. */
+  secretDigest: string
+  status: SignatureSignerStatus
+  signaturePng: Uint8Array | null
+  declineReason: string | null
+  viewedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+  signedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+  declinedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+export interface SignatureEventTable {
+  id: string
+  envelopeId: string
+  signerId: string | null
+  kind: SignatureEventKind
+  ipAddress: string | null
+  userAgent: string | null
+  createdAt: TimestampColumn
+}
+
+/** A room in a workspace, under another or at the top; see migration 029. */
+export interface RoomTable {
+  id: string
+  workspaceId: string
+  parentId: string | null
+  name: string
+  accessMode: RoomAccessMode
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  archivedAt: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>
+}
+
+/** Someone on a room's own list; exactly one row per room is its owner. */
+export interface RoomMemberTable {
+  roomId: string
+  userId: string
+  role: RoomRole
+  addedBy: string
+  createdAt: TimestampColumn
+}
+
+export interface RoomInvitationTable {
+  id: string
+  roomId: string
+  emailNormalized: string
+  role: RoomMemberRole
+  /** SHA-256 of the secret in the invitation link; the secret itself is never stored. */
+  tokenHash: string
+  status: Generated<'pending' | 'accepted' | 'revoked'>
+  invitedBy: string
+  invitedAt: TimestampColumn
+  expiresAt: TimestampColumn
+  acceptedAt: TimestampColumn | null
+  acceptedBy: string | null
+  revokedAt: TimestampColumn | null
+}
+
+/** A document kept in a room; while it is, the room decides who reaches it. */
+export interface RoomFileTable {
+  documentId: string
+  roomId: string
+  addedBy: string
+  addedAt: TimestampColumn
+}
+
+export interface RoomAuditEventTable {
+  id: string
+  roomId: string
+  actorUserId: string
+  action: RoomAuditAction
+  subjectUserId: string | null
+  subjectEmail: string | null
+  metadata: unknown
+  createdAt: TimestampColumn
+}
+
+export interface RoomPresenceTable {
+  roomId: string
+  userId: string
+  seenAt: TimestampColumn
+}
+
+/** A person's connected Jira Cloud site; the API token is stored encrypted. */
+export interface JiraConnectionTable {
+  userId: string
+  site: string
+  email: string
+  apiTokenEncrypted: string | null
+  authKind: ColumnType<'token' | 'oauth', 'token' | 'oauth' | undefined, 'token' | 'oauth'>
+  cloudId: string | null
+  accessTokenEncrypted: string | null
+  refreshTokenEncrypted: string | null
+  accessTokenExpiresAt: ColumnType<Date | null, Date | string | null, Date | string | null>
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
+export interface JiraOAuthStateTable {
+  stateDigest: string
+  userId: string
+  expiresAt: ColumnType<Date, Date | string, Date | string>
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -360,6 +513,7 @@ export interface CloudDatabase {
   revisionImage: RevisionImageTable
   workspaceImage: WorkspaceImageTable
   documentVersion: DocumentVersionTable
+  documentHistoryChange: DocumentHistoryChangeTable
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
@@ -370,6 +524,17 @@ export interface CloudDatabase {
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
+  signatureEnvelope: SignatureEnvelopeTable
+  signatureSigner: SignatureSignerTable
+  signatureEvent: SignatureEventTable
+  room: RoomTable
+  roomMember: RoomMemberTable
+  roomInvitation: RoomInvitationTable
+  roomFile: RoomFileTable
+  roomAuditEvent: RoomAuditEventTable
+  roomPresence: RoomPresenceTable
+  jiraConnection: JiraConnectionTable
+  jiraOAuthState: JiraOAuthStateTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

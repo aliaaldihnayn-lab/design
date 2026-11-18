@@ -29,6 +29,12 @@ export interface Size {
   height: number
 }
 
+/** The left and right edges of something measured along a line. */
+export interface HorizontalExtent {
+  left: number
+  right: number
+}
+
 export interface Rect {
   x: number
   y: number

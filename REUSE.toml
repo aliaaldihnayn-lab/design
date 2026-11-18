@@ -6,10 +6,10 @@ version = 1
 [[annotations]]
 path = "**"
 precedence = "override"
-SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-FileCopyrightText = ["2026 Danila Poyarkov and OpenPencil contributors", "2026 Lawha contributors"]
 SPDX-License-Identifier = "MIT"
 
-# OpenPencil Cloud's server, relay, and administration, and the pages it serves for signing in,
+# Lawha Cloud's server, relay, and administration, and the pages it serves for signing in,
 # account security, and administration.
 [[annotations]]
 path = [
@@ -25,7 +25,7 @@ path = [
   "vite/metrics.ts",
 ]
 precedence = "override"
-SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-FileCopyrightText = ["2026 Danila Poyarkov and OpenPencil contributors", "2026 Lawha contributors"]
 SPDX-License-Identifier = "Apache-2.0"
 
 # The protocol editors and other clients speak to a Cloud server stays MIT.
@@ -37,7 +37,7 @@ path = [
   "packages/cloud/tests/client/**",
 ]
 precedence = "override"
-SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
+SPDX-FileCopyrightText = ["2026 Danila Poyarkov and OpenPencil contributors", "2026 Lawha contributors"]
 SPDX-License-Identifier = "MIT"
 
 # Mermaid's flowchart grammar, the parser generated from it, and Mermaid's text preparation,
@@ -53,4 +53,11 @@ path = [
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2014 - 2022 Knut Sveidqvist"
+SPDX-License-Identifier = "MIT"
+
+# Word documents from python-docx's test files, written by Microsoft Word for the round-trip tests.
+[[annotations]]
+path = ["tests/fixtures/writer/word-*.docx"]
+precedence = "override"
+SPDX-FileCopyrightText = "2013 Steve Canny and python-docx contributors"
 SPDX-License-Identifier = "MIT"

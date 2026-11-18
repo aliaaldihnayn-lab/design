@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 
-import { useEditor } from '@open-pencil/vue'
-import { useComponentProperties } from '@open-pencil/vue/controls/component-props'
-import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
+import { useEditor } from '@lawha/vue'
+import { useComponentProperties } from '@lawha/vue/controls/component-props'
+import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
@@ -23,11 +23,11 @@ const { controls, setValue, setTextValue, flush } = useComponentProperties(() =>
 <template>
   <CollapsibleRoot v-if="controls.length" v-slot="{ open }" default-open>
     <CollapsibleTrigger
-      class="flex h-7 w-full items-center gap-1 text-left text-xs text-surface"
+      class="flex h-7 w-full items-center gap-1 text-start text-xs text-surface"
       :data-exposed-instance="name"
     >
       <icon-lucide-chevron-right
-        class="size-3 shrink-0 text-muted transition-transform data-[open]:rotate-90 motion-reduce:transition-none"
+        class="size-3 shrink-0 text-muted transition-transform data-[open]:rotate-90 rtl:not-data-[open]:rotate-180 motion-reduce:transition-none"
         :data-open="open || undefined"
         aria-hidden="true"
       />
@@ -35,7 +35,7 @@ const { controls, setValue, setTextValue, flush } = useComponentProperties(() =>
       <span class="truncate">{{ name }}</span>
     </CollapsibleTrigger>
     <CollapsibleContent :class="collapsibleContentMotion">
-      <div class="flex flex-col gap-1 pl-4">
+      <div class="flex flex-col gap-1 ps-4">
         <ComponentPropertyRow v-for="control in controls" :key="control.id" :name="control.name">
           <ComponentPropertyControl
             :control="control"

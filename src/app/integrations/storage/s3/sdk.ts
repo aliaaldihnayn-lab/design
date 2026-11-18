@@ -12,6 +12,7 @@ export {
   S3ServiceException,
   paginateListObjectsV2
 } from '@aws-sdk/client-s3'
+import { storageErrorText } from '../errors'
 
 function resolveS3Region(config: S3CompatibleConfig): string {
   const explicit = config.region?.trim()
@@ -21,7 +22,7 @@ function resolveS3Region(config: S3CompatibleConfig): string {
 
 function normalizeEndpoint(endpoint: string): string {
   const trimmed = endpoint.trim().replace(/\/+$/, '')
-  if (!trimmed) throw new Error('S3 endpoint is required')
+  if (!trimmed) throw new Error(storageErrorText((t) => t.s3EndpointRequired))
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
   return `https://${trimmed}`
 }

@@ -8,9 +8,9 @@ import type {
   FigJamLineStyle,
   FigJamTextSize,
   FigJamTypeface
-} from '@open-pencil/scene-graph/figjam'
-import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+} from '@lawha/scene-graph/figjam'
+import type { ShapeWithTextType } from '@lawha/scene-graph/shape-with-text'
+import { useFigJamMessages, useShapeMessages } from '@lawha/vue/i18n'
 
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { typefaceModel, useFigJamTextOptions } from '@/components/figjam/text-options'
@@ -83,9 +83,9 @@ const selectedTypeface = typefaceModel(
           :aria-label="shapes.kind"
           :class="select.trigger()"
         >
-          <component :is="SHAPE_KIND_ICONS[kind]" class="mr-1.5 size-4 text-muted" />
+          <component :is="SHAPE_KIND_ICONS[kind]" class="me-1.5 size-4 text-muted" />
           <span :class="select.value()">{{ label(kind) }}</span>
-          <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+          <icon-lucide-chevron-down class="ms-1 size-3 shrink-0 text-muted" />
         </button>
       </template>
     </ShapeKindPicker>

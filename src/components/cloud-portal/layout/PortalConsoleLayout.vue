@@ -3,7 +3,7 @@ import { uniq } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
@@ -113,8 +113,8 @@ watch(
           :data-start="!overflowEnd || undefined"
           @click="scrollTowardHidden"
         >
-          <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
-          <icon-lucide-chevron-left v-else class="size-3.5" />
+          <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5 rtl:-scale-x-100" />
+          <icon-lucide-chevron-left v-else class="size-3.5 rtl:-scale-x-100" />
         </button>
       </div>
       <main :class="ui.main()">

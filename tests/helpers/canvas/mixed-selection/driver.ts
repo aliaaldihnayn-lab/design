@@ -18,8 +18,8 @@ export function mixedSelectionDriver(page: () => Page) {
   return {
     async build() {
       ids = await page().evaluate(async () => {
-        const store = window.openPencil?.getStore?.()
-        if (!store) throw new Error('OpenPencil store not initialized')
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
         const fixtureURL = '/tests/helpers/canvas/mixed-selection/scene.ts'
         const scene: typeof MixedScene = await import(fixtureURL)
         const built = scene.createMixedSelectionScene(store.graph, store.state.currentPageId)
@@ -29,10 +29,7 @@ export function mixedSelectionDriver(page: () => Page) {
     },
 
     select(...layers: MixedLayer[]) {
-      return page().evaluate(
-        (select) => window.openPencil?.getStore?.().select(select),
-        idsOf(layers)
-      )
+      return page().evaluate((select) => window.lawha?.getStore?.().select(select), idsOf(layers))
     },
 
     /** One field of each layer, in the order asked. */
@@ -40,7 +37,7 @@ export function mixedSelectionDriver(page: () => Page) {
       return page().evaluate(
         ({ key, select }) =>
           select.map((id) => {
-            const node = window.openPencil?.getStore?.().graph.getNode(id)
+            const node = window.lawha?.getStore?.().graph.getNode(id)
             return node ? structuredClone(node[key as keyof typeof node] ?? null) : null
           }) as unknown[],
         { key, select: idsOf(layers) }
@@ -48,7 +45,7 @@ export function mixedSelectionDriver(page: () => Page) {
     },
 
     undo() {
-      return page().evaluate(() => window.openPencil?.getStore?.().undoAction())
+      return page().evaluate(() => window.lawha?.getStore?.().undoAction())
     }
   }
 }

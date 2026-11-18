@@ -1,0 +1,7 @@
+{
+  "imported": "Zainstalowano {name}",
+  "importFailed": "Nie udało się zaimportować wtyczki: {error}",
+  "failed": "{name} przestała działać: {error}",
+  "removed": "Usunięto {name}",
+  "close": "Zamknij wtyczkę"
+}

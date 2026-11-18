@@ -2,6 +2,8 @@
 import { Bar, BarChart, Legend, Tooltip, XAxis, YAxis } from 'vccs'
 import { computed } from 'vue'
 
+import { useMetricsMessages } from '@lawha/vue/i18n'
+
 import { formatOS } from '@/app/metrics/format'
 
 import type { PlatformCount } from './types'
@@ -11,6 +13,7 @@ import type { PlatformCount } from './types'
  * whole and as its two parts.
  */
 const { platforms } = defineProps<{ platforms: PlatformCount[] }>()
+const t = useMetricsMessages()
 
 const rows = computed(() =>
   platforms
@@ -31,7 +34,7 @@ const height = computed(() => rows.value.length * ROW_HEIGHT + LEGEND_HEIGHT)
     :bar-category-gap="6"
     :is-animation-active="false"
     class="text-[11px]"
-    title="Daily pings by OS, desktop and web"
+    :title="t.platformsChart"
   >
     <XAxis type="number" hide />
     <YAxis type="category" data-key="os" :width="64" :tick-line="false" :axis-line="false" />
@@ -45,7 +48,7 @@ const height = computed(() => rows.value.length * ROW_HEIGHT + LEGEND_HEIGHT)
     />
     <Bar
       data-key="desktop"
-      name="Desktop"
+      :name="t.seriesDesktop"
       stack-id="os"
       fill="var(--color-chart-1)"
       stroke="var(--color-panel)"
@@ -53,7 +56,7 @@ const height = computed(() => rows.value.length * ROW_HEIGHT + LEGEND_HEIGHT)
     />
     <Bar
       data-key="web"
-      name="Web"
+      :name="t.seriesWeb"
       stack-id="os"
       fill="var(--color-chart-2)"
       stroke="var(--color-panel)"

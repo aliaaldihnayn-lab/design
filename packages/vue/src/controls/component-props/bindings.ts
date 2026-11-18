@@ -1,8 +1,4 @@
-import type {
-  ComponentPropertyReferenceField,
-  SceneGraph,
-  SceneNode
-} from '@open-pencil/scene-graph'
+import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 export interface ComponentBinding {
   nodeId: string

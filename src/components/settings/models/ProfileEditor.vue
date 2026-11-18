@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { AIProviderID } from '@lawha/core/constants'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useCodingAgentSetup, usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
@@ -368,7 +368,7 @@ async function remove() {
         <AppButton v-if="canDelete" color="error" :disabled="busy" @click="deleteOpen = true">
           {{ ai.deleteModel }}
         </AppButton>
-        <AppButton class="ml-auto" :disabled="busy" @click="emit('done')">
+        <AppButton class="ms-auto" :disabled="busy" @click="emit('done')">
           {{ common.cancel }}
         </AppButton>
         <AppButton v-if="!choosing" type="submit" color="primary" variant="solid" :loading="busy">

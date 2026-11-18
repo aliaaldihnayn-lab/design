@@ -1,0 +1,16 @@
+{
+  "tab": "Inspecter",
+  "noSelection": "Sélectionnez un calque pour voir ses propriétés et son code",
+  "size": "Taille",
+  "limits": "Min. / max.",
+  "layout": "Mise en page auto",
+  "radius": "Rayon d’angle",
+  "colors": "Couleurs",
+  "typography": "Typographie",
+  "code": "Code",
+  "copy": "Copier le code",
+  "sizingFixed": "Fixe",
+  "sizingHug": "Ajuster au contenu",
+  "sizingFill": "Remplir",
+  "gradient": "Dégradé"
+}

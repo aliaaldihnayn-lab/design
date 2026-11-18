@@ -7,9 +7,12 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import { FIG_COMPRESSIONS } from '../fig-compression'
 import { iconSchema, iconTintSchema } from '../icons/schema'
+import { curvePointSchema, imageLevelsSchema, MAX_CURVE_POINTS } from '../paints/schema'
+import { liveBlendSchema, pathEffectSchema } from '../path-effects/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
 import { nodeStatusSchema, statusWorkflowSchema } from '../statuses/schema'
+import { epicsSchema, storyJiraProjectSchema, userStoriesSchema } from '../stories/schema'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
@@ -139,12 +142,79 @@ const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPubl
   }
 )
 
+const adjustmentValueSchema = v.optional(v.pipe(v.number(), v.minValue(-1), v.maxValue(1)))
+
+/** Every adjustment of each adjusted fill, by fill index, so a save loses none of them. */
+const imageAdjustmentsSchema = v.record(
+  v.pipe(v.string(), v.regex(/^\d+$/)),
+  v.object({
+    exposure: adjustmentValueSchema,
+    contrast: adjustmentValueSchema,
+    brightness: adjustmentValueSchema,
+    saturation: adjustmentValueSchema,
+    vibrance: adjustmentValueSchema,
+    temperature: adjustmentValueSchema,
+    tint: adjustmentValueSchema,
+    highlights: adjustmentValueSchema,
+    shadows: adjustmentValueSchema,
+    hue: adjustmentValueSchema,
+    sharpen: adjustmentValueSchema,
+    noise: adjustmentValueSchema,
+    vignette: adjustmentValueSchema,
+    invert: v.optional(v.boolean()),
+    levels: v.optional(imageLevelsSchema),
+    curve: v.optional(v.pipe(v.array(curvePointSchema), v.maxLength(MAX_CURVE_POINTS)))
+  })
+)
+
+/** Where each pattern fill's tiles sit, by fill index: Figma's pattern paint has no offset or turn. */
+const patternPlacementSchema = v.record(
+  v.pipe(v.string(), v.regex(/^\d+$/)),
+  v.object({
+    offset: v.optional(
+      v.object({ x: v.pipe(v.number(), v.finite()), y: v.pipe(v.number(), v.finite()) })
+    ),
+    rotation: v.optional(v.pipe(v.number(), v.finite()))
+  })
+)
+
+const paintLayerSchema = v.object({
+  hash: v.pipe(v.string(), v.minLength(1)),
+  /** Paint pixels to one unit of the layer, which a resized layer's paint keeps. */
+  density: v.optional(v.pipe(v.number(), v.gtValue(0), v.maxValue(64))),
+  /** How the paint is resampled when the layer is resized: pixel for pixel, or smoothly. */
+  resample: v.optional(v.picklist(['nearest', 'smooth']))
+})
+
+const masterPageSchema = v.object({ role: v.picklist(['master', 'applied']) })
+
+const pageNumberSchema = v.object({ template: v.pipe(v.string(), v.maxLength(200)) })
+
+const pagePlacementSchema = v.object({ x: v.number(), y: v.number() })
+
+const publicationSchema = v.object({
+  /** The number the first page shows. */
+  numberStart: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100_000))),
+  /** The digits page numbers are written in. */
+  numberFormat: v.optional(v.picklist(['western', 'arabic-indic', 'roman', 'roman-upper'])),
+  /** Which way the pages read: right to left for Arabic and Hebrew books. */
+  direction: v.optional(v.picklist(['ltr', 'rtl'])),
+  /** Whether pages face each other in spreads, the first page on its own. */
+  spreads: v.optional(v.boolean())
+})
+
+const textThreadSchema = v.object({
+  story: v.pipe(v.string(), v.minLength(1)),
+  order: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  lead: v.pipe(v.string(), v.maxLength(1000))
+})
+
 /**
- * Every plugin-data entry OpenPencil writes under {@link OPEN_PENCIL_PLUGIN_ID}: state Figma's
+ * Every plugin-data entry Lawha writes under {@link LAWHA_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
  * it share one schema.
  */
-export const OPEN_PENCIL_PLUGIN_DATA = {
+export const LAWHA_PLUGIN_DATA = {
   /** A text node's direction, on TEXT nodes. */
   textDirection: textPluginDataField('textDirection', 'format', DIRECTIONS),
   /** An auto-layout frame's direction. */
@@ -156,6 +226,40 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettingsSchema),
   /** The node-local rect a TEXT_PATH layout maps onto, which Kiwi has no field for. */
   textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBoxSchema),
+  /**
+   * Image fill adjustments by fill index. Figma's paint filter keeps eight of them; hue, invert
+   * and vibrance have no Figma field, so this keeps every one exactly.
+   */
+  imageAdjustments: jsonPluginDataField('imageAdjustments', 'format', imageAdjustmentsSchema),
+  /** Each pattern fill's offset and turn by fill index, which Figma's pattern paint cannot hold. */
+  patternPlacement: jsonPluginDataField('patternPlacement', 'format', patternPlacementSchema),
+  /**
+   * The image fill that holds what was painted on the layer with the brush, eraser and fill
+   * bucket, by its image's hash, so its other fills stay as they were (Affinity's pixel layer).
+   */
+  paintLayer: jsonPluginDataField('paintLayer', 'content', paintLayerSchema),
+  /**
+   * A publication's master page (a component) or a master applied to a page (its instance at the
+   * bottom of the page frame), as Affinity Publisher's master pages.
+   */
+  masterPage: jsonPluginDataField('masterPage', 'content', masterPageSchema),
+  /**
+   * A canvas page laid out as a publication: where page numbers start and how they are written,
+   * which way the pages read, and whether they face each other in spreads.
+   */
+  publication: jsonPluginDataField('publication', 'content', publicationSchema),
+  /**
+   * Where the Pages panel last laid a page out; a page moved away from it by hand keeps its own
+   * place when the panel lays the pages out again.
+   */
+  pagePlacement: jsonPluginDataField('pagePlacement', 'content', pagePlacementSchema),
+  /** A text that shows its page's number: `{page}` and `{pages}` in the template are filled in. */
+  pageNumber: jsonPluginDataField('pageNumber', 'content', pageNumberSchema),
+  /**
+   * A text frame in a threaded story: the story (its first frame's id), its place in the chain,
+   * and the white space the story had where the text broke into this frame.
+   */
+  textThread: jsonPluginDataField('textThread', 'content', textThreadSchema),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
   /**
@@ -179,6 +283,15 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
   /** The statuses layers can be in, on the DOCUMENT node. */
   statuses: jsonPluginDataField('statuses', 'bookkeeping', statusWorkflowSchema),
+  /** The epics a document's user stories are grouped under, on the DOCUMENT node. */
+  epics: jsonPluginDataField('epics', 'bookkeeping', epicsSchema),
+  /** The Jira site and project the document's stories are created in, on the DOCUMENT node. */
+  storyJiraProject: jsonPluginDataField('storyJiraProject', 'bookkeeping', storyJiraProjectSchema),
+  /**
+   * The user stories that specify a layer, on any layer: the product spec stays with the
+   * document, so a component copied into a library leaves them behind.
+   */
+  userStories: jsonPluginDataField('userStories', 'bookkeeping', userStoriesSchema),
   /** How tightly the document's `.fig` data is compressed, on the DOCUMENT node. */
   figCompression: textPluginDataField('figCompression', 'bookkeeping', FIG_COMPRESSIONS),
   /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */
@@ -206,15 +319,20 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */
   iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema),
   /** One entry per paint that draws a shader, matched to its image paint by the frame's hash. */
-  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
+  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema),
+  /**
+   * A live warp, envelope mesh, or width profile on the vector it made, with the outline it was
+   * made from, so it can be edited again, expanded, or released.
+   */
+  pathEffect: jsonPluginDataField('pathEffect', 'content', pathEffectSchema),
+  /** A live blend, on the group holding its ends and the steps it made between them. */
+  liveBlend: jsonPluginDataField('liveBlend', 'content', liveBlendSchema)
 } satisfies Record<string, PluginDataKey>
 
-const NOT_CONTENT = Object.values(OPEN_PENCIL_PLUGIN_DATA).filter(
-  (field) => field.role !== 'content'
-)
+const NOT_CONTENT = Object.values(LAWHA_PLUGIN_DATA).filter((field) => field.role !== 'content')
 
 /**
- * A node's plugin data that is part of its content, in a stable order: OpenPencil's content
+ * A node's plugin data that is part of its content, in a stable order: Lawha's content
  * fields and every other plugin's entries, which the node carries wherever it goes. Format
  * copies of node fields and bookkeeping are left out.
  */

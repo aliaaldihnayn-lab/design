@@ -1,12 +1,12 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import { readIcon } from '@open-pencil/scene-graph/icons'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
-import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
-import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { BLACK } from '@lawha/scene-graph/constants'
+import { readIcon } from '@lawha/scene-graph/icons'
+import { imageMimeType } from '@lawha/scene-graph/images'
+import { layoutSizingInParent } from '@lawha/scene-graph/layout'
+import { shaderOfPaint } from '@lawha/scene-graph/shaders'
+import { resolveNodeTextDirection } from '@lawha/scene-graph/text/direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -19,10 +19,11 @@ import {
   lineHeightToCSS,
   strokeColorToCSS
 } from './css'
+import { gradientBackgrounds } from './gradient'
 import { addGridContainer, addGridPlacement } from './grid'
 import { textCaseToCSS, textElementContent } from './text'
 
-const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
+const DOM_CSS_PLUGIN_ID = 'lawha-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
 /**
@@ -317,6 +318,8 @@ function styleFromSceneNode(
   addSizeConstraints(style, node, css)
   const fill = fillToCSS(node.fills.at(0))
   if (fill) style['background-color'] = css('fills/0/color', fill)
+  const gradients = gradientBackgrounds(node.fills, node.width, node.height)
+  if (gradients.length > 0) style['background-image'] = gradients.join(', ')
   addImageStyle(style, node)
   addStroke(style, node, css)
   Object.assign(style, effectsToCSS(node.effects))
@@ -358,7 +361,8 @@ function styleFromTextNode(
   addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
-  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  if (rtl) style.direction = 'rtl'
   const color = fillToCSS(node.fills.at(0))
   style.color = color ? css('fills/0/color', color) : cssColor(BLACK)
   style['font-family'] = node.fontFamily
@@ -371,7 +375,8 @@ function styleFromTextNode(
   if (node.letterSpacing.value !== 0) {
     style['letter-spacing'] = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
   }
-  if (node.textAlignHorizontal !== 'LEFT')
+  // Alignment is visual; RTL text would otherwise start at the right edge when LEFT is left implicit.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   const shadow = dropShadowToCSS(node.effects[0])
@@ -397,9 +402,7 @@ function attrsForNode(
   node: SceneNode,
   includeSourceIds: boolean
 ): Record<string, string> {
-  const attrs: Record<string, string> = includeSourceIds
-    ? { 'data-open-pencil-node-id': node.id }
-    : {}
+  const attrs: Record<string, string> = includeSourceIds ? { 'data-lawha-node-id': node.id } : {}
   const sourceURL = imageSourceURL(node)
   if (sourceURL) attrs.src = sourceURL
   const fill = node.fills.at(0)

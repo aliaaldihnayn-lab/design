@@ -3,15 +3,16 @@ import { writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 import { zipSync, type Zippable } from 'fflate'
 import { extname } from 'pathe'
 
-import type { Editor, EditorState } from '@open-pencil/core'
+import type { Editor, EditorState } from '@lawha/core'
 import {
   findPageId,
   type ExportRequest,
+  type ExportWarning,
   type IOFormatAdapter,
   type IORegistry
-} from '@open-pencil/core/io'
-import { type RasterExportFormat, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/core/io'
+import { type RasterExportFormat, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
 import { pickBrowserSaveFile, supportsFileSystemAccess } from '@/app/document/io/capability'
@@ -27,6 +28,8 @@ export interface ExportedFile {
   format: string
   ext: string
   mime: string
+  /** What the export could not keep as asked, such as why a print PDF is not PDF/X. */
+  warnings?: ExportWarning[]
 }
 
 // Layer/page names flow into zip entry keys; flatten them to a single safe

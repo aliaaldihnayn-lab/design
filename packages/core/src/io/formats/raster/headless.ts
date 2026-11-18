@@ -1,9 +1,13 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
+import type { PixelSampleScope } from '#core/editor/pixels/sample'
+import { renderLayerGrid } from '#core/editor/pixels/sample'
+import { findPageId } from '#core/io/subgraph'
 
+import type { RGBAImage } from './pixels'
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
 let cachedCk: CanvasKit | null = null
@@ -69,4 +73,25 @@ export async function headlessRenderThumbnail(
   renderer.invalidateAllPictures()
   await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
   return renderThumbnail(ck, renderer, graph, pageId, width, height)
+}
+
+/**
+ * What the canvas draws over a layer's pixel grid, rendered headlessly: the layer alone or every
+ * layer on its page, as the fill bucket and colour picker tools sample it. Null without the layer.
+ */
+export async function headlessRenderLayerGrid(
+  graph: SceneGraph,
+  nodeId: string,
+  grid: { width: number; height: number },
+  scope: PixelSampleScope
+): Promise<RGBAImage | null> {
+  const node = graph.getNode(nodeId)
+  if (!node) return null
+  const { ck, renderer } = await getRenderer()
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  const pageId = findPageId(graph, nodeId)
+  if (!pageId) return null
+  await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
+  return renderLayerGrid(ck, renderer, graph, node, grid, scope)
 }

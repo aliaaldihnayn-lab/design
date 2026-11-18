@@ -2,7 +2,7 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
 
-import { StorageUnavailableError } from './errors'
+import { storageErrorText, StorageUnavailableError } from './errors'
 import { storageProfileId } from './location'
 import {
   activeStorageProviderID,
@@ -85,7 +85,9 @@ export async function openStorageAdapter(location: StorageLocation): Promise<Sto
   const required = provider.preferenceFields.filter((field) => field.required)
   const preferences = readStoragePreferences(location.providerId)
   if (required.some((field) => !preferences[field.id]?.trim())) {
-    throw new StorageUnavailableError(`${provider.label} is not configured`)
+    throw new StorageUnavailableError(
+      storageErrorText((t) => t.providerNotConfigured({ provider: provider.label }))
+    )
   }
   const missing = await Promise.all(
     provider.credentialFields
@@ -96,7 +98,9 @@ export async function openStorageAdapter(location: StorageLocation): Promise<Sto
       })
   )
   if (missing.includes(true)) {
-    throw new StorageUnavailableError(`${provider.label} credentials are unavailable`)
+    throw new StorageUnavailableError(
+      storageErrorText((t) => t.providerCredentialsUnavailable({ provider: provider.label }))
+    )
   }
   return createStorageAdapter(location)
 }

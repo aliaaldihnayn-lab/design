@@ -1,7 +1,8 @@
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@lawha/core/constants'
 
 import { aiModelSettings, modelConnectionCredentialRef } from '@/app/ai/models'
 import { VECTORIZE_CREDENTIAL_REFS } from '@/app/editor/vectorize/credentials'
+import { JIRA_API_TOKEN_CREDENTIAL } from '@/app/integrations/jira/connection'
 import { mcpConnectionSettings, mcpConnectionCredentialRef } from '@/app/integrations/mcp'
 import { storageCredentialRefs, storageProviderRegistry } from '@/app/integrations/storage'
 import {
@@ -34,6 +35,7 @@ export function appCredentialRefs(): CredentialRef[] {
     PEXELS_CREDENTIAL,
     UNSPLASH_CREDENTIAL,
     ...VECTORIZE_CREDENTIAL_REFS,
+    JIRA_API_TOKEN_CREDENTIAL,
     ...mcpConnectionSettings.value.connections.map((connection) =>
       mcpConnectionCredentialRef(connection.id)
     ),

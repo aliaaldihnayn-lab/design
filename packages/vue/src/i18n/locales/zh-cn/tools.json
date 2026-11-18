@@ -14,5 +14,16 @@
   "shape": "形状",
   "connector": "连接线",
   "hand": "抓手",
-  "comment": "评论"
+  "comment": "评论",
+  "shapeBuilder": "形状生成器",
+  "width": "宽度",
+  "brush": "画笔",
+  "eraser": "橡皮擦",
+  "fillBucket": "油漆桶",
+  "colorPicker": "取色器",
+  "marqueeRect": "矩形选框",
+  "marqueeEllipse": "椭圆选框",
+  "magicWand": "魔棒",
+  "cloneStamp": "仿制图章",
+  "healingBrush": "修复画笔"
 }

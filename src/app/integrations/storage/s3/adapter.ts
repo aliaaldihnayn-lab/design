@@ -1,10 +1,11 @@
 import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { extractFigThumbnailFromReader } from '@lawha/fig'
 
 import { isTauri } from '@/app/tauri/env'
 
+import { storageErrorText } from '../errors'
 import {
   NAMESPACE_MARKER_BODY,
   STORAGE_DOCUMENTS_PREFIX,
@@ -42,7 +43,7 @@ const SECRET_KEY_FIELD = 'secret-access-key'
 
 function requiredPreference(runtime: StorageProviderRuntime, field: string): string {
   const value = runtime.preferences[field]?.trim()
-  if (!value) throw new Error(`S3 ${field} is required`)
+  if (!value) throw new Error(storageErrorText((t) => t.s3FieldRequired({ field })))
   return value
 }
 
@@ -51,7 +52,8 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
     runtime.resolveCredential(ACCESS_KEY_FIELD),
     runtime.resolveCredential(SECRET_KEY_FIELD)
   ])
-  if (!accessKeyId || !secretAccessKey) throw new Error('S3 credentials are required')
+  if (!accessKeyId || !secretAccessKey)
+    throw new Error(storageErrorText((t) => t.s3CredentialsRequired))
 
   const region = runtime.preferences[REGION_FIELD]?.trim()
   return {
@@ -106,7 +108,7 @@ async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
     await putObject(config, STORAGE_NAMESPACE_MARKER, NAMESPACE_MARKER_BODY, 'application/json')
   } catch (error) {
     if (error instanceof S3HttpError && (error.status === 403 || error.status === 401)) {
-      throw new Error('Cannot write to this bucket. Check access permissions and bucket name.')
+      throw new Error(storageErrorText((t) => t.s3CannotWrite))
     }
     throw error
   }
@@ -200,7 +202,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
           : undefined,
         signal
       )
-      if (!bytes) throw new Error(`Document not found: ${id}`)
+      if (!bytes) throw new Error(storageErrorText((t) => t.documentNotFound({ id })))
       // Buckets do not record which version a copy came from, so S3 documents are last-writer-wins.
       return { bytes, revision: null }
     },
@@ -290,7 +292,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
           await putObject(await resolveConfig(runtime), key, bytes, contentType, undefined, options)
         } catch (error) {
           if (error instanceof S3HttpError && (error.status === 409 || error.status === 412)) {
-            throw new Error('Library revision conflict: latest revision has changed')
+            throw new Error(storageErrorText((t) => t.libraryRevisionConflict))
           }
           throw error
         }

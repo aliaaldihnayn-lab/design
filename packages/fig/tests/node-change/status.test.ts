@@ -3,12 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import type { KiwiNodeChange } from '#fig/node-change/export/context'
 import { extractNodeStatus, serializeNodeStatus } from '#fig/node-change/status'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import {
-  OPEN_PENCIL_PLUGIN_DATA,
-  OPEN_PENCIL_PLUGIN_ID
-} from '@open-pencil/scene-graph/plugin-data'
+import type { NodeChange } from '@lawha/kiwi/fig/codec'
+import { createDefaultNode } from '@lawha/scene-graph/node-defaults'
+import { LAWHA_PLUGIN_DATA, LAWHA_PLUGIN_ID } from '@lawha/scene-graph/plugin-data'
 
 function written(status: string): NodeChange {
   let id = 0
@@ -37,7 +34,7 @@ describe('section status in .fig records', () => {
     expect(extractNodeStatus(nc)).toBe('approved')
   })
 
-  test('a status changed in Figma wins over the one OpenPencil wrote', () => {
+  test('a status changed in Figma wins over the one Lawha wrote', () => {
     expect(
       extractNodeStatus({ ...written('approved'), sectionStatusInfo: { status: 'COMPLETED' } })
     ).toBe('completed')
@@ -49,9 +46,7 @@ describe('section status in .fig records', () => {
   test("Figma's status reads without plugin data, and a malformed entry is ignored", () => {
     const nc: NodeChange = {
       sectionStatusInfo: { status: 'BUILD' },
-      pluginData: [
-        { pluginID: OPEN_PENCIL_PLUGIN_ID, key: OPEN_PENCIL_PLUGIN_DATA.status.key, value: '{' }
-      ]
+      pluginData: [{ pluginID: LAWHA_PLUGIN_ID, key: LAWHA_PLUGIN_DATA.status.key, value: '{' }]
     }
     expect(extractNodeStatus(nc)).toBe('ready-for-dev')
   })

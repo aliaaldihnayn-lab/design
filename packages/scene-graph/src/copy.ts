@@ -37,6 +37,7 @@ export function copyFill<T extends Fill>(f: T): T {
   if (f.gradientTransform) copy.gradientTransform = { ...f.gradientTransform }
   if (f.imageTransform) copy.imageTransform = { ...f.imageTransform }
   if (f.patternSpacing) copy.patternSpacing = { ...f.patternSpacing }
+  if (f.patternOffset) copy.patternOffset = { ...f.patternOffset }
   if (f.noiseSize) copy.noiseSize = { ...f.noiseSize }
   return copy
 }

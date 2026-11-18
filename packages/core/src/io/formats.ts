@@ -1,8 +1,8 @@
 import { groupBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
-import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { isDrawIOExportFileName } from '@open-pencil/drawio'
+import { sceneNodeToJSX, selectionToJSX } from '@lawha/design-jsx'
+import { isDrawIOExportFileName } from '@lawha/drawio'
 import {
   buildPenGraph,
   isDataURL,
@@ -10,17 +10,20 @@ import {
   penAssets,
   type PenIconRequest,
   type PenIconSource
-} from '@open-pencil/pen'
-import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+} from '@lawha/pen'
+import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
 
 import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import type { PDFPrintOptions } from './formats/pdf/print'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
+import { storiesCSVFormat, storiesMarkdownFormat } from './formats/stories'
 import { extractExportGraph, findPageId } from './subgraph'
+import { EXPORT_EVERY_TARGET, FIXED_SIZE_EXPORT, resolveExportNodes } from './targets'
 import type {
   ExportRequest,
   ExportResult,
@@ -28,23 +31,10 @@ import type {
   HTMLExportOptions,
   IOContext,
   IOFormatAdapter,
-  IOFormatExportOptions,
-  IOFormatSupport,
   RasterExportOptions,
   ReadDocumentInput,
   SVGExportOptions
 } from './types'
-
-/** Formats that export a document, page, selection, or single node alike. */
-const EXPORT_EVERY_TARGET: IOFormatSupport = {
-  exportDocument: true,
-  exportPage: true,
-  exportSelection: true,
-  exportNode: true
-}
-
-/** Formats with a size of their own, so no export scale or quality. */
-const FIXED_SIZE_EXPORT: IOFormatExportOptions = { scale: false, quality: false }
 
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
@@ -55,37 +45,6 @@ function ensureSingleNode(target: ExportRequest['target']): string | null {
   if (target.scope === 'node') return target.nodeId
   if (target.scope === 'selection' && target.nodeIds.length === 1) return target.nodeIds[0]
   return null
-}
-
-function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {
-  switch (request.target.scope) {
-    case 'document': {
-      const page = request.graph.getPages()[0]
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'page': {
-      const page = request.graph.getNode(request.target.pageId)
-      if (!page) return null
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'selection': {
-      const first = request.target.nodeIds[0]
-      if (!first) return null
-      const pageId = findPageId(request.graph, first)
-      if (!pageId) return null
-      if (!request.target.nodeIds.every((nodeId) => findPageId(request.graph, nodeId) === pageId)) {
-        throw new Error('Export selection must stay on a single page')
-      }
-      return { pageId, nodeIds: request.target.nodeIds }
-    }
-    case 'node':
-      return resolveExportNodes({
-        ...request,
-        target: { scope: 'selection', nodeIds: [request.target.nodeId] }
-      })
-    default:
-      return null
-  }
 }
 
 async function renderRaster(
@@ -174,7 +133,7 @@ export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentKind, 'fig' | 'jam'>> 
 
 export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
-  label: 'OpenPencil Document',
+  label: 'Lawha Document',
   role: 'native-document',
   category: 'document',
   extensions: ['fig', 'jam'],
@@ -362,7 +321,7 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     )
   },
   async readDocument(input) {
-    const { readDrawIOBytes } = await import('@open-pencil/drawio')
+    const { readDrawIOBytes } = await import('@lawha/drawio')
     const { drawioToSceneGraph } = await import('./formats/drawio')
     const file = readDrawIOBytes(input.data)
     if (!file) throw new Error('This file holds no draw.io diagram')
@@ -409,7 +368,7 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
     return ext === 'mmd' || ext === 'mermaid' || mimeType === 'text/vnd.mermaid'
   },
   async readDocument(input) {
-    const { detectMermaidDiagram } = await import('@open-pencil/mermaid')
+    const { detectMermaidDiagram } = await import('@lawha/mermaid')
     const text = new TextDecoder().decode(input.data)
     if (!detectMermaidDiagram(text)) throw new Error('This file holds no Mermaid flowchart')
     // Mermaid stores a diagram's structure, which reading lays out with its text measured.
@@ -420,7 +379,7 @@ export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
 
 /** Pages or layers as a draw.io file, loading the writer only when one is saved. */
 async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
-  const { writeDrawIOFile } = await import('@open-pencil/drawio')
+  const { writeDrawIOFile } = await import('@lawha/drawio')
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
   return {
     format: 'drawio',
@@ -472,8 +431,16 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   category: 'vector',
   extensions: ['pdf'],
   mimeTypes: ['application/pdf'],
-  support: EXPORT_EVERY_TARGET,
+  support: { ...EXPORT_EVERY_TARGET, readDocument: true },
   exportOptions: FIXED_SIZE_EXPORT,
+  async readDocument(input, context) {
+    const { readPDFDocument } = await import('./formats/pdf/import')
+    const graph = await readPDFDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.pdf$/i, '')
+    })
+    return { graph, sourceFormat: 'pdf' }
+  },
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -486,6 +453,49 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
       mimeType: 'application/pdf',
       extension: 'pdf',
       data
+    }
+  }
+}
+
+/**
+ * A press-ready PDF: each top-level layer a page with bleed and crop marks, colours in CMYK and
+ * die-line or named spot inks as Separations, trim and bleed boxes, and an output intent; it
+ * declares PDF/X-1a (PDF/X-4 with a profile) when nothing in it rules that out.
+ */
+export const pdfPrintFormat: IOFormatAdapter<'pdf-print'> = {
+  id: 'pdf-print',
+  label: 'PDF for print (CMYK, PDF/X)',
+  role: 'derived-export',
+  category: 'print',
+  extensions: ['pdf'],
+  mimeTypes: ['application/pdf'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request, options?: PDFPrintOptions, context?: IOContext) {
+    const target = resolvePPTXExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const specs = target.nodeIds.map((nodeId) => ({
+      pageId: findPageId(request.graph, nodeId) ?? target.pageId,
+      nodeIds: [nodeId],
+      label: request.graph.getNode(nodeId)?.name
+    }))
+    const { exportPrintPDF } = await import('./formats/pdf/print')
+    const result = await exportPrintPDF(request.graph, specs, {
+      canvasKit: context?.canvasKit,
+      title: request.fileName ? filename(request.fileName) : undefined,
+      ...options
+    })
+    if (!result) throw new Error('Nothing to export')
+    const warnings = [
+      ...result.issues.map((issue) => ({ ...issue, blocking: true })),
+      ...result.notes
+    ]
+    return {
+      format: 'pdf-print',
+      mimeType: 'application/pdf',
+      extension: 'pdf',
+      data: result.data,
+      ...(warnings.length > 0 ? { warnings } : {})
     }
   }
 }
@@ -510,8 +520,12 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   category: 'print',
   extensions: ['pptx'],
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-  support: EXPORT_EVERY_TARGET,
+  support: { ...EXPORT_EVERY_TARGET, readDocument: true },
   exportOptions: FIXED_SIZE_EXPORT,
+  async readDocument(input) {
+    const { readPPTXDocument } = await import('./formats/pptx/import')
+    return { graph: await readPPTXDocument(input.data), sourceFormat: 'pptx' }
+  },
   async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -603,7 +617,7 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
+    const { sceneNodesToTailwindJSX } = await import('@lawha/dom-css/export')
     const { vectorElement } = await import('#core/io/formats/html/vectors')
     const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement })
     if (!data) throw new Error('Nothing to export')
@@ -617,6 +631,116 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   }
 }
 
+/**
+ * Illustrator documents. Since Illustrator 9 an `.ai` file is a PDF with Illustrator's private
+ * data alongside, which every PDF reader draws, so it opens through the PDF reader. Files saved
+ * without "Create PDF Compatible File" hold no PDF and are refused with that advice.
+ */
+export const aiFormat: IOFormatAdapter<'ai'> = {
+  id: 'ai',
+  label: 'Illustrator',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['ai'],
+  mimeTypes: ['application/illustrator', 'application/postscript'],
+  support: { readDocument: true },
+  matchesFile(fileName) {
+    return lowerExt(fileName) === 'ai'
+  },
+  async readDocument(input, context) {
+    const head = new TextDecoder().decode(input.data.subarray(0, 8))
+    if (!head.startsWith('%PDF')) {
+      throw new Error(
+        'This Illustrator file has no PDF inside. In Illustrator, save it again with “Create PDF Compatible File” on.'
+      )
+    }
+    const { readPDFDocument } = await import('./formats/pdf/import')
+    const graph = await readPDFDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.ai$/i, '')
+    })
+    return { graph, sourceFormat: 'ai' }
+  }
+}
+
+/** Photoshop and Affinity documents: layers in, layers out. */
+export const psdFormat: IOFormatAdapter<'psd'> = {
+  id: 'psd',
+  label: 'Photoshop',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['psd', 'psb'],
+  mimeTypes: ['image/vnd.adobe.photoshop', 'application/x-photoshop'],
+  support: { readDocument: true, exportSelection: true, exportNode: true },
+  exportOptions: FIXED_SIZE_EXPORT,
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return ext === 'psd' || ext === 'psb' || mimeType === 'image/vnd.adobe.photoshop'
+  },
+  async readDocument(input, context) {
+    const { readPSDDocument } = await import('./formats/psd')
+    const graph = await readPSDDocument(input.data, {
+      canvasKit: context?.canvasKit,
+      name: input.name?.replace(/\.ps[db]$/i, '')
+    })
+    return { graph, sourceFormat: 'psd' }
+  },
+  async exportContent(request, _options?: unknown, context?: IOContext) {
+    const rootId = ensureSingleNode(request.target)
+    if (!rootId) throw new Error('Select one frame to export as Photoshop')
+    const { writePSDDocument } = await import('./formats/psd')
+    const data = await writePSDDocument({
+      graph: request.graph,
+      rootId,
+      canvasKit: context?.canvasKit,
+      rasterize: (nodeIds) =>
+        renderRaster(
+          { ...request, target: { scope: 'selection', nodeIds } },
+          { format: 'PNG', scale: 1 },
+          context
+        )
+    })
+    return { format: 'psd', mimeType: 'image/vnd.adobe.photoshop', extension: 'psd', data }
+  }
+}
+
+/** Everything a coding agent needs to rebuild the selection exactly; see `formats/handoff`. */
+export const handoffFormat: IOFormatAdapter<'handoff'> = {
+  id: 'handoff',
+  label: 'Code handoff (Claude Code)',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['zip'],
+  mimeTypes: ['application/zip'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request, _options?: unknown, context?: IOContext) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const [{ exportHandoffPackage }, { sceneNodesToTailwindJSX }, { vectorElement }] =
+      await Promise.all([
+        import('./formats/handoff'),
+        import('@lawha/dom-css/export'),
+        import('#core/io/formats/html/vectors')
+      ])
+    const data = await exportHandoffPackage({
+      graph: request.graph,
+      nodeIds: target.nodeIds,
+      tailwindJSX: sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement }),
+      canvasKit: context?.canvasKit,
+      rasterize: (nodeIds, scale) =>
+        renderRaster(
+          { ...request, target: { scope: 'selection', nodeIds } },
+          { format: 'PNG', scale },
+          context
+        )
+    })
+    return { format: 'handoff', mimeType: 'application/zip', extension: 'zip', data }
+  }
+}
+
+export { storiesCSVFormat, storiesMarkdownFormat } from './formats/stories'
+
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
@@ -627,10 +751,16 @@ export const BUILTIN_IO_FORMATS = [
   webpFormat,
   svgFormat,
   pdfFormat,
+  pdfPrintFormat,
   pptxFormat,
   jsxFormat,
   tailwindJSXFormat,
-  htmlFormat
+  htmlFormat,
+  handoffFormat,
+  storiesMarkdownFormat,
+  storiesCSVFormat,
+  psdFormat,
+  aiFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

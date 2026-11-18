@@ -1,0 +1,1 @@
+- OpenPencil is now Lawha (لوحة): packages are published as `@lawha/*` instead of `@open-pencil/*`, the CLI is `lawha` instead of `openpencil`, the desktop app's identifier is `app.lawha.desktop` and its links use the `lawha://` scheme, and settings, recent files and recovery data saved under the old names are not carried over (#1).

@@ -13,6 +13,8 @@ export interface RekaProps extends BaseProps {
   max?: number
   step?: number
   defaultValue?: number
+  /** A range slider's second end, where its end thumb starts. */
+  defaultEnd?: number
   /** For a group's item: the component or set it is an instance of. */
   of?: string
 }

@@ -1,5 +1,5 @@
-import { resolveEditorProfile, type Editor } from '@open-pencil/core'
-import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
+import { resolveEditorProfile, type Editor } from '@lawha/core'
+import { layerResizes, layerRotates } from '@lawha/scene-graph/generated'
 
 import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
@@ -28,7 +28,8 @@ function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): st
       node,
       editor.graph,
       editor.renderer?.zoom ?? 1,
-      editor.state.rotationPreview
+      editor.state.rotationPreview,
+      editor.state.handleScale
     )
     if (handleHit?.handle) return buildResizeCursor(handleHit.rotation)
   }
@@ -48,7 +49,8 @@ function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): 
     node,
     editor.graph,
     editor.renderer?.zoom ?? 1,
-    editor.state.rotationPreview
+    editor.state.rotationPreview,
+    editor.state.handleScale
   )
   if (!corner) return null
 

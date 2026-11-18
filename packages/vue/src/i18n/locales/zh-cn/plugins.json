@@ -1,0 +1,7 @@
+{
+  "imported": "已安装 {name}",
+  "importFailed": "无法导入插件：{error}",
+  "failed": "{name} 已停止：{error}",
+  "removed": "已移除 {name}",
+  "close": "关闭插件"
+}

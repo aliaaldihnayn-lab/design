@@ -1,0 +1,34 @@
+diff --git a/dist/shared/useHideOthers.cjs b/dist/shared/useHideOthers.cjs
+index d0296758178968a6e2b57f8916a9f6a01967ed8c..e957f7b95bc02c9a55ff750867e824f47cb4a2a3 100644
+--- a/dist/shared/useHideOthers.cjs
++++ b/dist/shared/useHideOthers.cjs
+@@ -18,8 +18,11 @@ function useHideOthers(target) {
+ 		try {
+ 			isInsideClosedPopover = !!el?.closest("[popover]:not(:popover-open)");
+ 		} catch {}
++		// A content element replaced while open would otherwise leave the elements hidden for
++		// the one before it hidden for good.
++		if (undo) undo();
++		undo = void 0;
+ 		if (el && !isInsideClosedPopover) undo = (0, aria_hidden.hideOthers)(el);
+-		else if (undo) undo();
+ 	});
+ 	(0, vue.onUnmounted)(() => {
+ 		if (undo) undo();
+diff --git a/dist/shared/useHideOthers.js b/dist/shared/useHideOthers.js
+index c9e22b713d75fb94b81264cf2ae99d1c09e66dbb..6b6f200ce3e2032c71362b68f20993882dd965f2 100644
+--- a/dist/shared/useHideOthers.js
++++ b/dist/shared/useHideOthers.js
+@@ -17,8 +17,11 @@ function useHideOthers(target) {
+ 		try {
+ 			isInsideClosedPopover = !!el?.closest("[popover]:not(:popover-open)");
+ 		} catch {}
++		// A content element replaced while open would otherwise leave the elements hidden for
++		// the one before it hidden for good.
++		if (undo) undo();
++		undo = void 0;
+ 		if (el && !isInsideClosedPopover) undo = hideOthers(el);
+-		else if (undo) undo();
+ 	});
+ 	onUnmounted(() => {
+ 		if (undo) undo();

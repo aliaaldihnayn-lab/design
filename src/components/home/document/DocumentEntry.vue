@@ -14,10 +14,9 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
-import type { DocumentKind } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
-import { DOCUMENT_KIND_ICONS } from '@/components/home/document/kinds'
+import { STORED_DOCUMENT_KIND_ICONS, type StoredKind } from '@/components/home/document/kinds'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
@@ -38,7 +37,7 @@ const {
 } = defineProps<{
   name: string
   /** A design or a board, marked before the name as Figma marks its files; unknown leaves no mark. */
-  kind?: DocumentKind
+  kind?: StoredKind
   metadata: string
   previewURL?: string | null
   view?: 'grid' | 'list'
@@ -51,7 +50,13 @@ const emit = defineEmits<{ open: []; delete: [] }>()
 const styles = computed(() => documentEntry({ view, kind }))
 const { files } = useI18n()
 const kindLabel = computed(() =>
-  kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
+  kind
+    ? {
+        design: files.value.createDesign,
+        board: files.value.createBoard,
+        writer: files.value.createText
+      }[kind]
+    : null
 )
 const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-error' })
 </script>
@@ -80,7 +85,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
             <icon-lucide-file-image v-else :class="styles.fallback()" />
           </span>
           <component
-            :is="DOCUMENT_KIND_ICONS[kind]"
+            :is="STORED_DOCUMENT_KIND_ICONS[kind]"
             v-else-if="kind"
             :class="styles.icon()"
             aria-hidden="true"
@@ -89,7 +94,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
           <span data-slot="body" :class="styles.body()">
             <span data-slot="title" :class="styles.title()">
               <component
-                :is="DOCUMENT_KIND_ICONS[kind]"
+                :is="STORED_DOCUMENT_KIND_ICONS[kind]"
                 v-if="kind && view === 'grid'"
                 :class="styles.kind()"
                 aria-hidden="true"

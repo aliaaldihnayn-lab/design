@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { MarkdownComponentProps } from 'vue-stream-markdown'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 const { node } = defineProps<MarkdownComponentProps>()
 const { common } = useI18n()
@@ -23,7 +23,7 @@ const checked = computed(() => {
   <!-- A task list's checkbox shows a reply's state and cannot be changed; it still needs a name. -->
   <input
     data-stream-markdown="input"
-    class="mr-2 align-middle task-list-item-checkbox"
+    class="me-2 align-middle task-list-item-checkbox"
     type="checkbox"
     disabled
     :checked="checked"

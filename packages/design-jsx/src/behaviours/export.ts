@@ -1,14 +1,14 @@
 import { findKey } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import {
   behaviourToSpec,
   readBehaviour,
   textBinding,
   type BehaviourKind
-} from '@open-pencil/scene-graph/behaviours'
-import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+} from '@lawha/scene-graph/behaviours'
+import { instanceMainComponent } from '@lawha/scene-graph/instances'
+import { slotPropertyId } from '@lawha/scene-graph/slots'
 
 import { REKA_ELEMENTS, rekaRole } from '.'
 import { itemProps } from '../export/components/instances'
@@ -71,6 +71,8 @@ function rootProps(graph: SceneGraph, owner: SceneNode): JSXProp[] {
     }
     if (range.default !== undefined) props.push(['defaultValue', range.default])
   }
+  const end = spec.numbers?.end
+  if (spec.parts?.endThumb && end?.default !== undefined) props.push(['defaultEnd', end.default])
   if (spec.states)
     props.push(['states', typeof spec.states === 'string' ? spec.states : spec.states.property])
   return props

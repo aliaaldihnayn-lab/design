@@ -14,5 +14,16 @@
   "shape": "Kształt",
   "connector": "Łącznik",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "shapeBuilder": "Kreator kształtów",
+  "width": "Szerokość",
+  "brush": "Pędzel",
+  "eraser": "Gumka",
+  "fillBucket": "Wiadro z farbą",
+  "colorPicker": "Pipeta",
+  "marqueeRect": "Zaznaczenie prostokątne",
+  "marqueeEllipse": "Zaznaczenie eliptyczne",
+  "magicWand": "Różdżka",
+  "cloneStamp": "Stempel",
+  "healingBrush": "Pędzel korygujący"
 }

@@ -1,9 +1,15 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
+import type { StockPhotoKeyCheck } from '@lawha/core/tools'
 
-import { vectorizeProviderID } from '@/app/editor/vectorize'
+import {
+  localTraceOptions,
+  vectorizeEngine,
+  vectorizeProviderID,
+  type LocalTraceOptions,
+  type VectorizeEngine
+} from '@/app/editor/vectorize'
 import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
 import {
   checkMediaKey,
@@ -24,6 +30,14 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
   const key = ref('')
   const providerID = ref(vectorizeProviderID.value)
   const initialProvider = providerID.value
+  /** Image Trace on this device or a cloud service; a cloud one is the provider whose key edits. */
+  const engine = ref<VectorizeEngine>(vectorizeEngine.value)
+  const initialEngine = engine.value
+  const trace = ref<LocalTraceOptions>({ ...localTraceOptions.value })
+  const initialTrace = JSON.stringify(trace.value)
+  watch(engine, (next) => {
+    if (next !== 'local') providerID.value = next
+  })
   const removeKey = ref(false)
   const busy = ref(false)
   const saveError = ref('')
@@ -54,7 +68,12 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
   })
   const error = computed(() => saveError.value || vector?.error.value || '')
   const dirty = computed(
-    () => key.value.length > 0 || removeKey.value || providerID.value !== initialProvider
+    () =>
+      key.value.length > 0 ||
+      removeKey.value ||
+      providerID.value !== initialProvider ||
+      engine.value !== initialEngine ||
+      JSON.stringify(trace.value) !== initialTrace
   )
 
   function clearCredential() {
@@ -87,7 +106,9 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
             ? await vector.clearCredential()
             : await vector.saveCredential()
         if (!saved || isDisposed()) return false
-        vectorizeProviderID.value = providerID.value
+        localTraceOptions.value = { ...trace.value }
+        if (engine.value === 'local') vectorizeEngine.value = 'local'
+        else vectorizeProviderID.value = providerID.value
       } else if (service !== 'vectorize' && (key.value.trim() || removeKey.value)) {
         await services[service].set(key.value.trim())
       }
@@ -103,6 +124,8 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
   return {
     key,
     providerID,
+    engine,
+    trace,
     vector,
     keyStatus,
     keyCheck,

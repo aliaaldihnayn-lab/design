@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import type { CloudLinkPolicy } from '@/app/cloud/sharing/document'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
@@ -194,7 +194,7 @@ function submitInvite() {
               :label="t.shareGeneralAccess"
               :options="accessOptions"
               :ui="{
-                trigger: 'h-6 w-auto border-transparent bg-transparent px-1 -ml-1 font-medium'
+                trigger: 'h-6 w-auto border-transparent bg-transparent px-1 -ms-1 font-medium'
               }"
               @update:model-value="
                 emit(

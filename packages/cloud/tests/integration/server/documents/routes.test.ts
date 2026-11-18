@@ -19,9 +19,9 @@ const config = parseCloudServerConfig({
   authSecret: 'integration-test-secret-at-least-32-characters',
   s3Endpoint: 'http://localhost:9000',
   s3Region: 'us-east-1',
-  s3Bucket: 'openpencil',
-  s3AccessKeyId: 'openpencil',
-  s3SecretAccessKey: 'openpencil-secret'
+  s3Bucket: 'lawha',
+  s3AccessKeyId: 'lawha',
+  s3SecretAccessKey: 'lawha-secret'
 })
 
 const actor: CloudActor = {
@@ -92,6 +92,19 @@ describe('Cloud document routes', () => {
         body: JSON.stringify({ name: 'Retro', kind: 'board' })
       })
       expect(await board.json()).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
+
+      // A document editor file is a document of its own kind, kept and listed like the rest.
+      const text = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Contract', kind: 'writer' })
+      })
+      expect(text.status).toBe(201)
+      expect(await text.json()).toMatchObject({ document: { name: 'Contract', kind: 'writer' } })
+      const listed = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`)
+      expect(await listed.json()).toMatchObject({
+        documents: expect.arrayContaining([expect.objectContaining({ kind: 'writer' })])
+      })
     } finally {
       await context.runtime.close()
     }

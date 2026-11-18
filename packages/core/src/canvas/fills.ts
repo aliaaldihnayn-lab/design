@@ -1,15 +1,18 @@
 import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
 
-import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
-import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
+import type { SceneNode, SceneGraph, Fill } from '@lawha/scene-graph'
+import { invertGradientTransform } from '@lawha/scene-graph/gradient'
+import Matrix from '@lawha/scene-graph/matrix'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
+import type { Color, Rect, Vector } from '@lawha/scene-graph/primitives'
+import { fillGeometryMatchesRegions, hasRegionFills } from '@lawha/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
+import { adjustedImageShader, hasAdjustments, IMAGE_ADJUST_SKSL } from './image-adjust'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
+import { compiledEffect } from './renderer/shaders'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
@@ -213,6 +216,18 @@ function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | 
   return null
 }
 
+/**
+ * Where a pattern's tiles sit on the layer: moved by its offset and turned about the layer's
+ * middle; undefined when it does neither, so tiles start at the layer's corner.
+ */
+export function patternPlacementMatrix(r: SkiaRenderer, fill: Fill, node: SceneNode) {
+  const offset = fill.patternOffset ?? { x: 0, y: 0 }
+  const degrees = fill.patternRotation ?? 0
+  if (offset.x === 0 && offset.y === 0 && degrees === 0) return undefined
+  const turn = r.ck.Matrix.rotated((degrees * Math.PI) / 180, node.width / 2, node.height / 2)
+  return r.ck.Matrix.multiply(turn, r.ck.Matrix.translated(offset.x, offset.y))
+}
+
 function applyPatternFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -240,7 +255,7 @@ function applyPatternFill(
     r.ck.TileMode.Repeat,
     r.ck.TileMode.Repeat,
     r.ck.FilterMode.Linear,
-    undefined,
+    patternPlacementMatrix(r, fill, node),
     tileRect
   )
   r.fillPaint.setShader(shader)
@@ -411,6 +426,18 @@ export function makeImageFillLocalMatrix(
 }
 
 /**
+ * Whether `fill` is a layer's paint layer stretched beyond the density it was painted at, since
+ * its layer was enlarged, and set to follow pixel for pixel: drawn with nearest sampling, its
+ * pixels show as the crisp blocks the next stroke resamples them into, rather than a blur.
+ */
+function showsPaintPixelForPixel(fill: Fill, node: SceneNode, imgW: number, imgH: number) {
+  const marker = readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)
+  if (!marker || marker.hash !== fill.imageHash || marker.resample === 'smooth') return false
+  const density = marker.density ?? 1
+  return imgW < node.width * density - 0.5 || imgH < node.height * density - 0.5
+}
+
+/**
  * Sets `paint`'s shader to `img` laid out as `fill` places it on `node`; `preview`, when `img`
  * is a downscaled preview, keeps a tiled image at its original size.
  */
@@ -433,20 +460,41 @@ function setImageShader(
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
   const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
+  const crisp = showsPaintPixelForPixel(
+    fill,
+    node,
+    preview?.originalWidth ?? imgW,
+    preview?.originalHeight ?? imgH
+  )
   const shader =
     scaleMode === 'TILE'
       ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
       : img.makeShaderOptions(
           tileMode,
           tileMode,
-          r.ck.FilterMode.Linear,
-          r.ck.MipmapMode.Linear,
+          crisp ? r.ck.FilterMode.Nearest : r.ck.FilterMode.Linear,
+          crisp ? r.ck.MipmapMode.None : r.ck.MipmapMode.Linear,
           localMatrix
         )
+  const adjusted = hasAdjustments(fill.adjustments)
+    ? adjustedImageShader(
+        compiledEffect(
+          r.ck,
+          r.shaders,
+          'imageAdjustEffect',
+          IMAGE_ADJUST_SKSL,
+          'image adjustments'
+        ),
+        shader,
+        fill.adjustments,
+        { width: node.width, height: node.height }
+      )
+    : null
   try {
-    paint.setShader(shader)
+    paint.setShader(adjusted ?? shader)
     markShaded(r, paint)
   } finally {
+    adjusted?.delete()
     shader.delete()
   }
   return true

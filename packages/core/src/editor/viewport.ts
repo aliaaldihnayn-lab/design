@@ -1,7 +1,7 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph } from '@lawha/scene-graph'
+import { getAxisAlignedWorldBounds } from '@lawha/scene-graph/coordinate'
+import { computeBounds } from '@lawha/scene-graph/geometry'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import type { ViewportTransform } from '#core/geometry/types'
@@ -181,6 +181,13 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
+  /** Sizes selection handles for the pointer: `TOUCH_HANDLE_SCALE` for a finger, 1 otherwise. */
+  function setHandleScale(scale: number) {
+    if (ctx.state.handleScale === scale) return
+    ctx.state.handleScale = scale
+    ctx.requestRepaint()
+  }
+
   function zoomTo100() {
     zoomToLevel(1)
   }
@@ -234,6 +241,7 @@ export function createViewportActions(ctx: EditorContext) {
     zoomToFit,
     zoomTo100,
     zoomToLevel,
-    zoomToSelection
+    zoomToSelection,
+    setHandleScale
   }
 }

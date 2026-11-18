@@ -40,5 +40,18 @@
   "deleteDocumentDescription": "El documento se elimina para todas las personas que pueden abrirlo. No se puede deshacer.",
   "deleteDocumentFailed": "No se pudo eliminar «{name}». Inténtalo de nuevo.",
   "saveAsPrompt": "Guardar como:",
-  "browserFileAPINotSupported": "Tu navegador no admite la API de archivos locales. Los archivos se descargarán en lugar de guardarse en el mismo lugar."
+  "browserFileAPINotSupported": "Tu navegador no admite la API de archivos locales. Los archivos se descargarán en lugar de guardarse en el mismo lugar.",
+  "preparingDocument": "Preparando el documento",
+  "preparationReading": "Leyendo el documento",
+  "preparationDecoding": "Descodificando el documento de Figma",
+  "preparationMaterializing": "Preparando las capas",
+  "preparationPopulatingPage": "Preparando la página",
+  "preparationResolvingFonts": "Resolviendo las fuentes",
+  "preparationResolvingFallbacks": "Terminando la tipografía",
+  "preparationLayout": "Calculando el diseño",
+  "preparationDrawingShaders": "Dibujando los shaders",
+  "preparationPreparingRender": "Preparando el lienzo",
+  "preparationLoading": "Cargando…",
+  "preparationProgress": "{completed} de {total}",
+  "createText": "Documento de texto"
 }

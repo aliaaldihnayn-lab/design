@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/vue'
 import { useFocus } from '@vueuse/core'
 import { useTemplateRef } from 'vue'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
+import { commonMessages, filesMessages } from '@lawha/vue/i18n'
 
 import { answerClosePrompt, closePrompt } from '@/app/document/close/prompt'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -39,7 +39,7 @@ function updateOpen(open: boolean) {
       <AppButton
         color="neutral"
         variant="ghost"
-        class="mr-auto"
+        class="me-auto"
         @click="answerClosePrompt('discard')"
       >
         {{ files.discard }}

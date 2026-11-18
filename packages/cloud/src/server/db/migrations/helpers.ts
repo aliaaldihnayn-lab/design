@@ -41,6 +41,24 @@ export async function addCurrentTimestampColumns(
   }
 }
 
+/** `created_at`, set when the row is written. */
+export function withCreatedAt<Table extends string, Column extends string>(
+  table: CreateTableBuilder<Table, Column>
+): CreateTableBuilder<Table, Column | 'created_at'> {
+  return table.addColumn('created_at', 'timestamptz', (column) =>
+    column.notNull().defaultTo(CURRENT_TIMESTAMP)
+  )
+}
+
+/** `created_at` and `updated_at`, both set when the row is written. */
+export function withTimestamps<Table extends string, Column extends string>(
+  table: CreateTableBuilder<Table, Column>
+): CreateTableBuilder<Table, Column | 'created_at' | 'updated_at'> {
+  return withCreatedAt(table).addColumn('updated_at', 'timestamptz', (column) =>
+    column.notNull().defaultTo(CURRENT_TIMESTAMP)
+  )
+}
+
 type InvitationColumn =
   | 'email_normalized'
   | 'token_hash'

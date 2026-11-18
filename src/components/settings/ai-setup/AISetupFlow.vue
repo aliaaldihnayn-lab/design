@@ -2,8 +2,8 @@
 import { tv } from 'tailwind-variants'
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { IS_TAURI } from '@lawha/core/constants'
+import { useI18n } from '@lawha/vue/i18n'
 
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
@@ -90,7 +90,7 @@ const header = computed(() => {
 
 /** Runs in the click handler, so the browser allows the sign-in popup. */
 function signIn(providerID: OnboardingAccess): void {
-  onboarding.signIn(providerID, { keyLabel: 'OpenPencil' })
+  onboarding.signIn(providerID, { keyLabel: 'Lawha' })
 }
 
 function back(): void {
@@ -115,7 +115,7 @@ async function finish(): Promise<void> {
     :close-label="common.close"
   >
     <template #actions>
-      <AppButton v-if="phase === 'wizard'" size="xs" class="mr-1 ml-auto" @click="emit('advanced')">
+      <AppButton v-if="phase === 'wizard'" size="xs" class="me-1 ms-auto" @click="emit('advanced')">
         {{ ai.aiSetupAdvanced }}
       </AppButton>
     </template>
@@ -247,7 +247,7 @@ async function finish(): Promise<void> {
       </AppButton>
     </template>
     <template v-else-if="phase === 'saved'">
-      <AppButton class="ml-auto" color="primary" variant="solid" @click="emit('close')">
+      <AppButton class="ms-auto" color="primary" variant="solid" @click="emit('close')">
         {{ common.done }}
       </AppButton>
     </template>

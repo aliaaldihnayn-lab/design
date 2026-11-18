@@ -2,8 +2,8 @@
 import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h } from 'vue'
 
-import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import type { CloudAdminEmailFilter } from '@lawha/cloud/contract'
+import { useCloudPortalMessages } from '@lawha/vue/i18n'
 
 import {
   usePortalList,
@@ -44,6 +44,7 @@ const statusLabels = computed(() => ({
 const kindLabels = computed<Record<string, string>>(() => ({
   'document-invitation': messages.value.emailKindInvitation,
   'workspace-invitation': messages.value.emailKindWorkspaceInvitation,
+  'room-invitation': messages.value.emailKindRoomInvitation,
   'enrollment-requested': messages.value.emailKindEnrollmentRequested,
   'admin-enrollment-notification': messages.value.emailKindAdminNotification,
   'enrollment-approved': messages.value.emailKindEnrollmentApproved,
@@ -100,7 +101,7 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { class: 'w-px text-end', actions: true },
       cell: ({ row: { original: email } }) =>
         email.status === 'failed'
           ? h(

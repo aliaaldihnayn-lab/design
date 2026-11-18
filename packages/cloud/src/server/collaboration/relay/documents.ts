@@ -1,17 +1,22 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { createRoomPresenceStore } from '#cloud/server/rooms/presence'
 import type { Kysely } from 'kysely'
 
 import type { CollaborationRelayOptions } from './hub'
 
-/** The relay's lookups of a document: its participant limit under `policy`, and its epoch. */
+/**
+ * The relay's lookups of a document: its participant limit under `policy`, and its epoch; and
+ * where its rooms' presence channels record who is in them.
+ */
 export function relayDocumentLookups(
   database: Kysely<CloudDatabase>,
   policy: CloudPolicy,
   deploymentMode: 'official' | 'self-hosted'
-): Pick<CollaborationRelayOptions, 'maximumParticipants' | 'currentRoomEpoch'> {
+): Pick<CollaborationRelayOptions, 'maximumParticipants' | 'currentRoomEpoch' | 'roomPresence'> {
   return {
+    roomPresence: createRoomPresenceStore(database),
     async maximumParticipants(documentId) {
       const document = await database
         .selectFrom('document')

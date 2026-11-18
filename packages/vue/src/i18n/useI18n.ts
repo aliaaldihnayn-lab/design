@@ -14,6 +14,9 @@ import {
   commonMessages,
   credentialsMessages,
   designCheckMessages,
+  designSystemMessages,
+  inspectMessages,
+  pluginsMessages,
   diagnosticsMessages,
   editorMessages,
   figJamMessages,
@@ -23,11 +26,21 @@ import {
   menuMessages,
   pageMessages,
   panelMessages,
+  pathMessages,
   recoveryMessages,
+  framePresetMessages,
+  historyMessages,
+  metricsMessages,
+  photoMessages,
+  printMessages,
+  writerMessages,
+  prototypeMessages,
   renameMessages,
   settingsMessages,
   shapeMessages,
   statusMessages,
+  storageErrorMessages,
+  storiesMessages,
   storageMessages,
   toolMessages,
   updatesMessages,
@@ -60,10 +73,23 @@ export const useMenuMessages = () => useI18nNamespace(menuMessages)
 export const usePageMessages = () => useI18nNamespace(pageMessages)
 export const usePanelMessages = () => useI18nNamespace(panelMessages)
 export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
+export const useFramePresetMessages = () => useI18nNamespace(framePresetMessages)
+export const useHistoryMessages = () => useI18nNamespace(historyMessages)
+export const useMetricsMessages = () => useI18nNamespace(metricsMessages)
+export const useDesignSystemMessages = () => useI18nNamespace(designSystemMessages)
+export const usePathMessages = () => useI18nNamespace(pathMessages)
+export const useInspectMessages = () => useI18nNamespace(inspectMessages)
+export const usePluginMessages = () => useI18nNamespace(pluginsMessages)
+export const usePhotoMessages = () => useI18nNamespace(photoMessages)
+export const usePrintMessages = () => useI18nNamespace(printMessages)
+export const useWriterMessages = () => useI18nNamespace(writerMessages)
+export const usePrototypeMessages = () => useI18nNamespace(prototypeMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
 export const useShapeMessages = () => useI18nNamespace(shapeMessages)
 export const useStatusMessages = () => useI18nNamespace(statusMessages)
+export const useStorageErrorMessages = () => useI18nNamespace(storageErrorMessages)
+export const useStoriesMessages = () => useI18nNamespace(storiesMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)
 export const useUpdateMessages = () => useI18nNamespace(updatesMessages)
@@ -91,6 +117,11 @@ export function useI18n() {
     pages: usePageMessages(),
     panels: usePanelMessages(),
     recovery: useRecoveryMessages(),
+    history: useHistoryMessages(),
+    print: usePrintMessages(),
+    paths: usePathMessages(),
+    writer: useWriterMessages(),
+    prototype: usePrototypeMessages(),
     rename: useRenameMessages(),
     settings: useSettingsMessages(),
     storage: useStorageMessages(),

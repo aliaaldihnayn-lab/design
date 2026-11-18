@@ -25,7 +25,8 @@ export default {
   variants: {
     kind: {
       design: { kind: 'text-primary' },
-      board: { kind: 'text-board', icon: 'text-board' }
+      board: { kind: 'text-board', icon: 'text-board' },
+      writer: { kind: 'text-primary' }
     },
     view: {
       grid: {

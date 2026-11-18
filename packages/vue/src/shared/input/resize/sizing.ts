@@ -1,12 +1,8 @@
 import { pick } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import {
-  layoutSizing,
-  layoutSizingUpdates,
-  type LayoutSizingAxis
-} from '@open-pencil/scene-graph/layout'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { layoutSizing, layoutSizingUpdates, type LayoutSizingAxis } from '@lawha/scene-graph/layout'
+import type { Rect } from '@lawha/scene-graph/primitives'
 
 const SIZING_FIELDS = [
   'primaryAxisSizing',

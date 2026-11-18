@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash ha rifiutato questa chiave. Incolla l’Access Key della tua app, non la Secret key.",
   "photoKeyRateLimited": "Questa chiave ha esaurito le richieste a {service} per quest’ora. Riprova più tardi.",
   "photoKeyUnreachable": "Impossibile raggiungere {service}. Controlla la connessione di rete.",
-  "photoKeyCheckFailed": "{service} non ha risposto al test. Riprova più tardi."
+  "photoKeyCheckFailed": "{service} non ha risposto al test. Riprova più tardi.",
+  "traceOnDevice": "Ricalco immagine su questo dispositivo",
+  "tracePreset": "Predefinito",
+  "tracePresetLogo": "Logotipo",
+  "tracePresetPhotoHigh": "Foto ad alta fedeltà",
+  "tracePresetPhotoLow": "Foto a bassa fedeltà",
+  "tracePresetLineArt": "Disegno al tratto",
+  "tracePresetSketch": "Schizzo",
+  "traceThreshold": "Soglia",
+  "traceColors": "Colori",
+  "tracePreview": "Anteprima del ricalco immagine",
+  "tracePreviewSelection": "L'immagine selezionata ricalcata con {count} colori.",
+  "tracePreviewSample": "Un esempio ricalcato con {count} colori. Seleziona un livello immagine per l'anteprima."
 }

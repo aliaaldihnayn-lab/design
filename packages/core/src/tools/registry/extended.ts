@@ -30,6 +30,22 @@ import {
   searchIconsTool,
   setBehaviour
 } from '#core/tools/create'
+import { buildDesignSystemTool, createComponentSetsTool } from '#core/tools/design-system'
+import { diffVersions, listVersions, restoreVersion, saveVersion } from '#core/tools/history'
+import { inspectLayerTool } from '#core/tools/inspect'
+import {
+  addStateInteraction,
+  bindPropertyToVariable,
+  createInteractiveComponent
+} from '#core/tools/interactive-components'
+import { buildInteractiveKitTool, insertKitComponentTool } from '#core/tools/kit'
+import {
+  createDeviceMockup,
+  createSocialPost,
+  listMockupPresets,
+  resizeForPlatforms,
+  resizeForScreens
+} from '#core/tools/mockup'
 import {
   setBlend,
   setConstraints,
@@ -45,6 +61,35 @@ import {
   setTextResize,
   setVisible
 } from '#core/tools/modify'
+import { setImageAdjustments } from '#core/tools/photo'
+import {
+  clonePixels,
+  fillPixels,
+  maskFromSelection,
+  paintPixels,
+  samplePixelColor
+} from '#core/tools/pixels'
+import { runFigmaPlugin } from '#core/tools/plugins'
+import { convertToDieline, createPrintTemplate, listPrintProducts } from '#core/tools/print'
+import {
+  addInteraction,
+  editConnection,
+  autoPrototype,
+  getPrototype,
+  setFlow,
+  setInteractions,
+  setScrollBehavior,
+  setScrollPosition,
+  setVariableScope
+} from '#core/tools/prototype'
+import {
+  applyMasterPageTool,
+  convertToMasterPageTool,
+  createMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool,
+  setPublicationLayoutTool
+} from '#core/tools/publisher'
 import {
   getComponents,
   getCurrentPage,
@@ -60,8 +105,16 @@ import {
   selectNodes,
   switchPage
 } from '#core/tools/read'
+import { createRoom, inviteToRoom, listRooms, setRoomAccess } from '#core/tools/rooms'
 import type { ToolDef } from '#core/tools/schema'
 import { getStatuses, setStatus } from '#core/tools/statuses'
+import {
+  addEpic,
+  addUserStory,
+  linkJiraIssue,
+  listUserStories,
+  syncJira
+} from '#core/tools/stories'
 import {
   arrangeNodes,
   cloneNode,
@@ -105,15 +158,90 @@ import {
   pathMove,
   pathScale,
   pathSet,
+  blendShapes,
+  editBlend,
+  editPathEffect,
+  envelopeMesh,
+  expandBlend,
+  expandPathEffect,
+  getPathEffect,
+  imageTrace,
+  releaseBlend,
+  releasePathEffect,
+  offsetPath,
+  outlineStroke,
+  setPatternFill,
+  warpShape,
+  widthProfile,
+  shapeBuilder,
+  shapeBuilderRegionsTool,
   viewportGet,
   viewportSet
 } from '#core/tools/vector'
+import { editDocument, readDocument, writeDocument } from '#core/tools/writer'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,
  * codegen, advanced structure, path manipulation, etc.
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
+  // Lawha Cloud rooms
+  listRooms,
+  createRoom,
+  inviteToRoom,
+  setRoomAccess,
+  // Documents (the document editor)
+  readDocument,
+  writeDocument,
+  editDocument,
+  // Mockups & social posts
+  listMockupPresets,
+  createSocialPost,
+  resizeForPlatforms,
+  createDeviceMockup,
+  resizeForScreens,
+  // Print
+  listPrintProducts,
+  createPrintTemplate,
+  convertToDieline,
+  // Design system
+  buildDesignSystemTool,
+  createComponentSetsTool,
+  // Interactive kit
+  insertKitComponentTool,
+  buildInteractiveKitTool,
+  // Dev Mode
+  inspectLayerTool,
+  // Photo
+  setImageAdjustments,
+  paintPixels,
+  fillPixels,
+  samplePixelColor,
+  maskFromSelection,
+  clonePixels,
+  // Plugins
+  runFigmaPlugin,
+  // Publisher
+  createMasterPageTool,
+  applyMasterPageTool,
+  insertPageNumberTool,
+  linkTextFramesTool,
+  setPublicationLayoutTool,
+  convertToMasterPageTool,
+  // Prototype
+  getPrototype,
+  setInteractions,
+  addInteraction,
+  editConnection,
+  setFlow,
+  autoPrototype,
+  setScrollBehavior,
+  setScrollPosition,
+  setVariableScope,
+  // Interactive components
+  createInteractiveComponent,
+  addStateInteraction,
+  bindPropertyToVariable,
   // Read (advanced)
   getPageTree,
   getCurrentPage,
@@ -131,6 +259,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   resolveComment,
   getStatuses,
   setStatus,
+  addEpic,
+  addUserStory,
+  listUserStories,
+  linkJiraIssue,
+  syncJira,
   getFontStatus,
   listFonts,
   listAvailableFonts,
@@ -199,6 +332,23 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   booleanSubtract,
   booleanIntersect,
   booleanExclude,
+  shapeBuilderRegionsTool,
+  shapeBuilder,
+  warpShape,
+  envelopeMesh,
+  getPathEffect,
+  editPathEffect,
+  expandPathEffect,
+  releasePathEffect,
+  imageTrace,
+  offsetPath,
+  outlineStroke,
+  widthProfile,
+  blendShapes,
+  editBlend,
+  releaseBlend,
+  expandBlend,
+  setPatternFill,
   pathGet,
   pathSet,
   pathScale,
@@ -219,6 +369,11 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   analyzeOverlaps,
   diffShow,
   diffApply,
+  // Version history of the open design or document
+  listVersions,
+  saveVersion,
+  restoreVersion,
+  diffVersions,
   // Codegen
   designToTokens,
   importDesignTokens,

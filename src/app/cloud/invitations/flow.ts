@@ -2,18 +2,19 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref, shallowRef } from 'vue'
 
-import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
+import { CloudAPIError, createCloudAPIClient } from '@lawha/cloud/client'
 import {
   cloudDesktopLinkURL,
   type AcceptedInvitation,
   type InvitationPreview
-} from '@open-pencil/cloud/contract'
+} from '@lawha/cloud/contract'
 
 import { openHomeLocation } from '@/app/shell/menu/navigation'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { IS_BROWSER, OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { openCloudConnect } from '../connect/flow'
+import { showCloudRoom } from '../room-tree/store'
 import { cloudServerHost, normalizeCloudServerURL } from '../servers/address'
 import { addCloudServer, cloudServers, showCloudServerOnHome } from '../servers/store'
 import {
@@ -41,7 +42,7 @@ type PendingInvitation = v.InferOutput<typeof pendingSchema>
  * sign-in pages, and cleared once accepted or dismissed.
  */
 const stored = IS_BROWSER
-  ? useSessionStorage<string | null>('open-pencil:cloud-invitation', null)
+  ? useSessionStorage<string | null>('lawha:cloud-invitation', null)
   : ref<string | null>(null)
 const pending = computed<PendingInvitation | null>(() => {
   const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), pendingSchema), stored.value ?? '')
@@ -145,7 +146,7 @@ export async function signInForCloudInvitation(): Promise<void> {
 }
 
 /**
- * Accepts the invitation and opens what it gives: the document, or the workspace on Home. The
+ * Accepts the invitation and opens what it gives: the document, or the workspace or room on Home. The
  * server refuses another account's invitation the same way as a used one; right after a valid
  * preview, that means the account.
  */
@@ -170,6 +171,13 @@ export async function acceptCloudInvitation(): Promise<void> {
     showCloudServerOnHome(server.id)
     const router = (await import('@/router')).default
     openHomeLocation(router, { kind: 'workspace', id: accepted.workspaceId })
+    return
+  }
+  if (accepted.kind === 'room') {
+    showCloudServerOnHome(server.id)
+    showCloudRoom(accepted.roomId)
+    const router = (await import('@/router')).default
+    openHomeLocation(router, { kind: 'rooms' })
     return
   }
   const { document } = await client.getDocument(accepted.grant.documentId)

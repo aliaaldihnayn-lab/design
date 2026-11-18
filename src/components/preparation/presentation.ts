@@ -1,19 +1,29 @@
+import type { useFileMessages } from '@lawha/vue/i18n'
+
 import type { EditorPreparation, EditorPreparationProgress } from '@/app/editor/preparation/types'
 
-export const preparationPhaseLabels = {
-  reading: 'Reading document',
-  decoding: 'Decoding Figma document',
-  materializing: 'Preparing layers',
-  'populating-page': 'Preparing page',
-  'resolving-fonts': 'Resolving fonts',
-  'resolving-fallbacks': 'Finalizing typography',
-  layout: 'Computing layout',
-  'drawing-shaders': 'Drawing shaders',
-  'preparing-render': 'Preparing canvas'
-} satisfies Record<EditorPreparation['phase'], string>
+type FilesMessages = ReturnType<typeof useFileMessages>['value']
 
-export function preparationLabel(preparation: EditorPreparation | null): string {
-  return preparation ? preparationPhaseLabels[preparation.phase] : 'Loading…'
+/** The message naming each step a document goes through as it opens. */
+const PREPARATION_PHASE_MESSAGES = {
+  reading: 'preparationReading',
+  decoding: 'preparationDecoding',
+  materializing: 'preparationMaterializing',
+  'populating-page': 'preparationPopulatingPage',
+  'resolving-fonts': 'preparationResolvingFonts',
+  'resolving-fallbacks': 'preparationResolvingFallbacks',
+  layout: 'preparationLayout',
+  'drawing-shaders': 'preparationDrawingShaders',
+  'preparing-render': 'preparationPreparingRender'
+} as const satisfies Record<EditorPreparation['phase'], keyof FilesMessages>
+
+export function preparationLabel(
+  preparation: EditorPreparation | null,
+  files: FilesMessages
+): string {
+  return preparation
+    ? files[PREPARATION_PHASE_MESSAGES[preparation.phase]]
+    : files.preparationLoading
 }
 
 export function preparationPercent(progress: EditorPreparationProgress | null): number | null {

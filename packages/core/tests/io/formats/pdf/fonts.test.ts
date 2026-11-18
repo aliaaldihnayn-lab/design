@@ -1,10 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { toUint8Array } from 'js-base64'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
+import { fontFixture } from '#core-tests/helpers/paths'
+import { toUint8Array } from 'js-base64'
 
 import {
   cutFontInstances,
@@ -14,8 +12,8 @@ import {
   type PDFFontTarget
 } from '#core/io/formats/pdf/fonts'
 import type { SVGFontRequest } from '#core/io/formats/svg'
-import { isVariableFont } from '#core/text/font/variation'
 import { fontManager } from '#core/text/font/manager'
+import { isVariableFont } from '#core/text/font/variation'
 
 /** Records what jsPDF would be asked to register. */
 function pdfDoc() {
@@ -32,7 +30,11 @@ function pdfDoc() {
  * Text in `family` and `style` at 16 px, its optical size following its size. Variable faces are
  * named apart from the fonts other tests load, whose named instances would set their axes.
  */
-function font(family: string, style: string, request: Partial<SVGFontRequest> = {}): SVGFontRequest {
+function font(
+  family: string,
+  style: string,
+  request: Partial<SVGFontRequest> = {}
+): SVGFontRequest {
   return {
     family,
     style,
@@ -45,11 +47,6 @@ function font(family: string, style: string, request: Partial<SVGFontRequest> = 
   }
 }
 
-const fixture = async (name: string) => {
-  const data = await readFile(join(FIXTURES, 'fonts', name))
-  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-}
-
 let inter: ArrayBuffer
 let interVariable: ArrayBuffer
 let cff: ArrayBuffer
@@ -57,8 +54,9 @@ let cff: ArrayBuffer
 beforeAll(async () => {
   // Static, as jsPDF embeds only static TrueType; the canvas labels' face.
   inter = expectDefined(await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'), 'Inter')
-  interVariable = await fixture('InterVariable-Latin.ttf')
-  cff = await fixture('NotoSansCJK-Test.otf')
+  // Inter's variable file as Core bundles it, which is in the repository itself, not in LFS.
+  interVariable = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
+  cff = await fontFixture('NotoSansCJK-Test.otf')
 })
 
 describe('PDF font embedding', () => {
@@ -100,7 +98,6 @@ describe('PDF font embedding', () => {
         { face: 'Cff Italic', reason: 'not a TrueType font file' }
       ]
     })
-    
   })
 
   test('a face jsPDF rejects is dropped and reported as a fallback', () => {
@@ -124,10 +121,15 @@ describe('PDF font embedding', () => {
 
   test('embeds a static file of each instance of a variable face the text draws', async () => {
     const { doc, fonts, files } = pdfDoc()
-    const embedding = planFontEmbedding([{ family: 'PDF Variable', style: 'Regular', data: interVariable }])
+    const embedding = planFontEmbedding([
+      { family: 'PDF Variable', style: 'Regular', data: interVariable }
+    ])
     const alias = embeddedFontAlias(embedding)
     const body = expectDefined(alias(font('PDF Variable', 'Regular')), 'body alias')
-    const heading = expectDefined(alias(font('PDF Variable', 'Regular', { fontSize: 24 })), 'heading')
+    const heading = expectDefined(
+      alias(font('PDF Variable', 'Regular', { fontSize: 24 })),
+      'heading'
+    )
     const heavy = expectDefined(
       alias(font('PDF Variable', 'Regular', { variations: [{ axis: 'wght', value: 650 }] })),
       'heavy alias'
@@ -161,7 +163,9 @@ describe('PDF font embedding', () => {
         throw new Error('Unsupported font')
       }
     }
-    const embedding = planFontEmbedding([{ family: 'PDF Variable', style: 'Regular', data: interVariable }])
+    const embedding = planFontEmbedding([
+      { family: 'PDF Variable', style: 'Regular', data: interVariable }
+    ])
     const alias = embeddedFontAlias(embedding)
     expect(alias(font('PDF Variable', 'Regular'))).not.toBeNull()
 

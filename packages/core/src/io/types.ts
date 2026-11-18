@@ -1,7 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import type { SceneGraph } from '@lawha/scene-graph'
+import type { RenderColorSpace } from '@lawha/scene-graph/color'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { IconProvider } from '#core/icons'
@@ -105,6 +105,18 @@ export interface ExportResult {
   encoding?: IOTextEncoding
   /** Extra files the main file refers to, such as external images and fonts. */
   assets?: ExportAsset[]
+  /** What the file could not keep as asked, such as why a print PDF is not PDF/X. */
+  warnings?: ExportWarning[]
+}
+
+/** A warning an export gives, by code for front ends to translate, with an English message. */
+export interface ExportWarning {
+  code: string
+  /** What the warning is about, such as a font's name or a count. */
+  subject?: string
+  message: string
+  /** Whether it keeps the file from meeting the standard it was asked for, such as PDF/X. */
+  blocking?: boolean
 }
 
 export interface HTMLExportOptions {

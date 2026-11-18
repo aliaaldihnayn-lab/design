@@ -1,0 +1,38 @@
+import { params } from '@nanostores/i18n'
+
+/** The panels' paint and color picker labels, part of the `panels` namespace. */
+export const panelPaintMessageDefaults = {
+  solid: 'Solid',
+  linearGradient: 'Linear',
+  radialGradient: 'Radial',
+  image: 'Image',
+  shader: 'Shader',
+  addShaderEffect: 'Add effect',
+  searchShaderEffects: 'Search effects',
+  noShaderEffects: 'No effects found',
+  removeShaderEffect: 'Remove effect',
+  shaderPreset: 'Preset JSON',
+  applyShaderPreset: 'Apply',
+  invalidShaderPreset: 'Not a shaders preset',
+  shaderNeedsWebGPU: 'This browser has no WebGPU, so shaders show their saved frame.',
+  stops: 'Stops',
+  addStop: 'Add stop',
+  colorFormatRgb: 'RGB',
+  colorFormatHsl: 'HSL',
+  colorFormatHsb: 'HSB',
+  colorFormatOkhcl: 'OkHCL',
+  colorHintHsl: 'H hue · S saturation · L lightness',
+  colorHintHsb: 'H hue · S saturation · B brightness',
+  colorHintOkhcl: 'H hue · C chroma · L lightness · A alpha',
+  colorPreviewClipped: params('Clipped to {space} preview gamut'),
+  editColor: 'Edit color',
+  red: 'Red',
+  green: 'Green',
+  blue: 'Blue',
+  hue: 'Hue',
+  saturation: 'Saturation',
+  brightness: 'Brightness',
+  lightness: 'Lightness',
+  chroma: 'Chroma',
+  alpha: 'Alpha'
+} as const

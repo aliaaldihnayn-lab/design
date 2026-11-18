@@ -14,5 +14,16 @@
   "shape": "Фигура",
   "connector": "Соединитель",
   "hand": "Рука",
-  "comment": "Комментарий"
+  "comment": "Комментарий",
+  "shapeBuilder": "Создание фигур",
+  "width": "Ширина",
+  "brush": "Кисть",
+  "eraser": "Ластик",
+  "fillBucket": "Заливка",
+  "colorPicker": "Пипетка",
+  "marqueeRect": "Прямоугольное выделение",
+  "marqueeEllipse": "Овальное выделение",
+  "magicWand": "Волшебная палочка",
+  "cloneStamp": "Штамп",
+  "healingBrush": "Восстанавливающая кисть"
 }

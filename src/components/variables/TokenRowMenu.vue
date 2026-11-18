@@ -11,7 +11,7 @@ import {
   ContextMenuTrigger
 } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -63,7 +63,7 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
             <ContextMenuSubTrigger :class="menu.subTrigger" data-test-id="variables-move-to-group">
               <icon-lucide-folder-input :class="menu.icon" />
               <span class="flex-1">{{ variables.moveToGroup }}</span>
-              <icon-lucide-chevron-right :class="menu.icon" />
+              <icon-lucide-chevron-right :class="[menu.icon, 'rtl:-scale-x-100']" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="menu.content">

@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommonMessages } from '@lawha/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -58,6 +58,8 @@ const description = computed(() => {
   if (invitation.kind === 'workspace') {
     return t.value.invitationWorkspaceDescription({ host: invitation.host })
   }
+  if (invitation.kind === 'room')
+    return t.value.invitationRoomDescription({ host: invitation.host })
   return invitation.permission === 'edit'
     ? t.value.invitationEditDescription({ host: invitation.host })
     : t.value.invitationViewDescription({ host: invitation.host })
@@ -70,6 +72,9 @@ const roles = computed(() => ({
 /** The invited thing's name and the access it brings. */
 const target = computed(() => {
   if (!invitation) return null
+  if (invitation.kind === 'room') {
+    return { name: invitation.roomName, access: roles.value[invitation.role] }
+  }
   return invitation.kind === 'workspace'
     ? { name: invitation.workspaceName, access: roles.value[invitation.role] }
     : {
@@ -108,6 +113,7 @@ const target = computed(() => {
         <div :class="ui.document()">
           <span :class="ui.documentIcon()">
             <icon-lucide-layers v-if="invitation.kind === 'workspace'" class="size-4" />
+            <icon-lucide-door-open v-else-if="invitation.kind === 'room'" class="size-4" />
             <icon-lucide-file v-else class="size-4" />
           </span>
           <span :class="ui.documentBody()">
@@ -127,7 +133,7 @@ const target = computed(() => {
           tone="warning"
           :heading="t.unknownServerHeading({ host: invitation.host })"
           :description="
-            invitation.kind === 'workspace'
+            invitation.kind === 'workspace' || invitation.kind === 'room'
               ? t.unknownServerWorkspaceDescription
               : t.unknownServerDescription
           "
@@ -189,7 +195,13 @@ const target = computed(() => {
           :loading="state === 'accepting'"
           @click="emit('accept')"
         >
-          {{ invitation?.kind === 'workspace' ? t.joinWorkspace : t.openDocument }}
+          {{
+            invitation?.kind === 'workspace'
+              ? t.joinWorkspace
+              : invitation?.kind === 'room'
+                ? t.joinRoom
+                : t.openDocument
+          }}
         </AppButton>
       </template>
     </AppDialogFooter>

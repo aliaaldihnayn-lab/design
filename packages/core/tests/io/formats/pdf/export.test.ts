@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
-import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
+import { expectDefined } from '#core-tests/helpers/assert'
+import { fontFixture } from '#core-tests/helpers/paths'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@lawha/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'
@@ -59,7 +59,7 @@ test('exports several PDFs at once', async () => {
 })
 
 test('embeds the fallback font that draws characters the text’s own font lacks', async () => {
-  const cjk = await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+  const cjk = await fontFixture('NotoSansSC-Regular.ttf')
   await fontManager.markLoaded('PDF Test CJK', 'Regular', cjk)
   fontManager.setCJKFallbackFamily('PDF Test CJK')
   const graph = new SceneGraph()
@@ -74,11 +74,10 @@ test('embeds the fallback font that draws characters the text’s own font lacks
   const providers = fontManager.enabledOnlineFontProviders()
   fontManager.setOnlineFontProviders({})
   try {
-    const result = await exportPDFDocument(
-      graph,
-      [{ pageId, nodeIds: [text.id], label: 'Text' }],
-      { embedFonts: true, layOutPages: true }
-    )
+    const result = await exportPDFDocument(graph, [{ pageId, nodeIds: [text.id], label: 'Text' }], {
+      embedFonts: true,
+      layOutPages: true
+    })
     // Inter has no Chinese, which the canvas draws in a CJK fallback, the one loaded here or one
     // another test loaded first; the PDF embeds that face too.
     const embedded = result?.fonts?.embedded ?? []
@@ -97,11 +96,11 @@ test('embeds each file of a split web font the text draws from', async () => {
   const files = {
     'https://fonts.gstatic.com/s/test/pdf-latin.ttf': {
       range: 'U+0000-00FF',
-      data: await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+      data: expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
     },
     'https://fonts.gstatic.com/s/test/pdf-han.ttf': {
       range: 'U+4E00-9FFF',
-      data: await Bun.file(join(FIXTURES, 'fonts', 'NotoSansSC-Regular.ttf')).arrayBuffer()
+      data: await fontFixture('NotoSansSC-Regular.ttf')
     }
   }
   const providers = fontManager.enabledOnlineFontProviders()
@@ -132,11 +131,10 @@ test('embeds each file of a split web font the text draws from', async () => {
       fontSize: 32,
       textAutoResize: 'WIDTH_AND_HEIGHT'
     })
-    const result = await exportPDFDocument(
-      graph,
-      [{ pageId, nodeIds: [text.id], label: 'Text' }],
-      { embedFonts: true, layOutPages: true }
-    )
+    const result = await exportPDFDocument(graph, [{ pageId, nodeIds: [text.id], label: 'Text' }], {
+      embedFonts: true,
+      layOutPages: true
+    })
     // The Chinese is in the family's second file, which the canvas draws it from. The first is
     // variable, so it is embedded as the instance the text draws.
     expect(result?.fonts?.embedded.toSorted()).toEqual([
@@ -154,7 +152,10 @@ test('embeds each file of a split web font the text draws from', async () => {
 test('asks a web font for the forms jsPDF writes Arabic letters in', async () => {
   const family = 'PDF Test Arabic'
   const fontURL = 'https://fonts.gstatic.com/s/test/pdf-arabic.ttf'
-  const naskh = await Bun.file(join(FIXTURES, 'fonts', 'NotoNaskhArabic-Regular.ttf')).arrayBuffer()
+  const naskh = expectDefined(
+    await fontManager.fetchBundledFont('/NotoNaskhArabic-Regular.ttf'),
+    'Noto Naskh Arabic'
+  )
   const asked: string[] = []
   const providers = fontManager.enabledOnlineFontProviders()
   fontManager.setOnlineFontProviders({ google: true })
@@ -185,9 +186,9 @@ test('asks a web font for the forms jsPDF writes Arabic letters in', async () =>
       layOutPages: true
     })
     // jsPDF writes مرحبا as ﻣﺮﺣﺒﺎ, so a font subset to the typed letters alone would draw nothing.
-    expect(asked.some((characters) => [...'ﻣﺮﺣﺒﺎ'].every((form) => characters.includes(form)))).toBe(
-      true
-    )
+    expect(
+      asked.some((characters) => 'ﻣﺮﺣﺒﺎ'.split('').every((form) => characters.includes(form)))
+    ).toBe(true)
   } finally {
     fontManager.setWebFontFetch(null)
     fontManager.setOnlineFontProviders(

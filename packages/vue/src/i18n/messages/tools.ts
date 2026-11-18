@@ -11,12 +11,23 @@ export const toolMessageDefaults = {
   star: 'Star',
   pen: 'Pen',
   pencil: 'Pencil',
+  shapeBuilder: 'Shape builder',
+  width: 'Width',
   text: 'Text',
   sticky: 'Sticky note',
   shape: 'Shape',
   connector: 'Connector',
   hand: 'Hand',
-  comment: 'Comment'
+  comment: 'Comment',
+  brush: 'Paint brush',
+  eraser: 'Eraser',
+  fillBucket: 'Fill bucket',
+  colorPicker: 'Color picker',
+  marqueeRect: 'Rectangular marquee',
+  marqueeEllipse: 'Elliptical marquee',
+  magicWand: 'Magic wand',
+  cloneStamp: 'Clone',
+  healingBrush: 'Healing brush'
 } as const
 
 export const toolMessages = i18n('tools', toolMessageDefaults)

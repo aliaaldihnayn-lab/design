@@ -8,18 +8,18 @@ import type {
   UpdateDocumentVersionInput
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
-import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import { documentSummary } from '#cloud/server/documents/summary'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, Transaction } from 'kysely'
 
+import { createDocumentChangeService } from './changes'
 import { announceVersions, keepRevision } from './checkpoint'
-import { historyStart } from './history'
+import { historyDocument, historyStart } from './history'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const DEFAULT_PAGE_SIZE = 50
@@ -96,11 +96,7 @@ export function createDocumentVersionService(
 
   /** The document the person may see the history of, and where that history starts. */
   async function openHistory(userId: string, documentId: string, edit: boolean) {
-    const access = await resolveDocumentAccess(database, userId, documentId)
-    if (!access) throw new DocumentNotFoundError()
-    if (edit && !canEditDocument(access)) throw new DocumentForbiddenError()
-    const document = await getDocumentSummaryRow(database, documentId)
-    if (!document) throw new DocumentNotFoundError()
+    const document = await historyDocument(database, userId, documentId, edit)
     return {
       document,
       start: await historyStart(options.policy, deploymentMode, document.workspaceId, new Date())
@@ -139,6 +135,12 @@ export function createDocumentVersionService(
   }
 
   return {
+    /** The edits between versions, as the editor's history records them. */
+    changes: createDocumentChangeService(database, {
+      policy: options.policy,
+      deploymentMode
+    }),
+
     async list(
       userId: string,
       documentId: string,

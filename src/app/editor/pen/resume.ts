@@ -1,12 +1,7 @@
-import type { EditorState, ResumedPath } from '@open-pencil/core'
-import type {
-  SceneNode,
-  VectorNetwork,
-  VectorSegment,
-  VectorVertex
-} from '@open-pencil/scene-graph'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph/copy'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { EditorState, ResumedPath } from '@lawha/core'
+import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '@lawha/scene-graph'
+import { cloneVectorNetwork } from '@lawha/scene-graph/copy'
+import type { Vector } from '@lawha/scene-graph/primitives'
 
 export type PenState = EditorState
 type PenStateInit = NonNullable<EditorState['penState']>

@@ -6,7 +6,7 @@ import { useEventListener, whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n } from '@lawha/vue/i18n'
 
 import {
   aiSetupDialogOpen,
@@ -26,6 +26,7 @@ import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
+import { localPreviewKey, shownLocalStore } from '@/app/history/panel'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { useDocumentDrop } from '@/app/shell/document-drop'
@@ -52,6 +53,7 @@ import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
+import HistoryVersionDialog from '@/components/history/HistoryVersionDialog.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import LoadingScreen from '@/components/shell/LoadingScreen.vue'
@@ -67,8 +69,8 @@ const shown = computed(() => {
   const tab = activeTab.value
   if (!tab) return null
   return {
-    tab: { ...tab, store: shownEditorStore(tab.store) },
-    key: tab.id + versionPreviewKey(tab.store)
+    tab: { ...tab, store: shownLocalStore(shownEditorStore(tab.store)) },
+    key: tab.id + versionPreviewKey(tab.store) + localPreviewKey(tab.store)
   }
 })
 // Shortcuts, menus, and the clipboard act on what the tab shows.
@@ -294,7 +296,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+  <div
+    data-test-id="editor-root"
+    class="flex h-dvh w-screen flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+  >
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
@@ -306,6 +311,7 @@ onUnmounted(() => {
       @new-document="createDocumentTab"
     />
     <CloudVersionDialog />
+    <HistoryVersionDialog />
     <EditorWorkspace
       v-if="shown && shown.tab.kind === 'document'"
       :key="shown.key"

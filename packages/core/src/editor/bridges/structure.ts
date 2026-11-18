@@ -1,3 +1,6 @@
+import type { Vector } from '@lawha/scene-graph/primitives'
+
+import type { ShapeBuilderMode } from '#core/canvas/shape-builder'
 import type { createSelectionActions } from '#core/editor/selection'
 import type { createStructureActions } from '#core/editor/structure'
 import type { LayerType } from '#core/editor/structure/layer-type'
@@ -18,6 +21,12 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     flattenSelected: () => structure.flattenSelected(selection.getSelectedNodes()),
     outlineTextSelected: () => structure.outlineTextSelected(selection.getSelectedNodes()),
     outlineStrokeSelected: () => structure.outlineStrokeSelected(selection.getSelectedNodes()),
+    /** Merges (or with `delete`, removes) the regions of the selected shapes under `points`. */
+    shapeBuilderSelected: (points: readonly Vector[], mode?: ShapeBuilderMode) =>
+      structure.shapeBuilderSelected(selection.getSelectedNodes(), points, mode),
+    /** Highlights the regions of the selected shapes under `points`; null clears the highlight. */
+    setShapeBuilderHover: (points: readonly Vector[] | null, mode?: ShapeBuilderMode) =>
+      structure.setShapeBuilderHover(selection.getSelectedNodes(), points, mode),
     ungroupSelected: () => structure.ungroupSelected(selection.getSelectedNode()),
     /** Switches a layer to another type in place, as Figma's layer type menu does. */
     convertLayerType: (nodeId: string, type: LayerType) => structure.convertLayerType(nodeId, type)

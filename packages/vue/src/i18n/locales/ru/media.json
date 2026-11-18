@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash не принял этот ключ. Вставьте Access Key вашего приложения, а не Secret key.",
   "photoKeyRateLimited": "Этот ключ исчерпал запросы к {service} на этот час. Попробуйте позже.",
   "photoKeyUnreachable": "Не удалось связаться с {service}. Проверьте подключение к сети.",
-  "photoKeyCheckFailed": "{service} не ответил на проверку. Попробуйте позже."
+  "photoKeyCheckFailed": "{service} не ответил на проверку. Попробуйте позже.",
+  "traceOnDevice": "Трассировка изображения на этом устройстве",
+  "tracePreset": "Набор настроек",
+  "tracePresetLogo": "Логотип",
+  "tracePresetPhotoHigh": "Фото высокой точности",
+  "tracePresetPhotoLow": "Фото низкой точности",
+  "tracePresetLineArt": "Штриховой рисунок",
+  "tracePresetSketch": "Эскиз",
+  "traceThreshold": "Порог",
+  "traceColors": "Цвета",
+  "tracePreview": "Предпросмотр трассировки",
+  "tracePreviewSelection": "Выбранное изображение, трассированное в {count} цветах.",
+  "tracePreviewSample": "Образец, трассированный в {count} цветах. Выберите слой с изображением для предпросмотра."
 }

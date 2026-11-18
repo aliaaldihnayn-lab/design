@@ -35,7 +35,7 @@ export { graphFromDocumentChange, graphFromPageSnapshot } from './history/snapsh
 export type { ClipboardPayload, ClipboardSnapshot, CopyOptions } from './clipboard/copy'
 export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
-export { playIslandRoots } from './play/islands'
+export { liveComponentScreens, playIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
 export { EDIT_VIEW, resolveEditorProfile } from './views'
 export type { CanvasView, EditorProfile, EditorProfileInputs, EditorRestrictions } from './views'
@@ -57,7 +57,21 @@ export { resizedPathTextGlyphs } from './text/path-edit'
 export { opacityFromBuffer } from './nodes'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
 export type { NodePreview } from './node-preview'
-export { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
+export type { PixelMarquee, PixelOverlay, PixelToolSettings } from './pixels/types'
+export { selectionModeFor } from './pixels/select'
+export type { SelectionMode } from '#core/pixels/mask'
+export type { PaintResample } from '#core/pixels/composite'
+export { renderLayerGrid, type PixelSampleScope } from './pixels/sample'
+export type { PublicationPage } from './publisher/pages'
+export type { PageNumberFormat, PublicationSettings, SpreadSide } from '#core/publisher'
+export {
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  cycleToolKey,
+  EDITOR_TOOLS,
+  TOOL_KEY_CYCLES,
+  TOOL_SHORTCUTS
+} from './tool-registry'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {

@@ -13,5 +13,17 @@
   "unsplashKeyRejected": "Unsplash odrzucił ten klucz. Wklej Access Key swojej aplikacji, a nie Secret key.",
   "photoKeyRateLimited": "Ten klucz wykorzystał limit zapytań do {service} na tę godzinę. Spróbuj później.",
   "photoKeyUnreachable": "Nie udało się połączyć z {service}. Sprawdź połączenie sieciowe.",
-  "photoKeyCheckFailed": "{service} nie odpowiedział na test. Spróbuj później."
+  "photoKeyCheckFailed": "{service} nie odpowiedział na test. Spróbuj później.",
+  "traceOnDevice": "Obrys obrazu na tym urządzeniu",
+  "tracePreset": "Ustawienie wstępne",
+  "tracePresetLogo": "Logotyp",
+  "tracePresetPhotoHigh": "Zdjęcie o wysokiej wierności",
+  "tracePresetPhotoLow": "Zdjęcie o niskiej wierności",
+  "tracePresetLineArt": "Grafika liniowa",
+  "tracePresetSketch": "Szkic",
+  "traceThreshold": "Próg",
+  "traceColors": "Kolory",
+  "tracePreview": "Podgląd obrysu obrazu",
+  "tracePreviewSelection": "Zaznaczony obraz obrysowany w kolorach: {count}.",
+  "tracePreviewSample": "Próbka obrysowana w kolorach: {count}. Zaznacz warstwę obrazu, aby ją podejrzeć."
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
-import type { StatusWorkflowPreset } from '@open-pencil/scene-graph/statuses'
-import { useCommonMessages, useStatusMessages } from '@open-pencil/vue/i18n'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+import type { StatusWorkflowPreset } from '@lawha/scene-graph/statuses'
+import { useCommonMessages, useStatusMessages } from '@lawha/vue/i18n'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useStatusWorkflowDraft } from '@/app/editor/statuses/workflow'
@@ -225,7 +225,7 @@ function discard() {
           <li v-for="(change, index) in impact" :key="index" class="flex items-center gap-1.5">
             <span class="tabular-nums">{{ messages.layerCount(change.count) }}</span>
             <span>{{ change.from }}</span>
-            <icon-lucide-arrow-right class="size-3" aria-hidden="true" />
+            <icon-lucide-arrow-right class="size-3 rtl:-scale-x-100" aria-hidden="true" />
             <span>{{ change.to ?? messages.noStatus }}</span>
           </li>
         </ul>
@@ -239,7 +239,7 @@ function discard() {
         :label="messages.preset"
         size="sm"
         :ui="{ trigger: 'w-40' }"
-        class="mr-auto"
+        class="me-auto"
         @update:model-value="choosePreset(String($event))"
       />
       <AppButton variant="ghost" :disabled="!dirty" @click="editor.reset()">

@@ -1,0 +1,110 @@
+import { useLocalStorage } from '@vueuse/core'
+import { computed, ref, shallowRef } from 'vue'
+
+import { setWriterHost } from '@lawha/core/tools'
+import {
+  createWriterDocument,
+  emptyBody,
+  type TextDirection,
+  type WriterDocument,
+  type WriterNode
+} from '@lawha/core/writer'
+
+import type { StorageDocumentBinding } from '@/app/integrations/storage'
+
+/** Where the open document came from, so Save writes back to the same place. */
+export type WriterSource =
+  | {
+      kind: 'file'
+      handle: FileSystemFileHandle | null
+      path: string | null
+      /** The Word package last opened or saved, which saving patches rather than rebuilds. */
+      package?: Uint8Array | null
+    }
+  | { kind: 'google'; documentId: string; revisionId: string | null }
+  | {
+      /** A document kept by a storage provider, such as a Lawha Cloud workspace or room. */
+      kind: 'storage'
+      binding: StorageDocumentBinding
+      /** The revision this copy is based on, so a save made over another one is refused. */
+      revision: string | null
+      package: Uint8Array | null
+    }
+
+/**
+ * The document the document editor shows. The editor view owns the Tiptap instance; this holds
+ * what it edits, so saving, the AI tools, and the side panels read one model.
+ */
+export const writerDocument = shallowRef<WriterDocument>(createWriterDocument())
+export const writerSource = shallowRef<WriterSource | null>(null)
+export const writerName = ref('')
+export const writerDirty = ref(false)
+/** Bumped when a different document is loaded, so editors replace their content. */
+export const writerRevision = ref(0)
+
+/** Bumped only when another document is opened or started, unlike `writerRevision`. */
+export const writerLoads = ref(0)
+
+/** Bumped when the header or footer is replaced from outside its editor, such as by a command. */
+export const writerRegionsRevision = ref(0)
+
+/** The name comments and tracked changes are signed with. */
+export const writerAuthor = useLocalStorage('lawha:writer-author', '')
+
+export const writerTitle = computed(() => writerName.value || writerDocument.value.title)
+
+export function loadWriterDocument(
+  document: WriterDocument,
+  name: string,
+  source: WriterSource | null
+): void {
+  writerDocument.value = document
+  writerName.value = name
+  writerSource.value = source
+  writerDirty.value = false
+  writerRevision.value += 1
+  writerLoads.value += 1
+}
+
+export function newWriterDocument(dir: TextDirection, template?: WriterDocument): void {
+  loadWriterDocument(template ?? createWriterDocument({ body: emptyBody(dir) }), '', null)
+}
+
+/** Replaces part of the document, marking it changed. */
+export function updateWriterDocument(patch: Partial<WriterDocument>): void {
+  writerDocument.value = { ...writerDocument.value, ...patch }
+  writerDirty.value = true
+}
+
+export function setWriterBody(body: WriterNode): void {
+  updateWriterDocument({ body })
+}
+
+/** After a save: the document is unchanged since, and Save goes to `source`. */
+export function markWriterSaved(source: WriterSource, name?: string): void {
+  writerSource.value = source
+  if (name !== undefined) writerName.value = name
+  writerDirty.value = false
+}
+
+/** Replaces the header or footer from a command, refreshing its editor. */
+export function setWriterRegion(kind: 'header' | 'footer', node: WriterNode | null): void {
+  updateWriterDocument({ [kind]: node })
+  writerRegionsRevision.value += 1
+}
+
+/**
+ * Replaces the whole document from outside the editor, as an AI tool or a restored version does:
+ * it is marked changed and every editor loads it again.
+ */
+export function replaceWriterDocument(document: Partial<WriterDocument>): void {
+  updateWriterDocument(document)
+  writerRevision.value += 1
+  writerRegionsRevision.value += 1
+}
+
+/** The AI tools read and edit the document editor's document through this host. */
+setWriterHost({
+  read: () => writerDocument.value,
+  write: replaceWriterDocument
+})

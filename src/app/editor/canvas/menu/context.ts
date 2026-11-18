@@ -1,18 +1,25 @@
 import { computed, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
-import { formatShortcut } from '@open-pencil/vue/editor/commands'
-import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
+import type { Editor } from '@lawha/core'
+import { formatShortcut } from '@lawha/vue/editor/commands'
+import type { MenuEntry } from '@lawha/vue/editor/menu-model'
+import { pathMessages, photoMessages, storiesMessages } from '@lawha/vue/i18n'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
+import { publisherMenuEntries } from '@/app/editor/canvas/menu/publisher'
 import {
   CANVAS_COPY_AS_ACTIONS,
   CANVAS_COPY_AS_GROUP_TEST_ID,
   CANVAS_PROPERTIES_ACTIONS,
+  CANVAS_REMOVE_BACKGROUND_TEST_ID,
+  CANVAS_IMAGE_TRACE_TEST_ID,
   CANVAS_VECTORIZE_TEST_ID,
+  CANVAS_DRAFT_STORIES_TEST_ID,
   type CanvasContextActionId,
   type CanvasContextActionMeta
 } from '@/app/editor/canvas/menu/registry'
+import { useStoryDraft } from '@/app/stories/draft'
+import { useStories } from '@/app/stories/use'
 
 const STATIC_SELECTION_COMMAND_IDS = new Set(['selection.duplicate', 'selection.delete'])
 
@@ -109,6 +116,17 @@ export function useCanvasContextMenu(
   return computed<MenuEntry[]>(() => {
     const entries = withoutStaticSelectionCommands(baseEntries.value)
     if (!hasSelection.value) return entries
+    entries.push(...publisherMenuEntries(editor))
+    if (actions.canRemoveBackground()) {
+      entries.push(
+        { separator: true },
+        {
+          label: photoMessages.get().removeBackground,
+          testId: CANVAS_REMOVE_BACKGROUND_TEST_ID,
+          action: runAsync(actions.removeBackground)
+        }
+      )
+    }
     if (actions.canVectorizeImage()) {
       entries.push(
         { separator: true },
@@ -116,6 +134,25 @@ export function useCanvasContextMenu(
           label: labels.value.convertToVector,
           testId: CANVAS_VECTORIZE_TEST_ID,
           action: runAsync(actions.vectorizeImage)
+        },
+        {
+          label: pathMessages.get().imageTrace,
+          testId: CANVAS_IMAGE_TRACE_TEST_ID,
+          action: runAsync(actions.traceImage)
+        }
+      )
+    }
+    const single = editor.state.selectedIds.size === 1 ? [...editor.state.selectedIds][0] : null
+    if (single) {
+      entries.push(
+        { separator: true },
+        {
+          label: storiesMessages.get().draftForFrame,
+          testId: CANVAS_DRAFT_STORIES_TEST_ID,
+          action: () => {
+            void useStories().openStory(single)
+            void useStoryDraft().start(single)
+          }
         }
       )
     }

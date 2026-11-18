@@ -13,10 +13,10 @@ import {
 } from 'reka-ui'
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
-import type { ComponentPropertyType } from '@open-pencil/scene-graph'
-import { useComponentPropertyAuthoring } from '@open-pencil/vue/controls/component-props'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
+import type { ComponentPropertyType } from '@lawha/scene-graph'
+import { useComponentPropertyAuthoring } from '@lawha/vue/controls/component-props'
+import { useI18n } from '@lawha/vue/i18n'
+import { useFlatReorderDrag } from '@lawha/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -272,7 +272,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
             >
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-start"
                 @click="authoring.select(node.id)"
               >
                 <icon-lucide-component class="size-3.5 shrink-0 text-component" />
@@ -301,7 +301,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
       >
         <div :class="nestedStyles.header">
           <h3 class="text-xs font-semibold text-surface">{{ panels.nestedInstances }}</h3>
-          <AppButton :aria-label="common.close" class="ml-auto" @click="nestedOpen = false">
+          <AppButton :aria-label="common.close" class="ms-auto" @click="nestedOpen = false">
             <icon-lucide-x class="size-3.5" />
           </AppButton>
         </div>

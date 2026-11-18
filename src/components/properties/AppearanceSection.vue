@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { BlendMode } from '@open-pencil/scene-graph'
-import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
-import { MIXED } from '@open-pencil/vue/controls/node-props'
-import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { AppearanceControlsRoot } from '@open-pencil/vue/primitives/AppearanceControls'
+import type { BlendMode } from '@lawha/scene-graph'
+import { POINT_COUNT_RANGE } from '@lawha/scene-graph/polygon'
+import { MIXED } from '@lawha/vue/controls/node-props'
+import { useVariableModes } from '@lawha/vue/controls/variable-modes'
+import { useI18n } from '@lawha/vue/i18n'
+import { AppearanceControlsRoot } from '@lawha/vue/primitives/AppearanceControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import { useBlendModeGroups } from '@/components/properties/blend-mode/use'
@@ -177,7 +177,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
         data-corner-grid
       >
         <VariableNumberField
-          label="TL"
+          :label="panels.radiusTopLeftShort"
+          :aria-label="panels.radiusTopLeft"
           :model-value="node.topLeftRadius"
           :min="0"
           :node-id="node.id"
@@ -186,7 +187,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('topLeftRadius', v, p)"
         />
         <VariableNumberField
-          label="TR"
+          :label="panels.radiusTopRightShort"
+          :aria-label="panels.radiusTopRight"
           :model-value="node.topRightRadius"
           :min="0"
           :node-id="node.id"
@@ -195,7 +197,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('topRightRadius', v, p)"
         />
         <VariableNumberField
-          label="BL"
+          :label="panels.radiusBottomLeftShort"
+          :aria-label="panels.radiusBottomLeft"
           :model-value="node.bottomLeftRadius"
           :min="0"
           :node-id="node.id"
@@ -204,7 +207,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
           @commit="(v: number, p: number) => actions.commitCornerProp('bottomLeftRadius', v, p)"
         />
         <VariableNumberField
-          label="BR"
+          :label="panels.radiusBottomRightShort"
+          :aria-label="panels.radiusBottomRight"
           :model-value="node.bottomRightRadius"
           :min="0"
           :node-id="node.id"

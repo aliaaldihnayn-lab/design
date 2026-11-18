@@ -63,6 +63,7 @@ function services() {
       }
     },
     versions: {
+      changes: { list: notUsed, append: notUsed },
       list: notUsed,
       save: notUsed,
       update: notUsed,
@@ -129,7 +130,44 @@ function services() {
       delete: notUsed,
       preview: async () => null,
       accept: async () => null
-    }
+    },
+    rooms: {
+      tree: async () => [],
+      get: notUsed,
+      create: notUsed,
+      update: notUsed,
+      move: notUsed,
+      addFile: notUsed,
+      removeFile: notUsed,
+      createDocument: notUsed,
+      audit: notUsed,
+      heartbeat: notUsed,
+      presence: notUsed,
+      leavePresence: notUsed,
+      presenceTicket: notUsed
+    },
+    roomMembers: {
+      list: notUsed,
+      invite: notUsed,
+      revokeInvitation: notUsed,
+      updateRole: notUsed,
+      remove: notUsed,
+      transfer: notUsed,
+      preview: async () => null,
+      accept: async () => null
+    },
+    signatures: {
+      create: notUsed,
+      list: async () => [],
+      get: async () => null,
+      pdf: async () => null,
+      download: async () => null,
+      void: async () => false,
+      view: async () => null,
+      sign: async () => 'not_found' as const,
+      decline: async () => 'not_found' as const
+    },
+    signing: { trustedHeaders: [] }
   }
 }
 

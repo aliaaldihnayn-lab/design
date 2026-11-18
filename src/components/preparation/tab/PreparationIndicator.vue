@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useFileMessages } from '@lawha/vue/i18n'
+
 import type { EditorPreparationProgress } from '@/app/editor/preparation/types'
 import { preparationPercent } from '@/components/preparation/presentation'
 import { motionStyles } from '@/theme/motion/styles'
@@ -9,6 +11,7 @@ const { progress } = defineProps<{
   progress: EditorPreparationProgress | null
 }>()
 
+const files = useFileMessages()
 const percent = computed(() => preparationPercent(progress))
 </script>
 
@@ -18,7 +21,7 @@ const percent = computed(() => preparationPercent(progress))
     :aria-valuenow="percent ?? undefined"
     :aria-valuemin="percent === null ? undefined : 0"
     :aria-valuemax="percent === null ? undefined : 100"
-    aria-label="Preparing document"
+    :aria-label="files.preparingDocument"
     class="relative flex size-3 shrink-0 items-center justify-center text-primary"
   >
     <icon-lucide-loader-circle class="size-3" :class="motionStyles.spinner" />

@@ -1,0 +1,14 @@
+{
+  "section": "Designsystem",
+  "build": "Designsystem erstellen",
+  "buildPage": "Aus dieser Seite",
+  "buildSelection": "Aus der Auswahl",
+  "buildHint": "Verwendete Farben, Schriften, Abstände und Radien in Variablen mit hellem und dunklem Modus sowie Textstile umwandeln, mit den Ebenen verknüpfen und mit Startkomponenten auf einer Design-System-Seite dokumentieren",
+  "done": "{tokens} Tokens erstellt, {bound} Ebenen verknüpft",
+  "duplicates": "{count} fast identische Farben gefunden: ihre Ebenen behalten ihre eigene Farbe",
+  "failed": "Designsystem konnte nicht erstellt werden: {error}",
+  "extras": "Dunkelmodus, {styles} Textstile und {components} Komponentensets hinzugefügt",
+  "components": "Komponentensets hinzufügen",
+  "componentsHint": "Fügt dieser Seite Button-, Input- und Badge-Komponentensets hinzu, gebunden an die Variablen des Designsystems, sofern vorhanden",
+  "componentsDone": "{count} Komponentensets hinzugefügt"
+}

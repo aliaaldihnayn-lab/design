@@ -7,7 +7,7 @@ import {
   useCredentialMessages,
   useMediaMessages,
   useSettingsMessages
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { useMediaSettingsEditor, type MediaSettingsService } from '@/app/settings/media/use'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
@@ -19,10 +19,12 @@ import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSet
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import MediaTraceSettings from './MediaTraceSettings.vue'
+
 const { service } = defineProps<{ service: MediaSettingsService }>()
 const emit = defineEmits<{ done: [] }>()
 const editor = useMediaSettingsEditor(service)
-const { key, providerID, keyStatus, keyCheck, error, dirty, busy, clearCredential, checkKey } =
+const { key, engine, trace, keyStatus, keyCheck, error, dirty, busy, clearCredential, checkKey } =
   editor
 const ai = useAIMessages()
 const common = useCommonMessages()
@@ -30,7 +32,12 @@ const credentials = useCredentialMessages()
 const media = useMediaMessages()
 const settings = useSettingsMessages()
 const provider = computed(() => editor.vector?.provider.value)
-const providerOptions = editor.vector?.providerOptions ?? []
+/** Image Trace on this device first, then the cloud services, which need a key. */
+const engineOptions = computed(() => [
+  { value: 'local' as const, label: media.value.traceOnDevice },
+  ...(editor.vector?.providerOptions ?? [])
+])
+const onDevice = computed(() => service === 'vectorize' && engine.value === 'local')
 const title = computed(() => {
   if (service === 'vectorize') return media.value.vectorization
   return service === 'pexels' ? 'Pexels' : 'Unsplash'
@@ -96,13 +103,16 @@ async function save() {
           >
             <AppSelect
               v-bind="control"
-              v-model="providerID"
-              :options="providerOptions"
+              v-model="engine"
+              :options="engineOptions"
               :label="media.vectorizeProvider"
               :disabled="busy"
+              data-test-id="vectorize-engine"
             />
           </ProviderSettingsField>
+          <MediaTraceSettings v-if="onDevice" v-model="trace" />
           <ProviderSettingsKeyField
+            v-else
             v-model="key"
             :label="keyLabel"
             :saved="keyStatus === 'configured'"

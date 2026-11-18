@@ -5,13 +5,13 @@ import { join, relative, sep } from 'node:path'
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@lawha/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,
   type TranslatedLocale,
   messageDefaults
-} from '@open-pencil/vue/i18n'
+} from '@lawha/vue/i18n'
 
 import { hasMixedLatinAndCjk, placeholders } from './quality'
 
@@ -24,6 +24,9 @@ const LOCALE_FILE_NAMES: Record<string, string> = {
   cloud: 'cloud/editor',
   cloudPortal: 'cloud/portal',
   designCheck: 'design-check',
+  designSystem: 'design-system',
+  framePresets: 'frame-presets',
+  storageErrors: 'storage-errors',
   variables: 'variables/panel',
   variableTypes: 'variables/types'
 }
@@ -137,6 +140,16 @@ for (const [locale, dir] of expectedLocaleDirs) {
     .map((entry) => relative(localeDir, join(entry.parentPath, entry.name)).split(sep).join('/'))
   if (!files.includes(REQUIRED_INDEX_FILE)) {
     report(`\n${locale}: missing ${REQUIRED_INDEX_FILE}`)
+  } else {
+    // A namespace the index leaves out never loads, and the locale then stays loading in English.
+    const index = readFileSync(join(localeDir, REQUIRED_INDEX_FILE), 'utf8')
+    for (const namespace of namespaces) {
+      if (!index.includes(`from './${localeFileName(namespace)}.json'`)) {
+        report(
+          `${locale}: ${REQUIRED_INDEX_FILE} does not import ${localeFileName(namespace)}.json`
+        )
+      }
+    }
   }
 
   const jsonFiles = files.filter((file) => file.endsWith('.json'))
@@ -166,6 +179,12 @@ for (const [locale, dir] of expectedLocaleDirs) {
       }
       const source = sourceMessage(defaults[key as keyof typeof defaults])
       const localized = data[key]
+      // A message with {params} is a plain string in locale files; any other shape is shown to
+      // users as raw JSON and would otherwise skip every check below.
+      if (source !== null && typeof localized !== 'string') {
+        report(`${baselineLocaleId(locale)}:${namespace}.${key}: must be a plain string`)
+        continue
+      }
       if (source === null || typeof localized !== 'string') continue
       total++
       const id = `${baselineLocaleId(locale)}:${namespace}.${key}`

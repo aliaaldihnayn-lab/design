@@ -1,13 +1,39 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { checkBrandAssets } from '#brand/check'
-import { repositoryRoot, webFiles } from '#brand/config'
+import { brand, repositoryRoot, webFiles } from '#brand/config'
 import { generateDesktop } from '#brand/desktop'
 import { canonicalIcns, icoSizes, validateFiles, validateMaskable } from '#brand/validate'
 import { generateWeb } from '#brand/web'
 import sharp from 'sharp'
 
 const files = await generateWeb(repositoryRoot)
+
+/** The artwork master as authored, which the generated files are derived from. */
+function master(name: 'mark' | 'mark-micro'): string {
+  return readFileSync(join(repositoryRoot, 'assets/brand', `${name}.svg`), 'utf8')
+}
+
+/** The pixel a point in the master's user space lands on once it is drawn at `size` pixels. */
+function pixelOf(source: string, size: number, x: number, y: number): [number, number] {
+  const box = /viewBox="([\d.\s-]+)"/.exec(source)?.[1]?.trim().split(/\s+/).map(Number)
+  if (box?.length !== 4) throw new Error('The master has no viewBox')
+  const [minX, minY, width, height] = box
+  return [Math.floor(((x - minX) / width) * size), Math.floor(((y - minY) / height) * size)]
+}
+
+/** The fill of the first element with this `data-part`. */
+function partFill(source: string, part: string): string {
+  const fill = new RegExp(`data-part="${part}"[^>]*fill="(#[0-9A-Fa-f]{6})"`).exec(source)?.[1]
+  if (!fill) throw new Error(`The master has no ${part} fill`)
+  return fill
+}
+
+function rgbaOf(hex: string): number[] {
+  return [...Buffer.from(hex.slice(1), 'hex'), 255]
+}
 
 function file(name: string): Buffer {
   const bytes = files.get(name)
@@ -25,32 +51,55 @@ describe('brand generation', () => {
   })
 
   test('preserves transparent counters and renders the micro master at 16px', async () => {
-    const main = await sharp(file('brand/mark.svg')).ensureAlpha().raw().toBuffer()
-    expect(main[(80 * 256 + 130) * 4 + 3]).toBe(0)
-    expect(main[(80 * 256 + 90) * 4 + 3]).toBe(255)
-    const micro = await sharp(file('brand/mark-micro.svg')).ensureAlpha().raw().toBuffer()
-    expect(micro[(6 * 16 + 8) * 4 + 3]).toBe(0)
-    expect(micro[(6 * 16 + 4) * 4 + 3]).toBe(255)
-    expect(micro.length).toBe(16 * 16 * 4)
+    // The bowl is a half ring about (128, 170): its hole is open, the ring between radii 48 and 78 is solid.
+    const [hole, ring] = [
+      [128, 190],
+      [128, 233]
+    ] as const
+    for (const [name, size] of [
+      ['mark', 256],
+      ['mark-micro', 16]
+    ] as const) {
+      const pixels = await sharp(file(`brand/${name}.svg`))
+        .ensureAlpha()
+        .raw()
+        .toBuffer()
+      expect(pixels.length).toBe(size * size * 4)
+      const alphaAt = ([x, y]: readonly [number, number]) => {
+        const [px, py] = pixelOf(master(name), size, x, y)
+        return pixels[(py * size + px) * 4 + 3]
+      }
+      expect(alphaAt(hole)).toBe(0)
+      expect(alphaAt(ring)).toBe(255)
+    }
   })
 
-  test('preserves blue handle borders and white centers in both themes and sizes', async () => {
-    for (const name of ['mark', 'mark-micro']) {
+  test('preserves orange handle borders and white centers in both themes and sizes', async () => {
+    // Where the square handle's centre and border, and the circular handle's centre, sit in each master.
+    const spots = {
+      mark: { square: [176, 46], border: [164, 46], circle: [73, 225] },
+      'mark-micro': { square: [176, 50], border: [159, 50], circle: [73, 225] }
+    } as const
+    for (const name of ['mark', 'mark-micro'] as const) {
+      const source = master(name)
       for (const suffix of ['', '-dark']) {
         const pixels = await sharp(file(`brand/${name}${suffix}.svg`), { density: 1152 })
           .resize(256, 256)
           .ensureAlpha()
           .raw()
           .toBuffer()
-        const center = suffix ? [244, 251, 250, 255] : [255, 255, 255, 255]
-        const border = suffix ? [67, 140, 255, 255] : [0, 92, 255, 255]
-        for (const [x, y, rgba] of [
-          [54, 27, center],
-          [202, 101, center],
-          [name === 'mark' ? 38 : 32, 27, border]
+        const center = rgbaOf(
+          suffix ? brand.darkPalette['handle-surface'] : partFill(source, 'handle-surface')
+        )
+        const border = rgbaOf(suffix ? brand.darkPalette.handle : partFill(source, 'handle'))
+        for (const [spot, rgba] of [
+          [spots[name].square, center],
+          [spots[name].circle, center],
+          [spots[name].border, border]
         ] as const) {
+          const [x, y] = pixelOf(source, 256, ...spot)
           const offset = (y * 256 + x) * 4
-          expect([...pixels.subarray(offset, offset + 4)]).toEqual([...rgba])
+          expect([...pixels.subarray(offset, offset + 4)]).toEqual(rgba)
         }
       }
     }
@@ -74,7 +123,10 @@ describe('brand generation', () => {
           colors.add(pixels.subarray(offset, offset + 3).toString('hex'))
       }
       expect(colors.size).toBeGreaterThan(0)
-      const expected = Buffer.from(suffix ? 'f5f5ef' : '202b2d', 'hex')
+      const expected = Buffer.from(
+        (suffix ? brand.background : brand.darkBackground).slice(1),
+        'hex'
+      )
       for (const color of colors) {
         // Overlapping antialiased edges can round a channel down by one.
         expect(

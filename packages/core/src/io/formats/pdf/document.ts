@@ -1,8 +1,8 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@lawha/scene-graph'
 
 import { fontManager } from '#core/text/font/manager'
 
-import { renderPagesToPDFDetailed, type PDFExportResult } from './export'
+import { renderPagesToPDFDetailed, type PDFExportOptions, type PDFExportResult } from './export'
 import type { PDFPageSpec } from './plan'
 import { pdfFontFaces, preparePagesForPDF, preparePDFFonts, withPDFTextLayout } from './prepare'
 
@@ -12,6 +12,8 @@ export interface PDFDocumentOptions {
   /** Lay the pages out first, as pages other than the open one have no layout yet. */
   layOutPages?: boolean
   title?: string
+  /** Page content left uncompressed and pages composed on their sheets, for print export. */
+  print?: Pick<PDFExportOptions, 'compress' | 'composePage'>
 }
 
 /**
@@ -27,15 +29,17 @@ export async function exportPDFDocument(
     ? await preparePagesForPDF(graph, specs)
     : await preparePDFFonts(graph, specs)
   const fonts = options.embedFonts ? pdfFontFaces(status) : undefined
-  return withPDFTextLayout((textLayout) =>
+  return withPDFTextLayout((textLayout, imageAdjust) =>
     renderPagesToPDFDetailed(graph, specs, {
       fonts,
       textLayout,
+      imageAdjust,
       fallbackFile: (family, style, file) =>
         file === 0
           ? fontManager.loadedData(family, style)
           : (fontManager.shardData(family, style)[file - 1] ?? null),
-      title: options.title
+      title: options.title,
+      ...options.print
     })
   )
 }

@@ -13,13 +13,25 @@ import {
   createDocumentVersionRoutes,
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
+import {
+  createJiraRoutes,
+  createPublicJiraRoutes,
+  type JiraConnectionService
+} from '#cloud/server/jira'
 import type { EntitlementService } from '#cloud/server/policy'
+import { createRoomRoutes, type RoomMemberService, type RoomService } from '#cloud/server/rooms'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
   createDocumentSharingRoutes,
   createPublicDocumentRoutes,
   createPublicSharingRoutes
 } from '#cloud/server/sharing'
+import {
+  createPublicSigningRoutes,
+  createSignatureRoutes,
+  type SignatureService,
+  type SigningRouteOptions
+} from '#cloud/server/signatures'
 import type { WorkspaceMemberService, WorkspaceService } from '#cloud/server/workspaces'
 import { createWorkspaceRoutes } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -38,6 +50,13 @@ export type CloudAPIServices = {
   aiTokens?: AITokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
+  rooms: RoomService
+  roomMembers: RoomMemberService
+  /** Documents sent for signature, and how to read a signer's address for the audit trail. */
+  signatures: SignatureService
+  signing: SigningRouteOptions
+  /** The person's Jira Cloud site for their user stories; without it the routes answer 404. */
+  jira?: JiraConnectionService
 }
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
@@ -48,6 +67,8 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
       createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
     )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
+    .route('/', createPublicSigningRoutes(services.signatures, services.signing))
+    .route('/integrations/jira', createPublicJiraRoutes(services.jira))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {
@@ -92,10 +113,22 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
     )
     .route('/', createDocumentVersionRoutes(services.versions))
+    .route('/signatures', createSignatureRoutes(services.signatures, services.signing))
+    .route('/integrations/jira', createJiraRoutes(services.jira))
     .route(
       '/',
       createDocumentSharingRoutes(
         services.sharing,
+        services.database && services.rateLimitSecret
+          ? { database: services.database, secret: services.rateLimitSecret }
+          : undefined
+      )
+    )
+    .route(
+      '/rooms',
+      createRoomRoutes(
+        services.rooms,
+        services.roomMembers,
         services.database && services.rateLimitSecret
           ? { database: services.database, secret: services.rateLimitSecret }
           : undefined

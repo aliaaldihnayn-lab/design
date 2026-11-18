@@ -1,11 +1,7 @@
 import { computed, ref } from 'vue'
 
-import type {
-  FontFamilyOption,
-  LocalFontAccessState,
-  WebFontProviderId
-} from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue/i18n'
+import type { FontFamilyOption, LocalFontAccessState, WebFontProviderId } from '@lawha/core/text'
+import { useI18n } from '@lawha/vue/i18n'
 
 import {
   clearDownloadedFontCache,

@@ -1,8 +1,8 @@
 import { computed, type Component } from 'vue'
 import IconSmilePlus from '~icons/lucide/smile-plus'
 
-import type { Tool } from '@open-pencil/core'
-import { useI18n, usePanelMessages } from '@open-pencil/vue/i18n'
+import type { Tool } from '@lawha/core'
+import { useI18n, usePanelMessages } from '@lawha/vue/i18n'
 
 import type { ToolbarEntry } from '@/app/editor/toolbar/layout'
 import { toolIcons } from '@/components/icons'
@@ -20,6 +20,17 @@ export function useToolLabels() {
     STAR: tools.value.star,
     PEN: tools.value.pen,
     PENCIL: tools.value.pencil,
+    SHAPE_BUILDER: tools.value.shapeBuilder,
+    WIDTH: tools.value.width,
+    BRUSH: tools.value.brush,
+    ERASER: tools.value.eraser,
+    FILL_BUCKET: tools.value.fillBucket,
+    COLOR_PICKER: tools.value.colorPicker,
+    MARQUEE_RECT: tools.value.marqueeRect,
+    MARQUEE_ELLIPSE: tools.value.marqueeEllipse,
+    MAGIC_WAND: tools.value.magicWand,
+    CLONE_STAMP: tools.value.cloneStamp,
+    HEALING_BRUSH: tools.value.healingBrush,
     TEXT: tools.value.text,
     STICKY: tools.value.sticky,
     SHAPE_WITH_TEXT: tools.value.shape,
