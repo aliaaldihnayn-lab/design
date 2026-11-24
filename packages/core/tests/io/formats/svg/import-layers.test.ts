@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { compact } from 'es-toolkit/array'
 
 import { FigmaAPI } from '@lawha/core/figma-api'
-import { createSVGNodes } from '@lawha/core/io/formats/svg'
+import { createSVGNodes, renderNodesToSVG } from '@lawha/core/io/formats/svg'
 import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 /**
@@ -313,6 +313,22 @@ describe('SVG text imports as the text layers Figma makes', () => {
     expect((end?.x ?? 0) + (end?.width ?? 0)).toBeCloseTo(190)
   })
 
+  test('in right-to-left text, text-anchor start is the right edge and end the left, as renderers draw it', () => {
+    const { graph, texts } = textLayers(
+      '<svg viewBox="0 0 400 140"><text x="390" y="30" font-size="20" direction="rtl">مرحبا</text>' +
+        '<text x="10" y="70" font-size="20" direction="rtl" text-anchor="end">نهاية</text>' +
+        '<g style="direction: rtl"><text x="390" y="110" font-size="20">Hello عالم</text></g></svg>'
+    )
+    const [start, end, inherited] = texts
+    expect(start).toMatchObject({ textAlignHorizontal: 'RIGHT', textDirection: 'RTL' })
+    expect((start?.x ?? 0) + (start?.width ?? 0)).toBeCloseTo(390)
+    expect(end).toMatchObject({ textAlignHorizontal: 'LEFT', textDirection: 'RTL', x: 10 })
+    // Inherited from a group, the direction also orders the mixed text from the right.
+    expect(inherited).toMatchObject({ textAlignHorizontal: 'RIGHT', textDirection: 'RTL' })
+    const right = inherited ? graph.getAbsolutePosition(inherited.id).x + inherited.width : 0
+    expect(right).toBeCloseTo(390)
+  })
+
   test('same-line tspans style one layer; a tspan that moves starts another, grouped', () => {
     const { graph, root, texts } = textLayers(
       '<svg viewBox="0 0 300 90"><text x="10" y="30" font-size="20">Plain <tspan font-weight="700" fill="#00f">bold blue</tspan> end<tspan x="10" dy="30">second line</tspan></text></svg>'
@@ -367,4 +383,38 @@ describe('SVG text imports as the text layers Figma makes', () => {
     expect(root.type).toBe('GROUP')
     expect(texts.map((text) => text.text)).toEqual(['lots of space'])
   })
+})
+
+test('right-to-left text exported as SVG imports back on the same side of its box', () => {
+  const source = new SceneGraph()
+  const sourcePage = source.getPages()[0].id
+  const frame = source.createNode('FRAME', sourcePage, { width: 300, height: 80 })
+  for (const align of ['LEFT', 'RIGHT'] as const) {
+    source.createNode('TEXT', frame.id, {
+      name: align,
+      text: 'مرحبا بالعالم',
+      fontSize: 20,
+      x: 40,
+      y: align === 'LEFT' ? 10 : 40,
+      width: 220,
+      height: 24,
+      textAutoResize: 'NONE',
+      textAlignHorizontal: align,
+      textDirection: 'RTL'
+    })
+  }
+  const svg = renderNodesToSVG(source, sourcePage, [frame.id], { xmlDeclaration: false }) ?? ''
+
+  const graph = new SceneGraph()
+  createSVGNodes(graph, graph.getPages()[0].id, svg)
+  const imported = (align: string) => {
+    const node = [...graph.getAllNodes()].find(
+      (candidate) => candidate.type === 'TEXT' && candidate.textAlignHorizontal === align
+    )
+    if (!node) throw new Error(`No ${align} text`)
+    return { x: graph.getAbsolutePosition(node.id).x, width: node.width }
+  }
+  expect(imported('LEFT').x).toBeCloseTo(40)
+  const right = imported('RIGHT')
+  expect(right.x + right.width).toBeCloseTo(260)
 })

@@ -87,6 +87,8 @@ function createTextPiece(
     text: characters,
     styleRuns: styleRuns(piece.runs, scale),
     textAlignHorizontal: ALIGN[piece.anchor],
+    // Mixed text orders its runs by its base direction, which it would otherwise detect.
+    textDirection: piece.direction === 'rtl' ? 'RTL' : 'AUTO',
     textAutoResize: 'WIDTH_AND_HEIGHT',
     lineHeight: null,
     width: 0

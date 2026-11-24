@@ -15,6 +15,7 @@ export interface PresentationAttributes {
   fontWeight: string
   fontStyle: string
   textAnchor: string
+  direction: string
   letterSpacing: string
   textDecoration: string
   visibility: string
@@ -35,6 +36,7 @@ export const DEFAULT_PRESENTATION: PresentationAttributes = {
   fontWeight: 'normal',
   fontStyle: 'normal',
   textAnchor: 'start',
+  direction: 'ltr',
   letterSpacing: 'normal',
   textDecoration: 'none',
   visibility: 'visible',
@@ -90,6 +92,7 @@ export function presentationFor(
     fontWeight: attribute('font-weight', inherited.fontWeight),
     fontStyle: attribute('font-style', inherited.fontStyle),
     textAnchor: attribute('text-anchor', inherited.textAnchor),
+    direction: attribute('direction', inherited.direction),
     letterSpacing: attribute('letter-spacing', inherited.letterSpacing),
     textDecoration: attribute('text-decoration', inherited.textDecoration),
     // As Figma reads them: both inherit, unlike CSS `display`; any visibility but `visible`

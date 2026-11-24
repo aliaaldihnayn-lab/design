@@ -70,9 +70,19 @@ function textRun(text: string, presentation: PresentationAttributes): SVGTextRun
   }
 }
 
+function direction(presentation: PresentationAttributes): SVGTextPiece['direction'] {
+  return presentation.direction.trim().toLowerCase() === 'rtl' ? 'rtl' : 'ltr'
+}
+
+/**
+ * The edge of the text on `x`, as SVG renderers place it: `text-anchor` is the start or end of
+ * the text in its direction, so in right-to-left text `start` is its right edge and `end` its left.
+ */
 function anchor(presentation: PresentationAttributes): SVGTextPiece['anchor'] {
   const value = presentation.textAnchor.trim()
-  return value === 'middle' || value === 'end' ? value : 'start'
+  if (value === 'middle') return value
+  const end = value === 'end'
+  return end !== (direction(presentation) === 'rtl') ? 'end' : 'start'
 }
 
 /** Collapse whitespace as SVG does by default: runs of it become one space, trimmed at the ends. */
@@ -96,6 +106,7 @@ export function collectTextPieces(element: Element, scope: Scope): SVGTextPiece[
     x: num(element, 'x'),
     y: num(element, 'y'),
     anchor: anchor(scope.presentation),
+    direction: direction(scope.presentation),
     runs: []
   }
   const walk = (node: Node, presentation: PresentationAttributes) => {
@@ -112,6 +123,7 @@ export function collectTextPieces(element: Element, scope: Scope): SVGTextPiece[
           x: child.hasAttribute('x') ? num(child, 'x') : current.x + num(child, 'dx'),
           y: child.hasAttribute('y') ? num(child, 'y') : current.y + num(child, 'dy'),
           anchor: anchor(style),
+          direction: direction(style),
           runs: []
         }
       }

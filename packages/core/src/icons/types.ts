@@ -113,7 +113,13 @@ export interface SVGTextPiece {
   /** The baseline origin, in the text element's own coordinates. */
   x: number
   y: number
+  /**
+   * The edge on `x`: `start` the left, `end` the right. `text-anchor` names the edge the text
+   * starts or ends at in its direction, so right-to-left text starts at its right.
+   */
   anchor: 'start' | 'middle' | 'end'
+  /** The base direction of the text, from `direction`. */
+  direction: 'ltr' | 'rtl'
   runs: SVGTextRun[]
 }
 
