@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 
 import { strFromU8, unzipSync } from 'fflate'
 
-import { nodeText, readDocx } from '@lawha/core/writer'
+import { decryptDocx, nodeText, readDocx } from '@lawha/core/writer'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { testPath } from '#tests/helpers/paths'
@@ -51,4 +51,28 @@ test('typing in a Word file keeps its other parts and blocks when saved', async 
   )
   // The table keeps its Word style, which the model does not hold.
   expect(strFromU8(after['word/document.xml'])).toContain('<w:tblStyle w:val="TableGrid"/>')
+})
+
+test('saving a Word file with a password keeps what it held', async ({ page }) => {
+  const source = fixture('python-docx-rich.docx')
+  await page.goto('/writer?test')
+  const body = page.getByTestId('writer-body')
+  await expect(body).toBeVisible({ timeout: 30_000 })
+  const files = await openWordFile(page, source, 'rich.docx')
+  await expect(body).toContainText('Commented text here.')
+
+  await page.getByTestId('writer-protect').click()
+  await page.getByTestId('writer-protect-password').fill('كلمة سر')
+  await page.getByTestId('writer-protect-confirm').fill('كلمة سر')
+  await page.getByTestId('writer-protect-docx').click()
+  const locked = await nextSave(files, 0)
+
+  expect(() => readDocx(locked)).toThrow('encrypted')
+  const opened = unzipSync(decryptDocx(locked, 'كلمة سر'))
+  const before = unzipSync(source)
+  expect(Object.keys(opened).sort()).toEqual(Object.keys(before).sort())
+  expect(strFromU8(opened['word/theme/theme1.xml'])).toBe(
+    strFromU8(before['word/theme/theme1.xml'])
+  )
+  expect(strFromU8(opened['word/document.xml'])).toContain('<w:tblStyle w:val="TableGrid"/>')
 })

@@ -119,7 +119,7 @@ export async function openWordDocument(): Promise<WriterFileOutcome> {
  * The document as Word bytes, patched into the package it came from when there is one. A file's
  * own title stays as it is; the name it is saved under titles one that has none.
  */
-function currentBytes(): Uint8Array {
+export function currentWordBytes(): Uint8Array {
   const source = writerSource.value
   return writeDocx(
     { ...writerDocument.value, title: writerDocument.value.title || writerName.value },
@@ -130,7 +130,7 @@ function currentBytes(): Uint8Array {
 /** Saves as a new file; the document then saves there. */
 export async function saveWriterDocumentAs(): Promise<WriterFileOutcome> {
   try {
-    const bytes = currentBytes()
+    const bytes = currentWordBytes()
     const saved = await saveFileAs(bytes, writerName.value || 'Document', DOCX)
     if (!saved) return { status: 'cancelled' }
     if (saved.inPlace) {
@@ -154,7 +154,7 @@ export async function saveWriterDocument(
   if (source?.kind === 'storage') return saveStoredWriterDocument(source)
   if (source?.kind !== 'file' || (!source.handle && !source.path)) return saveWriterDocumentAs()
   try {
-    const bytes = currentBytes()
+    const bytes = currentWordBytes()
     const written = await saveInPlace(source, bytes)
     if (!written) return await saveWriterDocumentAs()
     markWriterSaved({ ...source, package: bytes })

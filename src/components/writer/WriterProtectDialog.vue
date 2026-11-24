@@ -2,11 +2,12 @@
 import { computed, ref, watch } from 'vue'
 
 import { encryptPDF } from '@lawha/core/pdf-sign'
-import { encryptDocx, writeDocx } from '@lawha/core/writer'
+import { encryptDocx } from '@lawha/core/writer'
 import { useWriterMessages } from '@lawha/vue/i18n'
 
+import { currentWordBytes } from '@/app/writer/document'
 import { DOCX, PDF, pickFile, saveFileAs } from '@/app/writer/files'
-import { writerDocument, writerName } from '@/app/writer/session'
+import { writerName } from '@/app/writer/session'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialog } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -53,7 +54,8 @@ async function run(action: () => Promise<boolean>) {
 }
 
 async function saveDocx(): Promise<boolean> {
-  const bytes = encryptDocx(writeDocx(writerDocument.value), password.value)
+  // The same package Save writes, so a Word file keeps everything it held, then encrypted.
+  const bytes = encryptDocx(currentWordBytes(), password.value)
   return (await saveFileAs(bytes, writerName.value || 'Document', DOCX)) !== null
 }
 
