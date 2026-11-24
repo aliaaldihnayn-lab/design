@@ -87,3 +87,37 @@ test('text whose case changes its length is kept on one line, in that case', asy
 
   expect(expectDefined(svg, 'SVG')).toContain('>STRASSE</text>')
 })
+
+test('tracked text is written letter by letter where the canvas draws it, as PDFs keep no tracking', async () => {
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  const node = graph.createNode('TEXT', pageId, {
+    text: 'TRACK',
+    fontFamily: 'Inter',
+    fontSize: 20,
+    width: 200,
+    height: 24,
+    letterSpacing: pixelLength(8)
+  })
+
+  const { svg, edges } = await withPDFTextLayout(async (textLayout) => {
+    const [line] = expectDefined(textLayout?.(node), 'text lines')
+    const characters = expectDefined(line.characters, 'character edges')
+    return {
+      svg: renderNodesToSVG(graph, pageId, [node.id], {
+        xmlDeclaration: false,
+        textLayout,
+        placeTrackedLetters: true
+      }),
+      edges: [0, 1, 2, 3, 4].map((index) => expectDefined(characters.get(index)).left)
+    }
+  })
+
+  const spans = [
+    ...expectDefined(svg, 'SVG').matchAll(/<tspan x="([\d.]+)"[^>]*>([^<]*)<\/tspan>/g)
+  ]
+  expect(spans.map((span) => span[2])).toEqual(['T', 'R', 'A', 'C', 'K'])
+  expect(spans.map((span) => Number(span[1]))).toEqual(edges.map((x) => Math.round(x * 100) / 100))
+  // Letters 8 px apart besides their own widths: the tracking is in the positions.
+  expect(Number(spans[1][1]) - Number(spans[0][1])).toBeGreaterThan(8)
+})

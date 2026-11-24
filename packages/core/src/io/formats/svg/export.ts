@@ -465,6 +465,11 @@ export interface SVGExportOptions {
   imageAdjust?: SVGImageAdjust
   /** Starts every def id, so SVGs drawn into one document cannot take each other's defs. */
   idPrefix?: string
+  /**
+   * Places each letter of laid-out tracked text at its own position, for a reader that ignores
+   * `letter-spacing`, as svg2pdf does when it writes a PDF.
+   */
+  placeTrackedLetters?: boolean
 }
 
 export function renderNodesToSVG(
@@ -488,7 +493,8 @@ export function renderNodesToSVG(
     textLayout: options.textLayout,
     fontAlias: options.fontAlias,
     imageAdjust: options.imageAdjust,
-    idPrefix: options.idPrefix
+    idPrefix: options.idPrefix,
+    placeTrackedLetters: options.placeTrackedLetters
   }
 
   const roots = nodeIds.flatMap((id) => {

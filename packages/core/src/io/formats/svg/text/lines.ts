@@ -98,6 +98,9 @@ function spanEdges(line: SVGTextLine, from: number, to: number): SVGCharacterEdg
   return left <= right ? { left, right } : null
 }
 
+/** Scripts whose letters join, which a span keeps joined only while they are drawn together. */
+const RIGHT_TO_LEFT = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u
+
 interface FallbackSegment {
   from: number
   to: number
@@ -124,11 +127,35 @@ function fallbackSegments(line: SVGTextLine, from: number, to: number): Fallback
   return segments
 }
 
+/** A tracked span as one span per letter, each where the editor draws it. */
+function letterSpans(
+  node: SceneNode,
+  line: SVGTextLine,
+  from: number,
+  to: number,
+  y: number,
+  attrs: Record<string, string | number | undefined>
+): SVGNode[] {
+  const spans: SVGNode[] = []
+  for (let index = from; index < to; index++) {
+    const edges = line.characters?.get(index)
+    if (!edges || !node.text[index].trim()) continue
+    // A character drawn as two code units (a surrogate pair) keeps both.
+    let end = index + 1
+    while (end < to && !line.characters?.has(end)) end++
+    spans.push(
+      svg('tspan', { x: round(edges.left), y, ...attrs }, shownTextSlice(node, index, end))
+    )
+  }
+  return spans
+}
+
 function lineSpans(
   node: SceneNode,
   pieces: readonly TextPiece[],
   line: SVGTextLine,
-  spanAttrs: SpanAttrs
+  spanAttrs: SpanAttrs,
+  placeTrackedLetters: boolean
 ): SVGNode[] {
   // The newline that ends a line is not drawn. A CR is dropped only with that LF, so a
   // literal trailing CR stays.
@@ -147,6 +174,13 @@ function lineSpans(
     )) {
       if (to <= from) continue
       const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
+      const tracked = (piece.style?.letterSpacing ?? node.letterSpacing).value !== 0
+      const text = node.text.slice(from, to)
+      // Letters joined by shaping, as Arabic, stay one span, which keeps them joined.
+      if (placeTrackedLetters && tracked && line.characters && !RIGHT_TO_LEFT.test(text)) {
+        spans.push(...letterSpans(node, line, from, to, y, attrs))
+        continue
+      }
       // Every span starts at its left edge, in either direction, since renderers disagree on
       // which side `text-anchor` and `direction` place. Without character edges the first span
       // of a line starts at the line's left edge, and the rest follow on from it.
@@ -252,8 +286,9 @@ export function explicitNewlineLines(
 export function laidOutTextSpans(
   node: SceneNode,
   lines: readonly SVGTextLine[],
-  spanAttrs: SpanAttrs
+  spanAttrs: SpanAttrs,
+  placeTrackedLetters = false
 ): SVGNode[] {
   const pieces = textPieces(node)
-  return lines.flatMap((line) => lineSpans(node, pieces, line, spanAttrs))
+  return lines.flatMap((line) => lineSpans(node, pieces, line, spanAttrs, placeTrackedLetters))
 }

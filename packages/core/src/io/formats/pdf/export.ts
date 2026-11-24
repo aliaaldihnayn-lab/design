@@ -67,7 +67,10 @@ interface PreparedPage {
   height: number
 }
 
-type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias' | 'imageAdjust'>
+type PageSVGOptions = Pick<
+  SVGExportOptions,
+  'textLayout' | 'fontAlias' | 'imageAdjust' | 'placeTrackedLetters'
+>
 
 function preparePage(
   graph: SceneGraph,
@@ -124,7 +127,9 @@ async function renderPages(
   const svgOptions: PageSVGOptions = {
     textLayout: options.textLayout,
     fontAlias: embedding ? embeddedFontAlias(embedding) : undefined,
-    imageAdjust: options.imageAdjust
+    imageAdjust: options.imageAdjust,
+    // svg2pdf writes no letter spacing, so tracked letters are each placed where they are drawn.
+    placeTrackedLetters: true
   }
   const preparePages = () =>
     specs

@@ -176,7 +176,7 @@ export function renderTextNode(
   ctx: SVGExportContext,
   fillOpacity?: number
 ): SVGNode {
-  const { colorSpace, textLayout, fontAlias } = ctx
+  const { colorSpace, textLayout, fontAlias, placeTrackedLetters } = ctx
   const direction = resolveNodeTextDirection(node)
   const lines = textLayout ? textLayout(node) : null
   const laidOut = lines && lines.length > 0 ? lines : null
@@ -210,7 +210,7 @@ export function renderTextNode(
     return svg(
       'text',
       { ...attrs, 'xml:space': 'preserve' },
-      ...laidOutTextSpans(node, laidOut, spanAttrs)
+      ...laidOutTextSpans(node, laidOut, spanAttrs, placeTrackedLetters)
     )
   }
 

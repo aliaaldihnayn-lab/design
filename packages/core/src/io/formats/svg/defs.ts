@@ -60,6 +60,8 @@ export interface SVGExportContext {
   textLayout?: SVGTextLayout
   imageAdjust?: SVGImageAdjust
   fontAlias?: SVGFontAlias
+  /** Places each letter of tracked text where the editor draws it, for readers without tracking. */
+  placeTrackedLetters?: boolean
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
