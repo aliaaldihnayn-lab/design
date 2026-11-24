@@ -34,10 +34,6 @@ const reason = ref('')
 const busy = ref(false)
 const finished = ref<'signed' | 'declined' | null>(null)
 
-useHead({
-  title: computed(() => signedPDF.value?.title ?? view.value?.title ?? t.value.signature)
-})
-
 /** A completion email's link: the signed PDF itself, downloaded with the token it carries. */
 const downloading = signerId.value === 'download'
 const signedPDF = shallowRef<{ title: string; pdf: string } | null>(null)
@@ -49,6 +45,17 @@ const pdfBlob = computed(() =>
 )
 const download = useTemplateRef<HTMLAnchorElement>('download')
 const pdfURL = useObjectUrl(pdfBlob)
+
+useHead({
+  title: computed(() => signedPDF.value?.title ?? view.value?.title ?? t.value.signature)
+})
+
+/** What a closed envelope's signer is told, by why it closed. */
+const CLOSED_LABELS = {
+  completed: 'statusCompleted',
+  declined: 'statusDeclined',
+  voided: 'statusVoided'
+} as const
 
 const failed = (failure: unknown) =>
   t.value.signFailed({ error: failure instanceof Error ? failure.message : String(failure) })
@@ -152,7 +159,7 @@ async function decline() {
             size="sm"
             variant="outline"
             data-test-id="signing-draw"
-            @click="signatureOpen = true"
+            @click="signature ? (signature = null) : (signatureOpen = true)"
           >
             {{ signature ? t.clear : t.signHere }}
           </AppButton>
@@ -179,7 +186,11 @@ async function decline() {
             }}</AppButton>
           </template>
         </div>
-        <AppAlert v-else tone="info" :heading="t.statusVoided" />
+        <AppAlert
+          v-else-if="view.envelopeStatus !== 'sent'"
+          tone="info"
+          :heading="t[CLOSED_LABELS[view.envelopeStatus]]"
+        />
       </template>
     </div>
     <WriterSignatureDialog
