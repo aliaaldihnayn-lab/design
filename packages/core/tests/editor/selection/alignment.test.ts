@@ -5,6 +5,7 @@ import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
 import { createEditor } from '@lawha/core'
 import { SceneGraph } from '@lawha/scene-graph'
+import { getAbsolutePositionFull, getNodeWorldBounds } from '@lawha/scene-graph/coordinate'
 
 describe('single-node alignment to parent', () => {
   function setup() {
@@ -143,4 +144,98 @@ test('aligning auto layout children records no undo step', () => {
   editor.runLayoutForNode(row.id)
   editor.alignNodes([a.id, b.id], 'vertical', 'max')
   expect(editor.undo.canUndo).toBe(false)
+})
+
+describe('aligning turned and reflected layers', () => {
+  // Each layer's box as drawn on the canvas, which Figma aligns by.
+  function drawnBoxes(editor: ReturnType<typeof createEditor>, ids: string[]) {
+    return ids.map((id) => {
+      const box = getAbsolutePositionFull(getNodeOrThrow(editor.graph, id), editor.graph)
+      return {
+        left: box.boundX,
+        right: box.boundX + box.width,
+        top: box.boundY,
+        bottom: box.boundY + box.height
+      }
+    })
+  }
+
+  function setup(parentRotation = 0) {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const parent =
+      parentRotation === 0
+        ? pageId
+        : editor.graph.createNode('FRAME', pageId, {
+            x: 0,
+            y: 0,
+            width: 600,
+            height: 400,
+            rotation: parentRotation
+          }).id
+    const ids = [
+      editor.graph.createNode('RECTANGLE', parent, { x: 100, y: 100, width: 80, height: 40, rotation: 30 }).id,
+      editor.graph.createNode('RECTANGLE', parent, { x: 260, y: 180, width: 60, height: 60 }).id,
+      editor.graph.createNode('RECTANGLE', parent, {
+        x: 420,
+        y: 140,
+        width: 50,
+        height: 90,
+        rotation: -45,
+        flipX: true
+      }).id
+    ]
+    return { editor, ids }
+  }
+
+  for (const parentRotation of [0, 20]) {
+    test(`lines up the edges they draw (parent turned ${parentRotation}°)`, () => {
+      const { editor, ids } = setup(parentRotation)
+      const before = drawnBoxes(editor, ids)
+      const left = Math.min(...before.map((box) => box.left))
+      const right = Math.max(...before.map((box) => box.right))
+      const top = Math.min(...before.map((box) => box.top))
+
+      editor.alignNodes(ids, 'horizontal', 'min')
+      for (const box of drawnBoxes(editor, ids)) expect(box.left).toBeCloseTo(left, 6)
+      editor.undoAction()
+
+      editor.alignNodes(ids, 'horizontal', 'max')
+      for (const box of drawnBoxes(editor, ids)) expect(box.right).toBeCloseTo(right, 6)
+      editor.undoAction()
+
+      editor.alignNodes(ids, 'vertical', 'center')
+      const middles = drawnBoxes(editor, ids).map((box) => (box.top + box.bottom) / 2)
+      for (const middle of middles) expect(middle).toBeCloseTo(middles[0], 6)
+      editor.undoAction()
+
+      editor.alignNodes(ids, 'vertical', 'min')
+      const after = drawnBoxes(editor, ids)
+      for (const box of after) expect(box.top).toBeCloseTo(top, 6)
+      // Aligning one axis leaves the other alone, even when the parent is turned.
+      after.forEach((box, index) => expect(box.left).toBeCloseTo(before[index].left, 6))
+      editor.dispose()
+    })
+  }
+
+  test('a turned layer aligns to its parent by its outline', () => {
+    const editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      width: 400,
+      height: 300
+    })
+    const id = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 150,
+      y: 100,
+      width: 100,
+      height: 50,
+      rotation: 45
+    }).id
+    editor.alignNodes([id], 'horizontal', 'min')
+    editor.alignNodes([id], 'vertical', 'max')
+    const box = getNodeWorldBounds(getNodeOrThrow(editor.graph, id))
+    expect(box.x).toBeCloseTo(0, 6)
+    expect(box.y + box.height).toBeCloseTo(300, 6)
+    editor.dispose()
+  })
 })

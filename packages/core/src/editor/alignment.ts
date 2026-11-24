@@ -1,8 +1,11 @@
 import { sumBy } from 'es-toolkit'
 
 import type { SceneNode } from '@lawha/scene-graph'
-import { getAbsolutePositionFull, getWorldMatrix } from '@lawha/scene-graph/coordinate'
-import { computeAbsoluteBounds } from '@lawha/scene-graph/geometry'
+import {
+  getAbsolutePositionFull,
+  getNodeWorldBounds,
+  getWorldMatrix
+} from '@lawha/scene-graph/coordinate'
 import Matrix from '@lawha/scene-graph/matrix'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
@@ -24,6 +27,10 @@ function computeAlignTarget(
   return max - size
 }
 
+/**
+ * Aligns one layer within its parent by the box it draws in the parent's frame, as Figma does, so
+ * a turned or reflected layer lines up by its outline, not by its unturned position.
+ */
 function alignSingleNode(
   ctx: EditorContext,
   node: SceneNode,
@@ -33,42 +40,44 @@ function alignSingleNode(
   const parent = node.parentId ? ctx.graph.getNode(node.parentId) : undefined
   const pw = parent?.width ?? 0
   const ph = parent?.height ?? 0
+  const drawn = getNodeWorldBounds(node)
 
   if (axis === 'horizontal') {
-    ctx.graph.updateNode(node.id, { x: computeAlignTarget(0, pw, node.width, align) })
+    const target = computeAlignTarget(0, pw, drawn.width, align)
+    ctx.graph.updateNode(node.id, { x: node.x + target - drawn.x })
   } else {
-    ctx.graph.updateNode(node.id, { y: computeAlignTarget(0, ph, node.height, align) })
+    const target = computeAlignTarget(0, ph, drawn.height, align)
+    ctx.graph.updateNode(node.id, { y: node.y + target - drawn.y })
   }
 }
 
+/**
+ * Aligns layers by the boxes they draw on the canvas, as Figma does: a turned or reflected layer,
+ * or one inside a turned frame, lines up by its outline, and moves along its parent's own axes.
+ */
 function alignMultipleNodes(
   ctx: EditorContext,
   nodes: SceneNode[],
   axis: 'horizontal' | 'vertical',
   align: 'min' | 'center' | 'max'
 ) {
-  const absPositions = new Map<string, Vector>()
-  for (const n of nodes) absPositions.set(n.id, ctx.graph.getAbsolutePosition(n.id))
+  const drawn = new Map(nodes.map((node) => [node.id, getAbsolutePositionFull(node, ctx.graph)]))
+  const boxes = [...drawn.values()]
+  const start = axis === 'horizontal' ? 'boundX' : 'boundY'
+  const size = axis === 'horizontal' ? 'width' : 'height'
+  const min = Math.min(...boxes.map((box) => box[start]))
+  const max = Math.max(...boxes.map((box) => box[start] + box[size]))
 
-  const getPos = (id: string) => absPositions.get(id) ?? { x: 0, y: 0 }
-  const b = computeAbsoluteBounds(nodes, getPos)
-  const minX = b.x
-  const minY = b.y
-  const maxX = b.x + b.width
-  const maxY = b.y + b.height
-
-  for (const n of nodes) {
-    const abs = absPositions.get(n.id)
-    if (!abs) continue
-    const parentAbs = n.parentId ? ctx.graph.getAbsolutePosition(n.parentId) : { x: 0, y: 0 }
-
-    if (axis === 'horizontal') {
-      const target = computeAlignTarget(minX, maxX, n.width, align)
-      ctx.graph.updateNode(n.id, { x: target - parentAbs.x })
-    } else {
-      const target = computeAlignTarget(minY, maxY, n.height, align)
-      ctx.graph.updateNode(n.id, { y: target - parentAbs.y })
-    }
+  for (const node of nodes) {
+    const box = drawn.get(node.id)
+    if (!box) continue
+    const distance = computeAlignTarget(min, max, box[size], align) - box[start]
+    const delta = parentLocalDelta(
+      ctx,
+      node,
+      axis === 'horizontal' ? { x: distance, y: 0 } : { x: 0, y: distance }
+    )
+    if (delta) ctx.graph.updateNode(node.id, { x: node.x + delta.x, y: node.y + delta.y })
   }
 }
 
