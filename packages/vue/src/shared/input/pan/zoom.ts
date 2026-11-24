@@ -21,7 +21,8 @@ export function setupPanZoom(
   onMouseDown: (e: MouseEvent) => void,
   onMouseMove: (e: MouseEvent) => void,
   onMouseUp: () => void,
-  zoomSpeed: () => number = () => 1
+  zoomSpeed: () => number = () => 1,
+  cancelPress: () => void = onMouseUp
 ) {
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
@@ -34,6 +35,8 @@ export function setupPanZoom(
   }
 
   let touchAsMouse = false
+  /** The selection before a finger's press, which a second finger landing puts back. */
+  let selectionBeforePress: string[] = []
   /** A long press opened the menu; the finger's later moves and lift do nothing. */
   let longPressFired = false
 
@@ -85,8 +88,11 @@ export function setupPanZoom(
 
     if (activeTouches.length === 2) {
       longPress.cancel()
+      // Fingers rarely land together: the first one's press was the start of a pinch, so it
+      // neither selects, nor draws, nor moves anything.
       if (touchAsMouse) {
-        onMouseUp()
+        cancelPress()
+        editor.select(selectionBeforePress)
         touchAsMouse = false
       }
       drag.value = null
@@ -112,6 +118,7 @@ export function setupPanZoom(
         }
       } else {
         touchAsMouse = true
+        selectionBeforePress = [...editor.state.selectedIds]
         onMouseDown(syntheticMouse('mousedown', t))
       }
     }

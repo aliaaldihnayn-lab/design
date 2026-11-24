@@ -504,7 +504,16 @@ export function useCanvasInput(
     canvasLabelEdit.commit()
   })
 
-  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp, zoomSpeed)
+  setupPanZoom(
+    canvasRef,
+    editor,
+    drag,
+    onMouseDown,
+    onMouseMove,
+    onMouseUp,
+    zoomSpeed,
+    cancelPointerInteraction
+  )
   return {
     drag,
     cursorOverride,
