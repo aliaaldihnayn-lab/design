@@ -1,3 +1,4 @@
+import { directionFromAttribute } from '#dom-css/import/direction'
 import type {
   DesignDocument,
   DesignElement,
@@ -31,13 +32,29 @@ interface AncestorContext {
   parent: AncestorContext | null
 }
 
+/** The properties CSS inherits that the import reads. */
 const INHERITED_PROPERTIES = new Set([
   'color',
+  'direction',
   'font-family',
   'font-size',
+  'font-style',
   'font-weight',
-  'line-height'
+  'letter-spacing',
+  'line-height',
+  'text-align',
+  'text-transform',
+  'white-space'
 ])
+
+/**
+ * What a browser's default stylesheet sets that the import reads and no inheritance gives, read
+ * before the document's own rules so that any of them wins.
+ */
+const USER_AGENT_CSS = 'h1, h2, h3, h4, h5, h6, th { font-weight: 700 }'
+
+/** Selectors of the page's root boxes, which the parsed content sits inside without. */
+const ROOT_SELECTORS = new Set(['html', 'body', ':root'])
 
 function styleToRecord(
   style: CSSStyleDeclarationLike,
@@ -291,6 +308,9 @@ function applyComputedStyles(
   if (node.type === 'text') return node
 
   const computedStyle: DesignStyleDeclaration = pickInheritedStyle(inheritedStyle)
+  // A `dir` attribute sets `direction` as a presentational hint, under any author rule.
+  const dir = directionFromAttribute(node.attrs.dir)
+  if (dir) computedStyle.direction = dir
   const matchingRules = rules
     .filter((rule) => matchesSelector(node, rule.selector, parent))
     .sort((left, right) => left.specificity - right.specificity || left.order - right.order)
@@ -317,14 +337,31 @@ function pickInheritedStyle(style: DesignStyleDeclaration): DesignStyleDeclarati
   return inherited
 }
 
+/**
+ * What the content inherits from `<html>` and `<body>`, which it is parsed without: their
+ * direction, then the inherited properties of rules that select them, such as a page's font.
+ */
+function rootInheritedStyle(
+  rules: HeadlessCSSRule[],
+  document: DesignDocument
+): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = document.dir ? { direction: document.dir } : {}
+  const rootRules = rules
+    .filter((rule) => ROOT_SELECTORS.has(rule.selector.toLowerCase()))
+    .sort((left, right) => left.specificity - right.specificity || left.order - right.order)
+  for (const rule of rootRules) Object.assign(style, pickInheritedStyle(rule.style))
+  return style
+}
+
 export function computeHeadlessStyles(document: DesignDocument, cssText = ''): DesignDocument {
   const stylesheetText = [document.stylesheets?.map((sheet) => sheet.cssText).join('\n'), cssText]
     .filter((text): text is string => !!text)
     .join('\n')
-  const { rules } = parseRules(stylesheetText)
+  const { rules } = parseRules(`${USER_AGENT_CSS}\n${stylesheetText}`)
+  const rootStyle = rootInheritedStyle(rules, document)
 
   return {
     ...document,
-    children: document.children.map((child) => applyComputedStyles(child, rules, null, {}))
+    children: document.children.map((child) => applyComputedStyles(child, rules, null, rootStyle))
   }
 }

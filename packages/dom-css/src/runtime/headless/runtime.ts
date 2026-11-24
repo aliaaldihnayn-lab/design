@@ -1,8 +1,9 @@
 import { serializeHTML } from '#dom-css/export/html'
+import { directionFromAttribute } from '#dom-css/import/direction'
 import { INLINE_TAGS } from '#dom-css/import/flow'
 import { parseStyleAttribute } from '#dom-css/import/style-attribute'
 import type { CSSRuntime, DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
-import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
+import { parse, parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { computeHeadlessStyles } from './styles'
 
@@ -77,11 +78,24 @@ function childToDesignNode(
   return element
 }
 
+/** The direction a whole page sets with `dir` on its `<html>` or `<body>`; the body's wins. */
+function pageDirection(html: string) {
+  if (!/<(?:html|body)\b[^>]*\bdir\s*=/iu.test(html)) return undefined
+  const root = parse(html).childNodes.find((node) => 'tagName' in node && node.tagName === 'html')
+  if (!root || !('tagName' in root)) return undefined
+  const body = root.childNodes.find((node) => 'tagName' in node && node.tagName === 'body')
+  const dirOf = (node: DefaultTreeAdapterTypes.ChildNode | undefined) =>
+    node && 'attrs' in node ? node.attrs.find((attr) => attr.name === 'dir')?.value : undefined
+  return directionFromAttribute(dirOf(body)) ?? directionFromAttribute(dirOf(root))
+}
+
 function parseHTML(html: string): DesignDocument {
   const fragment = parseFragment(html)
+  const dir = pageDirection(html)
   return {
     type: 'document',
-    children: childrenToDesignNodes(fragment.childNodes, false)
+    children: childrenToDesignNodes(fragment.childNodes, false),
+    ...(dir ? { dir } : {})
   }
 }
 

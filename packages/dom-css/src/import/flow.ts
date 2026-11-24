@@ -16,6 +16,7 @@ import {
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
+import { cssDirection, inlineAlignFromCSS } from './direction'
 
 /**
  * How CSS lays an element and its children out, mapped onto auto layout: block flow stacks
@@ -55,6 +56,7 @@ const CENTERED_TAGS = new Set(['button'])
 /** What a run of text takes from its element: the properties CSS inherits, and decoration. */
 const TEXT_PROPERTIES = [
   'color',
+  'direction',
   'font-family',
   'font-size',
   'font-style',
@@ -107,10 +109,8 @@ export function isInlineLevel(display: string): boolean {
 }
 
 function textAlignAxis(element: DesignElement, style: DesignStyleDeclaration) {
-  const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
-  if (align === 'center') return 'CENTER'
-  if (align === 'right' || align === 'end') return 'MAX'
-  if (align) return 'MIN'
+  const align = inlineAlignFromCSS(pickStyle(style, 'text-align'), cssDirection(style))
+  if (align) return align
   return CENTERED_TAGS.has(element.tagName.toLowerCase()) ? 'CENTER' : 'MIN'
 }
 

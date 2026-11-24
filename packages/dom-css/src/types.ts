@@ -12,7 +12,11 @@ export interface DesignDocument {
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens
+  /** The page's direction from the `dir` of its `<html>` or `<body>`, which content inherits. */
+  dir?: DocumentDirection
 }
+
+export type DocumentDirection = 'ltr' | 'rtl'
 
 export interface DesignElement {
   type: 'element'

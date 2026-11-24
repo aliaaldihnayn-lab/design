@@ -35,3 +35,44 @@ describe('reading HTML', () => {
     expect(label.x * 2 + label.width).toBeCloseTo(390, 0)
   })
 })
+
+describe('reading right-to-left HTML', () => {
+  const RTL_PAGE = `<!doctype html><html dir="rtl" lang="ar"><head><style>
+    body { font-family: 'Noto Naskh Arabic'; }
+    .card { width: 300px; display: flex; flex-direction: column; gap: 8px; }
+    .row { display: flex; gap: 8px; }
+    .btn { width: 60px; height: 30px; background: #e8632c; }
+  </style></head><body>
+    <div class="card"><h1>مرحبا</h1><p>نص عربي</p><div class="row"><span class="btn">أ</span><span class="btn">ب</span></div></div>
+    <div class="note" style="width:120px;height:40px;background:#eef"></div>
+  </body></html>`
+
+  test('lays content out from the right and stacks the body in flow', async () => {
+    const { graph } = await readHTMLDocument(RTL_PAGE)
+    const layers = [...graph.getAllNodes()]
+    const named = (name: string) => {
+      const found = layers.find((node) => node.name === name)
+      if (!found) throw new Error(`Missing layer ${name}`)
+      return found
+    }
+    const body = named('body')
+    expect(body.layoutDirection).toBe('RTL')
+    const [card, note] = body.childIds.map((id) => graph.getNode(id))
+    // The two roots sit one below the other, each from the right edge, rather than both at 0,0.
+    expect(card?.y).toBe(0)
+    expect(note?.y).toBe(card?.height)
+    expect((note?.x ?? 0) + (note?.width ?? 0)).toBe(body.width)
+
+    // The first button of the row is the rightmost, as a browser draws it.
+    const [first, second] = named('row').childIds.map((id) => graph.getNode(id))
+    expect(first?.x).toBeGreaterThan(second?.x ?? Infinity)
+
+    // Text starts on the right, in the page's font, and the heading is bold.
+    const heading = layers.find((node) => node.type === 'TEXT' && node.text === 'مرحبا')
+    expect(heading).toMatchObject({
+      textAlignHorizontal: 'RIGHT',
+      fontFamily: 'Noto Naskh Arabic',
+      fontWeight: 700
+    })
+  })
+})

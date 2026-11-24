@@ -1,4 +1,5 @@
 import { serializeHTML } from '../export/html'
+import { directionFromAttribute } from '../import/direction'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -38,6 +39,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'box-sizing',
   'color',
   'column-gap',
+  'direction',
   'display',
   'align-self',
   'bottom',
@@ -132,11 +134,15 @@ function parseHTMLWithDocument(browserDocument: Document, html: string): DesignD
   if (!Parser) throw new TypeError('Browser CSS runtime requires DOMParser')
   const parser = new Parser()
   const parsed = parser.parseFromString(html, 'text/html')
+  const dir =
+    directionFromAttribute(parsed.body.getAttribute('dir') ?? undefined) ??
+    directionFromAttribute(parsed.documentElement.getAttribute('dir') ?? undefined)
   return {
     type: 'document',
     children: Array.from(parsed.body.childNodes)
       .map(domNodeToDesignNode)
-      .filter((node): node is DesignNode => node !== null)
+      .filter((node): node is DesignNode => node !== null),
+    ...(dir ? { dir } : {})
   }
 }
 
@@ -214,6 +220,7 @@ async function computeStylesInShadowRoot(
   shadow.append(style)
 
   const content = browserDocument.createElement('div')
+  if (designDocument.dir) content.dir = designDocument.dir
   content.innerHTML = serializeHTML(designDocument)
   shadow.append(content)
   browserDocument.body.append(host)
@@ -247,6 +254,8 @@ async function computeStylesInIframe(
     style.textContent = cssText
     iframeDocument.head.append(style)
 
+    // The page's `dir` sits on its `<html>` or `<body>`, which the content is parsed without.
+    if (designDocument.dir) iframeDocument.body.dir = designDocument.dir
     const content = iframeDocument.createElement('div')
     content.innerHTML = serializeHTML(designDocument)
     iframeDocument.body.append(content)

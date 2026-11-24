@@ -11,9 +11,23 @@ import {
 import { TRANSPARENT } from '@lawha/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@lawha/scene-graph/css'
 import { computeImageHash } from '@lawha/scene-graph/images'
+import { autoLayoutSizingFields } from '@lawha/scene-graph/layout'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { colorToFillFromCSS, colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
+import {
+  colorToFillFromCSS,
+  colorToStrokeFromCSS,
+  hasBoxStyle,
+  mergedStyle,
+  pickStyle
+} from './css-values'
+import {
+  applyLayoutDirection,
+  applyTextDirection,
+  cssDirection,
+  textAlignFromCSS,
+  type FlowDirection
+} from './direction'
 import {
   applyContainerLayout,
   applyFlowSizing,
@@ -370,10 +384,8 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const effects = parseCSSShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
-  const textAlign = pickStyle(style, 'text-align')?.toUpperCase()
-  if (textAlign === 'CENTER' || textAlign === 'RIGHT' || textAlign === 'JUSTIFIED') {
-    node.textAlignHorizontal = textAlign
-  }
+  const direction = cssDirection(style)
+  node.textAlignHorizontal = textAlignFromCSS(pickStyle(style, 'text-align'), direction)
 
   if (pickStyle(style, 'white-space') === 'nowrap') node.maxLines = 1
 }
@@ -398,6 +410,7 @@ function createRichTextNode(
   node.text = rich.text
   node.name = rich.text.slice(0, 32) || 'Text'
   node.styleRuns = rich.styleRuns
+  applyTextDirection(node, cssDirection(style))
   if (blocks) applyParagraphs(node, rich)
   applyFlowSizing(graph, node, style, display, parentFlow)
   return node
@@ -430,6 +443,7 @@ function createTextNode(
 ) {
   const node = graph.createNode('TEXT', parentId, { name: text.slice(0, 32) || 'Text', text })
   applyTextStyle(node, style)
+  applyTextDirection(node, cssDirection(style))
   applyFlowSizing(graph, node, style, display, parentFlow)
   return node
 }
@@ -442,49 +456,6 @@ function linkText(node: SceneNode, element: DesignElement): void {
   }
 }
 
-function hasBoxStyle(style: DesignStyleDeclaration): boolean {
-  return [
-    'aspect-ratio',
-    'background-color',
-    'border-color',
-    'border-style',
-    'border-width',
-    'border-top-style',
-    'border-top-width',
-    'border-right-style',
-    'border-right-width',
-    'border-bottom-style',
-    'border-bottom-width',
-    'border-left-style',
-    'border-left-width',
-    'border-radius',
-    'box-shadow',
-    'display',
-    'height',
-    'padding',
-    'padding-top',
-    'padding-right',
-    'padding-bottom',
-    'padding-left',
-    'padding-block',
-    'padding-inline',
-    'width',
-    'min-width',
-    'max-width',
-    'min-height',
-    'max-height',
-    'object-fit',
-    'overflow',
-    'position',
-    'top',
-    'right',
-    'bottom',
-    'left',
-    'flex-wrap',
-    'align-self'
-  ].some((property) => pickStyle(style, property) !== undefined)
-}
-
 function hasContent(element: DesignElement): boolean {
   return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }
@@ -493,7 +464,8 @@ function createElementNode(
   graph: SceneGraph,
   parentId: string,
   element: DesignElement,
-  parentFlow: ParentFlow
+  parentFlow: ParentFlow,
+  parentDirection: FlowDirection
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
@@ -516,6 +488,8 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  const direction = cssDirection(style, parentDirection)
+  applyLayoutDirection(node, direction, parentDirection)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
@@ -532,7 +506,14 @@ function createElementNode(
     return node
   }
   for (const child of element.children) {
-    createDesignNode(graph, node.id, child, flow ?? 'none', inheritedTextStyle(element, style))
+    createDesignNode(
+      graph,
+      node.id,
+      child,
+      flow ?? 'none',
+      direction,
+      inheritedTextStyle(element, style)
+    )
   }
 
   return node
@@ -543,6 +524,7 @@ function createDesignNode(
   parentId: string,
   node: DesignNode,
   parentFlow: ParentFlow,
+  parentDirection: FlowDirection,
   inheritedStyle: DesignStyleDeclaration = {}
 ): SceneNode | null {
   if (node.type === 'text') {
@@ -552,7 +534,7 @@ function createDesignNode(
     return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
   }
 
-  return createElementNode(graph, parentId, node, parentFlow)
+  return createElementNode(graph, parentId, node, parentFlow, parentDirection)
 }
 
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
@@ -560,6 +542,30 @@ function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
   if (children.length === 0) return
   page.width = Math.max(...children.map((child) => child.x + child.width))
   page.height = Math.max(...children.map((child) => child.y + child.height))
+}
+
+function isRendered(node: DesignNode): boolean {
+  if (node.type === 'text') return node.text.trim().length > 0
+  return elementDisplay(node, mergedStyle(node)) !== 'none'
+}
+
+/**
+ * Several roots sit in the block flow of their `<body>`, which stacks them as a browser does
+ * instead of piling them up at the page's origin; each keeps its own layer.
+ */
+function createBody(graph: SceneGraph, pageId: string, document: DesignDocument): void {
+  const direction: FlowDirection = document.dir === 'rtl' ? 'RTL' : 'LTR'
+  const body = graph.createNode('FRAME', pageId, {
+    name: 'body',
+    clipsContent: false,
+    fills: [],
+    layoutMode: 'VERTICAL'
+  })
+  applyLayoutDirection(body, direction, 'LTR')
+  Object.assign(body, autoLayoutSizingFields('VERTICAL', 'HUG', 'HUG'))
+  for (const child of document.children) {
+    createDesignNode(graph, body.id, child, 'block', direction)
+  }
 }
 
 export function designDocumentToSceneGraph(
@@ -571,9 +577,8 @@ export function designDocumentToSceneGraph(
 
   page.name = options.pageName ?? 'DesignDOM'
 
-  for (const child of document.children) {
-    createDesignNode(graph, page.id, child, 'none')
-  }
+  if (document.children.filter(isRendered).length > 1) createBody(graph, page.id, document)
+  else for (const child of document.children) createDesignNode(graph, page.id, child, 'none', 'LTR')
 
   fitPageToChildren(page, graph)
   return graph
