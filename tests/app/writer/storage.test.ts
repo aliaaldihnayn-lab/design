@@ -82,4 +82,15 @@ describe('document editor files in storage', () => {
     expect(await saveWriterDocument()).toMatchObject({ status: 'failed', reason: 'conflict' })
     expect(revisions).toHaveLength(2)
   })
+
+  test('a stored file keeps its own title when saved under another name', async () => {
+    const revisions = memoryProvider()
+    revisions.push(
+      writeDocx(createWriterDocument({ body: paragraph('مشترك'), title: 'عقد الإيجار' }))
+    )
+    expect(await openStoredWriterDocument(binding, 'lease-v2')).toEqual({ status: 'done' })
+    updateWriterDocument({ body: paragraph('معدّل') })
+    expect(await saveWriterDocument()).toEqual({ status: 'done' })
+    expect(readDocx(revisions.at(-1) ?? new Uint8Array()).title).toBe('عقد الإيجار')
+  })
 })

@@ -62,7 +62,9 @@ export function startStoredWriterDocument(binding: StorageDocumentBinding, name:
 export async function saveStoredWriterDocument(source: StorageSource): Promise<WriterFileOutcome> {
   try {
     const name = writerName.value || writerDocument.value.title || 'Document'
-    const bytes = writeDocx({ ...writerDocument.value, title: name }, { source: source.package })
+    // The document's own title stays; the name titles one that has none.
+    const title = writerDocument.value.title || name
+    const bytes = writeDocx({ ...writerDocument.value, title }, { source: source.package })
     const result = await createStorageAdapter(source.binding).putDocument(
       source.binding.documentId,
       bytes,
