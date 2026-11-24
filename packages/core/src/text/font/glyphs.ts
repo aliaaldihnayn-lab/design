@@ -292,7 +292,19 @@ export interface ShapedGlyph {
 /** How a run is shaped, apart from the font and its axes. */
 export type RunShaping = Omit<ShapingOptions, 'instance'>
 
+/** The loaded file a source reads its glyphs from, at the axes it draws them at. */
+export interface GlyphSourceFile {
+  family: string
+  style: string
+  /** Which of the style's files: 0 for its own, then its shards, as `FontManager.shardData` lists them. */
+  file: number
+  /** The axis values a variable font is drawn at; empty for its defaults. */
+  variations: readonly FontVariation[]
+}
+
 export interface GlyphOutlineSource {
+  /** The file the glyph IDs are of, so a writer can embed it, such as a PDF. */
+  file: GlyphSourceFile
   /** Whether the font has a glyph for every code point, so a shaper used it rather than a fallback. */
   covers(text: string): boolean
   /** The glyph the font maps `character` to, to check a shaper's glyph IDs are this font's. */
@@ -312,7 +324,7 @@ export function glyphOutlineSourceSync(
   variations: readonly FontVariation[] = []
 ): GlyphOutlineSource | null {
   const parsed = getParsedFont(family, style)
-  return parsed ? outlineSource(parsed, variations) : null
+  return parsed ? outlineSource(parsed, { family, style, file: 0, variations }) : null
 }
 
 /**
@@ -325,18 +337,16 @@ export function shardOutlineSources(
   variations: readonly FontVariation[] = []
 ): GlyphOutlineSource[] {
   if (!isHarfBuzzLoaded()) return []
-  return fontManager.shardData(family, style).flatMap((data) => {
+  return fontManager.shardData(family, style).flatMap((data, index) => {
     const parsed = shardFont(data)
-    return parsed ? [outlineSource(parsed, variations)] : []
+    return parsed ? [outlineSource(parsed, { family, style, file: index + 1, variations })] : []
   })
 }
 
-function outlineSource(
-  parsed: HarfBuzzFont,
-  variations: readonly FontVariation[]
-): GlyphOutlineSource {
-  const instance = fontInstance(parsed, variations)
+function outlineSource(parsed: HarfBuzzFont, file: GlyphSourceFile): GlyphOutlineSource {
+  const instance = fontInstance(parsed, file.variations)
   return {
+    file,
     covers: (text) => Array.from(text).every((char) => glyphIndex(parsed, char) !== 0),
     glyphOf: (character) => glyphIndex(parsed, character),
     shape: (text, shaping) =>

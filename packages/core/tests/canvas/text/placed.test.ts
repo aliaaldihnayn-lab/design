@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
+import { fontFixture } from '#core-tests/helpers/paths'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@lawha/scene-graph'
@@ -132,9 +133,17 @@ describe('the font saved glyphs are outlined from', () => {
     const source = variableSource()
     const text = 'a->b a->b'
     // The second arrow keeps its characters: the run drawn from one font has both arrows.
-    const glyphs = placed(text, variableProvider, [], {
-      styleRuns: [{ start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }]
-    }, { from: 5, features: [{ name: 'calt', value: 0 }] })
+    const glyphs = placed(
+      text,
+      variableProvider,
+      [],
+      {
+        styleRuns: [
+          { start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }
+        ]
+      },
+      { from: 5, features: [{ name: 'calt', value: 0 }] }
+    )
 
     expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3, 4, 5, 6, 7, 8])
     expect(glyphs.slice(4).map((glyph) => glyph.id)).toEqual(
@@ -210,5 +219,60 @@ describe('the font saved glyphs are outlined from', () => {
       Array.from('t->b', (character) => source.glyphOf(character))
     )
     expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 2, 3])
+  })
+})
+
+describe('Arabic glyphs as the paragraph places them', () => {
+  const ARABIC = 'Placed Test Naskh'
+
+  /** Arabic with stacked marks after a space, laid out right to left in Noto Naskh Arabic. */
+  async function arabic(text: string) {
+    const naskh = await fontFixture('NotoNaskhArabic-Regular.ttf')
+    await fontManager.markLoaded(ARABIC, 'Regular', naskh)
+    const provider = ck.TypefaceFontProvider.Make()
+    provider.registerFont(naskh, ARABIC)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text,
+      fontFamily: ARABIC,
+      fontSize: 40
+    })
+    const textStyle = { fontFamilies: [ARABIC], fontSize: 40 }
+    const builder = ck.ParagraphBuilder.MakeFromFontProvider(
+      new ck.ParagraphStyle({ textStyle, textDirection: ck.TextDirection.RTL }),
+      provider
+    )
+    builder.addText(text)
+    const paragraph = builder.build()
+    builder.delete()
+    try {
+      const layout = TextLayout.ofParagraph(ck, paragraph, text.length)
+      layout.layout(1000)
+      const runs = layout.getShapedLines().flatMap((line) => line.runs)
+      const baseline = layout.getLineMetrics()[0].baseline
+      return {
+        glyphs: expectDefined(laidOutGlyphs(node, layout, text, 0), 'laid-out glyphs'),
+        drawn: runs.flatMap((run) => Array.from(run.glyphs)),
+        drawnX: runs.flatMap((run) =>
+          Array.from(run.positions).filter((_, index) => index % 2 === 0)
+        ),
+        baseline
+      }
+    } finally {
+      paragraph.delete()
+      provider.delete()
+    }
+  }
+
+  test('keeps every glyph of a right-to-left run, its marks raised onto their letters', async () => {
+    const { glyphs, drawn, drawnX, baseline } = await arabic('شَدَّ مَدّ')
+    // The font that drew the run is confirmed, so the glyphs are the paragraph's own, in place.
+    expect(glyphs.map((glyph) => glyph.id)).toEqual(drawn)
+    expect(glyphs.map((glyph) => glyph.x)).toEqual(drawnX.slice(0, glyphs.length))
+    expect(glyphs.every((glyph) => glyph.source?.file.family === ARABIC)).toBe(true)
+    // Shadda and fatha keep the offsets the shaper stacked them with, off the baseline.
+    const marks = glyphs.filter((glyph) => Math.abs(glyph.y - baseline) > 0.5)
+    expect(marks.length).toBeGreaterThanOrEqual(4)
+    expect(new Set(marks.map((glyph) => Math.round(glyph.y))).size).toBeGreaterThan(1)
   })
 })

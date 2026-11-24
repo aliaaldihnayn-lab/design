@@ -20,7 +20,8 @@ import type { ShapingFeature } from '#core/text/font/harfbuzz'
 import { laidOutText } from '#core/text/keycap'
 import { utf16IndicesByUtf8 } from '#core/text/utf8'
 
-type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
+type ShapedLine = ReturnType<Paragraph['getShapedLines']>[number]
+type GlyphRun = ShapedLine['runs'][number]
 
 /** A glyph of laid-out text where the renderer draws it, with the font its outline comes from. */
 export interface LaidOutGlyph {
@@ -162,13 +163,14 @@ function runOutline(
   node: SceneNode,
   shaped: string,
   run: GlyphRun,
+  runEnd: number,
   characterAt: (offset: number) => number,
   sourceAt: (index: number) => number
 ): RunOutline | null {
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
   const start = Math.min(...offsets)
-  const end = Math.max(...offsets)
+  const end = Math.max(runEnd, ...offsets)
   // A glyph covers the characters up to the next greater offset in the run, whatever its
   // direction; the sorted offsets give that once for every glyph.
   const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
@@ -268,13 +270,14 @@ function lineRunOutline(
   node: SceneNode,
   shaped: string,
   run: GlyphRun,
+  runEnd: number,
   endsTruncated: boolean,
   indices: { characterAt: (offset: number) => number; sourceAt: (index: number) => number }
 ): { outline: RunOutline | null; ellipsis: boolean } {
   const { characterAt, sourceAt } = indices
   const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
   if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
-  const outline = runOutline(node, shaped, run, characterAt, sourceAt)
+  const outline = runOutline(node, shaped, run, runEnd, characterAt, sourceAt)
   return { outline: endsTruncated && outline?.glyphs ? null : outline, ellipsis: false }
 }
 
@@ -337,6 +340,42 @@ function reshapedGlyphs(
   })
 }
 
+/** Characters that end a line without a glyph, which no run shapes. */
+const LINE_BREAK = /[\n\r\u2028\u2029]/
+
+/** Where a line's first character is in the text, or null for a line with nothing shaped. */
+function lineStart(line: ShapedLine, characterAt: (offset: number) => number): number | null {
+  const offsets = line.runs.flatMap((run) =>
+    run.glyphs.length === 0 ? [] : Array.from(run.offsets, characterAt)
+  )
+  return offsets.length > 0 ? Math.min(...offsets) : null
+}
+
+/**
+ * Where each run of a line ends in the text, as an index into it. CanvasKit closes a run's
+ * offsets with where it ends only when it runs left to right; a right-to-left run closes them
+ * with where it starts, and the line's text range is no better. A run therefore ends where the
+ * next run of the line starts, or the next line does, short of the break that ends the line.
+ */
+function runEnds(
+  line: ShapedLine,
+  nextLineStart: number,
+  text: string,
+  characterAt: (offset: number) => number
+): number[] {
+  const starts = line.runs.map((run) =>
+    run.glyphs.length === 0 ? Infinity : Math.min(...Array.from(run.offsets, characterAt))
+  )
+  let lineEnd = nextLineStart
+  const first = Math.min(...starts, lineEnd)
+  while (lineEnd > first && LINE_BREAK.test(text[lineEnd - 1] ?? '')) lineEnd--
+  return starts.map((start) => {
+    let end = lineEnd
+    for (const other of starts) if (other > start && other < end) end = other
+    return end
+  })
+}
+
 /**
  * A list marker's glyphs as Figma saves them: placed beside their item and drawing no
  * character of the text.
@@ -389,13 +428,22 @@ export function laidOutGlyphs(
     if (marker) glyphs.push(...markerGlyphs(marker, offsetY))
     const { left, baseline } = metrics[lineIndex]
     const lastLine = lineIndex === lines.length - 1
+    const nextStart = lines
+      .slice(lineIndex + 1)
+      .map((next) => lineStart(next, characterAt))
+      .find((start) => start !== null)
+    const ends = runEnds(line, nextStart ?? shaped.length, shaped, characterAt)
     for (const [runIndex, run] of line.runs.entries()) {
       const endsTruncated =
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
-      const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
-        characterAt,
-        sourceAt
-      })
+      const { outline, ellipsis } = lineRunOutline(
+        node,
+        shaped,
+        run,
+        ends[runIndex],
+        endsTruncated,
+        { characterAt, sourceAt }
+      )
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
       if (outline?.glyphs && !sameClusters(run, outline, characterAt)) {
@@ -407,7 +455,8 @@ export function laidOutGlyphs(
         glyphs.push({
           id: outline?.glyphs?.[index].id ?? run.glyphs[index],
           x,
-          y,
+          // A mark the shaper raised or lowered onto its base keeps that offset.
+          y: y + run.positions[index * 2 + 1] - line.baseline,
           fontSize: run.size,
           // The ellipsis truncation adds draws no character, as Figma saves it.
           firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),
