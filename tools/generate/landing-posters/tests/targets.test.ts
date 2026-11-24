@@ -5,15 +5,19 @@ import { parseShard, posterFiles, posterTargets, shardTargets } from '#landing-p
 const FINGERPRINT = '0123456789abcdef'
 
 describe('landing poster targets', () => {
-  test('cover each locale in both themes and layouts', () => {
+  test('cover each stage landing locale in both themes and layouts', () => {
     const targets = posterTargets(FINGERPRINT)
     expect(targets).toContainEqual({
       fingerprint: FINGERPRINT,
-      locale: 'root',
+      locale: 'de',
       theme: 'dark',
       layout: 'phone'
     })
     expect(targets.length % 4).toBe(0)
+  })
+
+  test('skip the root, which serves the static home page instead of live stages', () => {
+    expect(posterTargets(FINGERPRINT).some((target) => target.locale === 'root')).toBe(false)
   })
 
   test('split into shards that together capture every page once', () => {
@@ -36,6 +40,6 @@ describe('landing poster targets', () => {
     if (!target) throw new Error('no targets')
     const files = posterFiles(target)
     expect(new Set(files).size).toBe(files.length)
-    expect(files).toContain(`landing-posters/${FINGERPRINT}/root/light-desktop/collab-frame.webp`)
+    expect(files).toContain(`landing-posters/${FINGERPRINT}/de/light-desktop/collab-frame.webp`)
   })
 })

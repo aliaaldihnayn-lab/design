@@ -27,9 +27,13 @@ export function parseShard(text: string): PosterShard {
   return { index, count }
 }
 
-/** Every page captured: each locale's landing in each theme and layout. */
+/**
+ * Every page captured: each locale's landing in each theme and layout. The root and `/en` serve
+ * the static home page, whose screenshots are ordinary images, so only the locale landings that
+ * still mount live stages have stills.
+ */
 export function posterTargets(fingerprint: string): PosterTarget[] {
-  return ['root', ...LOCALE_PREFIXES].flatMap((locale) =>
+  return LOCALE_PREFIXES.flatMap((locale) =>
     POSTER_THEMES.flatMap((theme) =>
       POSTER_LAYOUTS.map((layout) => ({ fingerprint, locale, theme, layout }))
     )

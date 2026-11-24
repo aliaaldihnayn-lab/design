@@ -140,7 +140,42 @@ export function withAlternateSitemapLinks<T extends SitemapItem>(items: T[]): T[
   })
 }
 
+/** The home page: Arabic at the root, English at `/en`, each the other's alternate. */
+const HOME_PAGES: Record<string, { hreflang: string; ogLocale: string; url: string }> = {
+  'index.md': { hreflang: 'ar', ogLocale: 'ar_SA', url: BASE },
+  'en.md': { hreflang: 'en', ogLocale: 'en_US', url: `${BASE}/en` }
+}
+
+function applyHomeSeo(pageData: PageDataLike, home: (typeof HOME_PAGES)[string]): void {
+  pageData.frontmatter.head ??= []
+  const head = pageData.frontmatter.head
+  head.push(['link', { rel: 'canonical', href: home.url }])
+  head.push(['meta', { property: 'og:url', content: home.url }])
+  head.push(['meta', { property: 'og:locale', content: home.ogLocale }])
+  head.push(['script', { type: 'application/ld+json' }, JSON.stringify(SOFTWARE_APPLICATION)])
+  for (const other of Object.values(HOME_PAGES)) {
+    if (other !== home)
+      head.push(['meta', { property: 'og:locale:alternate', content: other.ogLocale }])
+    head.push(['link', { rel: 'alternate', hreflang: other.hreflang, href: other.url }])
+  }
+  head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: BASE }])
+  if (pageData.title) {
+    head.push(['meta', { property: 'og:title', content: pageData.title }])
+    head.push(['meta', { name: 'twitter:title', content: pageData.title }])
+  }
+  if (pageData.description) {
+    head.push(['meta', { property: 'og:description', content: pageData.description }])
+    head.push(['meta', { name: 'twitter:description', content: pageData.description }])
+    head.push(['meta', { name: 'description', content: pageData.description }])
+  }
+}
+
 export function applyPageSeo(pageData: PageDataLike): void {
+  const home = HOME_PAGES[pageData.relativePath]
+  if (home) {
+    applyHomeSeo(pageData, home)
+    return
+  }
   const localeKey = localeKeyForPath(pageData.relativePath)
   const locale = LOCALES[localeKey]
   const slug = slugForPath(pageData.relativePath)

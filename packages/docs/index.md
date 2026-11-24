@@ -1,15 +1,11 @@
 ---
-layout: page
-landing: true
-sidebar: false
-aside: false
-title: Lawha — Open-Source Design Editor
-description: Open-source design editor that opens Figma .fig files, runs locally, and is fully programmable by you or your AI agent.
+layout: false
+title: لوحة — محرّر تصميم عربي أولاً
+description: محرّر تصميم مفتوح المصدر للواجهات والمطبوعات ووسائل التواصل الاجتماعي، بواجهة عربية كاملة من اليمين إلى اليسار وذكاء اصطناعي مدمج، في المتصفح وعلى سطح المكتب وأندرويد.
 ---
 
 <script setup>
-import LandingPage from '#docs/theme/landing/LandingPage.vue'
-import { en } from '#docs/theme/landing/content/messages/en'
+import HomePage from '#docs/theme/landing/home/HomePage.vue'
 </script>
 
-<LandingPage :messages="en" />
+<HomePage locale="ar" />

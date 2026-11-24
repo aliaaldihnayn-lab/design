@@ -69,6 +69,11 @@ export default defineConfig({
     }
   },
   transformHead: landingPreloads,
+  // The root locale is English, but its home page is Arabic: say so before any script runs.
+  transformHtml(html, _id, { pageData }) {
+    if (pageData.relativePath !== 'index.md') return
+    return html.replace(/<html lang="en" dir="ltr"/, '<html lang="ar" dir="rtl"')
+  },
 
   markdown: {
     codeTransformers: [
