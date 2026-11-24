@@ -6,11 +6,14 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 import { strFromU8, unzipSync } from 'fflate'
 
 import {
+  createWriterDocument,
+  defaultPageSetup,
   nodeText,
   readDocx,
   writeDocx,
   writerSections,
-  type WriterDocument
+  type WriterDocument,
+  type WriterNode
 } from '@lawha/core/writer'
 
 /**
@@ -60,5 +63,68 @@ describe('Word sections', () => {
     const model = readDocx(source)
     const changed = { ...model, title: 'Changed' }
     expect(summary(readDocx(writeDocx(changed, { source })))).toEqual(EXPECTED)
+  })
+
+  const paragraph = (text: string): WriterNode => ({
+    type: 'paragraph',
+    attrs: { dir: 'ltr' },
+    content: [{ type: 'text', text }]
+  })
+  const region = (text: string): WriterNode => ({ type: 'doc', content: [paragraph(text)] })
+
+  test('a break made in the editor shows the document header in Word in both sections', () => {
+    const doc = createWriterDocument({
+      header: region('Document header'),
+      body: {
+        type: 'doc',
+        content: [
+          paragraph('one'),
+          { type: 'sectionBreak', attrs: { page: defaultPageSetup('letter') } },
+          paragraph('two')
+        ]
+      }
+    })
+    const read = readDocx(writeDocx(doc))
+    expect(summary(read).map((section) => section.header)).toEqual([
+      'Document header',
+      'Document header'
+    ])
+    // The break ends the paragraph before it, as Word writes it, with no empty one added.
+    expect(read.body.content?.map((node) => node.type)).toEqual([
+      'paragraph',
+      'sectionBreak',
+      'paragraph'
+    ])
+  })
+
+  test('a section without a header after one with a header shows none in Word', () => {
+    const doc = createWriterDocument({
+      body: {
+        type: 'doc',
+        content: [
+          paragraph('one'),
+          {
+            type: 'sectionBreak',
+            attrs: { page: defaultPageSetup(), header: region('First only'), footer: null }
+          },
+          paragraph('two')
+        ]
+      }
+    })
+    expect(summary(readDocx(writeDocx(doc))).map((section) => section.header)).toEqual([
+      'First only',
+      null
+    ])
+  })
+
+  test('removing the last section header over a file does not show the previous one', () => {
+    const source = fixture('lawha-section-headers.docx')
+    const model = readDocx(source)
+    const saved = readDocx(writeDocx({ ...model, header: null }, { source }))
+    expect(summary(saved).map((section) => section.header)).toEqual([
+      'عقد إيجار',
+      'Annex header',
+      null
+    ])
   })
 })

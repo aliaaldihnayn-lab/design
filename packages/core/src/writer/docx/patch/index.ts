@@ -20,6 +20,7 @@ import {
 import { footnoteXML, PartWriter } from '#core/writer/docx/write'
 import { attrOf, DOCUMENT_NAMESPACES, kid, kids, NS, parseXML, REL } from '#core/writer/docx/xml'
 import type { WriterDocument, WriterNode } from '#core/writer/model'
+import { writerSections } from '#core/writer/sections'
 
 import { chunksOf, patchBody, setSectionPage } from './body'
 import { canonical, sameNode } from './canonical'
@@ -89,11 +90,14 @@ function patchRegion(
   sectPr: Element,
   kind: 'header' | 'footer',
   node: WriterNode | null,
-  watermark: string
+  watermark: string,
+  previous: WriterNode | null
 ): void {
   const references = kids(sectPr, `${kind}Reference`)
   const reference = references.find((ref) => attrOf(ref, 'type') === 'default') ?? references.at(0)
-  if (!node?.content?.length && !watermark) {
+  // Without a reference Word shows the previous section's region, so one is removed only when
+  // the previous section has none either.
+  if (!node?.content?.length && !watermark && !previous?.content?.length) {
     if (reference) sectPr.removeChild(reference)
     return
   }
@@ -200,14 +204,15 @@ function patchLastSection(
   }
   if (canonical(original.page) !== canonical(model.page)) setSectionPage(sectPr, model.page)
   const watermarkChanged = canonical(original.watermark) !== canonical(model.watermark)
+  const previous = writerSections(model).at(-2) ?? null
   if (!sameNode(original.header, model.header) || watermarkChanged) {
     const watermark = model.watermark
       ? watermarkXML(model.watermark.text, model.watermark.color)
       : ''
-    patchRegion(state, sectPr, 'header', model.header, watermark)
+    patchRegion(state, sectPr, 'header', model.header, watermark, previous?.header ?? null)
   }
   if (!sameNode(original.footer, model.footer)) {
-    patchRegion(state, sectPr, 'footer', model.footer, '')
+    patchRegion(state, sectPr, 'footer', model.footer, '', previous?.footer ?? null)
   }
 }
 

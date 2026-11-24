@@ -13,7 +13,7 @@ import {
   type WriterNode
 } from '#core/writer/model'
 import { writerNodeSchema } from '#core/writer/schema'
-import { sectionPage } from '#core/writer/sections'
+import { sectionPage, writerSections, type WriterSection } from '#core/writer/sections'
 
 import { imageFromDataURL, imageSize } from './images'
 import {
@@ -33,6 +33,7 @@ import {
   settingsXML,
   stylesXML
 } from './parts'
+import { sameNode } from './patch/canonical'
 import { runProperties } from './runs'
 import { tableGrid, columnWidths } from './tables'
 import { DOCUMENT_NAMESPACES, el, REL, XML_HEADER } from './xml'
@@ -67,9 +68,27 @@ export class PartWriter {
     return this.eachBlock(nodes, textWidth).join('') + this.closeOpenComments()
   }
 
-  /** Each block's XML on its own; comments left open close with `closeOpenComments`. */
+  /**
+   * Each block's XML on its own; comments left open close with `closeOpenComments`. A section
+   * break after a paragraph is written into that paragraph, as Word ends a section, and its own
+   * entry is empty, so reading the file back finds no extra empty paragraph.
+   */
   eachBlock(nodes: readonly WriterNode[] | undefined, textWidth: number): string[] {
-    return (nodes ?? []).map((node) => this.block(node, textWidth, 0))
+    const list = nodes ?? []
+    const xml = list.map((node) => this.block(node, textWidth, 0))
+    list.forEach((node, index) => {
+      const previous = list[index - 1]
+      if (node.type !== 'sectionBreak' || !previous) return
+      if (previous.type !== 'paragraph' && previous.type !== 'heading') return
+      const sectPr = /^<w:p><w:pPr>(<w:sectPr>.*<\/w:sectPr>)<\/w:pPr><\/w:p>$/su.exec(xml[index])
+      const paragraph = xml[index - 1]
+      if (!sectPr || !paragraph.startsWith('<w:p>')) return
+      xml[index - 1] = paragraph.startsWith('<w:p><w:pPr>')
+        ? paragraph.replace('</w:pPr>', `${sectPr[1]}</w:pPr>`)
+        : `<w:p><w:pPr>${sectPr[1]}</w:pPr>${paragraph.slice('<w:p>'.length)}`
+      xml[index] = ''
+    })
+    return xml
   }
 
   closeOpenComments(): string {
@@ -103,16 +122,25 @@ export class PartWriter {
     }
   }
 
-  /** A section's own header and footer, written as parts of their own. */
+  /** The header and footer references of the section `node` ends. */
   private sectionReferences(node: WriterNode): string {
-    let references = ''
-    for (const kind of ['header', 'footer'] as const) {
-      const region = v.safeParse(writerNodeSchema, node.attrs?.[kind])
-      if (!region.success) continue
-      const id = writeHeaderFooter(this.pkg, this, kind, region.output, '')
-      references += el(`w:${kind}Reference`, { 'w:type': 'default', 'r:id': id })
+    const breaks = (this.pkg.model.body.content ?? []).filter(
+      (child) => child.type === 'sectionBreak'
+    )
+    const index = breaks.indexOf(node)
+    if (index === -1) {
+      // Not one of the body's own sections: only what it carries itself.
+      let references = ''
+      for (const kind of ['header', 'footer'] as const) {
+        const region = v.safeParse(writerNodeSchema, node.attrs?.[kind])
+        if (!region.success) continue
+        const id = writeHeaderFooter(this.pkg, this, kind, region.output, '')
+        references += el(`w:${kind}Reference`, { 'w:type': 'default', 'r:id': id })
+      }
+      return references
     }
-    return references
+    const sections = writerSections(this.pkg.model)
+    return regionReferences(this.pkg, this, sections[index], sections[index - 1] ?? null, '')
   }
 
   private paragraph(node: WriterNode, list?: { numId: number; level: number }): string {
@@ -434,6 +462,36 @@ function writeHeaderFooter(
   return documentPart.rel(kind === 'header' ? REL.header : REL.footer, name)
 }
 
+/**
+ * A section's header and footer references. Word continues the previous section's region where
+ * a section has no reference (ECMA-376 17.10.5), so a region the same as the previous section's
+ * is left to continue, and a section without one where the previous had one gets an empty part.
+ */
+export function regionReferences(
+  pkg: PackageWriter,
+  documentPart: PartWriter,
+  section: WriterSection,
+  previous: WriterSection | null,
+  watermark: string
+): string {
+  let references = ''
+  for (const kind of ['header', 'footer'] as const) {
+    const region = section[kind]
+    const mark = kind === 'header' ? watermark : ''
+    const before = previous ? previous[kind] : null
+    if (!mark && sameNode(region, before)) continue
+    const id = writeHeaderFooter(
+      pkg,
+      documentPart,
+      kind,
+      region ?? { type: 'doc', content: [] },
+      mark
+    )
+    references += el(`w:${kind}Reference`, { 'w:type': 'default', 'r:id': id })
+  }
+  return references
+}
+
 /** One `<w:footnote>`, numbered as the package numbers it. */
 export function footnoteXML(part: PartWriter, note: WriterFootnote): string {
   const ref =
@@ -468,25 +526,16 @@ export function buildDocx(model: WriterDocument, options: BuildDocxOptions = {})
   const { page } = model
   const body = part.blocks(model.body.content, textWidthOf(model)) || '<w:p/>'
 
-  const references: string[] = []
-  if (model.header || model.watermark) {
-    const watermark = model.watermark
-      ? watermarkXML(model.watermark.text, model.watermark.color)
-      : ''
-    const id = writeHeaderFooter(
-      pkg,
-      part,
-      'header',
-      model.header ?? { type: 'doc', content: [] },
-      watermark
-    )
-    references.push(el('w:headerReference', { 'w:type': 'default', 'r:id': id }))
-  }
-  if (model.footer) {
-    const id = writeHeaderFooter(pkg, part, 'footer', model.footer, '')
-    references.push(el('w:footerReference', { 'w:type': 'default', 'r:id': id }))
-  }
-  const sectPr = sectionPropertiesXML(page, references.join(''))
+  const sections = writerSections(model)
+  const watermark = model.watermark ? watermarkXML(model.watermark.text, model.watermark.color) : ''
+  const references = regionReferences(
+    pkg,
+    part,
+    { page, header: model.header, footer: model.footer },
+    sections.at(-2) ?? null,
+    watermark
+  )
+  const sectPr = sectionPropertiesXML(page, references)
 
   pkg.files['word/document.xml'] = strToU8(
     `${XML_HEADER}<w:document ${DOCUMENT_NAMESPACES}><w:body>${body}${sectPr}</w:body></w:document>`
