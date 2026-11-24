@@ -20,12 +20,7 @@ function textLayer(textAutoResize: TextAutoResize) {
   return { editor, id, rect: { x: node.x, y: node.y, width: node.width, height: node.height } }
 }
 
-function drag(
-  editor: Editor,
-  id: string,
-  handle: DragResize['handle'],
-  rect: Rect
-): DragResize {
+function drag(id: string, handle: DragResize['handle'], rect: Rect): DragResize {
   return {
     type: 'resize',
     handle,
@@ -56,7 +51,7 @@ function layer(editor: Editor, id: string) {
 describe('resizing text from a handle', () => {
   test('a narrowed auto-width layer wraps and grows down, and undo puts it back', () => {
     const { editor, id, rect } = textLayer('WIDTH_AND_HEIGHT')
-    const resize = drag(editor, id, 'e', rect)
+    const resize = drag(id, 'e', rect)
     applyResize(resize, resize.startX - rect.width + 200, resize.startY, false, editor)
     expect(layer(editor, id)).toMatchObject({ textAutoResize: 'HEIGHT', width: 200 })
     expect(layer(editor, id).height).toBeGreaterThan(rect.height * 2)
@@ -74,7 +69,7 @@ describe('resizing text from a handle', () => {
   for (const mode of ['WIDTH_AND_HEIGHT', 'HEIGHT'] as const) {
     test(`dragging the height of ${mode} text fixes its box`, () => {
       const { editor, id, rect } = textLayer(mode)
-      const resize = drag(editor, id, 's', rect)
+      const resize = drag(id, 's', rect)
       applyResize(resize, resize.startX, resize.startY + 40, false, editor)
       commitResizePreview(resize, editor)
       expect(layer(editor, id)).toMatchObject({
@@ -89,7 +84,7 @@ describe('resizing text from a handle', () => {
 
   test('a cancelled drag leaves the text sizing itself', () => {
     const { editor, id, rect } = textLayer('WIDTH_AND_HEIGHT')
-    const resize = drag(editor, id, 'e', rect)
+    const resize = drag(id, 'e', rect)
     applyResize(resize, resize.startX - 300, resize.startY, false, editor)
     cancelResizePreview(resize, editor)
     expect(layer(editor, id)).toMatchObject({ textAutoResize: 'WIDTH_AND_HEIGHT', ...rect })
@@ -98,7 +93,7 @@ describe('resizing text from a handle', () => {
 
   test('a fixed box stays fixed', () => {
     const { editor, id, rect } = textLayer('NONE')
-    const resize = drag(editor, id, 'e', rect)
+    const resize = drag(id, 'e', rect)
     applyResize(resize, resize.startX - 100, resize.startY, false, editor)
     commitResizePreview(resize, editor)
     expect(layer(editor, id)).toMatchObject({ textAutoResize: 'NONE', width: rect.width - 100 })
