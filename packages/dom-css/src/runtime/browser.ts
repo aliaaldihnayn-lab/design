@@ -267,6 +267,38 @@ async function computeStylesInIframe(
   }
 }
 
+/** Properties whose resolved value is the size the browser laid out rather than the one set. */
+const LAID_OUT_SIZES = new Set(['width', 'height'])
+
+/**
+ * Leaves a width or height the page does not set to the import, as the headless runtime does.
+ * The browser resolves them to the sizes it laid out, in the fonts it had, so every box came in
+ * fixed at that size and text that measures wider in the document's fonts wrapped or spilled out
+ * of it. Without a box, as under `display: none`, they read as set: `auto`, a length, or a percent.
+ */
+function keepAuthoredSizes(content: Element, pairs: [DesignElement, Element][]): void {
+  const view = content.ownerDocument.defaultView
+  if (!view || !(content instanceof view.HTMLElement)) return
+  const display = content.style.display
+  content.style.display = 'none'
+  try {
+    for (const [designElement, domElement] of pairs) {
+      const style = designElement.computedStyle
+      if (!style) continue
+      const authored = view.getComputedStyle(domElement)
+      designElement.computedStyle = Object.fromEntries(
+        Object.entries(style).flatMap(([property, value]): [string, string][] => {
+          if (!LAID_OUT_SIZES.has(property)) return [[property, value]]
+          const set = authored.getPropertyValue(property)
+          return !set || set === 'auto' ? [] : [[property, set]]
+        })
+      )
+    }
+  } finally {
+    content.style.display = display
+  }
+}
+
 function copyComputedStyles(
   designDocument: DesignDocument,
   content: Element,
@@ -286,6 +318,7 @@ function copyComputedStyles(
   for (const [designElement, domElement] of pairs) {
     designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
   }
+  keepAuthoredSizes(content, pairs)
 
   return nextDocument
 }
