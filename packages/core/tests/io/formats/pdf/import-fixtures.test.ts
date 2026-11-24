@@ -299,3 +299,8 @@ describe("Lawha's own PDF, opened again", () => {
     expect(texts(opened, card)).toHaveLength(1)
   })
 })
+
+test('a PDF that needs a password to open says so', async () => {
+  // `password.pdf` is a one-page PDF qpdf encrypted with a user password.
+  await expect(open('password.pdf')).rejects.toThrow(/protected with a password/)
+})

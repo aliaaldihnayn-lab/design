@@ -112,15 +112,28 @@ function pageSVG(
   })
 }
 
-function openPDF(pdfjs: typeof PDFJS, bytes: Uint8Array) {
-  return pdfjs.getDocument({
-    data: bytes.slice(),
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    disableFontFace: true,
-    isOffscreenCanvasSupported: false,
-    verbosity: 0
-  }).promise
+async function openPDF(pdfjs: typeof PDFJS, bytes: Uint8Array) {
+  try {
+    return await pdfjs.getDocument({
+      data: bytes.slice(),
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      disableFontFace: true,
+      isOffscreenCanvasSupported: false,
+      verbosity: 0
+    }).promise
+  } catch (error) {
+    // A file that needs a password to open cannot be read here; say so rather than pdf.js's code.
+    if (error instanceof Error && error.name === 'PasswordException') {
+      throw new Error(
+        'This PDF is protected with a password. Remove the password, then open it again.',
+        {
+          cause: error
+        }
+      )
+    }
+    throw error
+  }
 }
 
 /** A page drawn as SVG, in PDF points, as previews show it. */
