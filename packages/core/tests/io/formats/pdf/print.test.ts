@@ -7,10 +7,12 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph, type Fill } from '@lawha/scene-graph'
 import { EXPORT_FORMAT_IDS } from '@lawha/scene-graph/export-format'
 
+import { getCanvasKit } from '#core/canvaskit'
 import { artworkBleed, DIELINE_SPOTS, limitInk, rgbToCMYK } from '#core/io/formats/pdf/print'
 import { rewriteContent } from '#core/io/formats/pdf/print/content'
 import { convertToPrintPDF } from '#core/io/formats/pdf/print/convert'
 import { latin1, latin1Bytes, parsePDF } from '#core/io/formats/pdf/print/file'
+import { flattenTransparency } from '#core/io/formats/pdf/print/flatten'
 import {
   createProfileTransform,
   loadPressProfile,
@@ -18,6 +20,7 @@ import {
   profileColor
 } from '#core/io/formats/pdf/print/icc'
 import { convertImage } from '#core/io/formats/pdf/print/images'
+import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
 
 setDefaultTimeout(120_000)
 
@@ -224,6 +227,38 @@ describe('print PDF export', () => {
     // The flattened area is an image, in CMYK; the rest of the card stays vector.
     expect(pdf).toMatch(/\/Subtype \/Image[\s\S]*?\/ColorSpace \/DeviceCMYK/)
     expect(pdf).toMatch(/\/FontFile2/)
+  })
+
+  test('a masked group is flattened with the layers its mask shows', async () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', pageId, { width: 100, height: 100, fills: [] })
+    const group = graph.createNode('GROUP', frame.id, { name: 'Clip path group' })
+    graph.createNode('ELLIPSE', group.id, {
+      width: 100,
+      height: 100,
+      isMask: true,
+      maskType: 'VECTOR',
+      fills: [solid(0, 0, 0)]
+    })
+    graph.createNode('RECTANGLE', group.id, { width: 100, height: 100, fills: [solid(0, 0, 1)] })
+    const flattened = await flattenTransparency(graph, [{ pageId, nodeIds: [frame.id] }], {
+      canvasKit: getCanvasKit,
+      outset: () => 0,
+      resolution: 72
+    })
+    expect(flattened).toBe(1)
+    const image = expectDefined(
+      [...graph.nodes.values()].find((node) => node.fills[0]?.type === 'IMAGE')
+    )
+    const pixels = expectDefined(
+      createCanvasKitRasterCodec(await getCanvasKit()).decode(
+        expectDefined(graph.images.get(expectDefined(image.fills[0].imageHash)))
+      )
+    )
+    // The middle shows the blue the mask lets through, not the empty page under a lone mask.
+    const middle = (50 * pixels.width + 50) * 4
+    expect([...pixels.data.subarray(middle, middle + 3)]).toEqual([0, 0, 255])
   })
 
   test('PDF/X-4 keeps transparency live', async () => {

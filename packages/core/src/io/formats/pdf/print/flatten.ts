@@ -80,20 +80,33 @@ function isTurned(node: SceneNode): boolean {
   return Math.abs(node.rotation) > 1e-6 || node.flipX || node.flipY
 }
 
+/**
+ * Whether a layer is flattened whole: it draws with transparency, or a mask among its children
+ * masks the layers after it, which only the mask and those layers drawn together show.
+ */
+function flattensWhole(
+  graph: SceneGraph,
+  node: SceneNode,
+  hasAlpha: (hash: string) => boolean
+): boolean {
+  if (drawsTransparency(node, hasAlpha)) return true
+  return graph.getChildren(node.id).some((child) => child.visible && child.isMask)
+}
+
 /** Layers to flatten under `root`, back to front: a transparent layer stands for its subtree. */
 function transparentUnits(
   graph: SceneGraph,
   root: SceneNode,
   hasAlpha: (hash: string) => boolean
 ): SceneNode[] {
-  if (drawsTransparency(root, hasAlpha)) return [root]
+  if (flattensWhole(graph, root, hasAlpha)) return [root]
   const units: SceneNode[] = []
   // `turned` is the outermost turned layer above, which the image must replace whole, since an
   // upright image cannot sit inside it.
   const visit = (node: SceneNode, turned: SceneNode | null) => {
     if (!node.visible) return
     const outer = turned ?? (isTurned(node) ? node : null)
-    if (drawsTransparency(node, hasAlpha)) {
+    if (flattensWhole(graph, node, hasAlpha)) {
       const unit = outer ?? node
       if (!units.includes(unit)) units.push(unit)
       return
