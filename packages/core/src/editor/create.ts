@@ -39,6 +39,7 @@ import { createConnectorDrawActions, createConnectorEndpointActions } from './co
 import { createConnectorLineActions } from './connectors/line'
 import { createConnectorRouting } from './connectors/routing'
 import { createConnectorStyleActions } from './connectors/style'
+import { createDeferredRenders } from './deferred-renders'
 import { createDesignTokenActions } from './design-tokens'
 import { createDocumentSettingsActions } from './document-settings'
 import { createFigCompressionActions } from './fig-compression'
@@ -228,21 +229,37 @@ export function createEditor(options?: EditorOptions) {
   }
 
   const graphReads = createGraphReadActions(() => _graph)
-  const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const layoutRunner = createLayoutRunner(() => _graph)
+  const { runLayoutForNode } = layoutRunner
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
     runLayoutForNode,
     requestRender
   })
-  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
+  const graphRenders = createDeferredRenders(requestRender)
+  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, graphRenders.request)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
     getRenderers: () => _renderers,
     scheduleComponentSync,
-    requestRender,
+    requestRender: graphRenders.request,
     emitEditorEvent
   })
+
+  /**
+   * An async mutation, such as an AI or MCP tool, lays out what it touched once it ends; the
+   * changes it makes on the way ask for one render then, rather than one at every await.
+   */
+  function runMutationWithLayout<T>(
+    operation: () => T | Promise<T>,
+    fallbackId?: string,
+    beforeLayout?: (result: T) => Promise<void> | void
+  ): Promise<T> {
+    return graphRenders.during(() =>
+      layoutRunner.runMutationWithLayout(operation, fallbackId, beforeLayout)
+    )
+  }
 
   if (!skipInitialGraphSetup) {
     subscribeToGraph()
