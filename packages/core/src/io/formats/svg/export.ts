@@ -34,6 +34,7 @@ import { hasRegionFills, looseSegments, regionSVGPaths } from '@lawha/scene-grap
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias, SVGImageAdjust } from './defs'
+import { renderMaskedChildren } from './masks'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -416,12 +417,9 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     ctx
   )
 
-  const childNodes = ctx.graph.getChildren(node.id)
-  const childContent: SVGNode[] = []
-  for (const child of childNodes) {
-    const rendered = renderNode(child, ctx)
-    if (rendered) childContent.push(rendered)
-  }
+  const childContent = renderMaskedChildren(ctx.graph.getChildren(node.id), ctx, (child) =>
+    renderNode(child, ctx)
+  )
 
   if (clipId && childContent.length > 0) {
     children.push(svg('g', { 'clip-path': `url(#${clipId})` }, ...childContent))
@@ -490,22 +488,16 @@ export function renderNodesToSVG(
     imageAdjust: options.imageAdjust
   }
 
-  const contentNodes: SVGNode[] = []
-
-  for (const id of nodeIds) {
+  const roots = nodeIds.flatMap((id) => {
     const node = graph.getNode(id)
-    if (!node?.visible) continue
-
+    if (!node) return []
     const abs = graph.getAbsolutePosition(id)
     const offsetX = abs.x - minX
     const offsetY = abs.y - minY
-
     const needsOffset = offsetX !== node.x || offsetY !== node.y
-    const clone = needsOffset ? { ...node, x: round(offsetX), y: round(offsetY) } : node
-
-    const rendered = renderNode(clone, ctx)
-    if (rendered) contentNodes.push(rendered)
-  }
+    return [needsOffset ? { ...node, x: round(offsetX), y: round(offsetY) } : node]
+  })
+  const contentNodes = renderMaskedChildren(roots, ctx, (node) => renderNode(node, ctx))
 
   if (contentNodes.length === 0) return null
 
