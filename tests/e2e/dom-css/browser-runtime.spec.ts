@@ -15,6 +15,7 @@ import {
 import {
   browserRuntimeComputeStyles,
   computedStyleProperties,
+  publicBrowserHTMLLayers,
   publicBrowserHTMLSceneGraph,
   publicBrowserSceneGraph,
   publicBrowserTextNode,
@@ -554,5 +555,29 @@ test.describe('@lawha/dom-css browser CSS runtime oracle', () => {
     expect(card.layoutMode).toBe('VERTICAL')
     expect(card.itemSpacing).toBe(12)
     expect(card.paddingLeft).toBe(24)
+  })
+
+  test('imports a right-to-left page by its dir and its body font', async ({ page }) => {
+    const layers = await publicBrowserHTMLLayers(
+      page,
+      `<!doctype html><html dir="rtl"><head><style>
+        body { font-family: 'Noto Naskh Arabic', serif; }
+      </style></head><body>
+        <nav style="display:flex;gap:8px"><span>الرئيسية</span><span>Contact</span></nav>
+        <section style="display:flex" dir="ltr"><p>English first</p></section>
+      </body></html>`
+    )
+    const named = (name: string) => layers.find((layer) => layer.name === name)
+    const text = (value: string) => layers.find((layer) => layer.text === value)
+
+    expect(named('body')?.layoutDirection).toBe('RTL')
+    expect(named('section')?.layoutDirection).toBe('LTR')
+    expect(text('الرئيسية')).toMatchObject({
+      textAlignHorizontal: 'RIGHT',
+      fontFamily: 'Noto Naskh Arabic'
+    })
+    // Latin text in the right-to-left nav keeps the paragraph's direction.
+    expect(text('Contact')).toMatchObject({ textDirection: 'RTL', textAlignHorizontal: 'RIGHT' })
+    expect(text('English first')).toMatchObject({ textAlignHorizontal: 'LEFT' })
   })
 })

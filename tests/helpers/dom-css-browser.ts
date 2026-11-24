@@ -222,3 +222,26 @@ export async function computedStyleProperties(
     )
   }, properties)
 }
+
+/** Each layer the browser helpers build from `html`, with what places it and its text. */
+export async function publicBrowserHTMLLayers(page: Page, html: string) {
+  await ensureAppPage(page)
+  await page.setContent('<main></main>')
+
+  return page.evaluate(
+    async ({ sourceHTML, modulePath }) => {
+      const { browserHTMLToSceneGraph } = await import(modulePath)
+      const graph = await browserHTMLToSceneGraph(sourceHTML)
+      return [...graph.getAllNodes()].map((node) => ({
+        name: node.name,
+        type: node.type,
+        text: node.text,
+        layoutDirection: node.layoutDirection,
+        textDirection: node.textDirection,
+        textAlignHorizontal: node.textAlignHorizontal,
+        fontFamily: node.fontFamily
+      }))
+    },
+    { sourceHTML: html, modulePath: DOM_CSS_BROWSER_MODULE }
+  )
+}
