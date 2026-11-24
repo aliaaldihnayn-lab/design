@@ -96,13 +96,17 @@ export function shapeBuilderSelected(
   try {
     const prevSelection = new Set(ctx.state.selectedIds)
     const removed: LayerPlace[] = plan.remains.flatMap(({ node }) => placeOf(ctx, node.id) ?? [])
+    const touched = new Set(plan.remains.map(({ node }) => node.id))
+    const untouched = operands.nodes.flatMap((node) => (touched.has(node.id) ? [] : [node.id]))
     const madeIds = applyShapeBuilderPlan(ctx.graph, renderer, operands.parentId, plan)
+    // As in Illustrator, the shapes stay selected, so the next drag builds on them.
     recordLayerSwap(
       ctx,
       mode === 'merge' ? 'Shape Builder merge' : 'Shape Builder delete',
       removed,
       madeIds,
-      prevSelection
+      prevSelection,
+      [...untouched, ...madeIds]
     )
     return madeIds
   } finally {

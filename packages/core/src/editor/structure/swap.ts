@@ -37,7 +37,8 @@ function restorePlaces(ctx: EditorContext, places: readonly LayerPlace[]) {
 
 /**
  * Records, as one undo step, an edit that already replaced the `removed` layers with `madeIds`:
- * selects what it made, refits the groups around them, and lets undo and redo swap them back.
+ * selects what it made (or `selected`), refits the groups around them, and lets undo and redo
+ * swap them back.
  * Layers both removed and made, edited in place, are put back as they were and as they became.
  */
 export function recordLayerSwap(
@@ -45,12 +46,13 @@ export function recordLayerSwap(
   label: string,
   removed: readonly LayerPlace[],
   madeIds: readonly string[],
-  prevSelection: ReadonlySet<string>
+  prevSelection: ReadonlySet<string>,
+  selected: readonly string[] = madeIds
 ): void {
   const made = madeIds.flatMap((id) => placeOf(ctx, id) ?? [])
   const parentIds = new Set([...removed, ...made].map((place) => place.parentId))
   for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
-  const selection = new Set(madeIds)
+  const selection = new Set(selected)
   ctx.setSelectedIds(selection)
   ctx.undo.runBatch(label, () => {
     ctx.undo.push({

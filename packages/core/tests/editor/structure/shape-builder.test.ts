@@ -83,6 +83,28 @@ describe('shapeBuilderSelected', () => {
     expect(new Set(editor.state.selectedIds)).toEqual(new Set(made))
   })
 
+  test('a shape the merge did not touch stays selected, so the next drag can use it', async () => {
+    const editor = await createEditorWithRenderer()
+    const { pageId, red, blue } = twoSquares(editor)
+    const green = editor.graph.createNode('RECTANGLE', pageId, {
+      name: 'Green',
+      x: 300,
+      y: 0,
+      width: 50,
+      height: 50,
+      fills: [solid(RED)]
+    })
+    editor.select([red.id, blue.id, green.id])
+    const made = editor.shapeBuilderSelected([{ x: 75, y: 50 }]) ?? []
+    expect(new Set(editor.state.selectedIds)).toEqual(new Set([green.id, ...made]))
+
+    // Delete with the Alt-click that follows: the untouched shape is still an operand.
+    expect(editor.shapeBuilderSelected([{ x: 325, y: 25 }], 'delete')).not.toBeNull()
+    expect(editor.graph.getNode(green.id)).toBeUndefined()
+    editor.undo.undo()
+    expect(new Set(editor.state.selectedIds)).toEqual(new Set([green.id, ...made]))
+  })
+
   test('deletes the region under the pointer from every shape over it', async () => {
     const editor = await createEditorWithRenderer()
     const { pageId } = twoSquares(editor)
