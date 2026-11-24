@@ -43,6 +43,32 @@ describe('track changes', () => {
     ])
   })
 
+  test('a word typed letter by letter is one insertion, though each key has its own time', () => {
+    let tick = 0
+    const ticking = trackChangesPlugin({
+      enabled: () => true,
+      author: () => 'Ali',
+      now: () => `2026-11-10T00:00:0${tick++}Z`
+    })
+    const doc = schema.nodeFromJSON({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'عقد' }] }]
+    })
+    let state = EditorState.create({ doc, plugins: [ticking] })
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 4)))
+    for (const letter of ' جديد') state = state.apply(state.tr.insertText(letter))
+    // One run with one mark, which Word gets as one `w:ins`.
+    const runs: unknown[] = state.doc.toJSON().content[0].content
+    expect(runs).toEqual([
+      { type: 'text', text: 'عقد' },
+      {
+        type: 'text',
+        text: ' جديد',
+        marks: [{ type: 'insertion', attrs: { author: 'Ali', date: '2026-11-10T00:00:00Z' } }]
+      }
+    ])
+  })
+
   test('backspace keeps the text, struck through, and the caret moves before it', () => {
     let state = stateWith('abc', 4)
     state = state.apply(state.tr.delete(3, 4))

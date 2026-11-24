@@ -63,6 +63,26 @@ function onlyDeletions(slice: Slice): boolean {
   )
 }
 
+/**
+ * The author's own insertion that text typed at `start`…`end` continues, so a word typed letter
+ * by letter is one change, as Word records it, rather than one per keystroke.
+ */
+function adjoiningInsertion(
+  doc: ProseMirrorNode,
+  start: number,
+  end: number,
+  author: string
+): Mark | null {
+  const neighbours = [doc.resolve(start).nodeBefore, doc.resolve(end).nodeAfter]
+  for (const node of neighbours) {
+    const mark = node?.isText
+      ? node.marks.find((candidate) => candidate.type.name === 'insertion')
+      : null
+    if (mark?.attrs.author === author) return mark
+  }
+  return null
+}
+
 /** Rewrites one user transaction's replace steps as tracked insertions and deletions. */
 function trackTransaction(
   source: Transaction,
@@ -92,7 +112,7 @@ function trackTransaction(
       const start = toNow(from, -1)
       const end = toNow(from + inserted, 1)
       tr.removeMark(start, end, schema.marks.deletion)
-      tr.addMark(start, end, insertion)
+      tr.addMark(start, end, adjoiningInsertion(tr.doc, start, end, author) ?? insertion)
     }
     if (to > from) {
       const removed = before.slice(from, to)
