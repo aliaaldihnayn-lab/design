@@ -142,6 +142,8 @@ export function pageArtworkBleed(graph: SceneGraph, nodeIds: readonly string[]):
  * that already holds its bleed keeps it: its trim is inside, and no bleed is added again.
  */
 export function composePrintSheet(graph: SceneGraph, layout: SheetLayout): PDFPageComposer {
+  // Clip ids hold for the whole PDF, so each sheet's bleed clip has its own.
+  let sheets = 0
   return (page) => {
     const box = trimBox(graph, page.spec.nodeIds)
     if (!box) return null
@@ -163,11 +165,12 @@ export function composePrintSheet(graph: SceneGraph, layout: SheetLayout): PDFPa
     const dx = offset + page.origin.x - trim.x
     const dy = offset + page.origin.y - trim.y
     const background = inner === null ? bleedBackground(graph, page.spec.nodeIds) : null
+    const clipId = `lawha-print-bleed-${sheets++}`
     const bleedSize = `x="${margin}" y="${margin}" width="${trim.width + 2 * bleed}" height="${trim.height + 2 * bleed}"`
     const svg = [
       `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-      `<defs><clipPath id="lawha-print-bleed"><rect ${bleedSize}/></clipPath></defs>`,
-      '<g clip-path="url(#lawha-print-bleed)">',
+      `<defs><clipPath id="${clipId}"><rect ${bleedSize}/></clipPath></defs>`,
+      `<g clip-path="url(#${clipId})">`,
       background ? `<rect ${bleedSize} fill="${background}"/>` : '',
       `<g transform="translate(${dx} ${dy})">${svgInner(page.svg)}</g>`,
       '</g>',

@@ -4,7 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { unzlibSync, zlibSync } from 'fflate'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
-import { SceneGraph, type Fill } from '@lawha/scene-graph'
+import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
 import { EXPORT_FORMAT_IDS } from '@lawha/scene-graph/export-format'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -259,6 +259,51 @@ describe('print PDF export', () => {
     // The middle shows the blue the mask lets through, not the empty page under a lone mask.
     const middle = (50 * pixels.width + 50) * 4
     expect([...pixels.data.subarray(middle, middle + 3)]).toEqual([0, 0, 255])
+  })
+
+  test('each sheet draws its own gradients, images and bleed', async () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const gradient = (from: Fill['color'], to: Fill['color']): Fill => ({
+      type: 'GRADIENT_LINEAR',
+      color: from,
+      opacity: 1,
+      visible: true,
+      gradientStops: [
+        { position: 0, color: from },
+        { position: 1, color: to }
+      ],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    })
+    const frames = [
+      gradient({ r: 1, g: 0, b: 0, a: 1 }, { r: 1, g: 1, b: 0, a: 1 }),
+      gradient({ r: 0, g: 0, b: 1, a: 1 }, { r: 0, g: 1, b: 1, a: 1 })
+    ].map((fill, index) => {
+      const frame = graph.createNode('FRAME', pageId, {
+        x: index * 300,
+        width: 100 + index * 100,
+        height: 100,
+        fills: []
+      })
+      graph.createNode('RECTANGLE', frame.id, { width: 80, height: 80, fills: [fill] })
+      return frame.id
+    })
+    const data = (await exportPrint(graph, frames)).data as Uint8Array
+    const { readPDFDocument } = await import('#core/io/formats/pdf/import')
+    const reread = await readPDFDocument(data)
+    const [first, second] = reread.getChildren(reread.getPages()[0].id)
+    const stops = (frameId: string) => {
+      const all = (id: string): SceneNode[] =>
+        reread.getChildren(id).flatMap((child) => [child, ...all(child.id)])
+      const fill = expectDefined(
+        all(frameId).find((node) => node.fills[0]?.type === 'GRADIENT_LINEAR')
+      ).fills[0]
+      return expectDefined(fill.gradientStops)[0].color
+    }
+    // Pages once shared the ids of their gradients, so the second drew the first one's.
+    expect(stops(first.id).r).toBeGreaterThan(0.8)
+    expect(stops(second.id).r).toBeLessThan(0.3)
+    expect(stops(second.id).b).toBeGreaterThan(0.5)
   })
 
   test('PDF/X-4 keeps transparency live', async () => {

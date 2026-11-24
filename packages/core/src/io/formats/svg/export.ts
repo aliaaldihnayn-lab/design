@@ -463,6 +463,8 @@ export interface SVGExportOptions {
   fontAlias?: SVGFontAlias
   /** Bakes an image fill's adjustments into its embedded copy; without it they are dropped. */
   imageAdjust?: SVGImageAdjust
+  /** Starts every def id, so SVGs drawn into one document cannot take each other's defs. */
+  idPrefix?: string
 }
 
 export function renderNodesToSVG(
@@ -485,7 +487,8 @@ export function renderNodesToSVG(
     colorSpace: options.colorSpace ?? 'srgb',
     textLayout: options.textLayout,
     fontAlias: options.fontAlias,
-    imageAdjust: options.imageAdjust
+    imageAdjust: options.imageAdjust,
+    idPrefix: options.idPrefix
   }
 
   const roots = nodeIds.flatMap((id) => {

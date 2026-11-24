@@ -72,13 +72,17 @@ type PageSVGOptions = Pick<SVGExportOptions, 'textLayout' | 'fontAlias' | 'image
 function preparePage(
   graph: SceneGraph,
   spec: PDFPageSpec,
+  index: number,
   svgOptions: PageSVGOptions,
   parse: SVGPageParser,
   compose?: PDFPageComposer
 ): PreparedPage | null {
   const svg = renderNodesToSVG(graph, spec.pageId, spec.nodeIds, {
     xmlDeclaration: false,
-    ...svgOptions
+    ...svgOptions,
+    // svg2pdf keeps gradients, patterns and clips by id for the whole document, so a page
+    // reusing another page's ids would draw with that page's images and gradients.
+    idPrefix: `p${index}-`
   })
   if (!svg) return null
 
@@ -124,7 +128,7 @@ async function renderPages(
   }
   const preparePages = () =>
     specs
-      .map((spec) => preparePage(graph, spec, svgOptions, parse, options.composePage))
+      .map((spec, index) => preparePage(graph, spec, index, svgOptions, parse, options.composePage))
       .filter((page): page is PreparedPage => page !== null)
   let prepared = preparePages()
   if (prepared.length === 0) return null
