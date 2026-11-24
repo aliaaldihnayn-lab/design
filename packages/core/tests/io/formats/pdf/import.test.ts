@@ -9,18 +9,9 @@ setDefaultTimeout(120_000)
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
-/** A hand-written PDF: a red filled rectangle, a blue 3pt line and the word Hello. */
-function handWrittenPDF(): Uint8Array {
-  const content =
-    '1 0 0 rg 50 50 100 60 re f 0 0 1 RG 3 w 20 150 m 180 150 l S BT /F1 24 Tf 40 180 Td (Hello) Tj ET'
-  const objects = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 220] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
-    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
-  ]
-  let pdf = '%PDF-1.4\n'
+/** A PDF of these objects, the first its catalog, with a cross-reference table. */
+function pdfOf(objects: readonly string[]): Uint8Array {
+  let pdf = '%PDF-1.5\n'
   const offsets: number[] = []
   objects.forEach((object, i) => {
     offsets.push(pdf.length)
@@ -31,6 +22,22 @@ function handWrittenPDF(): Uint8Array {
   pdf += offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
   return new TextEncoder().encode(pdf)
+}
+
+const stream = (content: string, dict = '') =>
+  `<< ${dict}/Length ${content.length} >>\nstream\n${content}\nendstream`
+
+/** A hand-written PDF: a red filled rectangle, a blue 3pt line and the word Hello. */
+function handWrittenPDF(): Uint8Array {
+  return pdfOf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 220] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    stream(
+      '1 0 0 rg 50 50 100 60 re f 0 0 1 RG 3 w 20 150 m 180 150 l S BT /F1 24 Tf 40 180 Td (Hello) Tj ET'
+    ),
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+  ])
 }
 
 function all(graph: SceneGraph, id: string): SceneNode[] {
@@ -213,5 +220,50 @@ describe('opening Illustrator', () => {
       '%!PS-Adobe-3.0 EPSF-3.0\n%%Creator: Adobe Illustrator 8'
     )
     expect(io.readDocument({ name: 'old.ai', data: legacy })).rejects.toThrow('PDF Compatible')
+  })
+})
+
+describe('opening a PDF with layers turned off', () => {
+  /**
+   * Text in a layer that is off, drawn three ways: inside the layer's marked content, by a form
+   * the layer turns off, and under a membership dictionary that shows it while the layer is on.
+   */
+  function layeredPDF(): Uint8Array {
+    const text = (x: number, y: number, words: string) =>
+      `BT /F1 18 Tf ${x} ${y} Td (${words}) Tj ET`
+    return pdfOf([
+      '<< /Type /Catalog /Pages 2 0 R /OCProperties << /OCGs [6 0 R] /D << /OFF [6 0 R] /Order [6 0 R] >> >> >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 220] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> /Properties << /L1 6 0 R /M1 8 0 R >> /XObject << /Fm1 7 0 R >> >> >>',
+      stream(
+        `/OC /L1 BDC ${text(40, 180, 'Marked')} EMC ${text(40, 100, 'Shown')} /Fm1 Do /OC /M1 BDC ${text(160, 100, 'Member')} EMC`
+      ),
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+      '<< /Type /OCG /Name (Notes) >>',
+      stream(
+        text(40, 40, 'Formed'),
+        '/Type /XObject /Subtype /Form /BBox [0 0 300 220] /OC 6 0 R /Resources << /Font << /F1 5 0 R >> >> '
+      ),
+      '<< /Type /OCMD /OCGs [6 0 R] /P /AnyOn >>'
+    ])
+  }
+
+  test('text the layer hides comes in hidden, whichever way the PDF hides it', async () => {
+    const { graph } = await io.readDocument({ name: 'layers.pdf', data: layeredPDF() })
+    const frame = expectDefined(graph.getNode(graph.getPages()[0].childIds[0]))
+    const shown = (node: SceneNode): boolean => {
+      for (let at: SceneNode | undefined = node; at; at = graph.getNode(at.parentId ?? '')) {
+        if (!at.visible) return false
+      }
+      return true
+    }
+    const texts = all(graph, frame.id).filter((node) => node.type === 'TEXT')
+    expect(texts.filter(shown).map((node) => node.text)).toEqual(['Shown'])
+    expect(texts.map((node) => node.text).toSorted()).toEqual([
+      'Formed',
+      'Marked',
+      'Member',
+      'Shown'
+    ])
   })
 })

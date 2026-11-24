@@ -153,12 +153,14 @@ export async function previewPDFPages(
   const doc = await openPDF(pdfjs, bytes)
   const ops: PDFOps = { ...pdfjs.OPS }
   const previews: PDFPagePreview[] = []
+  // Layers a viewer hides are hidden in the preview too.
+  const optionalContent = await doc.getOptionalContentConfig().catch(() => null)
   try {
     const count = Math.min(doc.numPages, options.maxPages ?? 50)
     for (let index = 1; index <= count; index++) {
       const page = await doc.getPage(index)
       const { width, height } = page.getViewport({ scale: 1 })
-      previews.push({ svg: await pageSVG(page, ops, codec), width, height })
+      previews.push({ svg: await pageSVG(page, ops, codec, optionalContent), width, height })
       page.cleanup()
     }
   } finally {

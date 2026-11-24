@@ -366,14 +366,22 @@ class PageWalker {
     })
   }
 
-  /** An optional content group as a layer: a group named for it, hidden when it is off. */
+  /**
+   * Optional content as a layer named for its group, hidden when off. Content several groups
+   * turn on and off together is one only while off, named for the first, so it comes in hidden.
+   */
   private layer(data: unknown): MarkedContent {
     const config = this.options.optionalContent
     if (!config || typeof data !== 'object' || data === null) return null
-    const id = Reflect.get(data, 'id')
-    const name = typeof id === 'string' ? config.getGroup(id)?.name : null
-    if (!name) return null
+    const id: unknown = Reflect.get(data, 'id')
+    const ids: unknown = Reflect.get(data, 'id' in data ? 'id' : 'ids')
+    const named = [ids]
+      .flat()
+      .flatMap((group) => (typeof group === 'string' ? (config.getGroup(group)?.name ?? []) : []))
     const visible = isLayerVisible(config, data)
+    let name: string | undefined = named.at(0)
+    if (typeof id !== 'string') name = visible ? undefined : (name ?? 'Hidden')
+    if (!name) return null
     const key = this.nextId('layer')
     this.text.flush()
     this.containers.set(key, ` id="${escapeXML(name)}"${visible ? '' : ' display="none"'}`)
