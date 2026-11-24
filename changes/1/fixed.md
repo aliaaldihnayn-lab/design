@@ -1,1 +1,2 @@
 - React components exported to the Code tab and Storybook spell SVG attributes as React does, such as `strokeWidth`, so React no longer warns about them (#1).
+- Edits made by AI, MCP and the interactive kit no longer keep the canvas and the editor's panels in memory after the preview or the canvas is reopened, which made long sessions slow down and the tab run out of memory (#1).

@@ -111,3 +111,37 @@ describe('recordEditAsync', () => {
     expect(editor.undo.canUndo).toBe(false)
   })
 })
+
+describe('what a recorded step keeps', () => {
+  /**
+   * Records an edit the way a tool run does: its `onRecorded` shares a scope with what the run
+   * holds, here `held`, as a run's Figma API with its renderer and canvas.
+   */
+  async function recordWithHeld(editor: ReturnType<typeof createEditor>, cardId: string) {
+    const held = { renderer: new Uint8Array(1024) }
+    const recorded: unknown[] = []
+    await editor.recordEditAsync(
+      { label: 'Agent: insert', onRecorded: (change) => recorded.push(change) },
+      async () => {
+        await Promise.resolve()
+        editor.graph.updateNode(cardId, { x: held.renderer.length })
+      }
+    )
+    expect(recorded).toHaveLength(1)
+    return new WeakRef(held)
+  }
+
+  test('the undo step keeps only the change, not what the edit’s caller held', async () => {
+    const { editor, card } = setup()
+    const held = await recordWithHeld(editor, card.id)
+    // A weak reference is kept until the job that made it ends.
+    await Bun.sleep(0)
+    Bun.gc(true)
+    expect(held.deref()).toBeUndefined()
+    // The step still undoes and redoes the edit.
+    expect(editor.undo.undo()).toBe('Agent: insert')
+    expect(editor.graph.getNode(card.id)?.x).toBe(0)
+    editor.undo.redo()
+    expect(editor.graph.getNode(card.id)?.x).toBe(1024)
+  })
+})

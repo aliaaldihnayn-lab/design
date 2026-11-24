@@ -23,17 +23,27 @@ export interface RecordEditOptions {
   onRecorded?: (change: DocumentChange) => void
 }
 
+/**
+ * The undo step of a recorded change. Its functions are made here, apart from the edit's own
+ * scope, so the history keeps only the change: closures share their scope, and one made beside
+ * the edit's options would keep `onRecorded` and whatever its caller holds, such as a tool run's
+ * Figma API with its renderer and canvas, for as long as the step stays undoable.
+ */
+function undoStep(ctx: EditorContext, label: string, change: DocumentChange) {
+  return {
+    label,
+    forward: () => restoreDocumentChange(ctx, change, 'after'),
+    inverse: () => restoreDocumentChange(ctx, change, 'before')
+  }
+}
+
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const finish = captureDocumentChange(ctx.graph, options.pageId ?? ctx.state.currentPageId)
   return () => {
     const change = finish()
     // An edit that changed nothing, such as a read-only script, leaves no empty step behind.
     if (options.push !== false && !isEmptyDocumentChange(change)) {
-      const entry = {
-        label: options.label,
-        forward: () => restoreDocumentChange(ctx, change, 'after'),
-        inverse: () => restoreDocumentChange(ctx, change, 'before')
-      }
+      const entry = undoStep(ctx, options.label, change)
       if (options.ownStep) ctx.undo.pushStep(entry)
       else ctx.undo.push(entry)
     }
