@@ -55,10 +55,13 @@ describe('parseAppPreferences', () => {
     })
   })
 
-  test('keeps a preset or a custom accent and falls back to blue for anything else', () => {
+  test('keeps a preset or a custom accent and falls back to the Lawha accent for anything else', () => {
     const accent = (value: unknown) =>
       parseAppPreferences({ appearance: { accent: value } }).appearance.accent
     expect(accent({ kind: 'preset', preset: 'green' })).toEqual({ kind: 'preset', preset: 'green' })
+    // People who chose the former default keep it.
+    expect(accent({ kind: 'preset', preset: 'blue' })).toEqual({ kind: 'preset', preset: 'blue' })
+    expect(DEFAULT_APP_PREFERENCES.appearance.accent).toEqual({ kind: 'preset', preset: 'lawha' })
     expect(accent({ kind: 'custom', color: '#ff6600' })).toEqual({
       kind: 'custom',
       color: '#FF6600'

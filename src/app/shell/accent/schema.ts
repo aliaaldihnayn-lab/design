@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 export const ACCENT_PRESETS = [
+  'lawha',
   'blue',
   'purple',
   'pink',

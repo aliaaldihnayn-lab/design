@@ -1,0 +1,2 @@
+- Lawha has a new identity: the black Lawha mark on a peach tile is the icon of the web app, desktop apps, Android app, favicons, and documentation site, and Android uses it as an adaptive and themed icon.
+- The default interface accent is a burnt orange derived from the brand peach, with hover, pressed, and subtle tints that keep WCAG AA text contrast in light and dark themes; Blue and the other accents remain in Settings, and people who chose one keep it.

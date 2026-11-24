@@ -8,6 +8,7 @@ export const settingsMessageDefaults = {
   animationsSystem: 'Follow system',
   animationsOff: 'Off',
   accentColor: 'Accent color',
+  accentLawha: 'Lawha',
   accentBlue: 'Blue',
   accentPurple: 'Purple',
   accentPink: 'Pink',

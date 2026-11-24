@@ -2,7 +2,7 @@ export default {
   slots: {
     base: [
       'inline-flex items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-panel-focus',
       'disabled:cursor-not-allowed disabled:opacity-50'
     ],
     icon: 'size-3.5 shrink-0'
@@ -67,7 +67,7 @@ export default {
     {
       color: 'primary',
       variant: 'solid',
-      class: { base: 'bg-primary text-on-primary hover:bg-primary/90' }
+      class: { base: 'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-pressed' }
     } as const,
     {
       color: 'primary',

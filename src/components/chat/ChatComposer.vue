@@ -120,7 +120,7 @@ defineExpose({ restoreDraft, insert: editor.insert, focus: editor.focus })
               size="sm"
               type="submit"
               data-test-id="chat-send-button"
-              class="bg-accent text-on-accent hover:bg-accent/90 hover:text-on-accent"
+              class="bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent active:bg-accent-pressed"
               :disabled="!text.trim()"
             >
               <icon-lucide-send class="size-3.5" />

@@ -82,7 +82,7 @@ function handleDismiss() {
         v-for="opt in allowOptions"
         :key="opt.optionId"
         v-test-id="acpPermissionOptionTestId(opt.kind)"
-        class="w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent/90"
+        class="w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover active:bg-accent-pressed"
         @click="respondToPermission(opt.optionId)"
       >
         {{ opt.name }}

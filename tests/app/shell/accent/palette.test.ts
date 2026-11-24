@@ -1,11 +1,14 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 
 import { SELECTION_COLOR } from '@lawha/core/constants'
 import { contrastRatio, parseColor, rgbaToOkHCL } from '@lawha/scene-graph/color'
 
 import {
   ACCENT_LIGHTNESS_RANGE,
+  ACCENT_TOKENS,
   accentBaseColor,
+  DEFAULT_ACCENT,
   deriveAccentPalette,
   type AccentTheme
 } from '@/app/shell/accent/palette'
@@ -17,8 +20,89 @@ function palette(color: string, theme: AccentTheme) {
   return deriveAccentPalette(accentBaseColor({ kind: 'custom', color }), theme)
 }
 
+/** The custom properties a block of `src/theme/tokens.css` sets, by name, in upper-case hex. */
+function stylesheetTokens(theme: AccentTheme): Record<string, string> {
+  const css = readFileSync(new URL('../../../../src/theme/tokens.css', import.meta.url), 'utf8')
+  const block =
+    theme === 'dark'
+      ? /@theme \{([\s\S]*?)\n\}/.exec(css)?.[1]
+      : /html\[data-theme='light'\] \{([\s\S]*?)\n\}/.exec(css)?.[1]
+  if (!block) throw new Error(`tokens.css has no ${theme} block`)
+  return Object.fromEntries(
+    [...block.matchAll(/(--color-[\w-]+):\s*(#[0-9a-fA-F]{6});/g)].map(([, name, value]) => [
+      name,
+      value.toUpperCase()
+    ])
+  )
+}
+
 describe('deriveAccentPalette', () => {
-  test('the default blue reproduces the interface tokens and canvas selection of the stylesheet', () => {
+  test('the default Lawha accent reproduces the stylesheet, so the page matches before boot', () => {
+    expect(DEFAULT_ACCENT).toEqual({ kind: 'preset', preset: 'lawha' })
+    const dark = stylesheetTokens('dark')
+    const light = { ...dark, ...stylesheetTokens('light') }
+    for (const [theme, sheet] of [
+      ['dark', dark],
+      ['light', light]
+    ] as const) {
+      const { tokens } = deriveAccentPalette(accentBaseColor(DEFAULT_ACCENT), theme)
+      for (const token of ACCENT_TOKENS)
+        expect([token, sheet[token]]).toEqual([token, tokens[token]])
+    }
+  })
+
+  test('the Lawha accent takes the brand peach hue and keeps AA text in both themes', () => {
+    const peach = rgbaToOkHCL(parseColor('#FFE9D7')).h
+    const white = parseColor('#FFFFFF')
+    for (const theme of THEMES) {
+      const { tokens, selection } = deriveAccentPalette(accentBaseColor(DEFAULT_ACCENT), theme)
+      expect(Math.abs(rgbaToOkHCL(parseColor(tokens['--color-accent'])).h - peach)).toBeLessThan(20)
+      expect(tokens['--color-on-accent']).toBe('#FFFFFF')
+      expect(contrastRatio(white, parseColor(tokens['--color-accent']))).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(white, selection.color)).toBeGreaterThanOrEqual(3)
+      // Primary is link and label text on the panel, and focus rings must reach 3:1 against it.
+      const panel = parseColor(theme === 'dark' ? '#2A2A2A' : '#FFFFFF')
+      expect(contrastRatio(parseColor(tokens['--color-primary']), panel)).toBeGreaterThanOrEqual(
+        4.5
+      )
+      expect(
+        contrastRatio(parseColor(tokens['--color-panel-focus']), panel)
+      ).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test('hover and pressed steps raise text contrast, and subtle tints keep primary text readable', () => {
+    for (const preset of ACCENT_PRESETS) {
+      for (const theme of THEMES) {
+        const { tokens } = deriveAccentPalette(accentBaseColor({ kind: 'preset', preset }), theme)
+        const ratio = (text: string, surface: string) =>
+          contrastRatio(parseColor(text), parseColor(surface))
+        for (const [text, base, hover, pressed] of [
+          ['--color-on-accent', '--color-accent', '--color-accent-hover', '--color-accent-pressed'],
+          [
+            '--color-on-primary',
+            '--color-primary',
+            '--color-primary-hover',
+            '--color-primary-pressed'
+          ]
+        ] as const) {
+          const rest = ratio(tokens[text], tokens[base])
+          expect(rest).toBeGreaterThanOrEqual(4.5)
+          expect(ratio(tokens[text], tokens[hover])).toBeGreaterThan(rest)
+          expect(ratio(tokens[text], tokens[pressed])).toBeGreaterThan(
+            ratio(tokens[text], tokens[hover])
+          )
+        }
+        // The tint never costs primary text its AA contrast, nor more than the bare panel gives.
+        const panel = theme === 'dark' ? '#2A2A2A' : '#FFFFFF'
+        expect(
+          ratio(tokens['--color-primary'], tokens['--color-accent-subtle'])
+        ).toBeGreaterThanOrEqual(Math.min(4.5, ratio(tokens['--color-primary'], panel)))
+      }
+    }
+  })
+
+  test('the blue preset reproduces the tokens the accent family was designed around', () => {
     const blue = accentBaseColor({ kind: 'preset', preset: 'blue' })
     expect(deriveAccentPalette(blue, 'dark').tokens).toEqual({
       '--color-accent': '#2563EB',
@@ -27,7 +111,12 @@ describe('deriveAccentPalette', () => {
       '--color-panel-selected-muted': '#353B46',
       '--color-primary': '#60A5FA',
       '--color-on-accent': '#FFFFFF',
-      '--color-on-primary': '#1F2328'
+      '--color-on-primary': '#1F2328',
+      '--color-accent-hover': '#1956DD',
+      '--color-accent-pressed': '#0B48CF',
+      '--color-accent-subtle': '#293858',
+      '--color-primary-hover': '#6CB2FF',
+      '--color-primary-pressed': '#81BFFF'
     })
     expect(deriveAccentPalette(blue, 'light').tokens).toEqual({
       '--color-accent': '#2563EB',
@@ -36,7 +125,12 @@ describe('deriveAccentPalette', () => {
       '--color-panel-selected-muted': '#E5E7EB',
       '--color-primary': '#1D4ED8',
       '--color-on-accent': '#FFFFFF',
-      '--color-on-primary': '#FFFFFF'
+      '--color-on-primary': '#FFFFFF',
+      '--color-accent-hover': '#1956DD',
+      '--color-accent-pressed': '#0B48CF',
+      '--color-accent-subtle': '#E5ECFD',
+      '--color-primary-hover': '#1340CA',
+      '--color-primary-pressed': '#0832BC'
     })
     const selection = deriveAccentPalette(blue, 'dark').selection
     expect(selection.color.r).toBeCloseTo(SELECTION_COLOR.r, 2)

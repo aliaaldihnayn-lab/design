@@ -14,10 +14,15 @@ import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { AccentPreference, AccentPreset } from './schema'
 
-export const DEFAULT_ACCENT: Readonly<AccentPreference> = { kind: 'preset', preset: 'blue' }
+export const DEFAULT_ACCENT: Readonly<AccentPreference> = { kind: 'preset', preset: 'lawha' }
 
 /** Base colors dark enough that white text reads on every accent surface in both themes. */
 export const ACCENT_PRESET_COLORS: Readonly<Record<AccentPreset, string>> = {
+  /**
+   * Lawha's own accent: the brand peach (#FFE9D7, OkLCH hue 62) carried down to a burnt orange
+   * between that hue and the more saturated orange preset, the darkest step white text reads on.
+   */
+  lawha: '#B84D00',
   blue: '#2563EB',
   purple: '#9333EA',
   pink: '#BE185D',
@@ -38,14 +43,37 @@ export const ACCENT_TOKENS = [
   '--color-panel-selected-muted',
   '--color-primary',
   '--color-on-accent',
-  '--color-on-primary'
+  '--color-on-primary',
+  '--color-accent-hover',
+  '--color-accent-pressed',
+  '--color-accent-subtle',
+  '--color-primary-hover',
+  '--color-primary-pressed'
 ] as const
 export type AccentToken = (typeof ACCENT_TOKENS)[number]
 
-type DerivedToken = Exclude<AccentToken, '--color-on-accent' | '--color-on-primary'>
+type DerivedToken = Exclude<
+  AccentToken,
+  | '--color-on-accent'
+  | '--color-on-primary'
+  | '--color-accent-hover'
+  | '--color-accent-pressed'
+  | '--color-accent-subtle'
+  | '--color-primary-hover'
+  | '--color-primary-pressed'
+>
+
+/** OkLCH lightness a hovered surface moves by; a pressed one moves twice as far. */
+export const ACCENT_STATE_STEP = 0.04
+
+/** The panels a subtle accent tint is mixed over, `--color-panel` in each theme. */
+const PANELS: Readonly<Record<AccentTheme, string>> = { dark: '#2A2A2A', light: '#FFFFFF' }
+
+/** How much of the accent a subtle tint holds over the panel. */
+const SUBTLE_SHARE: Readonly<Record<AccentTheme, number>> = { dark: 0.24, light: 0.12 }
 
 /**
- * The default blue family as `src/app.css` defines it. Every other accent keeps each token's
+ * The blue family the accent tokens were designed around. Every accent keeps each token's
  * lightness, chroma and hue relation to the base, so a new accent looks like the default one.
  */
 const REFERENCE_BASE = parseColor(ACCENT_PRESET_COLORS.blue)
@@ -150,6 +178,45 @@ function textContrast({ accent, selected, primary }: ReturnType<typeof surfaces>
   )
 }
 
+/** `color` moved by `delta` in OkLCH lightness, as the hex the stylesheet receives. */
+function shiftLightness(color: Color, delta: number): Color {
+  const okhcl = rgbaToOkHCL(color)
+  return parseColor(colorToHex(okhclToRGBA({ ...okhcl, l: okhcl.l + delta, a: 1 })))
+}
+
+/**
+ * `color` laid over the theme's panel and flattened to an opaque tint, at the largest share up to
+ * {@link SUBTLE_SHARE} that keeps `text` at {@link ACCENT_TEXT_CONTRAST} on it.
+ */
+function tint(color: Color, theme: AccentTheme, text: Color): Color {
+  const panel = parseColor(PANELS[theme])
+  for (let share = SUBTLE_SHARE[theme]; share > 0; share -= 0.02) {
+    const mix = (a: number, b: number) => a * share + b * (1 - share)
+    const result = parseColor(
+      colorToHex({
+        r: mix(color.r, panel.r),
+        g: mix(color.g, panel.g),
+        b: mix(color.b, panel.b),
+        a: 1
+      })
+    )
+    if (contrastRatio(text, result) >= ACCENT_TEXT_CONTRAST) return result
+  }
+  return panel
+}
+
+/**
+ * Hover and pressed steps for a surface with `foreground` text: darker under white text, lighter
+ * under dark ink, so the text gains contrast as the surface responds.
+ */
+function stateSteps(surface: Color, foreground: Color): [Color, Color] {
+  const direction = foreground === WHITE ? -1 : 1
+  return [
+    shiftLightness(surface, direction * ACCENT_STATE_STEP),
+    shiftLightness(surface, direction * ACCENT_STATE_STEP * 2)
+  ]
+}
+
 /**
  * The accent family for `theme`, derived from one base color. When its text would fall short of
  * {@link ACCENT_TEXT_CONTRAST}, the family moves by the smallest lightness shift that reaches it.
@@ -162,6 +229,9 @@ export function deriveAccentPalette(base: Color, theme: AccentTheme): AccentPale
     surfaces(base, theme, 0)
   const { relate, reference, accent, selected, primary } = family
   const foreground = accentForeground([accent, selected])
+  const primaryForeground = accentForeground([primary])
+  const [accentHover, accentPressed] = stateSteps(accent, foreground)
+  const [primaryHover, primaryPressed] = stateSteps(primary, primaryForeground)
   return {
     tokens: {
       '--color-accent': colorToHex(accent),
@@ -172,7 +242,12 @@ export function deriveAccentPalette(base: Color, theme: AccentTheme): AccentPale
       ),
       '--color-primary': colorToHex(primary),
       '--color-on-accent': colorToHex(foreground),
-      '--color-on-primary': colorToHex(accentForeground([primary]))
+      '--color-on-primary': colorToHex(primaryForeground),
+      '--color-accent-hover': colorToHex(accentHover),
+      '--color-accent-pressed': colorToHex(accentPressed),
+      '--color-accent-subtle': colorToHex(tint(accent, theme, primary)),
+      '--color-primary-hover': colorToHex(primaryHover),
+      '--color-primary-pressed': colorToHex(primaryPressed)
     },
     selection: { color: relate(SELECTION_COLOR), foreground }
   }
