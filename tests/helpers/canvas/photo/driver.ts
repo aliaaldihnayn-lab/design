@@ -30,6 +30,56 @@ export function photoDriver(page: () => Page) {
       }, PHOTO_PAN)
     },
 
+    /** A 300 × 200 layer filled with a real image, a blue-to-orange gradient, at the origin. */
+    showImage() {
+      return page().evaluate(async (pan) => {
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
+        store.setTool('SELECT')
+        const canvas = store.graph.getNode(store.state.currentPageId)
+        for (const id of canvas?.childIds.slice() ?? []) store.graph.deleteNode(id)
+        const drawing = new OffscreenCanvas(60, 40)
+        const context = drawing.getContext('2d')
+        if (!context) throw new Error('No 2D canvas')
+        const gradient = context.createLinearGradient(0, 0, 60, 0)
+        gradient.addColorStop(0, '#2050c0')
+        gradient.addColorStop(1, '#f0a040')
+        context.fillStyle = gradient
+        context.fillRect(0, 0, 60, 40)
+        const blob = await drawing.convertToBlob({ type: 'image/png' })
+        const hash = store.storeImage(new Uint8Array(await blob.arrayBuffer()))
+        const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+          name: 'Image',
+          width: 300,
+          height: 200,
+          fills: [
+            {
+              type: 'IMAGE',
+              imageHash: hash,
+              imageScaleMode: 'FILL',
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              opacity: 1,
+              visible: true
+            }
+          ]
+        })
+        store.state.zoom = 1
+        store.state.panX = pan
+        store.state.panY = pan
+        store.select([node.id])
+        store.requestRender()
+        return node.id
+      }, PHOTO_PAN)
+    },
+
+    /** The adjustments on a layer's first fill. */
+    adjustments(id: string) {
+      return page().evaluate(
+        (id) => window.lawha?.getStore?.().graph.getNode(id)?.fills[0]?.adjustments,
+        id
+      )
+    },
+
     showThread() {
       return page().evaluate(async (pan) => {
         const store = window.lawha?.getStore?.()

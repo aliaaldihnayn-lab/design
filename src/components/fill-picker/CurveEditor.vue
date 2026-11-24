@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
 import { sampleCurve } from '@lawha/core/canvas'
 import type { CurvePoint } from '@lawha/scene-graph'
@@ -18,7 +18,13 @@ const IDENTITY: CurvePoint[] = [
   { x: 1, y: 1 }
 ]
 
-const current = computed(() => (points && points.length >= 2 ? points : IDENTITY))
+/**
+ * The points a drag works on. A point added on the straight curve changes nothing, so the
+ * adjustments drop it and the props go back to the identity curve; the drag keeps its own copy
+ * so the new point is still the one that moves.
+ */
+const draft = shallowRef<CurvePoint[] | null>(null)
+const current = computed(() => draft.value ?? (points && points.length >= 2 ? points : IDENTITY))
 const canvas = ref<HTMLCanvasElement>()
 const dragging = ref<number | null>(null)
 const HIT = 0.05
@@ -105,13 +111,20 @@ function toPoint(event: MouseEvent): CurvePoint {
 }
 
 function startDrag(index: number, event: PointerEvent) {
+  draft.value = [...current.value]
   dragging.value = index
   canvas.value?.setPointerCapture(event.pointerId)
+}
+
+function endDrag() {
+  dragging.value = null
+  draft.value = null
 }
 
 function addPoint(event: PointerEvent) {
   const p = toPoint(event)
   const next = [...current.value, p].sort((a, b) => a.x - b.x)
+  draft.value = next
   emit('update', next)
   dragging.value = next.indexOf(p)
   canvas.value?.setPointerCapture(event.pointerId)
@@ -127,10 +140,9 @@ function move(event: PointerEvent) {
   if (index === 0) p.x = 0
   else if (index === last) p.x = 1
   else p.x = Math.min(list[index + 1].x - 0.01, Math.max(list[index - 1].x + 0.01, p.x))
-  emit(
-    'update',
-    list.map((q, i) => (i === index ? p : q))
-  )
+  const next = list.map((q, i) => (i === index ? p : q))
+  draft.value = next
+  emit('update', next)
 }
 
 function remove(index: number) {
@@ -149,8 +161,8 @@ function remove(index: number) {
     data-test-id="curve-editor"
     @pointerdown="down"
     @pointermove="move"
-    @pointerup="dragging = null"
-    @pointercancel="dragging = null"
+    @pointerup="endDrag"
+    @pointercancel="endDrag"
     @dblclick="dblclick"
   />
 </template>
