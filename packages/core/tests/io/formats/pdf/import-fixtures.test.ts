@@ -19,8 +19,11 @@ import { fontManager } from '#core/text/font/manager'
  * element, CSS transforms, gradients, a clipped image); `illustrator-box.ai` is written the way
  * Illustrator writes its PDF-compatible files (layers as optional content, a symbol as a form
  * XObject, clip groups, Identity-H TrueType subsets, tracking and horizontal scale, spot and
- * CMYK colours, a gradient through `sh`, a second artboard with an offset crop box). Their
- * generators are in `tests/fixtures/pdf/generators`.
+ * CMYK colours, a gradient through `sh`, a second artboard with an offset crop box);
+ * `libreoffice-arabic.pdf` is LibreOffice's export of `tests/fixtures/writer/libreoffice-arabic.docx`
+ * (words of a right-to-left line in logical order, styles glued to font names, slanted synthetic
+ * italic, Symbol-font bullets). The generators of the first two are in
+ * `tests/fixtures/pdf/generators`.
  */
 setDefaultTimeout(120_000)
 
@@ -227,5 +230,39 @@ describe('an Illustrator file', () => {
     const image = expectDefined(nodes.find((node) => node.fills[0]?.type === 'IMAGE'))
     expect(boxIn(graph, second, image)).toMatchObject({ x: 30, y: 50, width: 220, height: 220 })
     expect(nodes.some((node) => node.fills[0]?.type === 'GRADIENT_RADIAL')).toBe(true)
+  })
+})
+
+/** Where a layer ends on the right, where a right-to-left line starts. */
+function right(graph: SceneGraph, frame: SceneNode, node: SceneNode): number {
+  const box = boxIn(graph, frame, node)
+  return box.x + box.width
+}
+
+describe('a PDF LibreOffice exported', () => {
+  test('a right-to-left line keeps its words in order, with its bold and italic', async () => {
+    const graph = await open('libreoffice-arabic.pdf')
+    const [page] = frames(graph)
+    const title = textNode(graph, page, '\u0639\u0642\u062f \u062e\u062f\u0645\u0627\u062a')
+    expect(title.fontWeight).toBe(700)
+    expect(title.fontFamily).toBe('Free Serif')
+    const line = texts(graph, page)
+      .filter(
+        (node) => Math.abs(boxIn(graph, page, node).y - boxIn(graph, page, title).y - 30) < 15
+      )
+      .sort((a, b) => right(graph, page, b) - right(graph, page, a))
+    expect(line.map((node) => node.text).join(' ')).toBe(
+      '\u0647\u0630\u0627 \u0646\u0635 \u0639\u0631\u064a\u0636 \u0648 \u0645\u0627\u0626\u0644 \u0648\u0645\u0633\u0637\u0631 .'
+    )
+    const italic = expectDefined(line.find((node) => node.text === '\u0645\u0627\u0626\u0644'))
+    expect(italic.italic).toBe(true)
+    expect(italic.fontSize).toBeCloseTo(12, 1)
+    expect(italic.rotation).toBe(0)
+  })
+
+  test('list bullets from the Symbol font read as bullets', async () => {
+    const graph = await open('libreoffice-arabic.pdf')
+    const [page] = frames(graph)
+    expect(texts(graph, page).some((node) => node.text.startsWith('\u2022'))).toBe(true)
   })
 })

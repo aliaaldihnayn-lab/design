@@ -38,6 +38,20 @@ describe('PDF font names', () => {
     })
   })
 
+  test('read a style written onto the family name', () => {
+    expect(parsePDFFontName('CAAAAA+FreeSerifBold')).toEqual({
+      family: 'Free Serif',
+      weight: 700,
+      italic: false
+    })
+    expect(parsePDFFontName('ArialBoldItalic')).toEqual({
+      family: 'Arial',
+      weight: 700,
+      italic: true
+    })
+    expect(parsePDFFontName('FreeSans').family).toBe('Free Sans')
+  })
+
   test('name a variable font by its family', () => {
     expect(parsePDFFontName('AAAAAA+InterVariable').family).toBe('Inter')
     expect(parsePDFFontName('NotoKufiArabicVF-Bold')).toEqual({

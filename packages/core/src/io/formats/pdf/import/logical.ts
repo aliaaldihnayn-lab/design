@@ -35,11 +35,15 @@ function isDropped(code: number): boolean {
 
 /** Presentation forms and ligatures as the letters they show; controls and NULs dropped. */
 export function normalizeGlyphText(text: string): string {
-  return text
-    .replace(PRESENTATION_FORMS, (form) => form.normalize('NFKC'))
-    .split('')
-    .filter((character) => !isDropped(character.charCodeAt(0)))
-    .join('')
+  return (
+    text
+      .replace(PRESENTATION_FORMS, (form) => form.normalize('NFKC'))
+      // Symbol-font bullets, as Word and LibreOffice write list bullets, in the private use area.
+      .replace(/\uF0B7/gu, '\u2022')
+      .split('')
+      .filter((character) => !isDropped(character.charCodeAt(0)))
+      .join('')
+  )
 }
 
 export function isRightToLeft(text: string): boolean {

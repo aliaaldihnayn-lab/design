@@ -44,8 +44,16 @@ export function parsePDFFontName(
 ): PDFFontFace {
   const name = postScriptName.replace(/^[A-Z]{6}\+/, '')
   const known = KNOWN_FAMILIES[name]
-  const [familyPart, ...styleParts] = name.split(/[-,]/)
-  const style = styleParts.join(' ')
+  const [namePart, ...styleParts] = name.split(/[-,]/)
+  // Without a separator the style may close the name itself: `FreeSerifBold`, `ArialBoldItalic`.
+  const glued =
+    styleParts.length === 0 && !known
+      ? /^(.*?[a-z])((?:(?:Semi|Demi|Extra|Ultra)?(?:Bold|Light)|Medium|Black|Heavy|Thin|Italic|Oblique)+)$/.exec(
+          namePart
+        )
+      : null
+  const familyPart = glued ? glued[1] : namePart
+  const style = glued ? glued[2] : styleParts.join(' ')
   // A variable font's PostScript name often carries `Variable` or `VF`: `InterVariable` is Inter.
   const family =
     known ??

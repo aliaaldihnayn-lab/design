@@ -65,6 +65,8 @@ interface Run {
   along: [number, number]
   down: [number, number]
   size: number
+  /** Drawn leaning, as PDF writers draw italic in a face without one. */
+  slanted: boolean
   paint: TextPaint
   glyphs: Glyph[]
 }
@@ -224,18 +226,21 @@ export class TextCollector {
     state: { font: PDFFontInfo; paint: TextPaint }
   ): void {
     const scaleAlong = Math.hypot(at[0], at[1])
-    const scaleUp = Math.hypot(at[2], at[3])
-    const size = em * scaleUp
-    if (!(size > 0) || !(scaleAlong > 0)) return
+    if (!(scaleAlong > 0)) return
     const along: [number, number] = [at[0] / scaleAlong, at[1] / scaleAlong]
-    // Text space points up; SVG text's second axis points down from the baseline.
-    const down: [number, number] = [-at[2] / scaleUp, -at[3] / scaleUp]
+    // SVG text's second axis points down from the baseline, square to it: text space points up,
+    // and a slanted text matrix (synthetic italic) leans its glyphs without moving its baseline.
+    const across = (along[0] * at[3] - along[1] * at[2]) * -1
+    const down: [number, number] = across >= 0 ? [-along[1], along[0]] : [along[1], -along[0]]
+    const size = em * Math.abs(across)
+    if (!(size > 0)) return
+    const slanted = (at[2] * along[0] + at[3] * along[1]) / Math.abs(across) > 0.1
     const advance = advanceText * scaleAlong
     const text = normalizeGlyphText(unicode)
     const span = this.span()
     if (!text && !span) return
     const mark = advance < 0.01 * size || MARK.test(text)
-    const key = `${state.paint.attrs}|${state.paint.chain.join(',')}`
+    const key = `${state.paint.attrs}|${state.paint.chain.join(',')}|${slanted}`
     const font = state.font
     const run = this.run
     if (run && this.fits(run, key, along, down, size, at, mark)) {
@@ -259,6 +264,7 @@ export class TextCollector {
       along,
       down,
       size,
+      slanted,
       paint: state.paint,
       glyphs: [{ text, u: 0, v: 0, advance, mark, font, span }]
     }
@@ -289,7 +295,8 @@ export class TextCollector {
     const start = Math.min(...bases.map((glyph) => glyph.u), 0) / size
     const end = Math.max(...run.glyphs.map((glyph) => glyph.u + glyph.advance)) / size
     if (mark) return Math.abs(v) < MARK_REACH && u > start - MARK_REACH && u < end + MARK_REACH
-    return Math.abs(v) < BASELINE_TOLERANCE && u > start - 0.5 && u < end + MAX_GAP
+    // Words may come in either order along the line, as right-to-left text often does.
+    return Math.abs(v) < BASELINE_TOLERANCE && u > start - MAX_GAP && u < end + MAX_GAP
   }
 
   /** Writes the open run, before anything else is drawn over it. */
@@ -382,7 +389,8 @@ function runMarkup(run: Run): string | null {
     run.origin[1] + anchorU * run.along[1]
   ]
   const base = faceAttrs(ordered[0].font)
+  const italic = run.slanted && !base.includes('font-style') ? ' font-style="italic"' : ''
   const spacing = letterSpacing ? ` letter-spacing="${n(letterSpacing)}"` : ''
   const anchor = rtl ? ' text-anchor="end" direction="rtl"' : ''
-  return `<text transform="${matrixAttr(m)}" font-size="${n(run.size)}"${base}${spacing}${anchor}${run.paint.attrs}>${textContent(ordered, base)}</text>`
+  return `<text transform="${matrixAttr(m)}" font-size="${n(run.size)}"${base}${italic}${spacing}${anchor}${run.paint.attrs}>${textContent(ordered, base)}</text>`
 }
