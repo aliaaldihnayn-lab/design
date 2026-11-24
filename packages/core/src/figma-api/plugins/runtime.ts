@@ -183,7 +183,15 @@ export function startPlugin(options: StartPluginOptions): PluginSession {
   const timers = new Map<number, ReturnType<typeof setTimeout>>()
   let nextTimer = 1
 
-  const turn = <T>(run: () => Promise<T>): Promise<T> => (host.turn ? host.turn(run) : run())
+  /**
+   * One turn of plugin code, which ends when its code returns or when the plugin closes in it:
+   * closing disposes the interpreter, whose pending work then never settles, and the host's turn
+   * (an open undo step) must still end.
+   */
+  const turn = <T>(run: () => Promise<T>): Promise<T | undefined> => {
+    const untilClosed = () => Promise.race([run(), done.then(() => undefined)])
+    return host.turn ? host.turn(untilClosed) : untilClosed()
+  }
 
   const finish = (exit: PluginExit) => {
     if (!running) return

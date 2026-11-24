@@ -189,6 +189,43 @@ describe('running a plugin', () => {
     expect(log.notes).toEqual([{ message: 'Test: bad', error: true }])
   })
 
+  test('a turn ends when the plugin closes in it, so the host records it', async () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const { host } = recordingHost()
+    const ended: string[] = []
+    const run = host.turn
+    host.turn = async (code) => {
+      const out = await run?.(code)
+      ended.push('turn')
+      return out
+    }
+    const session = startPlugin({
+      figma,
+      host,
+      bundle: bundle(`
+        figma.createRectangle()
+        figma.showUI(__html__)
+        figma.ui.onmessage = async () => {
+          figma.createEllipse()
+          figma.closePlugin()
+          await new Promise(() => {})
+        }
+      `)
+    })
+    await session.ready
+    expect(ended).toEqual(['turn'])
+    await session.receiveFromUI({})
+    expect(ended).toEqual(['turn', 'turn'])
+
+    // Closed in its first turn, by a menu command.
+    ended.length = 0
+    const command = startPlugin({ figma, bundle: sampleBundle(), host, command: 'three' })
+    await command.done
+    // The turn's end follows the close within the same task.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(ended).toEqual(['turn'])
+  })
+
   test('each turn runs through the host, and messages are copies', async () => {
     const figma = new FigmaAPI(new SceneGraph())
     const { host, log } = recordingHost()
