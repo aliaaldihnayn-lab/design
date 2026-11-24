@@ -1,6 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { Fill, SceneNode } from '@lawha/scene-graph'
+import type { Fill, SceneNode, Stroke } from '@lawha/scene-graph'
+import type { Color } from '@lawha/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { textVerticalOffset, withTextParagraph } from '#core/canvas/text'
@@ -41,6 +42,55 @@ function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): bool
       return true
     }
   )
+}
+
+/**
+ * Strokes a text's laid-out glyphs, for text whose glyphs have no outlines to stroke as paths
+ * (complex scripts such as Arabic, fallback fonts). A stroke aligned to one side is drawn at twice
+ * its weight and the glyphs then cut it to that side, as a path stroke is clipped.
+ */
+export function strokeLaidOutText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  stroke: Stroke,
+  color: Color
+): boolean {
+  if (!r.fontsLoaded || !r.fontProvider || node.textPathData !== null) return false
+  const sided = stroke.align !== 'CENTER'
+  const pen = new r.ck.Paint()
+  const cut = new r.ck.Paint()
+  try {
+    pen.setAntiAlias(true)
+    pen.setStyle(r.ck.PaintStyle.Stroke)
+    pen.setStrokeWidth(sided ? stroke.weight * 2 : stroke.weight)
+    pen.setStrokeJoin(r.ck.StrokeJoin.Round)
+    pen.setColorComponents(color.r, color.g, color.b, color.a)
+    cut.setAntiAlias(true)
+    cut.setBlendMode(stroke.align === 'INSIDE' ? r.ck.BlendMode.DstIn : r.ck.BlendMode.DstOut)
+    const draw = (paint: typeof pen) =>
+      withTextParagraph(
+        r,
+        node,
+        r.ck.Color4f(0, 0, 0, 1),
+        { halfLeading: true, foregroundPaint: paint },
+        (paragraph) => {
+          paragraph.draw(canvas, 0, textVerticalOffset(node, paragraph.getHeight()))
+          return true
+        }
+      )
+    const layer = new r.ck.Paint()
+    layer.setAlphaf(stroke.opacity)
+    canvas.saveLayer(layer)
+    layer.delete()
+    const drawn = draw(pen)
+    if (drawn && sided) draw(cut)
+    canvas.restore()
+    return drawn
+  } finally {
+    pen.delete()
+    cut.delete()
+  }
 }
 
 function drawResolvedPathText(

@@ -19,6 +19,8 @@ import {
   withStrokeDash
 } from '#core/canvas/strokes'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
+import { textNodeToOutlinePath } from '#core/canvas/text/outlines'
+import { strokeLaidOutText } from '#core/canvas/text/render'
 import {
   addStrokeRunToPath,
   strokeRuns,
@@ -180,6 +182,8 @@ function drawNodeStroke(
   }
   if (!sg) {
     if (vectorPaths) drawAlignedVectorPathStrokes(r, canvas, node, vectorPaths, stroke, sc)
+    // Text is stroked along its glyphs, never around its box.
+    else if (node.type === 'TEXT') drawTextOutlineStroke(r, canvas, node, stroke, sc)
     else drawRegularStroke(r, canvas, node, stroke, sc)
     return
   }
@@ -198,6 +202,31 @@ function drawNodeStroke(
   r.clipNodeShape(canvas, node)
   drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
   canvas.restore()
+}
+
+/**
+ * Strokes text the file saved no stroke geometry for along its glyphs' outlines, on the side the
+ * stroke is aligned to, as Figma strokes text, or along its laid-out glyphs when they have no
+ * outlines.
+ */
+function drawTextOutlineStroke(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  stroke: SceneNode['strokes'][0],
+  sc: Color
+): void {
+  const outline = textNodeToOutlinePath(r, node)
+  if (!outline) {
+    strokeLaidOutText(r, canvas, node, stroke, sc)
+    return
+  }
+  const sided = clipToStrokeSide(r, canvas, [outline], stroke.align, outline)
+  // A stroke on one side is drawn at twice its weight, its other half clipped away.
+  const weight = sided ? stroke.weight * 2 : stroke.weight
+  drawVectorPathStrokes(r, canvas, [outline], { ...stroke, weight }, sc, node.strokeMiterLimit)
+  if (sided) canvas.restore()
+  outline.delete()
 }
 
 export function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
