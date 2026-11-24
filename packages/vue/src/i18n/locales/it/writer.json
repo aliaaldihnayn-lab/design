@@ -224,5 +224,7 @@
   "pickerUnavailable": "Aggiungi una chiave API di Google Picker in Impostazioni → Archiviazione → Google Drive, oppure incolla il link del documento.",
   "googleSkippedPageField": "L'intestazione o il piè di pagina contiene un numero di pagina che Google Docs non accetta; è rimasto com'è in Docs.",
   "googleSkippedImages": "{count} immagini incollate non sono state salvate: Google Docs accetta solo immagini scaricabili dal web.",
-  "googleSkippedSuggestions": "Le revisioni sono state salvate come modifiche normali: Google Docs non accetta suggerimenti."
+  "googleSkippedSuggestions": "Le revisioni sono state salvate come modifiche normali: Google Docs non accetta suggerimenti.",
+  "googleSkippedFootnotes": "{count} note a piè di pagina non sono state salvate: Lawha non può ancora aggiungere note a piè di pagina a Google Docs.",
+  "googleSkippedSections": "Le interruzioni di sezione non sono state salvate: l'intero documento prende l'impostazione di pagina dell'ultima sezione."
 }

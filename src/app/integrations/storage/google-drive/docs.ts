@@ -252,6 +252,9 @@ export function createGoogleDocsClient(
     const skipped = [...regions.skipped]
     if (skippedImages) skipped.push({ kind: 'image', count: skippedImages })
     if (hasSuggestions(model.body)) skipped.push({ kind: 'suggestions' })
+    const footnotes = countNodes(model.body, 'footnote')
+    if (footnotes) skipped.push({ kind: 'footnotes', count: footnotes })
+    if (countNodes(model.body, 'sectionBreak')) skipped.push({ kind: 'sections' })
     return { revisionId: revision, skipped, commentsPosted }
   }
 
@@ -264,6 +267,12 @@ function countImages(node: WriterNode, accept: (src: string) => string | null = 
   const src = node.type === 'image' ? node.attrs?.src : undefined
   const own = typeof src === 'string' && accept(src) !== null ? 1 : 0
   return own + (node.content ?? []).reduce((sum, child) => sum + countImages(child, accept), 0)
+}
+
+/** Nodes of a type the Docs requests do not write, which a save reports as left out. */
+function countNodes(node: WriterNode, type: string): number {
+  const own = node.type === type ? 1 : 0
+  return own + (node.content ?? []).reduce((sum, child) => sum + countNodes(child, type), 0)
 }
 
 /** Tracked insertions and deletions, which Docs keeps as suggestions no API can create. */

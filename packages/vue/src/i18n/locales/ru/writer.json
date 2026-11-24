@@ -224,5 +224,7 @@
   "pickerUnavailable": "Добавьте ключ API Google Picker в Настройки → Хранилище → Google Drive или вставьте ссылку на документ.",
   "googleSkippedPageField": "В колонтитуле есть номер страницы, который Google Docs не принимает; колонтитул оставлен как в Docs.",
   "googleSkippedImages": "Вставленные изображения ({count}) не сохранены: Google Docs принимает только изображения, доступные в интернете.",
-  "googleSkippedSuggestions": "Отслеживаемые изменения сохранены как обычные правки: Google Docs не принимает предложения."
+  "googleSkippedSuggestions": "Отслеживаемые изменения сохранены как обычные правки: Google Docs не принимает предложения.",
+  "googleSkippedFootnotes": "Сноски ({count}) не сохранены: Lawha пока не умеет добавлять сноски в Google Docs.",
+  "googleSkippedSections": "Разрывы разделов не сохранены: весь документ получает параметры страницы последнего раздела."
 }

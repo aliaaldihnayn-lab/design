@@ -224,5 +224,7 @@
   "pickerUnavailable": "Añade una clave de API de Google Picker en Ajustes → Almacenamiento → Google Drive, o pega el enlace del documento.",
   "googleSkippedPageField": "El encabezado o pie tiene un número de página que Google Docs no admite; se dejó como está en Docs.",
   "googleSkippedImages": "No se guardaron {count} imágenes pegadas: Google Docs solo acepta imágenes que puede descargar de la web.",
-  "googleSkippedSuggestions": "Los cambios con seguimiento se guardaron como ediciones normales: Google Docs no admite sugerencias."
+  "googleSkippedSuggestions": "Los cambios con seguimiento se guardaron como ediciones normales: Google Docs no admite sugerencias.",
+  "googleSkippedFootnotes": "No se guardaron {count} notas al pie: Lawha todavía no puede añadir notas al pie a Google Docs.",
+  "googleSkippedSections": "No se guardaron los saltos de sección: todo el documento toma la configuración de página de la última sección."
 }

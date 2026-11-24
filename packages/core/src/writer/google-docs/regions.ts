@@ -25,6 +25,8 @@ export type GoogleDocsSkipped =
   | { kind: 'pageField'; region: GoogleRegionKind }
   | { kind: 'image'; count: number }
   | { kind: 'suggestions' }
+  | { kind: 'footnotes'; count: number }
+  | { kind: 'sections' }
 
 export interface GoogleRegionPlan {
   /** Requests for regions the Doc lacks; their replies name the new segments. */

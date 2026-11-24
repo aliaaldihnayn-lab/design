@@ -238,7 +238,12 @@ export const writerMessageDefaults = {
     '{count} pasted images were not saved: Google Docs only takes images it can download from the web.'
   ),
   googleSkippedSuggestions:
-    'Tracked changes were saved as plain edits: Google Docs cannot receive suggestions.'
+    'Tracked changes were saved as plain edits: Google Docs cannot receive suggestions.',
+  googleSkippedFootnotes: params(
+    '{count} footnotes were not saved: Lawha cannot add footnotes to Google Docs yet.'
+  ),
+  googleSkippedSections:
+    "Section breaks were not saved: the whole Doc takes the last section's page setup."
 } as const
 
 export const writerMessages = i18n('writer', writerMessageDefaults)

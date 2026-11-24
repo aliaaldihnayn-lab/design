@@ -224,5 +224,7 @@
   "pickerUnavailable": "Ajoutez une clé d'API Google Picker dans Réglages → Stockage → Google Drive, ou collez le lien du document.",
   "googleSkippedPageField": "L'en-tête ou le pied de page contient un numéro de page que Google Docs ne peut pas recevoir ; il reste tel quel dans Docs.",
   "googleSkippedImages": "{count} images collées n'ont pas été enregistrées : Google Docs n'accepte que des images téléchargeables depuis le web.",
-  "googleSkippedSuggestions": "Les modifications suivies ont été enregistrées comme des modifications simples : Google Docs ne peut pas recevoir de suggestions."
+  "googleSkippedSuggestions": "Les modifications suivies ont été enregistrées comme des modifications simples : Google Docs ne peut pas recevoir de suggestions.",
+  "googleSkippedFootnotes": "{count} notes de bas de page n'ont pas été enregistrées : Lawha ne peut pas encore ajouter de notes de bas de page à Google Docs.",
+  "googleSkippedSections": "Les sauts de section n'ont pas été enregistrés : tout le document prend la mise en page de la dernière section."
 }

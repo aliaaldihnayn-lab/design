@@ -169,6 +169,34 @@ describe('Google Docs in the document editor', () => {
     expect(resolved?.body).toEqual({ action: 'resolve' })
   })
 
+  test('says which footnotes and section breaks the Doc did not receive', async () => {
+    const { client } = fakeDocs()
+    const paragraph = (text: string) => ({
+      type: 'paragraph',
+      content: [
+        { type: 'text', text },
+        { type: 'footnote', attrs: { id: `fn-${text}` } }
+      ]
+    })
+    const model = {
+      ...writerDocument.value,
+      body: {
+        type: 'doc',
+        content: [
+          paragraph('أ'),
+          { type: 'sectionBreak', attrs: { page: writerDocument.value.page } },
+          paragraph('ب')
+        ]
+      },
+      footnotes: [
+        { id: 'fn-أ', content: [{ type: 'paragraph', content: [{ type: 'text', text: '1' }] }] },
+        { id: 'fn-ب', content: [{ type: 'paragraph', content: [{ type: 'text', text: '2' }] }] }
+      ]
+    }
+    const result = await client.save(ID, model, 'rev-1', true)
+    expect(result.skipped).toEqual([{ kind: 'footnotes', count: 2 }, { kind: 'sections' }])
+  })
+
   test('reads the chosen Doc from a Picker response', () => {
     const api = {
       Action: { PICKED: 'picked', CANCEL: 'cancel' }

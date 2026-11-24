@@ -224,5 +224,7 @@
   "pickerUnavailable": "設定 → ストレージ → グーグルドライブでピッカー用キーを追加するか、文書のリンクを貼り付けてください。",
   "googleSkippedPageField": "ヘッダーまたはフッターのページ番号はグーグルドキュメントに書き込めないため、そのまま残しました。",
   "googleSkippedImages": "貼り付けた画像 {count} 件は保存されませんでした。ウェブから取得できる画像のみ対応しています。",
-  "googleSkippedSuggestions": "変更履歴は通常の編集として保存しました。提案モードの書き込みには対応していません。"
+  "googleSkippedSuggestions": "変更履歴は通常の編集として保存しました。提案モードの書き込みには対応していません。",
+  "googleSkippedFootnotes": "脚注 {count} 件は保存されませんでした。Lawha はまだ Google ドキュメントに脚注を追加できません。",
+  "googleSkippedSections": "セクション区切りは保存されませんでした。ドキュメント全体が最後のセクションのページ設定になります。"
 }

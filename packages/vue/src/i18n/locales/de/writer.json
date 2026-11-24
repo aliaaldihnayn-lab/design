@@ -224,5 +224,7 @@
   "pickerUnavailable": "Fügen Sie unter Einstellungen → Speicher → Google Drive einen Google-Picker-API-Schlüssel hinzu oder fügen Sie den Link des Dokuments ein.",
   "googleSkippedPageField": "Kopf- oder Fußzeile enthält eine Seitenzahl, die Google Docs nicht annehmen kann; sie bleibt wie in Docs.",
   "googleSkippedImages": "{count} eingefügte Bilder wurden nicht gespeichert: Google Docs übernimmt nur Bilder, die es aus dem Web laden kann.",
-  "googleSkippedSuggestions": "Nachverfolgte Änderungen wurden als normale Bearbeitungen gespeichert: Google Docs kann keine Vorschläge annehmen."
+  "googleSkippedSuggestions": "Nachverfolgte Änderungen wurden als normale Bearbeitungen gespeichert: Google Docs kann keine Vorschläge annehmen.",
+  "googleSkippedFootnotes": "{count} Fußnoten wurden nicht gespeichert: Lawha kann Google Docs noch keine Fußnoten hinzufügen.",
+  "googleSkippedSections": "Abschnittsumbrüche wurden nicht gespeichert: Das ganze Dokument übernimmt die Seiteneinrichtung des letzten Abschnitts."
 }

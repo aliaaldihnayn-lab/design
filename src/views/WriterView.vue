@@ -128,6 +128,8 @@ function skippedNotice(skipped: GoogleDocsSkipped[]): string | null {
   const notes = skipped.map((item) => {
     if (item.kind === 'pageField') return t.value.googleSkippedPageField
     if (item.kind === 'image') return t.value.googleSkippedImages({ count: item.count })
+    if (item.kind === 'footnotes') return t.value.googleSkippedFootnotes({ count: item.count })
+    if (item.kind === 'sections') return t.value.googleSkippedSections
     return t.value.googleSkippedSuggestions
   })
   return notes.length ? notes.join(' ') : null
