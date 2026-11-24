@@ -6,9 +6,12 @@ import { SceneGraph } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
-import { createSVGNodes } from '#core/io/formats/svg/import'
+import { createSVGNodesFromImport, prepareSVGImport } from '#core/io/formats/svg/import'
+import { svgImportFonts } from '#core/io/formats/svg/text/import'
+import { fontManager } from '#core/text/font/manager'
 
-import { pdfPageToSVG, type PDFImage, type PDFOps } from './svg'
+import type { PDFOps } from './paths'
+import { pdfPageToSVG, type PDFImage, type PDFOptionalContent } from './svg'
 
 /**
  * PDF, and Illustrator `.ai` files (a PDF inside), as editable layers: each page becomes a frame
@@ -80,10 +83,12 @@ type PDFPage = Awaited<
 function pageSVG(
   page: PDFPage,
   ops: PDFOps,
-  codec: ReturnType<typeof createCanvasKitRasterCodec>
+  codec: ReturnType<typeof createCanvasKitRasterCodec>,
+  optionalContent: PDFOptionalContent | null = null
 ): Promise<string> {
   return pdfPageToSVG(page, {
     ops,
+    optionalContent,
     image: (name) =>
       new Promise<PDFImage | null>((resolve) => {
         const store = name.startsWith('g_') ? page.commonObjs : page.objs
@@ -149,6 +154,14 @@ export async function previewPDFPages(
   return previews
 }
 
+function loadFonts(fonts: { family: string; style: string; characters: string }[]) {
+  return Promise.all(
+    fonts.map(({ family, style, characters }) =>
+      fontManager.loadFont(family, style, characters).catch(() => null)
+    )
+  )
+}
+
 export async function readPDFDocument(
   bytes: Uint8Array,
   options: PDFReadOptions = {}
@@ -162,13 +175,20 @@ export async function readPDFDocument(
   const pageId = graph.getPages()[0].id
   const ops: PDFOps = { ...pdfjs.OPS }
   const count = Math.min(doc.numPages, options.maxPages ?? 50)
+  const optionalContent = await doc.getOptionalContentConfig().catch(() => null)
   let x = 0
   try {
     for (let index = 1; index <= count; index++) {
       const page = await doc.getPage(index)
-      const svg = await pageSVG(page, ops, codec)
+      const svg = await pageSVG(page, ops, codec, optionalContent)
       const label = count > 1 ? `${options.name ?? 'PDF'} — ${index}` : (options.name ?? 'PDF')
-      const frame = createSVGNodes(graph, pageId, svg, { name: label, x, y: 0, keepEmpty: true })
+      const data = prepareSVGImport(svg)
+      // Text is measured and placed as it is created, so its fonts load first: measured in
+      // another font, a text layer's box would not match the text drawn in it.
+      if (data) await loadFonts(svgImportFonts(data))
+      const frame =
+        data &&
+        createSVGNodesFromImport(graph, pageId, data, { name: label, x, y: 0, keepEmpty: true })
       x += (frame?.width ?? page.getViewport({ scale: 1 }).width) + PAGE_GAP
       page.cleanup()
     }

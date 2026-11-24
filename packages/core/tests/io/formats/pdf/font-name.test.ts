@@ -37,4 +37,13 @@ describe('PDF font names', () => {
       italic: false
     })
   })
+
+  test('name a variable font by its family', () => {
+    expect(parsePDFFontName('AAAAAA+InterVariable').family).toBe('Inter')
+    expect(parsePDFFontName('NotoKufiArabicVF-Bold')).toEqual({
+      family: 'Noto Kufi Arabic',
+      weight: 700,
+      italic: false
+    })
+  })
 })

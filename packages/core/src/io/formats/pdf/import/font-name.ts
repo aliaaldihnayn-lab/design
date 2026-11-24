@@ -1,3 +1,5 @@
+import type { Matrix, PDFFontInfo } from './text'
+
 /**
  * A PDF font's face from its PostScript name, as PDFs name the fonts they embed:
  * `ABCDEF+OpenSans-SemiBoldItalic` is Open Sans at weight 600, italic.
@@ -44,8 +46,11 @@ export function parsePDFFontName(
   const known = KNOWN_FAMILIES[name]
   const [familyPart, ...styleParts] = name.split(/[-,]/)
   const style = styleParts.join(' ')
+  // A variable font's PostScript name often carries `Variable` or `VF`: `InterVariable` is Inter.
   const family =
-    known ?? KNOWN_FAMILIES[familyPart] ?? spaced(familyPart.replace(/(?:PS)?MT$/, '')).trim()
+    known ??
+    KNOWN_FAMILIES[familyPart] ??
+    spaced(familyPart.replace(/(?:PS)?MT$/, '').replace(/(?<=[a-z])(?:Variable|VF)$/, '')).trim()
   let weight = WEIGHTS.find(([pattern]) => pattern.test(style))?.[1] ?? 400
   if (weight === 400 && flags.black) weight = 900
   else if (weight === 400 && flags.bold) weight = 700
@@ -54,4 +59,31 @@ export function parsePDFFontName(
     weight,
     italic: /italic|oblique/i.test(style) || (flags.italic ?? false)
   }
+}
+
+/** The face and metrics pdf.js loaded a font with. */
+export function fontInfo(font: unknown): PDFFontInfo {
+  const info: PDFFontInfo = {
+    face: null,
+    fallback: 'sans-serif',
+    fontMatrix: [0.001, 0, 0, 0.001, 0, 0],
+    vertical: false
+  }
+  if (typeof font !== 'object' || font === null) return info
+  const get = (key: string): unknown => Reflect.get(font, key)
+  const fallback = get('fallbackName')
+  if (typeof fallback === 'string' && fallback) info.fallback = fallback
+  const matrix = get('fontMatrix')
+  if (Array.isArray(matrix) && matrix.length === 6 && matrix[0] && matrix[3])
+    info.fontMatrix = matrix as Matrix
+  info.vertical = get('vertical') === true
+  const name = get('name')
+  if (typeof name === 'string' && name) {
+    info.face = parsePDFFontName(name, {
+      bold: get('bold') === true,
+      black: get('black') === true,
+      italic: get('italic') === true
+    })
+  }
+  return info
 }

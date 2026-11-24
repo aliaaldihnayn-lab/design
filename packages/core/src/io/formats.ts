@@ -433,6 +433,8 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   mimeTypes: ['application/pdf'],
   support: { ...EXPORT_EVERY_TARGET, readDocument: true },
   exportOptions: FIXED_SIZE_EXPORT,
+  // Text layers are sized to their text as they are read.
+  laysOutOnRead: true,
   async readDocument(input, context) {
     const { readPDFDocument } = await import('./formats/pdf/import')
     const graph = await readPDFDocument(input.data, {
@@ -644,6 +646,7 @@ export const aiFormat: IOFormatAdapter<'ai'> = {
   extensions: ['ai'],
   mimeTypes: ['application/illustrator', 'application/postscript'],
   support: { readDocument: true },
+  laysOutOnRead: true,
   matchesFile(fileName) {
     return lowerExt(fileName) === 'ai'
   },

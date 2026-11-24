@@ -1,0 +1,26 @@
+diff --git a/build/pdf.worker.mjs b/build/pdf.worker.mjs
+index 92eba689bfddc9b642260a0fd2763e4f85f3ab3c..f20d3f869491f81371dbf8ab49013ca2ee6c6d56 100644
+--- a/build/pdf.worker.mjs
++++ b/build/pdf.worker.mjs
+@@ -31837,7 +31837,7 @@ class PartialEvaluator {
+               }));
+               return;
+             }
+-            args = [args[0].name, args[1] instanceof Dict ? args[1].get("MCID") : null];
++            args = [args[0].name, args[1] instanceof Dict ? args[1].get("MCID") : null, args[1] instanceof Dict && typeof args[1].get("ActualText") === "string" ? stringToPDFString(args[1].get("ActualText")) : null];
+             break;
+           case OPS.beginMarkedContent:
+           case OPS.endMarkedContent:
+diff --git a/legacy/build/pdf.worker.mjs b/legacy/build/pdf.worker.mjs
+index 91c64c8f53f385e95931a4db7742f2969790c78c..256c8c58bead47eebda77d278aeb46cfbe0c9a88 100644
+--- a/legacy/build/pdf.worker.mjs
++++ b/legacy/build/pdf.worker.mjs
+@@ -36841,7 +36841,7 @@ class PartialEvaluator {
+               }));
+               return;
+             }
+-            args = [args[0].name, args[1] instanceof Dict ? args[1].get("MCID") : null];
++            args = [args[0].name, args[1] instanceof Dict ? args[1].get("MCID") : null, args[1] instanceof Dict && typeof args[1].get("ActualText") === "string" ? stringToPDFString(args[1].get("ActualText")) : null];
+             break;
+           case OPS.beginMarkedContent:
+           case OPS.endMarkedContent:
