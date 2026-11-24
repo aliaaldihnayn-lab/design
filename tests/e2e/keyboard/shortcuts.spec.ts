@@ -117,10 +117,13 @@ test.describe('tool switching', () => {
     expect(await getActiveTool()).toBe('SECTION')
   })
 
-  test('S alone leaves the tool unchanged', async () => {
+  // Figma's S is Slice, which Lawha has no tool for; S takes Affinity's and Photoshop's clone stamp.
+  test('S → CLONE_STAMP, and ⇧S stays SECTION', async () => {
     await editor.page.keyboard.press('v')
     await editor.page.keyboard.press('s')
-    expect(await getActiveTool()).toBe('SELECT')
+    expect(await getActiveTool()).toBe('CLONE_STAMP')
+    await editor.page.keyboard.press('Shift+KeyS')
+    expect(await getActiveTool()).toBe('SECTION')
   })
 })
 

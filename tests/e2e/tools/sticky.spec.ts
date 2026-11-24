@@ -30,8 +30,9 @@ async function clickNote(x: number, y: number) {
 
 test('the toolbar keeps the sticky tool hidden, and S does not pick it', async () => {
   await expect(editor.page.getByTestId(toolbarToolTestId('STICKY'))).toHaveCount(0)
+  // In a design, S is the clone stamp; only a board's S places sticky notes.
   await editor.page.keyboard.press('s')
-  expect((await sticky.focus()).tool).toBe('SELECT')
+  expect((await sticky.focus()).tool).toBe('CLONE_STAMP')
 })
 
 test('a click with the sticky tool places a note with its corner there, to type into', async () => {
