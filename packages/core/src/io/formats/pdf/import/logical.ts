@@ -50,6 +50,13 @@ export function isRightToLeft(text: string): boolean {
   return RTL.test(text)
 }
 
+const ARABIC_DIGITS = /^[\u0660-\u0669\u06F0-\u06F9]+$/u
+
+/** Arabic-Indic digits are Arabic numbers in the bidirectional algorithm, apart from Latin. */
+function numberKind(text: string): 'arabic-number' | 'left-to-right' {
+  return ARABIC_DIGITS.test(text) ? 'arabic-number' : 'left-to-right'
+}
+
 /** Whether a cluster reads left to right inside right-to-left text: Latin, digits. */
 function isLeftToRight(text: string): boolean {
   return !RTL.test(text) && LTR.test(text)
@@ -74,10 +81,14 @@ export function logicalOrder<T extends VisualCluster>(clusters: readonly T[]): T
       index++
       continue
     }
-    // A left-to-right run spans neutrals only up to its last left-to-right cluster.
+    // A left-to-right run spans neutrals only up to its last left-to-right cluster, and Arabic
+    // numbers and Latin words beside them are runs of their own.
+    const kind = numberKind(texts[index])
     let end = index
     for (let next = index; next < texts.length && !isRightToLeft(texts[next]); next++) {
-      if (isLeftToRight(texts[next])) end = next
+      if (!isLeftToRight(texts[next])) continue
+      if (numberKind(texts[next]) !== kind) break
+      end = next
     }
     segments.push(clusters.slice(index, end + 1))
     index = end + 1

@@ -26,6 +26,10 @@ describe('text drawn by glyphs, back to the characters it spells', () => {
     expect(logicalText(visual('2', '0', '2', '4', ' ', 'ة', 'ك', 'ر', 'ش'))).toBe('شركة 2024')
     expect(logicalText(visual('٢', '٠', '٢', '٤', ' ', 'م', 'ا', 'ع'))).toBe('عام ٢٠٢٤')
     expect(logicalText(visual('.', 'm', 'i', 'x', 'e', 'd', ' ', 'ع', 'م'))).toBe('مع mixed.')
+    // Arabic numbers and a Latin word beside them are separate runs, even touching.
+    expect(
+      logicalText(visual('\u0662', '\u0660', 'A', 'B', '\u0629', '\u0643', '\u0631', '\u0634'))
+    ).toBe('\u0634\u0631\u0643\u0629AB\u0662\u0660')
     expect(logicalText(visual('(', 'ب', ')', ' ', 'ا'))).toBe('ا (ب)')
   })
 })

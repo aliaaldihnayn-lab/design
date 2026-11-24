@@ -71,6 +71,18 @@ interface Run {
   glyphs: Glyph[]
 }
 
+/** A glyph one operator showed: its characters, where it is drawn, and its advance. */
+interface Shown {
+  unicode: string
+  at: Matrix
+  advance: number
+}
+
+function expectRun(run: Run | null): Run {
+  if (!run) throw new Error('No text run is open')
+  return run
+}
+
 interface Cluster {
   text: string
   left: number
@@ -84,6 +96,8 @@ const MARK = /^\p{M}+$/u
 const BASELINE_TOLERANCE = 0.08
 const MAX_GAP = 3
 const MARK_REACH = 1.5
+/** Page units within which a mark's origin is on a letter's edge. */
+const EPSILON = 0.01
 
 function faceAttrs(font: PDFFontInfo): string {
   const { face, fallback } = font
@@ -129,13 +143,23 @@ function clusters(glyphs: Glyph[]): Cluster[] {
     })
   }
   const centre = (cluster: Cluster) => (cluster.left + cluster.right) / 2
-  // A mark belongs to the letter it sits on, unless its span already spelled it.
+  // A mark belongs to the letter it sits on, unless its span already spelled it: the letter whose
+  // box holds the mark's origin, which writers put at the letter's start in right-to-left text
+  // and at its end in left-to-right text, or else the letter nearest it.
+  const rtl = bases.some((base) => isRightToLeft(base.text))
+  const letters = bases.filter((base) => base.text.trim())
   for (const glyph of glyphs) {
     if (!glyph.mark) continue
+    const origin = glyph.u
     const at = glyph.u + glyph.advance / 2
+    const holds = (base: Cluster) =>
+      rtl
+        ? base.left - EPSILON <= origin && origin < base.right - EPSILON
+        : base.left + EPSILON < origin && origin <= base.right + EPSILON
     const owner =
       (glyph.span && bases.find((base) => base.span === glyph.span)) ??
-      bases.reduce<Cluster | null>(
+      letters.find(holds) ??
+      letters.reduce<Cluster | null>(
         (best, base) =>
           !best || Math.abs(centre(base) - at) < Math.abs(centre(best) - at) ? base : best,
         null
@@ -195,6 +219,7 @@ export class TextCollector {
     // A font's em is the font size, Type 3 fonts' too, whatever their glyph space.
     const emScale = Math.abs(size)
     let x = 0
+    const shown: Shown[] = []
     for (const glyph of glyphs) {
       if (typeof glyph === 'number') {
         x -= (glyph * size) / 1000
@@ -208,23 +233,29 @@ export class TextCollector {
         (typeof width === 'number' ? width : 0) * widthScale +
         ((isSpace ? state.wordSpacing : 0) + state.charSpacing) * direction
       if (!font.vertical && typeof unicode === 'string') {
-        const at = multiply(state.matrix, [1, 0, 0, 1, x * hScale, state.rise])
-        // The glyph's own width, unstretched: live text has no horizontal scale, so the room a
-        // stretch adds between letters becomes tracking and the text keeps its length.
-        this.add(unicode, at, emScale, (typeof width === 'number' ? width : 0) * widthScale, state)
+        shown.push({
+          unicode,
+          at: multiply(state.matrix, [1, 0, 0, 1, x * hScale, state.rise]),
+          // The glyph's own width, unstretched: live text has no horizontal scale, so the room
+          // a stretch adds between letters becomes tracking and the text keeps its length.
+          advance: (typeof width === 'number' ? width : 0) * widthScale
+        })
       }
       x += advance
     }
+    this.add(shown, emScale, state)
     return x * hScale
   }
 
-  private add(
-    unicode: string,
-    at: Matrix,
-    em: number,
-    advanceText: number,
-    state: { font: PDFFontInfo; paint: TextPaint }
-  ): void {
+  /**
+   * The glyphs one operator showed, to the open run when they continue its line, otherwise as a
+   * new run. They are judged together, so a word shown left of the line, as a right-to-left line
+   * written word by word is, joins the line by where it ends.
+   */
+  private add(shown: Shown[], em: number, state: { font: PDFFontInfo; paint: TextPaint }): void {
+    const first = shown.at(0)
+    if (!first) return
+    const { at } = first
     const scaleAlong = Math.hypot(at[0], at[1])
     if (!(scaleAlong > 0)) return
     const along: [number, number] = [at[0] / scaleAlong, at[1] / scaleAlong]
@@ -235,38 +266,39 @@ export class TextCollector {
     const size = em * Math.abs(across)
     if (!(size > 0)) return
     const slanted = (at[2] * along[0] + at[3] * along[1]) / Math.abs(across) > 0.1
-    const advance = advanceText * scaleAlong
-    const text = normalizeGlyphText(unicode)
     const span = this.span()
-    if (!text && !span) return
-    const mark = advance < 0.01 * size || MARK.test(text)
     const key = `${state.paint.attrs}|${state.paint.chain.join(',')}|${slanted}`
-    const font = state.font
-    const run = this.run
-    if (run && this.fits(run, key, along, down, size, at, mark)) {
-      const dx = at[4] - run.origin[0]
-      const dy = at[5] - run.origin[1]
-      run.glyphs.push({
-        text,
-        u: dx * run.along[0] + dy * run.along[1],
-        v: dx * run.down[0] + dy * run.down[1],
-        advance,
-        mark,
-        font,
-        span
-      })
-      return
+    const glyphs = shown.flatMap(({ unicode, at: glyphAt, advance: advanceText }) => {
+      const text = normalizeGlyphText(unicode)
+      if (!text && !span) return []
+      const advance = advanceText * scaleAlong
+      const mark = advance < 0.01 * size || MARK.test(text)
+      return [{ text, at: glyphAt, advance, mark, font: state.font, span }]
+    })
+    if (glyphs.length === 0) return
+    const fits = this.run !== null && this.fits(this.run, key, along, down, size, glyphs)
+    if (!fits) {
+      this.flush()
+      this.run = {
+        key,
+        origin: [at[4], at[5]],
+        along,
+        down,
+        size,
+        slanted,
+        paint: state.paint,
+        glyphs: []
+      }
     }
-    this.flush()
-    this.run = {
-      key,
-      origin: [at[4], at[5]],
-      along,
-      down,
-      size,
-      slanted,
-      paint: state.paint,
-      glyphs: [{ text, u: 0, v: 0, advance, mark, font, span }]
+    const run = expectRun(this.run)
+    for (const { at: glyphAt, ...glyph } of glyphs) {
+      const dx = glyphAt[4] - run.origin[0]
+      const dy = glyphAt[5] - run.origin[1]
+      run.glyphs.push({
+        ...glyph,
+        u: dx * run.along[0] + dy * run.along[1],
+        v: dx * run.down[0] + dy * run.down[1]
+      })
     }
   }
 
@@ -276,8 +308,7 @@ export class TextCollector {
     along: [number, number],
     down: [number, number],
     size: number,
-    at: Matrix,
-    mark: boolean
+    glyphs: { at: Matrix; advance: number; mark: boolean }[]
   ): boolean {
     if (run.key !== key) return false
     if (Math.abs(size - run.size) > 0.02 * run.size) return false
@@ -287,16 +318,30 @@ export class TextCollector {
       Math.abs(down[0] - run.down[0]) < 1e-3 &&
       Math.abs(down[1] - run.down[1]) < 1e-3
     if (!sameAxes) return false
-    const dx = at[4] - run.origin[0]
-    const dy = at[5] - run.origin[1]
-    const u = (dx * run.along[0] + dy * run.along[1]) / size
-    const v = (dx * run.down[0] + dy * run.down[1]) / size
+    const placed = glyphs.map(({ at, advance, mark }) => {
+      const dx = at[4] - run.origin[0]
+      const dy = at[5] - run.origin[1]
+      const u = (dx * run.along[0] + dy * run.along[1]) / size
+      return { u, end: u + advance / size, v: (dx * run.down[0] + dy * run.down[1]) / size, mark }
+    })
+    const letters = placed.filter((glyph) => !glyph.mark)
     const bases = run.glyphs.filter((glyph) => !glyph.mark)
     const start = Math.min(...bases.map((glyph) => glyph.u), 0) / size
     const end = Math.max(...run.glyphs.map((glyph) => glyph.u + glyph.advance)) / size
-    if (mark) return Math.abs(v) < MARK_REACH && u > start - MARK_REACH && u < end + MARK_REACH
+    if (letters.length === 0) {
+      return placed.every(
+        (glyph) =>
+          Math.abs(glyph.v) < MARK_REACH &&
+          glyph.u > start - MARK_REACH &&
+          glyph.u < end + MARK_REACH
+      )
+    }
     // Words may come in either order along the line, as right-to-left text often does.
-    return Math.abs(v) < BASELINE_TOLERANCE && u > start - MAX_GAP && u < end + MAX_GAP
+    const from = Math.min(...letters.map((glyph) => glyph.u))
+    const to = Math.max(...letters.map((glyph) => glyph.end))
+    return (
+      Math.abs(letters[0].v) < BASELINE_TOLERANCE && to > start - MAX_GAP && from < end + MAX_GAP
+    )
   }
 
   /** Writes the open run, before anything else is drawn over it. */
