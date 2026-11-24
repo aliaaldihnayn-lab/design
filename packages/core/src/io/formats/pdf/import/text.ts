@@ -152,10 +152,15 @@ function clusters(glyphs: Glyph[]): Cluster[] {
     if (!glyph.mark) continue
     const origin = glyph.u
     const at = glyph.u + glyph.advance / 2
-    const holds = (base: Cluster) =>
-      rtl
+    // A mark drawn as a glyph of its own width, as jsPDF draws them, sits after its letter in
+    // reading order: left of it in right-to-left text, right of it in left-to-right text.
+    const after = rtl ? origin + glyph.advance : origin
+    const holds = (base: Cluster) => {
+      if (glyph.advance > EPSILON) return Math.abs((rtl ? base.left : base.right) - after) < EPSILON
+      return rtl
         ? base.left - EPSILON <= origin && origin < base.right - EPSILON
         : base.left + EPSILON < origin && origin <= base.right + EPSILON
+    }
     const owner =
       (glyph.span && bases.find((base) => base.span === glyph.span)) ??
       letters.find(holds) ??
@@ -166,7 +171,12 @@ function clusters(glyphs: Glyph[]): Cluster[] {
       )
     if (!owner)
       bases.push({ text: glyph.text, left: glyph.u, right: glyph.u, font: glyph.font, span: null })
-    else if (!owner.span) owner.text += glyph.text
+    else {
+      if (!owner.span) owner.text += glyph.text
+      // The letter takes in the room its mark was drawn in, so no word gap opens there.
+      owner.left = Math.min(owner.left, glyph.u)
+      owner.right = Math.max(owner.right, glyph.u + glyph.advance)
+    }
   }
   return bases.sort((a, b) => a.left - b.left)
 }

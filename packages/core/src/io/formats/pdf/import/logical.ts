@@ -37,7 +37,9 @@ function isDropped(code: number): boolean {
 export function normalizeGlyphText(text: string): string {
   return (
     text
-      .replace(PRESENTATION_FORMS, (form) => form.normalize('NFKC'))
+      // Mark forms (shadda with fatha, a lone fatha) decompose to a space before their marks; the
+      // space is only there to show the mark alone, so the marks keep to their letter.
+      .replace(PRESENTATION_FORMS, (form) => form.normalize('NFKC').replace(/^ (?=\p{M})/u, ''))
       // Symbol-font bullets, as Word and LibreOffice write list bullets, in the private use area.
       .replace(/\uF0B7/gu, '\u2022')
       .split('')

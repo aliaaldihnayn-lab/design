@@ -10,6 +10,7 @@ describe('text drawn by glyphs, back to the characters it spells', () => {
     expect(normalizeGlyphText('\uFEE3')).toBe('\u0645')
     expect(normalizeGlyphText('\uFEFB')).toBe('\u0644\u0627')
     expect(normalizeGlyphText('\uFB01')).toBe('fi')
+    expect(normalizeGlyphText('\uFC60')).toBe('\u064E\u0651')
     expect(normalizeGlyphText('\uF0B7')).toBe('\u2022')
     expect(normalizeGlyphText('\u0000\u0628\uFFFD')).toBe('\u0628')
   })

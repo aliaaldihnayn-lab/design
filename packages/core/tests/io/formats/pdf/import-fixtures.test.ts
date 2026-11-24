@@ -7,7 +7,7 @@ import { FIXTURES, fontFixture } from '#core-tests/helpers/paths'
 
 import { SkiaRenderer } from '@lawha/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { installTextMeasurer } from '#core/layout/text-measurement'
@@ -264,5 +264,38 @@ describe('a PDF LibreOffice exported', () => {
     const graph = await open('libreoffice-arabic.pdf')
     const [page] = frames(graph)
     expect(texts(graph, page).some((node) => node.text.startsWith('\u2022'))).toBe(true)
+  })
+})
+
+describe("Lawha's own PDF, opened again", () => {
+  test('Arabic with its marks comes back as the same text, in one layer', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, { name: 'Card', width: 400, height: 120 })
+    const text =
+      '\u0627\u0644\u0642\u0650\u0645\u0651\u064e\u0629 \u0644\u0644\u0645\u064f\u0642\u0627\u0648\u064e\u0644\u0627\u062a'
+    graph.createNode('TEXT', frame.id, {
+      x: 20,
+      y: 20,
+      width: 360,
+      height: 60,
+      text,
+      fontFamily: 'Noto Naskh Arabic',
+      fontSize: 30,
+      textAlignHorizontal: 'RIGHT',
+      textAutoResize: 'NONE'
+    })
+    const exported = await io.exportContent('pdf', {
+      graph,
+      target: { scope: 'node', nodeId: frame.id }
+    })
+    if (typeof exported.data === 'string') throw new Error('Expected bytes')
+    const opened = (
+      await io.readDocument({ name: 'card.pdf', data: new Uint8Array(exported.data) })
+    ).graph
+    const [card] = frames(opened)
+    const [line] = texts(opened, card)
+    expect(line.text.normalize('NFD')).toBe(text.normalize('NFD'))
+    expect(texts(opened, card)).toHaveLength(1)
   })
 })
