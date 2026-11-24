@@ -22,11 +22,14 @@ interface NormalizedVectorGeometry {
 }
 
 function shouldTightenToContent(
-  node: Pick<SceneNode, 'width' | 'height' | 'rotation'>,
+  node: Pick<SceneNode, 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'>,
   content: Rect
 ): boolean {
+  // Turned or flipped, the box's corner is not where the content's offset starts from.
   return (
     node.rotation === 0 &&
+    !node.flipX &&
+    !node.flipY &&
     content.width > 0 &&
     content.height > 0 &&
     (content.x > 0 ||
@@ -37,7 +40,7 @@ function shouldTightenToContent(
 }
 
 export function resolveVectorFramePlacement(
-  node: Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation'>,
+  node: Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'>,
   content: Rect
 ): VectorFramePlacement {
   const tighten = shouldTightenToContent(node, content)

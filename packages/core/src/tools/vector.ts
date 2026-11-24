@@ -17,6 +17,7 @@ export { offsetPath, outlineStroke, setPatternFill, widthProfile } from './vecto
 
 export {
   imageTrace,
+  placedImageBytes,
   traceableImageFill,
   traceSettings,
   TRACE_DETAIL,

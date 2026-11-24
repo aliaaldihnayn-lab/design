@@ -2,6 +2,8 @@ import { watchDebounced } from '@vueuse/core'
 import { encode } from 'js-base64'
 import { ref, shallowRef, type Ref } from 'vue'
 
+import { placedImageBytes, traceableImageFill } from '@lawha/core/tools'
+
 import { getActiveEditorStoreOrNull, type EditorStore } from '@/app/editor/active-store'
 
 import { traceImageBytes, type LocalTraceOptions } from '../local'
@@ -16,9 +18,11 @@ function selectedImage(store: EditorStore): Uint8Array | null {
   if (store.state.selectedIds.size !== 1) return null
   const [id] = store.state.selectedIds
   const node = store.graph.getNode(id)
-  const fill = node?.fills.length === 1 ? node.fills[0] : undefined
-  if (fill?.type !== 'IMAGE' || !fill.imageHash) return null
-  return store.graph.images.get(fill.imageHash) ?? null
+  const fill = node ? traceableImageFill(node) : null
+  const bytes = fill?.imageHash ? store.graph.images.get(fill.imageHash) : undefined
+  if (!node || !fill || !bytes || !store.renderer) return null
+  // As the layer shows it, which is what Image Trace traces.
+  return placedImageBytes(store.renderer, node, fill, bytes)
 }
 
 /**

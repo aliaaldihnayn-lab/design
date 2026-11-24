@@ -9,6 +9,7 @@ export type {
 export { ALL_TOOLS, CORE_TOOLS, EXTENDED_TOOLS } from './registry'
 export {
   exportImage,
+  placedImageBytes,
   TRACE_DETAIL,
   traceableImageFill,
   traceSettings,

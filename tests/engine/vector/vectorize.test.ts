@@ -165,7 +165,7 @@ describe('resolveVectorFramePlacement', () => {
   test('tightens the replacement frame around inset vector content', () => {
     expect(
       resolveVectorFramePlacement(
-        { x: 10, y: 20, width: 200, height: 100, rotation: 0 },
+        { x: 10, y: 20, width: 200, height: 100, rotation: 0, flipX: false, flipY: false },
         { x: 25, y: 10, width: 150, height: 80 }
       )
     ).toEqual({ x: 35, y: 30, width: 150, height: 80, offsetX: 25, offsetY: 10 })
@@ -174,10 +174,23 @@ describe('resolveVectorFramePlacement', () => {
   test('keeps rotated replacements in the original coordinate box', () => {
     expect(
       resolveVectorFramePlacement(
-        { x: 10, y: 20, width: 200, height: 100, rotation: 30 },
+        { x: 10, y: 20, width: 200, height: 100, rotation: 30, flipX: false, flipY: false },
         { x: 25, y: 10, width: 150, height: 80 }
       )
     ).toEqual({ x: 10, y: 20, width: 200, height: 100, offsetX: 0, offsetY: 0 })
+  })
+
+  test('keeps flipped replacements in the original coordinate box', () => {
+    for (const flip of [
+      { flipX: true, flipY: false },
+      { flipX: false, flipY: true }
+    ])
+      expect(
+        resolveVectorFramePlacement(
+          { x: 10, y: 20, width: 200, height: 100, rotation: 0, ...flip },
+          { x: 25, y: 10, width: 150, height: 80 }
+        )
+      ).toEqual({ x: 10, y: 20, width: 200, height: 100, offsetX: 0, offsetY: 0 })
   })
 })
 

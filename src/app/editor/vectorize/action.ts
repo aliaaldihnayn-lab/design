@@ -1,5 +1,6 @@
-import { traceableImageFill } from '@lawha/core/tools'
+import { placedImageBytes, traceableImageFill } from '@lawha/core/tools'
 import { preprocessForVectorize, svgToVectorPaths } from '@lawha/core/vector'
+import type { Fill, SceneNode } from '@lawha/scene-graph'
 import { pathMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -22,7 +23,19 @@ function traceableImage(store: EditorStore, nodeId: string) {
   const node = store.graph.getNode(nodeId)
   const fill = node ? traceableImageFill(node) : null
   if (!node || fill?.type !== 'IMAGE' || !fill.imageHash) return null
-  return { node, imageHash: fill.imageHash }
+  return { node, fill, imageHash: fill.imageHash }
+}
+
+/**
+ * The image as the layer shows it, so the vectors line up with the layer however its fill
+ * crops, fits, or tiles the image.
+ */
+function placedImage(store: EditorStore, node: SceneNode, fill: Fill, imageBytes: Uint8Array) {
+  const renderer = store.renderer
+  if (!renderer) throw new Error('The canvas is not ready yet')
+  const placed = placedImageBytes(renderer, node, fill, imageBytes)
+  if (!placed) throw new Error('The image could not be decoded')
+  return placed
 }
 
 export function canVectorizeImageNode(store: EditorStore): boolean {
@@ -55,7 +68,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Promise<void> {
   const image = traceableImage(store, nodeId)
   if (!image) return
-  const { node, imageHash } = image
+  const { node, fill, imageHash } = image
 
   const provider = getVectorizeProvider(vectorizeProviderID.value)
   activeStores.add(store)
@@ -76,7 +89,10 @@ async function vectorizeImageNodeInCloud(store: EditorStore, nodeId: string): Pr
     }
 
     toast.info(notificationMessages.get().vectorizingImage)
-    const preprocessed = preprocessForVectorize(imageBytes, () => store.renderer?.ck ?? null)
+    const preprocessed = preprocessForVectorize(
+      placedImage(store, node, fill, imageBytes),
+      () => store.renderer?.ck ?? null
+    )
     if (!preprocessed) throw new Error('Could not prepare this image for vectorization')
 
     const svg = await provider.vectorize(preprocessed.pngBytes, apiKey)
@@ -121,7 +137,7 @@ export async function traceImageNodeOnDevice(
 ): Promise<void> {
   const image = traceableImage(store, nodeId)
   if (!image) return
-  const { node, imageHash } = image
+  const { node, fill, imageHash } = image
   const messages = pathMessages.get()
   activeStores.add(store)
   try {
@@ -137,7 +153,11 @@ export async function traceImageNodeOnDevice(
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 0)
     })
-    const svg = LOCAL_TRACE_PROVIDER.vectorize(imageBytes, ck, options)
+    const svg = LOCAL_TRACE_PROVIDER.vectorize(
+      placedImage(store, node, fill, imageBytes),
+      ck,
+      options
+    )
     const vectorized = svgToVectorPaths(svg, { width: node.width, height: node.height })
     if (!vectorized?.paths.length) throw new Error('The trace found no shapes')
     const frameId = store.replaceNodeWithVectorFrame(node.id, vectorized)

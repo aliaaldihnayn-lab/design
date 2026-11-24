@@ -1,9 +1,11 @@
 import * as v from 'valibot'
 
-import type { Fill, SceneNode } from '@lawha/scene-graph'
+import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
 
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { buildVectorFrame } from '#core/editor/vectorize'
 import { measuringRenderer } from '#core/figma-api/measure'
+import { renderNodesToImage } from '#core/io/formats/raster'
 import { defineTool } from '#core/tools/schema'
 import {
   svgToVectorPaths,
@@ -29,6 +31,43 @@ export function traceableImageFill(node: SceneNode): Fill | null {
   if (node.type !== 'RECTANGLE' || node.childIds.length > 0 || node.fills.length !== 1) return null
   const fill = node.fills[0]
   return fill.type === 'IMAGE' && fill.imageHash ? fill : null
+}
+
+/** The longest side, in pixels, of the image a trace reads a layer's picture from. */
+const MAX_PLACED_SIDE = 4096
+
+/**
+ * A layer's image as the layer shows it, unflipped and unturned, as PNG bytes the shape of the
+ * layer: filled, fitted, cropped, tiled, or stretched by its fill, at about the image's own
+ * resolution. A trace of it lines up with the layer's box, which the image's own bytes only do
+ * when the fill stretches them. Null when the image cannot be drawn.
+ */
+export function placedImageBytes(
+  renderer: SkiaRenderer,
+  node: SceneNode,
+  fill: Fill,
+  bytes: Uint8Array
+): Uint8Array | null {
+  const { ck } = renderer
+  if (!fill.imageHash || node.width <= 0 || node.height <= 0) return null
+  const image = ck.MakeImageFromEncoded(bytes)
+  if (!image) return null
+  const density = Math.max(image.width() / node.width, image.height() / node.height)
+  image.delete()
+  const scale = Math.min(density, MAX_PLACED_SIDE / Math.max(node.width, node.height))
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  graph.images.set(fill.imageHash, bytes)
+  const layer = graph.createNode('RECTANGLE', pageId, {
+    width: node.width,
+    height: node.height,
+    fills: [{ ...fill, opacity: 1, visible: true }]
+  })
+  return renderNodesToImage(ck, renderer, graph, pageId, [layer.id], {
+    scale,
+    format: 'PNG',
+    trimTransparent: false
+  })
 }
 
 /** The trace settings for a detail level, with the colour count and any noise given. */
@@ -98,7 +137,9 @@ export const imageTrace = defineTool({
       ? tracePresetSettings(preset, { colors, threshold })
       : traceSettings(detail, colors ?? 8, noise)
     if (preset && noise !== undefined) options.noise = noise
-    const pixels = tracePixelsFromImage(renderer.ck, bytes, maxSide)
+    const placed = placedImageBytes(renderer, node, fill, bytes)
+    if (!placed) return { error: 'The image could not be decoded' }
+    const pixels = tracePixelsFromImage(renderer.ck, placed, maxSide)
     if (!pixels) return { error: 'The image could not be decoded' }
     const traced = traceImage(pixels, options)
     const vectorized = svgToVectorPaths(traceToSVG(traced), {
