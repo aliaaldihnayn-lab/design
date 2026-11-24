@@ -4,6 +4,7 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { num } from './css'
 import { pointAt, topGradient, type InspectGradient } from './gradient'
+import { swiftString } from './literals'
 import type { InspectColor, InspectSpec } from './spec'
 
 /** A UIColor from `#RRGGBB` and its opacity, noting the variable it is bound to. */
@@ -106,8 +107,8 @@ function constraints(spec: InspectSpec, view: string): string[] {
 function label(text: NonNullable<InspectSpec['text']>, view: string): string[] {
   const lines = [
     `let ${view} = UILabel()`,
-    `${view}.text = ${JSON.stringify(text.content)}`,
-    `${view}.font = UIFont(name: ${JSON.stringify(text.family)}, size: ${num(text.size)}) ?? .systemFont(ofSize: ${num(text.size)}, weight: .${uiWeight(text.weight)})`,
+    `${view}.text = ${swiftString(text.content)}`,
+    `${view}.font = UIFont(name: ${swiftString(text.family)}, size: ${num(text.size)}) ?? .systemFont(ofSize: ${num(text.size)}, weight: .${uiWeight(text.weight)})`,
     `${view}.numberOfLines = 0`
   ]
   if (text.color) lines.push(`${view}.textColor = ${uiColor(text.color)}`)

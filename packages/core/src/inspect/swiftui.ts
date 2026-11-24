@@ -2,6 +2,7 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { num } from './css'
 import { topGradient, type InspectGradient } from './gradient'
+import { swiftString } from './literals'
 import type { InspectColor, InspectSpec } from './spec'
 
 function swiftColor(color: InspectColor): string {
@@ -53,8 +54,8 @@ function view(spec: InspectSpec): string[] {
   if (spec.text) {
     const t = spec.text
     const lines = [
-      `Text(${JSON.stringify(t.content)})`,
-      `.font(.custom(${JSON.stringify(t.family)}, size: ${num(t.size)}).weight(.${swiftWeight(t.weight)}))`
+      `Text(${swiftString(t.content)})`,
+      `.font(.custom(${swiftString(t.family)}, size: ${num(t.size)}).weight(.${swiftWeight(t.weight)}))`
     ]
     if (t.italic) lines.push('.italic()')
     if (t.letterSpacing !== 0) lines.push(`.kerning(${num(t.letterSpacing)})`)

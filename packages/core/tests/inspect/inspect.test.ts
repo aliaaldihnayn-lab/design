@@ -275,4 +275,23 @@ describe('inspect', () => {
     expect(inspectUIKit(spec)).toContain('CGAffineTransform(rotationAngle: -30 * .pi / 180)')
     expect(inspectAndroidXML(spec)).toContain('android:rotation="-30"')
   })
+
+  test('text comes out as a literal each language reads back as written', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const content = '@home\'s "$price" \\ ok\nمرحبا\f'
+    const node = graph.createNode('TEXT', page, { name: 'Label', text: content })
+    const spec = must(inspectLayer(graph, node.id))
+    // Swift has no \f; Kotlin would read $price as a template.
+    const swift = '"@home\'s \\"$price\\" \\\\ ok\\nمرحبا\\u{000C}"'
+    expect(inspectSwiftUI(spec)).toContain(`Text(${swift})`)
+    expect(inspectUIKit(spec)).toContain(`.text = ${swift}`)
+    expect(inspectCompose(spec)).toContain(
+      'text = "@home\'s \\"\\$price\\" \\\\ ok\\nمرحبا\\u000C"'
+    )
+    // Android reads a leading @ as a reference and drops unescaped quotes and backslashes.
+    expect(inspectAndroidXML(spec)).toContain(
+      'android:text="\\@home\\\'s \\&quot;$price\\&quot; \\\\ ok\\nمرحبا\\u000C"'
+    )
+  })
 })

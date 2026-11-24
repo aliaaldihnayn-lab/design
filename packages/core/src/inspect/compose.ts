@@ -2,6 +2,7 @@ import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { num } from './css'
 import { topGradient, type InspectGradient } from './gradient'
+import { kotlinString } from './literals'
 import type { InspectColor, InspectSpec } from './spec'
 
 function composeColor(color: InspectColor): string {
@@ -88,7 +89,7 @@ const TEXT_ALIGN = { left: 'Start', right: 'End', center: 'Center', justify: 'Ju
 function text(t: NonNullable<InspectSpec['text']>, modifier: string): string {
   const family = t.family.toLowerCase().replace(/[^a-z0-9]+/g, '_')
   const args = [
-    `text = ${JSON.stringify(t.content)}`,
+    `text = ${kotlinString(t.content)}`,
     `modifier = ${modifier}`,
     `fontFamily = FontFamily(Font(R.font.${family}))`,
     `fontSize = ${sp(t.size)}`,

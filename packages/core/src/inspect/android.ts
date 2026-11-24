@@ -1,5 +1,6 @@
 import { num } from './css'
 import { topGradient, type InspectGradient } from './gradient'
+import { androidText, escapeXML } from './literals'
 import type { InspectColor, InspectSpec } from './spec'
 
 const dp = (value: number) => `${num(value)}dp`
@@ -12,14 +13,6 @@ function androidColor(color: Pick<InspectColor, 'hex' | 'opacity'>): string {
     .padStart(2, '0')
     .toUpperCase()
   return `#${alpha}${color.hex.slice(1)}`
-}
-
-function escapeXML(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
 }
 
 /** A resource name from a layer name: lowercase letters, digits and underscores. */
@@ -108,7 +101,7 @@ function drawable(spec: InspectSpec): string[] | null {
 function textAttributes(text: NonNullable<InspectSpec['text']>): string[] {
   const family = text.family.toLowerCase().replace(/[^a-z0-9]+/g, '_')
   const out = [
-    `android:text="${escapeXML(text.content)}"`,
+    `android:text="${androidText(text.content)}"`,
     `android:textSize="${sp(text.size)}"`,
     `android:fontFamily="@font/${family}"`,
     `android:textFontWeight="${text.weight}"`
