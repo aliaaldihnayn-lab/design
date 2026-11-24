@@ -9,16 +9,15 @@ import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { getCanvasKit } from '#core/canvaskit'
-import { parsePDFFontName } from '#core/io/formats/pdf/import/font-name'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
-import { psdColor } from './color'
 import { layerStyle, psdBlendMode, type LayerStyle, type PatternFill } from './effects'
 import { activeRasterMask, addRasterMask } from './masks'
 import { pixelOutline } from './outline'
 import { preparePSDRuntime } from './runtime'
 import { addShapeLayer, addVectorMask, isEditableShapeLayer } from './shapes'
+import { textPlacement, textProps } from './text'
 
 /**
  * Photoshop and Affinity `.psd`/`.psb` files as editable layers: one frame the size of the
@@ -104,30 +103,19 @@ function bounds(layer: Layer) {
 function addText(ctx: Context, parentId: string, layer: Layer, shown: boolean, style: LayerStyle) {
   const text = layer.text
   if (!text) return
-  const box = bounds(layer)
-  const scale = Math.abs(text.transform?.[3] ?? 1) || 1
-  const size = (text.style?.fontSize ?? 16) * scale
-  const face = text.style?.font?.name ? parsePDFFontName(text.style.font.name) : null
-  const fill: Fill = {
-    type: 'SOLID',
-    color: psdColor(text.style?.fillColor),
-    opacity: layer.fillOpacity ?? 1,
-    visible: true
-  }
+  const placed = textPlacement(text)
+  const box = placed ?? { ...bounds(layer), rotation: 0, scale: 1 }
+  const pointText = !placed || text.shapeType !== 'box'
+  const props = textProps(text, box.scale, layer.fillOpacity ?? 1, pointText)
   ctx.graph.createNode('TEXT', parentId, {
     ...common(layer, shown),
+    ...props,
     x: box.x,
     y: box.y,
     width: box.width,
     height: box.height,
-    text: text.text.replace(/\r/g, '\n'),
-    fontFamily: face?.family ?? 'Inter',
-    fontSize: Math.round(size * 100) / 100,
-    fontWeight: face?.weight ?? 400,
-    italic: face?.italic ?? false,
-    textAutoResize: 'NONE',
-    textDirection: /[֐-ࣿ]/.test(text.text) ? 'RTL' : 'LTR',
-    fills: [fill, ...style.overlays],
+    rotation: box.rotation,
+    fills: [...(props.fills ?? []), ...style.overlays],
     strokes: style.strokes,
     effects: style.effects
   })
