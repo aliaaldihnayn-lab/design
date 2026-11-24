@@ -260,6 +260,43 @@ test.describe('group/ungroup shortcuts', () => {
   })
 })
 
+test.describe('boolean, flatten and frame shortcuts', () => {
+  async function selectTwoShapes() {
+    await editor.page.evaluate(() => {
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
+      for (const node of store.graph.getChildren(store.state.currentPageId))
+        store.graph.deleteNode(node.id)
+      const square = store.createShape('RECTANGLE', 200, 200, 160, 80)
+      const circle = store.createShape('ELLIPSE', 300, 230, 100, 100)
+      store.select([square, circle])
+    })
+  }
+
+  for (const [keys, type, operation] of [
+    ['Alt+Shift+KeyU', 'BOOLEAN_OPERATION', 'UNION'],
+    ['Alt+Shift+KeyS', 'BOOLEAN_OPERATION', 'SUBTRACT'],
+    ['Alt+Shift+KeyI', 'BOOLEAN_OPERATION', 'INTERSECT'],
+    ['Alt+Shift+KeyE', 'BOOLEAN_OPERATION', 'EXCLUDE'],
+    ['Alt+Shift+KeyF', 'VECTOR', undefined],
+    ['ControlOrMeta+Alt+KeyG', 'FRAME', undefined]
+  ] as const) {
+    test(`${keys} makes a ${operation ?? type}`, async () => {
+      await selectTwoShapes()
+      await editor.page.keyboard.press(keys)
+      await editor.canvas.waitForRender()
+      const made = await editor.page.evaluate(() => {
+        const store = window.lawha?.getStore?.()
+        if (!store) throw new Error('Lawha store not initialized')
+        return store.graph
+          .getChildren(store.state.currentPageId)
+          .map((node) => ({ type: node.type, operation: node.booleanOperation }))
+      })
+      expect(made).toEqual([expect.objectContaining({ type, operation })])
+    })
+  }
+})
+
 test.describe('UI toggles', () => {
   test('⌘\\ toggles UI visibility', async () => {
     const before = await getUIVisible()

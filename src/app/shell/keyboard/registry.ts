@@ -361,7 +361,15 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('open') ?? '$mod+KeyO',
       run: ({ openFileDialog }) => openFileDialog()
     },
-    ...commandShortcuts('selection.group'),
+    ...commandShortcuts(
+      'selection.group',
+      'selection.frameSelection',
+      'selection.booleanUnion',
+      'selection.booleanSubtract',
+      'selection.booleanIntersect',
+      'selection.booleanExclude',
+      'selection.flatten'
+    ),
     {
       id: 'toggle-auto-layout',
       keys: 'Shift+KeyA',
