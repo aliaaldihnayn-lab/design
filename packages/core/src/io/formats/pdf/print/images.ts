@@ -1,4 +1,4 @@
-import { deflateSync, inflateSync } from 'fflate'
+import { decompressSync, zlibSync } from 'fflate'
 
 import { rgbToCMYK, type ToCMYK } from './color'
 import { dictValue, removeDictKey, setDictValue, type PDFObject } from './file'
@@ -73,7 +73,8 @@ function cmykImage(dict: string, cmyk: Uint8Array): PDFObject {
   next = setDictValue(next, 'BitsPerComponent', '8')
   next = removeDictKey(next, 'DecodeParms')
   next = removeDictKey(next, 'Decode')
-  return { dict: next, stream: deflateSync(cmyk) }
+  // FlateDecode is zlib data, header and checksum included, not a bare deflate stream.
+  return { dict: next, stream: zlibSync(cmyk) }
 }
 
 /** An indexed image's RGB palette, written as hex, as a CMYK one. */
@@ -124,7 +125,7 @@ export function convertImage(
 function flateSamples(dict: string, stream: Uint8Array, width: number): Uint8Array | null {
   const filter = dictValue(dict, 'Filter') ?? ''
   let data: Uint8Array
-  if (filter === '/FlateDecode') data = inflateSync(stream)
+  if (filter === '/FlateDecode') data = decompressSync(stream)
   else if (filter === '') data = stream
   else return null
   const parms = dictValue(dict, 'DecodeParms') ?? ''

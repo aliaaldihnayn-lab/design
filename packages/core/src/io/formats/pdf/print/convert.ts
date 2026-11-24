@@ -1,4 +1,4 @@
-import { inflateSync } from 'fflate'
+import { decompressSync } from 'fflate'
 
 import { randomHex } from '@lawha/scene-graph/random'
 
@@ -89,7 +89,7 @@ function decodedStream(object: PDFObject): Uint8Array | null {
   if (!object.stream) return null
   const filter = dictValue(object.dict, 'Filter')
   if (!filter) return object.stream
-  if (filter === '/FlateDecode') return inflateSync(object.stream)
+  if (filter === '/FlateDecode') return decompressSync(object.stream)
   return null
 }
 

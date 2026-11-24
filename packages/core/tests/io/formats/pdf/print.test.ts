@@ -1,7 +1,7 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { deflateSync, inflateSync } from 'fflate'
+import { unzlibSync, zlibSync } from 'fflate'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph, type Fill } from '@lawha/scene-graph'
@@ -343,12 +343,13 @@ describe('print PDF colour conversion', () => {
     const rows = new Uint8Array([1, 255, 0, 0, 0, 0, 0])
     const image = convertImage({
       dict: '<< /Type /XObject /Subtype /Image /Width 2 /Height 1 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns 2 >> >>',
-      stream: deflateSync(rows)
+      stream: zlibSync(rows)
     })
     const converted = expectDefined(image)
     expect(converted.dict).toContain('/ColorSpace /DeviceCMYK')
     expect(converted.dict).not.toContain('DecodeParms')
-    expect([...inflateSync(expectDefined(converted.stream))]).toEqual([
+    // As PDF readers read FlateDecode: zlib data, which a bare deflate stream is not.
+    expect([...unzlibSync(expectDefined(converted.stream))]).toEqual([
       0, 255, 255, 0, 0, 255, 255, 0
     ])
 
