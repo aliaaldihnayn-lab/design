@@ -12,6 +12,7 @@ import {
 import { withPDFDOM, type SVGPageParser } from './dom'
 import {
   cutFontInstances,
+  dropUnnamedFaces,
   embeddedFontAlias,
   nameEmbeddedFonts,
   planFontEmbedding,
@@ -20,6 +21,7 @@ import {
   type PDFFontFace,
   type PDFFontReport
 } from './fonts'
+import type { PDFGlyphText } from './glyph-text'
 import type { PDFPageSpec } from './plan'
 
 export interface PDFExportOptions {
@@ -36,6 +38,11 @@ export interface PDFExportOptions {
   compress?: boolean
   /** Lays a page's drawing out on its sheet, such as with bleed and crop marks around it. */
   composePage?: PDFPageComposer
+  /**
+   * Draws text as the glyphs the canvas laid out, in fonts embedded by glyph ID; text it cannot
+   * draw so falls back to jsPDF's text in the `fonts` it embeds.
+   */
+  glyphText?: PDFGlyphText
 }
 
 /** A page's drawing, sized to its content, and where that content sits on the canvas. */
@@ -69,7 +76,7 @@ interface PreparedPage {
 
 type PageSVGOptions = Pick<
   SVGExportOptions,
-  'textLayout' | 'fontAlias' | 'imageAdjust' | 'placeTrackedLetters'
+  'textLayout' | 'fontAlias' | 'imageAdjust' | 'placeTrackedLetters' | 'drawText'
 >
 
 function preparePage(
@@ -104,6 +111,40 @@ function preparePage(
   return svgElement ? { spec, svgElement, width: sheet.width, height: sheet.height } : null
 }
 
+/** The parts of jsPDF a placeholder for glyphs is written through. */
+interface GlyphTextTarget {
+  text: (...args: never[]) => unknown
+  internal: object
+}
+
+/**
+ * Has `doc` write the glyphs of each placeholder svg2pdf asks it to write as text, in the state
+ * svg2pdf set for it: its clip, opacity and transform, which svg2pdf hands over as `angle`.
+ */
+function drawGlyphText(doc: GlyphTextTarget, glyphText: PDFGlyphText): void {
+  const write = doc.text.bind(doc)
+  const out: unknown = Reflect.get(doc.internal, 'write')
+  if (typeof out !== 'function') return
+  const text = (content: unknown, x: unknown, y: unknown, options?: { angle?: unknown }) => {
+    const matrix = jsPDFMatrix(options?.angle)
+    const operators =
+      typeof content === 'string' && typeof x === 'number' && typeof y === 'number' && matrix
+        ? glyphText.operators(content, matrix, x, y)
+        : null
+    if (operators === null) return Reflect.apply(write, doc, [content, x, y, options])
+    Reflect.apply(out, doc.internal, [operators])
+    return doc
+  }
+  Object.defineProperty(doc, 'text', { value: text, configurable: true, writable: true })
+}
+
+/** The six numbers of a jsPDF `Matrix`, as SVG's `matrix(a b c d e f)` orders them. */
+function jsPDFMatrix(value: unknown): number[] | null {
+  if (typeof value !== 'object' || value === null) return [1, 0, 0, 1, 0, 0]
+  const numbers = ['sx', 'shy', 'shx', 'sy', 'tx', 'ty'].map((key) => Reflect.get(value, key))
+  return numbers.every((entry): entry is number => typeof entry === 'number') ? numbers : null
+}
+
 const orientationOf = (page: PreparedPage) => (page.width > page.height ? 'landscape' : 'portrait')
 
 /**
@@ -129,7 +170,8 @@ async function renderPages(
     fontAlias: embedding ? embeddedFontAlias(embedding) : undefined,
     imageAdjust: options.imageAdjust,
     // svg2pdf writes no letter spacing, so tracked letters are each placed where they are drawn.
-    placeTrackedLetters: true
+    placeTrackedLetters: true,
+    drawText: options.glyphText?.drawer
   }
   const preparePages = () =>
     specs
@@ -151,11 +193,13 @@ async function renderPages(
   if (options.title) {
     doc.setProperties({ title: options.title })
   }
+  if (options.glyphText) drawGlyphText(doc, options.glyphText)
 
   // The pages name the variable instances they draw, which are cut now. jsPDF reads a font file
   // when it is registered, so a face it refuses is only known then. Either way, the pages are
   // written again without the names of faces that are not embedded.
   if (embedding) {
+    if (options.glyphText) dropUnnamedFaces(embedding)
     const cut = await cutFontInstances(embedding)
     if (!registerEmbeddedFonts(doc, embedding) || !cut) prepared = preparePages()
   }
@@ -167,8 +211,13 @@ async function renderPages(
 
   if (embedding) nameEmbeddedFonts(doc, embedding)
 
+  const output = new Uint8Array(doc.output('arraybuffer'))
+  const data = options.glyphText ? await options.glyphText.embed(output) : output
+  if (embedding && options.glyphText) {
+    embedding.report.embedded.unshift(...options.glyphText.embeddedFaces())
+  }
   return {
-    data: new Uint8Array(doc.output('arraybuffer')),
+    data,
     pages: prepared.map((page) => ({
       label: page.spec.label,
       width: page.width,

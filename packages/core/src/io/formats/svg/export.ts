@@ -33,7 +33,7 @@ import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@lawha/
 import { hasRegionFills, looseSegments, regionSVGPaths } from '@lawha/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext, SVGFontAlias, SVGImageAdjust } from './defs'
+import type { SVGExportContext, SVGFontAlias, SVGImageAdjust, SVGTextDrawer } from './defs'
 import { renderMaskedChildren } from './masks'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
@@ -383,6 +383,8 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
+    const drawn = ctx.drawText?.(node, (paint) => exportedFill(paint, node, ctx))
+    if (drawn) return svg('g', groupAttrs, ...drawn)
     const fill = exportedFill(
       node.fills.find((f) => f.visible),
       node,
@@ -470,6 +472,8 @@ export interface SVGExportOptions {
    * `letter-spacing`, as svg2pdf does when it writes a PDF.
    */
   placeTrackedLetters?: boolean
+  /** Draws text layers in elements of its own instead of SVG text, where it can. */
+  drawText?: SVGTextDrawer
 }
 
 export function renderNodesToSVG(
@@ -494,7 +498,8 @@ export function renderNodesToSVG(
     fontAlias: options.fontAlias,
     imageAdjust: options.imageAdjust,
     idPrefix: options.idPrefix,
-    placeTrackedLetters: options.placeTrackedLetters
+    placeTrackedLetters: options.placeTrackedLetters,
+    drawText: options.drawText
   }
 
   const roots = nodeIds.flatMap((id) => {

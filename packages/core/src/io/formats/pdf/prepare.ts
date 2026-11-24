@@ -4,6 +4,7 @@ import type { ShapedTextGlyph } from '@lawha/fig/node-change'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 import { imageAdjustBaker } from '#core/canvas/image-adjust'
+import type { PlacedText } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { populateFigPage } from '#core/io/formats/fig'
 import type {
@@ -99,35 +100,44 @@ export function pdfFontFaces(status: DocumentFontStatus): PDFFontFace[] {
 
 /**
  * Runs `render` with the line breaks the canvas gives each text node (same paragraph builder and
- * fonts), so a wrapped paragraph stays wrapped in the PDF. Without CanvasKit, `render` gets no
- * layout and only explicit newlines start a new line.
+ * fonts), so a wrapped paragraph stays wrapped in the PDF, and with each node's glyphs placed as
+ * the canvas draws them. Without CanvasKit, `render` gets neither and only explicit newlines
+ * start a new line.
  */
 export async function withPDFTextLayout<T>(
-  render: (textLayout: SVGTextLayout | undefined, imageAdjust?: SVGImageAdjust) => Promise<T>
+  render: (
+    textLayout: SVGTextLayout | undefined,
+    imageAdjust?: SVGImageAdjust,
+    place?: (node: SceneNode) => PlacedText | null
+  ) => Promise<T>
 ): Promise<T> {
   const ck = await getCanvasKit().catch(() => null)
   if (!ck) return render(undefined)
   // Image adjustments are baked with the canvas's own shader, so embedded images match it.
   const baker = imageAdjustBaker(ck)
   try {
-    return await withTextShaper(ck, (shape) =>
-      render((node) => {
-        // Shaped lines are cut by character index, which the text's case must keep.
-        if (shownText(node).length !== node.text.length) return null
-        const shaped = shape(node)
-        if (!shaped?.baselines.length) return null
-        const characters = characterEdges(shaped.glyphs)
-        const fallbacks = fallbackFaces(node, characters)
-        return shaped.baselines.map((line) => ({
-          start: line.firstCharacter,
-          end: line.endCharacter,
-          x: line.position.x,
-          y: line.position.y,
-          width: line.width,
-          characters,
-          fallbacks
-        }))
-      }, baker.bake)
+    return await withTextShaper(ck, (shape, place) =>
+      render(
+        (node) => {
+          // Shaped lines are cut by character index, which the text's case must keep.
+          if (shownText(node).length !== node.text.length) return null
+          const shaped = shape(node)
+          if (!shaped?.baselines.length) return null
+          const characters = characterEdges(shaped.glyphs)
+          const fallbacks = fallbackFaces(node, characters)
+          return shaped.baselines.map((line) => ({
+            start: line.firstCharacter,
+            end: line.endCharacter,
+            x: line.position.x,
+            y: line.position.y,
+            width: line.width,
+            characters,
+            fallbacks
+          }))
+        },
+        baker.bake,
+        place
+      )
     )
   } finally {
     baker.release()

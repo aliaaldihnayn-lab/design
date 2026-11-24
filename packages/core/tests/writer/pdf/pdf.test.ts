@@ -3,16 +3,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
-import {
-  decodePDFRawStream,
-  PDFArray,
-  PDFDict,
-  PDFDocument,
-  PDFName,
-  type PDFObject,
-  PDFRawStream
-} from '@cantoo/pdf-lib'
+import { PDFArray, PDFDict, PDFDocument, PDFName } from '@cantoo/pdf-lib'
 
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import {
   createWriterDocument,
   defaultPageSetup,
@@ -49,25 +42,24 @@ const paragraph = (dir: 'rtl' | 'ltr', ...content: WriterNode[]): WriterNode => 
 })
 
 /** Each page's text as written, from the ActualText of its spans. */
+/**
+ * The text of each page as Lawha reads the PDF back, which follows its ActualText spans: what
+ * copying the text out gives, in logical order.
+ */
 async function writtenTexts(pdf: Uint8Array): Promise<string[]> {
-  const loaded = await PDFDocument.load(pdf)
-  return loaded.getPages().map((page) => {
-    const contents = page.node.Contents()
-    const streams: PDFObject[] = contents instanceof PDFArray ? contents.asArray() : []
-    if (contents && !(contents instanceof PDFArray)) streams.push(contents)
-    return streams
-      .map((entry) => loaded.context.lookup(entry))
-      .filter((stream): stream is PDFRawStream => stream instanceof PDFRawStream)
-      .map((stream) => new TextDecoder().decode(decodePDFRawStream(stream).decode()))
-      .flatMap((content) =>
-        [...content.matchAll(/\/ActualText <FEFF([0-9A-F]*)>/g)].map(([, hex = '']) =>
-          String.fromCharCode(
-            ...(hex.match(/.{4}/g) ?? []).map((unit) => Number.parseInt(unit, 16))
-          )
-        )
-      )
-      .join(' ')
+  const { graph } = await new IORegistry(BUILTIN_IO_FORMATS).readDocument({
+    name: 'document.pdf',
+    data: pdf
   })
+  const textsIn = (id: string): string[] => {
+    const node = graph.getNode(id)
+    if (!node) return []
+    return node.type === 'TEXT' ? [node.text] : node.childIds.flatMap(textsIn)
+  }
+  return graph
+    .getPages()
+    .flatMap((page) => page.childIds)
+    .map((frame) => textsIn(frame).join(' '))
 }
 
 async function pageTexts(pdf: Uint8Array): Promise<string[]> {

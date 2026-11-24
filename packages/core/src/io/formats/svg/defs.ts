@@ -44,6 +44,19 @@ export interface SVGFontRequest extends FontFaceRef {
 /** The family to name a font face by instead of its own, or null to keep the face. */
 export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
+/** A paint as SVG writes it: the `fill` or `stroke` value and the opacity to give it. */
+export interface SVGPaint {
+  color: string | null
+  opacity: number | undefined
+}
+
+/**
+ * Draws a text layer's content in elements of the drawer's own, in the layer's coordinates, such
+ * as glyphs a PDF shows by ID; null draws the text as SVG text. `paint` writes a fill or stroke
+ * paint of the layer, adding the definitions a gradient needs.
+ */
+export type SVGTextDrawer = (node: SceneNode, paint: (paint: Fill) => SVGPaint) => SVGNode[] | null
+
 /** Bakes adjustments into image bytes for embedding; null keeps the original. */
 export type SVGImageAdjust = (bytes: Uint8Array, adjust: ImageAdjustments) => Uint8Array | null
 
@@ -62,6 +75,7 @@ export interface SVGExportContext {
   fontAlias?: SVGFontAlias
   /** Places each letter of tracked text where the editor draws it, for readers without tracking. */
   placeTrackedLetters?: boolean
+  drawText?: SVGTextDrawer
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {

@@ -79,6 +79,8 @@ export interface PDFFontEmbedding {
   /** Each instance's alias, or null once it could not be cut. */
   instances: Map<string, string | null>
   pending: PendingInstance[]
+  /** The aliases the pages named text by. */
+  named: Set<string>
   aliases: number
   report: PDFFontReport
 }
@@ -155,6 +157,7 @@ export function planFontEmbedding(
     variable: new Map(),
     instances: new Map(),
     pending: [],
+    named: new Set(),
     aliases: 0,
     report: { embedded: [], fallback: [] }
   }
@@ -197,8 +200,21 @@ export function embeddedFontAlias(embedding: PDFFontEmbedding): SVGFontAlias {
       planFace(embedding, { family: font.family, style: font.style, file, data })
     }
     const variable = embedding.variable.get(key)
-    if (variable) return instanceAlias(embedding, variable, font)
-    return embedding.faces.get(key)?.alias ?? null
+    const alias = variable
+      ? instanceAlias(embedding, variable, font)
+      : (embedding.faces.get(key)?.alias ?? null)
+    if (alias) embedding.named.add(alias)
+    return alias
+  }
+}
+
+/**
+ * Leaves out the faces no text was named by, such as those whose text is drawn glyph by glyph
+ * instead, so jsPDF embeds no file the pages do not use.
+ */
+export function dropUnnamedFaces(embedding: PDFFontEmbedding): void {
+  for (const [key, face] of embedding.faces) {
+    if (!embedding.named.has(face.alias)) embedding.faces.delete(key)
   }
 }
 

@@ -4,9 +4,11 @@ import type { ShapedText, ShapedTextGlyph } from '@lawha/fig/node-change'
 import type { SceneNode } from '@lawha/scene-graph'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
+import { laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
 import { laidOutGlyphs, type LaidOutGlyph } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { characterFamily } from '#core/text/character-face'
+import { textDecorationRects, type TextDecorationRect } from '#core/text/decorations'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { OutlineCommand } from '#core/text/font/glyphs'
 import { nextGraphemeBoundary } from '#core/text/graphemes'
@@ -147,6 +149,43 @@ export function shapeText(
       })),
       logicalIndexToCharacterOffsetMap: completeCharacterOffsets(characterOffsets)
     }
+  } finally {
+    paragraph.delete()
+  }
+}
+
+/** Text as the canvas draws it: its glyphs where they stand, and its underlines and strikes. */
+export interface PlacedText {
+  /** The text as shown, which the glyphs' characters index. */
+  text: string
+  glyphs: LaidOutGlyph[]
+  decorations: TextDecorationRect[]
+}
+
+/**
+ * Lay a text node out as the renderer draws it, with every glyph the paragraph drew, in the font
+ * it drew it from, at its place in the node, for writers that draw the same glyphs, such as PDF.
+ * Null for text on a path, which is not laid out in lines.
+ */
+export function placeText(
+  ck: CanvasKit,
+  fontProvider: TypefaceFontProvider,
+  node: SceneNode
+): PlacedText | null {
+  const text = shownText(node)
+  if (text.length === 0 || node.textPathData) return null
+  const paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node, undefined, {
+    halfLeading: true
+  })
+  try {
+    const glyphs = laidOutGlyphs(
+      node,
+      paragraph,
+      text,
+      textVerticalOffset(node, paragraph.getHeight())
+    )
+    if (!glyphs) return null
+    return { text, glyphs, decorations: textDecorationRects(node, laidOutDecoratedGlyphs(glyphs)) }
   } finally {
     paragraph.delete()
   }

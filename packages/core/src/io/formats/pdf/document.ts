@@ -3,6 +3,7 @@ import type { SceneGraph } from '@lawha/scene-graph'
 import { fontManager } from '#core/text/font/manager'
 
 import { renderPagesToPDFDetailed, type PDFExportOptions, type PDFExportResult } from './export'
+import { PDFGlyphText } from './glyph-text'
 import type { PDFPageSpec } from './plan'
 import { pdfFontFaces, preparePagesForPDF, preparePDFFonts, withPDFTextLayout } from './prepare'
 
@@ -29,11 +30,13 @@ export async function exportPDFDocument(
     ? await preparePagesForPDF(graph, specs)
     : await preparePDFFonts(graph, specs)
   const fonts = options.embedFonts ? pdfFontFaces(status) : undefined
-  return withPDFTextLayout((textLayout, imageAdjust) =>
+  return withPDFTextLayout((textLayout, imageAdjust, place) =>
     renderPagesToPDFDetailed(graph, specs, {
       fonts,
       textLayout,
       imageAdjust,
+      // Text set in embedded fonts is drawn glyph by glyph as the canvas lays it out.
+      glyphText: options.embedFonts && place ? new PDFGlyphText(place) : undefined,
       fallbackFile: (family, style, file) =>
         file === 0
           ? fontManager.loadedData(family, style)

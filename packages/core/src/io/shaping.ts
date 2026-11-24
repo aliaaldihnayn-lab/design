@@ -3,7 +3,7 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import type { ShapedText } from '@lawha/fig/node-change'
 import type { SceneNode } from '@lawha/scene-graph'
 
-import { shapeText } from '#core/canvas/text/shape'
+import { placeText, shapeText, type PlacedText } from '#core/canvas/text/shape'
 import { fontManager } from '#core/text/font/manager'
 
 /** How many shaping calls share each provider made for them; the last one to finish deletes it. */
@@ -16,7 +16,10 @@ const shaperProviderUsers = new Map<TypefaceFontProvider, number>()
  */
 export async function withTextShaper<T>(
   canvasKit: CanvasKit,
-  use: (shape: (node: SceneNode) => ShapedText | null) => Promise<T>
+  use: (
+    shape: (node: SceneNode) => ShapedText | null,
+    place: (node: SceneNode) => PlacedText | null
+  ) => Promise<T>
 ): Promise<T> {
   const attached = fontManager.providerFor(canvasKit)
   const provider = attached ?? canvasKit.TypefaceFontProvider.Make()
@@ -24,7 +27,10 @@ export async function withTextShaper<T>(
   const shared = !attached || shaperProviderUsers.has(provider)
   if (shared) shaperProviderUsers.set(provider, (shaperProviderUsers.get(provider) ?? 0) + 1)
   try {
-    return await use((node) => shapeText(canvasKit, provider, node))
+    return await use(
+      (node) => shapeText(canvasKit, provider, node),
+      (node) => placeText(canvasKit, provider, node)
+    )
   } finally {
     if (shared) {
       const users = (shaperProviderUsers.get(provider) ?? 1) - 1

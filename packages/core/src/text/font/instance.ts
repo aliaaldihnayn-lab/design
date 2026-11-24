@@ -31,13 +31,21 @@ export function fontInstanceVariations(
   })
 }
 
+/** HarfBuzz subset flags: keep glyph IDs, keep `.notdef`'s outline, and drop hinting. */
+const HB_SUBSET_FLAGS_NO_HINTING = 0x1
+const HB_SUBSET_FLAGS_RETAIN_GIDS = 0x2
+const HB_SUBSET_FLAGS_NOTDEF_OUTLINE = 0x40
+
 /**
  * A static font file drawing `data`'s instance at `variations`, every other axis at its default,
- * as HarfBuzz's instancer cuts it. Null when HarfBuzz cannot cut the file.
+ * as HarfBuzz's instancer cuts it. Given `glyphIds`, only those glyphs are kept, each under its own
+ * ID so text written by those IDs still draws them, and the others left empty. Null when HarfBuzz
+ * cannot cut the file.
  */
 export async function staticFontInstance(
   data: ArrayBuffer,
-  variations: readonly FontVariation[]
+  variations: readonly FontVariation[],
+  glyphIds: Iterable<number> | null = null
 ): Promise<ArrayBuffer | null> {
   const hb = await loadHarfBuzzSubsetter()
   const source = hb.malloc(data.byteLength)
@@ -46,7 +54,17 @@ export async function staticFontInstance(
   const face = hb.hb_face_create(blob, 0)
   hb.hb_blob_destroy(blob)
   const input = hb.hb_subset_input_create_or_fail()
-  hb.hb_subset_input_keep_everything(input)
+  if (glyphIds) {
+    hb.hb_subset_input_set_flags(
+      input,
+      HB_SUBSET_FLAGS_RETAIN_GIDS | HB_SUBSET_FLAGS_NOTDEF_OUTLINE | HB_SUBSET_FLAGS_NO_HINTING
+    )
+    const glyphs = hb.hb_subset_input_glyph_set(input)
+    hb.hb_set_add(glyphs, 0)
+    for (const glyph of glyphIds) hb.hb_set_add(glyphs, glyph)
+  } else {
+    hb.hb_subset_input_keep_everything(input)
+  }
   hb.hb_subset_input_pin_all_axes_to_default(input, face)
   for (const { axis, value } of variations) {
     hb.hb_subset_input_pin_axis_location(input, face, axisTag(axis), value)

@@ -1,6 +1,7 @@
+import { glyphFaceMetrics, type PDFGlyphFace } from '#core/io/formats/pdf/glyphs'
 import { harfBuzzFont, loadHarfBuzz, shapeText, type HarfBuzzFont } from '#core/text/font/harfbuzz'
 import { staticFontInstance } from '#core/text/font/instance'
-import { fontAxes, fontTableView, hasTrueTypeOutlines } from '#core/text/font/variation'
+import { fontAxes, fontTableView } from '#core/text/font/variation'
 
 /**
  * The faces a document's PDF draws its text in: each family, weight and slant the text asks
@@ -19,22 +20,9 @@ export interface WriterFontRequest {
 /** Gives the font file (TrueType or OpenType) drawing a face, or null when there is none. */
 export type WriterFontResolver = (request: WriterFontRequest) => Promise<ArrayBuffer | null>
 
-export interface Face {
-  key: string
+export interface Face extends PDFGlyphFace {
   family: string
-  bold: boolean
-  italic: boolean
-  /** The static file embedded; a variable font is cut at the face's weight. */
-  bytes: ArrayBuffer
   font: HarfBuzzFont
-  upem: number
-  ascender: number
-  descender: number
-  bbox: [number, number, number, number]
-  trueType: boolean
-  /** Whether the font is not bold or italic itself and the PDF fakes it. */
-  syntheticBold: boolean
-  syntheticItalic: boolean
 }
 
 export interface ShapedGlyph {
@@ -49,8 +37,9 @@ export interface ShapedGlyph {
 const faceKey = (family: string, bold: boolean, italic: boolean) =>
   `${family}|${bold ? 'b' : ''}${italic ? 'i' : ''}`
 
-function readInt16(view: DataView | null, offset: number): number {
-  return view && view.byteLength >= offset + 2 ? view.getInt16(offset) : 0
+function postScriptName(family: string, bold: boolean, italic: boolean): string {
+  const name = family.replace(/[^A-Za-z0-9]/g, '') || 'Font'
+  return `${name}-${`${bold ? 'Bold' : ''}${italic ? 'Italic' : ''}` || 'Regular'}`
 }
 
 async function staticFile(bytes: ArrayBuffer, bold: boolean): Promise<ArrayBuffer> {
@@ -104,23 +93,20 @@ export class FontSet {
     const bytes = await staticFile(source, asked.bold)
     const font = harfBuzzFont(bytes)
     if (!font) return null
-    const head = fontTableView(bytes, 'head')
-    const hhea = fontTableView(bytes, 'hhea')
     const own = fileStyle(bytes)
     const face: Face = {
       key: faceKey(family, bold, italic),
+      name: postScriptName(family, bold, italic),
       family,
       bold,
       italic,
       bytes,
       font,
       upem: font.face.upem,
-      ascender: readInt16(hhea, 4) || Math.round(font.face.upem * 0.8),
-      descender: readInt16(hhea, 6) || -Math.round(font.face.upem * 0.2),
-      bbox: [readInt16(head, 36), readInt16(head, 38), readInt16(head, 40), readInt16(head, 42)],
-      trueType: hasTrueTypeOutlines(bytes),
+      ...glyphFaceMetrics(bytes, font.face.upem),
       syntheticBold: bold && !own.bold,
-      syntheticItalic: italic && !own.italic
+      syntheticItalic: italic && !own.italic,
+      glyphAdvance: (glyph) => font.font.glyphHAdvance(glyph)
     }
     return face
   }

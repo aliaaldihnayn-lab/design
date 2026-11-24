@@ -28,8 +28,10 @@ export interface LaidOutGlyph {
   /** The glyph ID the shaper chose. */
   id: number
   x: number
-  /** The baseline of its line. */
+  /** Where it sits: its line's baseline, or off it for a mark the shaper raised or lowered. */
   y: number
+  /** The baseline of its line. */
+  baseline: number
   fontSize: number
   /** The character it draws, left out for a list marker. */
   firstCharacter?: number
@@ -38,6 +40,13 @@ export interface LaidOutGlyph {
   lineLeft: number
   /** The font that drew it, or `null` when the shaper may have used another. */
   source: GlyphOutlineSource | null
+  /** The shaped run it is in, the same object for every glyph of the run. */
+  run: LaidOutRun
+}
+
+/** A run the paragraph shaped in one font and one direction. */
+export interface LaidOutRun {
+  rtl: boolean
 }
 
 /**
@@ -317,7 +326,8 @@ function reshapedGlyphs(
   run: GlyphRun,
   outline: Extract<RunOutline, { glyphs: ShapedGlyph[] }>,
   lineLeft: number,
-  y: number
+  y: number,
+  shaped: LaidOutRun
 ): LaidOutGlyph[] {
   let x = run.positions[0]
   return outline.glyphs.map((glyph, index) => {
@@ -329,15 +339,28 @@ function reshapedGlyphs(
       id: glyph.id,
       x: x + glyph.xOffset * run.size,
       y: y - glyph.yOffset * run.size,
+      baseline: y,
       fontSize: run.size,
       firstCharacter: outline.start + glyph.cluster,
       advance,
       lineLeft,
-      source: outline.source
+      source: outline.source,
+      run: shaped
     }
     x += advance
     return placed
   })
+}
+
+/**
+ * Whether a run was shaped right to left: its glyphs, in visual order, show its characters from
+ * the last, or a run of one glyph takes the paragraph's direction, as `runShaping` decides.
+ */
+function runIsRightToLeft(node: SceneNode, run: GlyphRun): boolean {
+  const count = run.glyphs.length
+  const first = run.offsets[0]
+  const last = run.offsets[count - 1]
+  return count > 1 && first !== last ? first > last : resolveNodeTextDirection(node) === 'RTL'
 }
 
 /** Characters that end a line without a glyph, which no run shapes. */
@@ -355,7 +378,8 @@ function lineStart(line: ShapedLine, characterAt: (offset: number) => number): n
  * Where each run of a line ends in the text, as an index into it. CanvasKit closes a run's
  * offsets with where it ends only when it runs left to right; a right-to-left run closes them
  * with where it starts, and the line's text range is no better. A run therefore ends where the
- * next run of the line starts, or the next line does, short of the break that ends the line.
+ * next run of the line starts, or the next line does, short of the break that ends the line and
+ * the spaces a wrapped line hangs past its end, which no glyph draws.
  */
 function runEnds(
   line: ShapedLine,
@@ -366,9 +390,18 @@ function runEnds(
   const starts = line.runs.map((run) =>
     run.glyphs.length === 0 ? Infinity : Math.min(...Array.from(run.offsets, characterAt))
   )
+  // Characters no glyph starts at: the break, and spaces a wrapped line hangs past its end.
+  const drawn = new Set(
+    line.runs.flatMap((run) => Array.from(run.offsets.subarray(0, run.glyphs.length), characterAt))
+  )
   let lineEnd = nextLineStart
   const first = Math.min(...starts, lineEnd)
-  while (lineEnd > first && LINE_BREAK.test(text[lineEnd - 1] ?? '')) lineEnd--
+  while (
+    lineEnd > first &&
+    !drawn.has(lineEnd - 1) &&
+    (LINE_BREAK.test(text[lineEnd - 1] ?? '') || /\s/.test(text[lineEnd - 1] ?? ''))
+  )
+    lineEnd--
   return starts.map((start) => {
     let end = lineEnd
     for (const other of starts) if (other > start && other < end) end = other
@@ -382,6 +415,7 @@ function runEnds(
  */
 function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[] {
   const source = glyphOutlineSourceSync(marker.face.family, marker.face.style)
+  const markerRun: LaidOutRun = { rtl: false }
   const baseline = marker.paragraph.getLineMetrics().at(0)?.baseline ?? 0
   const glyphs: LaidOutGlyph[] = []
   for (const line of marker.paragraph.getShapedLines()) {
@@ -392,10 +426,12 @@ function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[]
           id: run.glyphs[index],
           x: marker.x + x,
           y: marker.y + baseline + offsetY,
+          baseline: marker.y + baseline + offsetY,
           fontSize: run.size,
           advance: run.positions[(index + 1) * 2] - x,
           lineLeft: marker.x,
-          source
+          source,
+          run: markerRun
         })
       }
     }
@@ -446,8 +482,9 @@ export function laidOutGlyphs(
       )
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
+      const shapedRun: LaidOutRun = { rtl: runIsRightToLeft(node, run) }
       if (outline?.glyphs && !sameClusters(run, outline, characterAt)) {
-        glyphs.push(...reshapedGlyphs(run, outline, left, y))
+        glyphs.push(...reshapedGlyphs(run, outline, left, y, shapedRun))
         continue
       }
       for (let index = 0; index < run.glyphs.length; index++) {
@@ -457,12 +494,14 @@ export function laidOutGlyphs(
           x,
           // A mark the shaper raised or lowered onto its base keeps that offset.
           y: y + run.positions[index * 2 + 1] - line.baseline,
+          baseline: y,
           fontSize: run.size,
           // The ellipsis truncation adds draws no character, as Figma saves it.
           firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),
           advance: run.positions[(index + 1) * 2] - x,
           lineLeft: left,
-          source: outline?.source ?? null
+          source: outline?.source ?? null,
+          run: shapedRun
         })
       }
     }
