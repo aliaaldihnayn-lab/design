@@ -5,6 +5,7 @@ import { CommittedGraphEventError, type SceneNode } from '@lawha/scene-graph'
 import { attachedConnectors } from '@lawha/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@lawha/scene-graph/coordinate'
 import { cycleSafeParent } from '@lawha/scene-graph/instances'
+import { remapLiveBlendIds } from '@lawha/scene-graph/path-effects'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 import { pluginDataForCopy } from '@lawha/scene-graph/stories'
 
@@ -295,7 +296,16 @@ export function createClipboardActions(ctx: EditorContext) {
           ])
         )
       }
-      ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
+      // A pasted live blend steps between the pasted ends, not the ones it was copied from.
+      const pluginData = remapLiveBlendIds(
+        node.pluginData,
+        (copied) => copiedIds.get(copied) ?? copied
+      )
+      ctx.graph.updateNode(id, {
+        componentId: componentId ?? node.componentId,
+        instanceOverrides,
+        ...(pluginData === node.pluginData ? {} : { pluginData: [...pluginData] })
+      })
     }
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
