@@ -152,9 +152,9 @@ function maskFromSelection() {
     v-if="shown"
     data-canvas-obstacle
     data-test-id="pixel-tool-options"
-    class="absolute bottom-18 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-panel px-3 py-1.5 text-[11px] shadow-[0_8px_30px_rgb(0_0_0/0.4)]"
+    class="absolute bottom-18 left-1/2 z-10 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg bg-panel px-3 py-1.5 text-[11px] shadow-[0_8px_30px_rgb(0_0_0/0.4)]"
   >
-    <label v-if="COLORED.has(tool)" class="flex items-center gap-1.5 text-muted">
+    <label v-if="COLORED.has(tool)" class="flex items-center gap-1.5 text-muted whitespace-nowrap">
       {{ t.brushColor }}
       <input
         type="color"
@@ -187,7 +187,7 @@ function maskFromSelection() {
         {{ slider.toView(settings[slider.key]) }}
       </span>
     </div>
-    <label v-if="FILLS.has(tool)" class="flex items-center gap-1.5 text-muted">
+    <label v-if="FILLS.has(tool)" class="flex items-center gap-1.5 text-muted whitespace-nowrap">
       <AppCheckbox
         :model-value="settings.contiguous"
         :ariaLabel="t.contiguous"
@@ -197,7 +197,7 @@ function maskFromSelection() {
     </label>
     <label
       v-if="BRUSHES.has(tool) && paintResample"
-      class="flex items-center gap-1.5 text-muted"
+      class="flex items-center gap-1.5 text-muted whitespace-nowrap"
       data-test-id="pixel-smooth-resize"
     >
       <AppCheckbox
@@ -209,7 +209,7 @@ function maskFromSelection() {
     </label>
     <label
       v-if="SAMPLING.has(tool)"
-      class="flex items-center gap-1.5 text-muted"
+      class="flex items-center gap-1.5 text-muted whitespace-nowrap"
       data-test-id="pixel-sample-all"
     >
       <AppCheckbox
@@ -242,7 +242,7 @@ function maskFromSelection() {
       >
         {{ t.invertSelection }}
       </AppButton>
-      <label class="flex items-center gap-1.5 text-muted">
+      <label class="flex items-center gap-1.5 text-muted whitespace-nowrap">
         <AppCheckbox
           :model-value="invertMask"
           :ariaLabel="t.invertMask"
