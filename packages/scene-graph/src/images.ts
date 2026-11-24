@@ -57,7 +57,9 @@ export interface ImageHeader extends Size {
 
 /**
  * The type and size of a PNG, JPEG, GIF, or WebP, read from its header by `image-size`; null for
- * bytes it cannot read and for other formats.
+ * bytes it cannot read and for other formats. The size is the image as shown: a photo whose EXIF
+ * orientation turns it a quarter (5–8, as phones save portraits) swaps its stored width and
+ * height, as CanvasKit and browsers decode it.
  */
 export function imageHeader(data: Uint8Array): ImageHeader | null {
   let header: ReturnType<typeof readImageHeader>
@@ -67,7 +69,11 @@ export function imageHeader(data: Uint8Array): ImageHeader | null {
     return null
   }
   const type = header.type === undefined ? undefined : IMAGE_MIME_TYPES[header.type]
-  return type ? { type, width: header.width, height: header.height } : null
+  if (!type) return null
+  const turned = header.orientation !== undefined && header.orientation >= 5
+  return turned
+    ? { type, width: header.height, height: header.width }
+    : { type, width: header.width, height: header.height }
 }
 
 /**

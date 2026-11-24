@@ -107,6 +107,20 @@ describe('imageSize', () => {
   })
 })
 
+/** A 37 × 21 JPEG whose EXIF orientation (6) turns it a quarter clockwise, as phones save. */
+const TURNED_JPEG = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xe1, 0x00, 0x22, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x4d, 0x4d, 0x00, 0x2a,
+  0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x15, 0x00, 0x25, 0x03
+])
+
+describe('imageSize of a turned photo', () => {
+  test('is the size it is shown at, its width and height swapped', () => {
+    expect(imageSize(TURNED_JPEG)).toEqual({ width: 21, height: 37 })
+    expect(imageHeader(TURNED_JPEG)).toEqual({ type: 'image/jpeg', width: 21, height: 37 })
+  })
+})
+
 describe('isSVGFile', () => {
   test('takes the SVG media type, or an .svg name when the system gives no type', () => {
     expect(isSVGFile({ name: 'icon', type: 'image/svg+xml' })).toBe(true)
