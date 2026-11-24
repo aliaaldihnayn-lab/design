@@ -104,7 +104,8 @@ describe('resize snapping preferences', () => {
     applyResize(drag, 148, drag.startY, false, editor)
     commitResizePreview(drag, editor)
 
-    expect(editor.graph.getNode(nodeId)?.width).toBeCloseTo(137.75)
+    // The pointer's 37.75 px along the canvas is 32.69 px along the layer's own 30° axis.
+    expect(editor.graph.getNode(nodeId)?.width).toBeCloseTo(132.69, 2)
     expect(editor.state.snapGuides).toEqual([])
   })
 

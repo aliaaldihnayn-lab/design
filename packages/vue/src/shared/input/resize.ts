@@ -27,6 +27,11 @@ import {
 } from '@lawha/scene-graph/resize'
 import { markSourceFieldsEdited } from '@lawha/scene-graph/source-metadata'
 
+import {
+  deltaInFrame,
+  placeResizedInFrame,
+  turnedResizeFrame
+} from '#vue/shared/input/resize/frame'
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
@@ -106,12 +111,18 @@ function resizeChanges(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const dx = cx - d.startX
-  const dy = cy - d.startY
-  const newRect =
+  const node = editor.graph.getNode(d.nodeId)
+  const frame = node ? turnedResizeFrame(node, origRect, editor.graph) : null
+  const { x: dx, y: dy } = frame
+    ? deltaInFrame(frame, { x: d.startX, y: d.startY }, { x: cx, y: cy })
+    : { x: cx - d.startX, y: cy - d.startY }
+  // Snapping finds edges along the canvas's axes, which a turned layer's edges do not follow.
+  const unsnapped = ctrlKey || frame !== null
+  const sized =
     aspect !== null
-      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
-      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
+      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, unsnapped)
+      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, unsnapped)
+  const newRect = node && frame ? placeResizedInFrame(node, origRect, sized) : sized
 
   const changes: Partial<SceneNode> = {
     ...newRect,
