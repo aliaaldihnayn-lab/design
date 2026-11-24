@@ -225,4 +225,73 @@ describe('sending documents for signature', () => {
       await runtime.close()
     }
   })
+
+  test('a voided envelope takes no more answers, signing or declining', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const { email, sent } = recordingEmail()
+      const service = createSignatureService(runtime.database, {
+        email,
+        publicURL: 'https://cloud.example.com',
+        downloadSecret: 'test-download-secret-of-enough-length'
+      })
+      const envelope = await service.create(
+        owner,
+        {
+          title: 'Lease',
+          message: '',
+          pdf: await samplePDF(),
+          signers: [
+            { name: 'A', email: 'a@example.com' },
+            { name: 'B', email: 'b@example.com' }
+          ]
+        },
+        context
+      )
+      if (envelope === 'invalid') throw new Error('Expected an envelope')
+      const [first, second] = sent.map((message) => linkParts(message.payload.actionURL))
+      if (!first || !second) throw new Error('Expected two signing links')
+      expect(await service.void(owner, envelope.id, context)).toBe(true)
+      expect(
+        await service.decline(first.signerId, { secret: first.secret, reason: '' }, context)
+      ).toBe('closed')
+      expect(
+        await service.sign(
+          second.signerId,
+          { secret: second.secret, signature: SIGNATURE, agree: true },
+          context
+        )
+      ).toBe('closed')
+      const voided = await service.get(owner, envelope.id)
+      expect(voided?.status).toBe('voided')
+      expect(voided?.signers.map((signer) => signer.status)).toEqual(['pending', 'pending'])
+      expect(voided?.events.map((event) => event.kind)).not.toContain('declined')
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('an id that is not a UUID names no envelope or signer', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const service = createSignatureService(runtime.database, {
+        publicURL: 'https://cloud.example.com',
+        downloadSecret: 'test-download-secret-of-enough-length'
+      })
+      expect(await service.get(owner, 'not-a-uuid')).toBeNull()
+      expect(await service.pdf(owner, 'not-a-uuid')).toBeNull()
+      expect(await service.void(owner, 'not-a-uuid', context)).toBe(false)
+      const app = new Hono().route('/', createPublicSigningRoutes(service, { trustedHeaders: [] }))
+      for (const action of ['view', 'decline']) {
+        const response = await app.request(`/signing/not-a-uuid/${action}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret: 'a'.repeat(64) })
+        })
+        expect(response.status).toBe(404)
+      }
+    } finally {
+      await runtime.close()
+    }
+  })
 })

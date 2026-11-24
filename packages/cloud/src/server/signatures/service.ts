@@ -20,7 +20,8 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import { fromUint8Array, toUint8Array } from 'js-base64'
-import type { Kysely, Selectable } from 'kysely'
+import type { ExpressionBuilder, Kysely, Selectable } from 'kysely'
+import * as v from 'valibot'
 
 import { randomHex } from '@lawha/scene-graph/random'
 
@@ -28,6 +29,8 @@ import { finalSignedPDF } from './final-pdf'
 import { sealPDF, type SealCredentials } from './seal'
 
 const SECRET_BYTES = 32
+/** Envelope and signer ids are UUIDs; anything else names no row, and PostgreSQL rejects it. */
+const uuidSchema = v.pipe(v.string(), v.uuid())
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46]
 
@@ -60,6 +63,20 @@ const hexDigest = (bytes: Uint8Array) => bytesToHex(sha256(bytes))
 const iso = (date: Date | null) => (date ? new Date(date).toISOString() : null)
 const startsWith = (bytes: Uint8Array, magic: readonly number[]) =>
   magic.every((byte, index) => bytes[index] === byte)
+
+/** The signer's envelope still collects answers: not completed, declined or voided. */
+function openEnvelope(
+  builder: ExpressionBuilder<CloudDatabase, 'signatureSigner'>,
+  envelopeId: string
+) {
+  return builder.exists(
+    builder
+      .selectFrom('signatureEnvelope')
+      .select('id')
+      .where('id', '=', envelopeId)
+      .where('status', '=', 'sent')
+  )
+}
 
 /** Compares two hex digests in time that does not depend on where they differ. */
 function sameDigest(a: string, b: string): boolean {
@@ -137,6 +154,7 @@ export function createSignatureService(
   }
 
   async function load(envelopeId: string) {
+    if (!v.is(uuidSchema, envelopeId)) return null
     const envelope = await database
       .selectFrom('signatureEnvelope')
       .selectAll()
@@ -160,6 +178,7 @@ export function createSignatureService(
 
   /** The signer a link names, when its secret matches. */
   async function signerFor(signerId: string, secret: string) {
+    if (!v.is(uuidSchema, signerId)) return null
     const signer = await database
       .selectFrom('signatureSigner')
       .selectAll()
@@ -334,6 +353,7 @@ export function createSignatureService(
 
     /** The final signed PDF, or the PDF as sent while signatures are pending. */
     async pdf(actor: CloudActor, envelopeId: string) {
+      if (!v.is(uuidSchema, envelopeId)) return null
       const envelope = await database
         .selectFrom('signatureEnvelope')
         .select(['ownerId', 'originalPdf', 'finalPdf', 'title'])
@@ -350,7 +370,7 @@ export function createSignatureService(
     /** The signed PDF a completion email's download token opens. */
     async download(token: string) {
       const [envelopeId = '', mac = ''] = token.split('.')
-      if (!sameDigest(mac, downloadMAC(envelopeId))) return null
+      if (!v.is(uuidSchema, envelopeId) || !sameDigest(mac, downloadMAC(envelopeId))) return null
       const envelope = await database
         .selectFrom('signatureEnvelope')
         .select(['finalPdf', 'title'])
@@ -361,6 +381,7 @@ export function createSignatureService(
     },
 
     async void(actor: CloudActor, envelopeId: string, context: SigningRequestContext) {
+      if (!v.is(uuidSchema, envelopeId)) return false
       const updated = await database
         .updateTable('signatureEnvelope')
         .set({ status: 'voided' })
@@ -421,15 +442,7 @@ export function createSignatureService(
         .set({ status: 'signed', signaturePng: png, signedAt: now() })
         .where('id', '=', signer.id)
         .where('status', 'in', ['pending', 'viewed'])
-        .where((builder) =>
-          builder.exists(
-            builder
-              .selectFrom('signatureEnvelope')
-              .select('id')
-              .where('id', '=', signer.envelopeId)
-              .where('status', '=', 'sent')
-          )
-        )
+        .where((builder) => openEnvelope(builder, signer.envelopeId))
         .executeTakeFirst()
       if (!updated.numUpdatedRows) return 'closed'
       await record(database, signer.envelopeId, 'signed', signer.id, context)
@@ -449,6 +462,7 @@ export function createSignatureService(
         .set({ status: 'declined', declinedAt: now(), declineReason: input.reason || null })
         .where('id', '=', signer.id)
         .where('status', 'in', ['pending', 'viewed'])
+        .where((builder) => openEnvelope(builder, signer.envelopeId))
         .executeTakeFirst()
       if (!updated.numUpdatedRows) return 'closed'
       await database
