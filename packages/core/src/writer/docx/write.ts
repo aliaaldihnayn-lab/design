@@ -77,7 +77,7 @@ export class PartWriter {
     const list = nodes ?? []
     const xml = list.map((node) => this.block(node, textWidth, 0))
     list.forEach((node, index) => {
-      const previous = list[index - 1]
+      const previous = index > 0 ? list.at(index - 1) : undefined
       if (node.type !== 'sectionBreak' || !previous) return
       if (previous.type !== 'paragraph' && previous.type !== 'heading') return
       const sectPr = /^<w:p><w:pPr>(<w:sectPr>.*<\/w:sectPr>)<\/w:pPr><\/w:p>$/su.exec(xml[index])
