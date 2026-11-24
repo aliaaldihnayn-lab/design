@@ -1,0 +1,1 @@
+- React components exported to the Code tab and Storybook spell SVG attributes as React does, such as `strokeWidth`, so React no longer warns about them (#1).

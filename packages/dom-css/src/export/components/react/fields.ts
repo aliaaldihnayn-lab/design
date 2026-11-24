@@ -1,4 +1,6 @@
 import dedent from 'dedent'
+import { omit } from 'es-toolkit/object'
+import { camelCase } from 'es-toolkit/string'
 
 import { es, jsx } from '@lawha/emit'
 
@@ -16,6 +18,21 @@ export const INPUT_PROPS: Partial<Record<GeneratedKind, 'input' | 'textarea'>> =
 export const STEPPERS: Record<string, { label: string; sign: '+' | '-' }> = {
   increment: { label: 'Increase', sign: '+' },
   decrement: { label: 'Decrease', sign: '-' }
+}
+
+/**
+ * A layer's own markup attributes, but its class, by React's names: SVG's hyphenated and
+ * namespaced presentation attributes are camel case in React (`stroke-width` is `strokeWidth`,
+ * `xlink:href` is `xlinkHref`), which warns about the markup spelling; `data-` and `aria-`
+ * attributes keep theirs.
+ */
+export function markupAttributes(node: ComponentElement): es.SyntaxNode[] {
+  return Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
+    jsx.attribute(
+      /^(data|aria)-/.test(name) || !/[-:]/.test(name) ? name : camelCase(name),
+      jsx.stringValue(value)
+    )
+  )
 }
 
 /** What a part of a native or measured control needs: a stepper's step, an indicator's width. */

@@ -2,7 +2,6 @@ import { HEADING_RESET } from '#dom-css/behaviours/reset'
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
 import { compact } from 'es-toolkit/array'
-import { omit } from 'es-toolkit/object'
 import { camelCase, upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@lawha/emit'
@@ -31,6 +30,7 @@ import {
   INPUT_PROPS,
   inputElement,
   kindParameters,
+  markupAttributes,
   NUMBER_STATE,
   partAttributes,
   prepend,
@@ -290,9 +290,7 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
     // takes them.
     ...(root && !INPUT_PROPS[kind] ? [jsx.spread(es.identifier('props'))] : []),
     ...(node.value === undefined ? [] : [jsx.attribute('value', jsx.stringValue(node.value))]),
-    ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
-      jsx.attribute(name, jsx.stringValue(value))
-    ),
+    ...markupAttributes(node),
     ...partAttributes(node, uses),
     jsx.attribute('className', classValue(classNameOf(node, root, uses))),
     ...bindingAttributes(node, kind, native)

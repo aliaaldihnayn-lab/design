@@ -24,7 +24,7 @@ import {
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
 import { cssRules, fileText } from '#dom-css-tests/helpers'
-import type { ComponentStyling } from '#dom-css/export'
+import type { ComponentStyling, VectorElementRenderer } from '#dom-css/export'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -55,8 +55,12 @@ afterAll(() => rm(output, { recursive: true, force: true }))
 type Props = Record<string, unknown>
 
 /** Exports a fixture's set to React stories and loads the component and stories it writes. */
-async function generate(fixture: ReturnType<typeof switchSet>, styling?: ComponentStyling) {
-  const files = await exportStorybook(fixture.graph, { framework: 'react', styling })
+async function generate(
+  fixture: ReturnType<typeof switchSet>,
+  styling?: ComponentStyling,
+  vectorElement?: VectorElementRenderer
+) {
+  const files = await exportStorybook(fixture.graph, { framework: 'react', styling, vectorElement })
   const name = fixture.set.name
   // Bun caches a folder's listing once it imports from it, so each export gets its own.
   const folder = await mkdtemp(join(output, `${name}-`))
@@ -115,6 +119,53 @@ describe('generated React plain components', () => {
     const filled = render(component, { extra: createElement('b', null, 'Custom') })
     expect(filled).toContain('<b>Custom</b>')
     expect(filled).not.toContain('Note')
+  })
+})
+
+describe('generated React vector layers', () => {
+  test('spell SVG presentation attributes as React names them, and type-check', async () => {
+    const fixture = plainBadgeSet()
+    for (const variant of fixture.graph.getChildren(fixture.set.id))
+      fixture.graph.createNode('VECTOR', variant.id, { name: 'Check', width: 16, height: 16 })
+    // The engine's SVG export draws a vector as markup, hyphenated attributes and all.
+    const vectorElement: VectorElementRenderer = (_graph, node) => ({
+      type: 'element',
+      tagName: 'svg',
+      attrs: { width: '16', height: '16', viewBox: '0 0 16 16' },
+      sourceSceneNodeId: node.id,
+      children: [
+        {
+          type: 'element',
+          tagName: 'path',
+          attrs: {
+            d: 'M3 8L7 12L13 4',
+            fill: 'none',
+            stroke: '#000000',
+            'stroke-width': '1.6',
+            'stroke-linecap': 'round',
+            'fill-rule': 'evenodd',
+            'data-part': 'tick'
+          },
+          children: []
+        }
+      ]
+    })
+    const { component, folder } = await generate(fixture, undefined, vectorElement)
+    expect(await typeErrors(folder, 'Badge')).toEqual([])
+    const warnings: unknown[] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => warnings.push(args)
+    try {
+      const html = render(component)
+      // React writes its camel-case names back out as the SVG attributes, without a warning.
+      expect(html).toContain('stroke-width="1.6"')
+      expect(html).toContain('stroke-linecap="round"')
+      expect(html).toContain('fill-rule="evenodd"')
+      expect(html).toContain('data-part="tick"')
+    } finally {
+      console.error = original
+    }
+    expect(warnings).toEqual([])
   })
 })
 
