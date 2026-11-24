@@ -228,8 +228,11 @@ function createImagePattern(
       {
         id,
         patternUnits: 'objectBoundingBox',
-        width: 1,
-        height: 1
+        // The image fills the layer's box once. A tile twice as large keeps the next one out of
+        // the box, which a PDF reader rounding the tile's edge to its pixels would otherwise
+        // show as a hairline of the image's first row or column along the far edge.
+        width: 2,
+        height: 2
       },
       svg('image', {
         href: `data:${mime};base64,${base64}`,
