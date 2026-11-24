@@ -41,6 +41,7 @@ import {
   shownDevView,
   shownTab,
   splitTabRow,
+  TAB_ROW_PRIORITY,
   visibleTabs,
   type DevView,
   type PropertiesTab,
@@ -176,11 +177,16 @@ const { width: zoomWidth } = useElementSize(zoom, undefined, { box: 'border-box'
 
 const row = computed(() => {
   const active = tabs.value.find((tab) => tab.value === activeTab.value) ?? tabs.value[0]
-  return splitTabRow(tabs.value, active, {
-    available: listWidth.value > 0 ? listWidth.value - TAB_ROW_PADDING - zoomWidth.value : 0,
-    active: activeWidth.value + 2,
-    icon: PROPERTIES_ICON_TAB_WIDTH
-  })
+  return splitTabRow(
+    tabs.value,
+    active,
+    {
+      available: listWidth.value > 0 ? listWidth.value - TAB_ROW_PADDING - zoomWidth.value : 0,
+      active: activeWidth.value + 2,
+      icon: PROPERTIES_ICON_TAB_WIDTH
+    },
+    TAB_ROW_PRIORITY.flatMap((value) => tabs.value.find((tab) => tab.value === value) ?? [])
+  )
 })
 
 function setTrigger(tab: PropertiesTab, element: unknown) {
@@ -338,12 +344,18 @@ const sectionTabs: SectionTab[] = ['design', 'prototype', 'adapt', 'system', 'ex
         </TabsRoot>
       </TabsContent>
 
-      <TabsContent value="stories" :class="tabStyles.content()" :hidden="activeTab !== 'stories'">
+      <TabsContent
+        value="stories"
+        data-test-id="properties-content-stories"
+        :class="tabStyles.content()"
+        :hidden="activeTab !== 'stories'"
+      >
         <StoriesPanel :active="activeTab === 'stories'" />
       </TabsContent>
 
       <TabsContent
         value="ai"
+        data-test-id="properties-content-ai"
         :class="tabStyles.content()"
         :force-mount="true"
         :hidden="activeTab !== 'ai'"

@@ -337,6 +337,12 @@ describe('tab row overflow', () => {
     expect(row.overflow).toEqual(['c', 'd'])
   })
 
+  test('tabs keep their place by priority and the row keeps its order', () => {
+    const row = splitTabRow(tabs, 'a', { available: 170, active: 80, icon: 30 }, ['a', 'e', 'c'])
+    expect(row.inline).toEqual(['a', 'c', 'e'])
+    expect(row.overflow).toEqual(['b', 'd'])
+  })
+
   test('a row too narrow for any other tab keeps only the active one', () => {
     const row = splitTabRow(tabs, 'c', { available: 90, active: 80, icon: 30 })
     expect(row.inline).toEqual(['c'])

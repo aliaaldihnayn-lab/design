@@ -216,20 +216,40 @@ export interface TabRowSpace {
 }
 
 /**
- * Which tabs stay in the row and which go into the More menu. The active tab always stays, and
- * the others keep their order, so the last ones are the first to move; before the row has been
- * measured every tab stays.
+ * The order tabs keep their place in a narrow row: the AI chat and the tabs used while designing
+ * stay longest, and the occasional ones move into More first.
+ */
+export const TAB_ROW_PRIORITY: readonly PropertiesTab[] = [
+  'design',
+  'ai',
+  'prototype',
+  'export',
+  'dev',
+  'adapt',
+  'system',
+  'stories'
+]
+
+/**
+ * Which tabs stay in the row and which go into the More menu. The active tab always stays, the
+ * others stay by `priority`, and both keep the row's order; before the row has been measured every
+ * tab stays.
  */
 export function splitTabRow<T>(
   tabs: readonly T[],
   active: T,
-  space: TabRowSpace
+  space: TabRowSpace,
+  priority: readonly T[] = tabs
 ): { inline: T[]; overflow: T[] } {
   const others = tabs.filter((tab) => tab !== active)
   if (space.available <= 0 || space.active + others.length * space.icon <= space.available)
     return { inline: [...tabs], overflow: [] }
   const fit = Math.max(0, Math.floor((space.available - space.active - space.icon) / space.icon))
-  const kept = new Set(others.slice(0, fit))
+  const rank = (tab: T) => {
+    const index = priority.indexOf(tab)
+    return index < 0 ? priority.length : index
+  }
+  const kept = new Set(others.toSorted((a, b) => rank(a) - rank(b)).slice(0, fit))
   return {
     inline: tabs.filter((tab) => tab === active || kept.has(tab)),
     overflow: others.filter((tab) => !kept.has(tab))
