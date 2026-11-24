@@ -291,4 +291,27 @@ describe('component sets on demand', () => {
     const badge = must(graph.getNode(out.components[2].id))
     expect(Object.keys(must(graph.getNode(badge.childIds[0])).boundVariables)).toEqual([])
   })
+
+  test('building again restyles the sets in place, so their instances keep their component', () => {
+    for (const options of [{}, { docs: false }]) {
+      const { figma, graph } = design()
+      const first = build.execute(figma, options) as ComponentsReport
+      const button = must(graph.getNode(first.components[0].id))
+      const variant = must(graph.getNode(button.childIds[0]))
+      const page = graph.getPages()[0].id
+      const instance = must(graph.createInstance(variant.id, page, { x: 800 }))
+      // The brand colour changes, and the system is built again.
+      const cta = must(
+        [...graph.nodes.values()].find((n) => n.name === 'Button' && n.type === 'FRAME')
+      )
+      graph.updateNode(cta.id, { fills: fill('#DC2626') })
+      const again = build.execute(figma, options) as ComponentsReport
+
+      expect(again.components.map((c) => c.id)).toEqual(first.components.map((c) => c.id))
+      const sets = [...graph.nodes.values()].filter((n) => n.type === 'COMPONENT_SET')
+      expect(sets.map((n) => n.name)).toEqual(['Button', 'Input', 'Badge'])
+      expect(must(graph.getNode(instance.id)).componentId).toBe(variant.id)
+      expect(graph.getNode(variant.id)?.parentId).toBe(button.id)
+    }
+  })
 })

@@ -6,7 +6,9 @@ import { buildDesignSystem } from '#core/design-system/build'
 import {
   COMPONENT_SET_NAMES,
   componentsOrigin,
+  keepStarterSets,
   pageNamed,
+  starterSetsOn,
   writeComponents
 } from '#core/design-system/components'
 import {
@@ -64,15 +66,25 @@ export const createComponentSetsTool = defineTool({
   }
 })
 
-/** The build's component sets: on its docs page, or on a Components page without one. */
-function buildComponents(figma: FigmaAPI, collectionId: string, docs: SceneNode | null) {
+/**
+ * The build's component sets: on its docs page, or on a Components page without one. Sets an
+ * earlier build made there are restyled in place, so their instances keep their main component.
+ */
+function buildComponents(
+  figma: FigmaAPI,
+  collectionId: string,
+  docs: SceneNode | null,
+  previous: ReadonlyMap<string, SceneNode>
+) {
   const pageId = docs?.id ?? pageNamed(figma, COMPONENTS_PAGE_NAME)
-  return writeComponents(figma, pageId, {
+  const kept = new Set([...previous.values()].map((set) => set.id))
+  const fresh = writeComponents(figma, pageId, {
     collectionId,
     origin: docs
-      ? { x: 0, y: docsPageBottom(figma.graph, docs) + 80 }
+      ? { x: 0, y: docsPageBottom(figma.graph, docs, kept) + 80 }
       : componentsOrigin(figma.graph, pageId)
   })
+  return keepStarterSets(figma.graph, fresh, previous, docs !== null)
 }
 
 export const buildDesignSystemTool = defineTool({
@@ -155,15 +167,27 @@ export const buildDesignSystemTool = defineTool({
       normalize: args.normalize,
       darkMode: args.dark_mode
     })
+    const setsPage = figma.graph
+      .getPages()
+      .find((p) => p.name === (args.docs ? DOCS_PAGE_NAME : COMPONENTS_PAGE_NAME))
+    const previous = args.components ? starterSetsOn(figma.graph, setsPage?.id) : new Map()
     const docs = args.docs
-      ? writeDocsPage(figma.graph, plan, built, plan.families[0]?.family ?? 'Inter')
+      ? writeDocsPage(
+          figma.graph,
+          plan,
+          built,
+          plan.families[0]?.family ?? 'Inter',
+          new Set([...previous.values()].map((set) => set.id))
+        )
       : null
     const darkPreview =
       docs && built.modes ? writeDarkPreview(figma, docs, built.collection, built.modes.dark) : null
     const styles = args.text_styles
       ? writeTextStyles(figma.graph, docs?.id ?? page.id, plan, built)
       : null
-    const components = args.components ? buildComponents(figma, built.collection, docs) : []
+    const components = args.components
+      ? buildComponents(figma, built.collection, docs, previous)
+      : []
     return {
       collection: built.collection,
       variables: { created: built.created, updated: built.updated },

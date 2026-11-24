@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import type { Color, Vector } from '@lawha/scene-graph/primitives'
 import {
   resolveColorVariable,
@@ -7,6 +7,8 @@ import {
 } from '@lawha/scene-graph/variables'
 
 import type { FigmaAPI, FigmaComponentNode, FigmaNodeProxy } from '#core/figma-api'
+
+import { restyleComponent } from './kit/restyle'
 
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
 const FALLBACK_PRIMARY: Color = { r: 0.31, g: 0.27, b: 0.9, a: 1 }
@@ -380,4 +382,40 @@ export function pageNamed(figma: FigmaAPI, name: string): string {
   const page = figma.createPage()
   page.name = name
   return page.id
+}
+
+/** The starter sets on a page, by name: what a build made there before. */
+export function starterSetsOn(
+  graph: SceneGraph,
+  pageId: string | undefined
+): Map<string, SceneNode> {
+  const names = new Set<string>(COMPONENT_SET_NAMES)
+  const found = new Map<string, SceneNode>()
+  for (const node of pageId ? graph.getChildren(pageId) : [])
+    if (node.type === 'COMPONENT_SET' && names.has(node.name) && !found.has(node.name))
+      found.set(node.name, node)
+  return found
+}
+
+/**
+ * Keeps the sets a build made before in place of the ones just drawn: each takes the fresh
+ * drawing's look, as the interactive kit restyles its controls, and the fresh one goes, so the
+ * instances of its variants and their overrides keep working. `move` puts it where the fresh
+ * one was drawn.
+ */
+export function keepStarterSets(
+  graph: SceneGraph,
+  fresh: readonly BuiltComponentSet[],
+  previous: ReadonlyMap<string, SceneNode>,
+  move: boolean
+): BuiltComponentSet[] {
+  return fresh.map((built) => {
+    const kept = previous.get(built.name)
+    const drawn = graph.getNode(built.id)
+    if (!kept || !drawn || !graph.getNode(kept.id)) return built
+    restyleComponent(graph, kept, drawn)
+    if (move) graph.updateNode(kept.id, { x: drawn.x, y: drawn.y })
+    graph.deleteNode(drawn.id)
+    return { ...built, id: kept.id, variants: graph.getChildren(kept.id).length }
+  })
 }

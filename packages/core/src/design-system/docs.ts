@@ -16,19 +16,21 @@ const solid = (color: Color) => [{ type: 'SOLID' as const, color, opacity: 1, vi
 /**
  * Writes a page documenting the system: colour swatches, the type scale, spacing and radii.
  * Swatches and samples are bound to their variables, so the page updates with the tokens.
- * Building again replaces the page's contents.
+ * Building again replaces the page's contents, apart from the layers in `keep`.
  */
 export function writeDocsPage(
   graph: SceneGraph,
   plan: Plan,
   built: BuildResult,
-  labelFamily: string
+  labelFamily: string,
+  keep: ReadonlySet<string> = new Set()
 ): SceneNode {
   const page =
     graph.getPages().find((p) => p.name === DOCS_PAGE_NAME) ?? graph.addPage(DOCS_PAGE_NAME)
   // A copy: deleting a child edits the list being walked. Shared styles kept on the page stay,
   // so the layers using them keep their style.
-  for (const id of page.childIds.slice()) if (!graph.getNode(id)?.internalOnly) graph.deleteNode(id)
+  for (const id of page.childIds.slice())
+    if (!graph.getNode(id)?.internalOnly && !keep.has(id)) graph.deleteNode(id)
   const variableId = new Map(built.tokens.map((t) => [t.name, t.id]))
 
   const label = (
@@ -195,9 +197,14 @@ export function writeDarkPreview(
 }
 
 /** Where the next block on the docs page goes: under everything already on it. */
-export function docsPageBottom(graph: SceneGraph, page: SceneNode): number {
+export function docsPageBottom(
+  graph: SceneGraph,
+  page: SceneNode,
+  skip: ReadonlySet<string> = new Set()
+): number {
   let bottom = 0
   for (const id of page.childIds) {
+    if (skip.has(id)) continue
     const node = graph.getNode(id)
     if (node && !node.internalOnly) bottom = Math.max(bottom, node.y + node.height)
   }
