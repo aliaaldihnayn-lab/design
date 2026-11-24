@@ -170,6 +170,8 @@ function finishGroups(ctx: Context) {
       opacity: frame.opacity,
       blendMode: frame.blendMode,
       effects: frame.effects,
+      isMask: frame.isMask,
+      maskType: frame.maskType,
       ...box
     })
     graph.insertChildAt(group.id, parentId, index)
@@ -256,9 +258,8 @@ function startClipping(
 ): string | null {
   const { graph } = ctx
   const pixels = base.layer.imageData
-  if (!pixels || pixels.width === 0 || pixels.height === 0) return null
-  const fill = imageFill(ctx, pixels)
-  if (!fill) return null
+  const fill = pixels && pixels.width > 0 && pixels.height > 0 ? imageFill(ctx, pixels) : null
+  if (!fill && base.ids.length !== 1) return null
   const parent = expectNode(graph, parentId)
   const index = parent.childIds.indexOf(base.ids[0])
   const group = stageGroup(ctx, parentId, {
@@ -267,16 +268,37 @@ function startClipping(
   })
   graph.insertChildAt(group.id, parentId, index)
   for (const id of base.ids) graph.insertChildAt(id, group.id, Infinity)
-  graph.createNode('RECTANGLE', group.id, {
-    name: 'Clipping mask',
-    ...bounds(base.layer),
-    width: pixels.width,
-    height: pixels.height,
-    fills: [fill],
-    isMask: true,
-    maskType: 'ALPHA'
-  })
+  const mask = { name: 'Clipping mask', isMask: true, maskType: 'ALPHA' } as const
+  if (fill && pixels) {
+    graph.createNode('RECTANGLE', group.id, {
+      ...mask,
+      ...bounds(base.layer),
+      width: pixels.width,
+      height: pixels.height,
+      fills: [fill]
+    })
+  } else {
+    // A group has no pixels of its own: its layers, copied, clip what is above it.
+    cloneStaged(ctx, base.ids[0], group.id, { ...mask, visible: true })
+  }
   return group.id
+}
+
+/** A copy of a layer and what it holds, whose staged groups are staged too. */
+function cloneStaged(
+  ctx: Context,
+  sourceId: string,
+  parentId: string,
+  overrides: Partial<SceneNode>
+): void {
+  const clone = ctx.graph.cloneTree(sourceId, parentId, overrides)
+  if (!clone) return
+  const pair = (source: string, copy: string) => {
+    if (ctx.groups.has(source)) ctx.groups.add(copy)
+    const copies = expectNode(ctx.graph, copy).childIds
+    expectNode(ctx.graph, source).childIds.forEach((child, index) => pair(child, copies[index]))
+  }
+  pair(sourceId, clone.id)
 }
 
 function addLayers(ctx: Context, parentId: string, layers: readonly Layer[]) {

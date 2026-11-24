@@ -141,6 +141,26 @@ describe('opening PSD masks', () => {
     expect(at(110, 10)).toEqual([255, 0, 0])
   })
 
+  test('layers clipped to a group draw only inside what the group shows', async () => {
+    const { graph, frame } = await open([
+      {
+        name: 'Card',
+        children: [pixels('Left', 10, 10, 40, 40, RED), pixels('Right', 60, 10, 90, 40, RED)]
+      },
+      { ...pixels('Clipped', 0, 0, 120, 80, BLUE), clipping: true }
+    ])
+    const group = named(graph, frame, 'Card')
+    expect(group).toMatchObject({ type: 'GROUP', x: 10, y: 10, width: 80, height: 30 })
+    const mask = named(graph, group, 'Clipping mask')
+    expect(mask).toMatchObject({ type: 'GROUP', isMask: true, x: 0, y: 0, width: 80, height: 30 })
+    const at = await renderedAt(graph, frame)
+    expect(at(25, 25)).toEqual([0, 0, 255])
+    expect(at(75, 25)).toEqual([0, 0, 255])
+    // Between the group's layers nothing is drawn.
+    expect(at(50, 25)).toEqual([255, 255, 255])
+    expect(at(50, 60)).toEqual([255, 255, 255])
+  })
+
   test('a layer mask hides the layer where it is black and beyond it by its default', async () => {
     const mask = solid(40, 40, [0, 0, 0, 255])
     // A white square in the middle of the mask: only there does the layer show.
