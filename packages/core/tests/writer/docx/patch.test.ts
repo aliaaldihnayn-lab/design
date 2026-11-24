@@ -9,6 +9,7 @@ import {
   nodeText,
   readDocx,
   writeDocx,
+  writerSections,
   type WriterDocument,
   type WriterNode
 } from '@lawha/core/writer'
@@ -87,6 +88,47 @@ describe('saving a Word file back', () => {
     expect(document).toContain('w:orient="landscape"')
     expect(document).toContain('تعديل')
     expect(saved['word/theme/theme1.xml']).toBe(parts(source)['word/theme/theme1.xml'])
+  })
+
+  test('editing the paragraph a text box anchors to keeps the text box', () => {
+    const source = fixture('libreoffice-sections.docx')
+    const read = readDocx(source)
+    const content = [...(read.body.content ?? [])]
+    const index = content.findIndex((node) => nodeText(node).includes('مربع نص'))
+    const anchor = content.at(index)
+    if (index === -1 || !anchor) throw new Error('no anchor paragraph')
+    content[index] = { ...anchor, content: [{ type: 'text', text: 'فقرة معدّلة' }] }
+    const saved = writeDocx({ ...read, body: { ...read.body, content } }, { source })
+    const xml = parts(saved)['word/document.xml'] ?? ''
+    expect(xml).toContain('فقرة معدّلة')
+    expect(xml).toContain('نص داخل مربع نص')
+    // The paragraph also ends the first section, which keeps its own setup.
+    expect(readDocx(saved).body.content?.map((node) => node.type)).toEqual(
+      read.body.content?.map((node) => node.type)
+    )
+    expect(xml).toContain('<w:pgNumType w:fmt="decimal"/>')
+  })
+
+  test('changing a section page keeps its type, columns and headers without new parts', () => {
+    const source = fixture('libreoffice-sections.docx')
+    const read = readDocx(source)
+    const content = (read.body.content ?? []).map((node) =>
+      node.type === 'sectionBreak'
+        ? { ...node, attrs: { ...node.attrs, page: { ...read.page, width: 12240, height: 15840 } } }
+        : node
+    )
+    const saved = writeDocx({ ...read, body: { ...read.body, content } }, { source })
+    const before = parts(source)
+    const after = parts(saved)
+    expect(Object.keys(after).sort()).toEqual(Object.keys(before).sort())
+    const first = (after['word/document.xml'] ?? '').match(/<w:sectPr>.*?<\/w:sectPr>/)?.[0] ?? ''
+    expect(first).toContain('<w:pgSz w:w="12240" w:h="15840"')
+    expect(first).toContain('<w:type w:val="nextPage"/>')
+    expect(first).toContain('<w:docGrid')
+    expect(first).toContain('<w:headerReference')
+    const sections = (document: WriterDocument) =>
+      writerSections(document).map((section) => section.header && nodeText(section.header))
+    expect(sections(readDocx(saved))).toEqual(sections(read))
   })
 
   test('keeps custom XML parts, numbering and styles of a Word file', () => {
