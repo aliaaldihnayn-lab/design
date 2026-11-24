@@ -164,12 +164,18 @@ export function createPixelSelectionActions(ctx: EditorContext, deps: PixelSelec
   const { session } = deps
   let drawing: { kind: PixelMarquee['kind']; nodeId: string; mode: SelectionMode } | null = null
 
+  /**
+   * Shows the selection's outline. The overlay is replaced rather than changed in place, so a
+   * front end that watches the editor state shallowly sees whether there is a selection.
+   */
   function showSelection() {
-    const overlay = deps.overlay()
     const { selection } = session
-    overlay.nodeId = selection?.nodeId ?? null
-    overlay.outline = selection ? maskOutline(selection.mask) : null
-    overlay.grid = selection ? { width: selection.mask.width, height: selection.mask.height } : null
+    ctx.state.pixelOverlay = {
+      ...deps.overlay(),
+      nodeId: selection?.nodeId ?? null,
+      outline: selection ? maskOutline(selection.mask) : null,
+      grid: selection ? { width: selection.mask.width, height: selection.mask.height } : null
+    }
     ctx.requestRepaint()
   }
 
