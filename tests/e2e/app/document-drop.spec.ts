@@ -77,3 +77,28 @@ test('an SVG dropped on the canvas is placed, not opened as a document', async (
   await expect(tabs.getByRole('tab')).toHaveCount(1)
   await expect(tabs.getByRole('tab').first()).toHaveText(tabName)
 })
+
+test('an HTML page dropped on the canvas sizes its text in the page’s fonts', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const html = `<html dir="rtl"><body style="font-family: 'Noto Naskh Arabic'">
+    <div style="display:flex"><span style="padding:8px 16px;background:#e8632c;color:#fff">متابعة</span></div>
+  </body></html>`
+
+  await dropOnCanvas(page, [{ name: 'button.html', bytes: [...new TextEncoder().encode(html)] }])
+
+  // Laid out while its font was still loading, the label kept a stand-in's width and drew off to
+  // one side of its button; it takes the width the loaded font measures.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = window.lawha?.getStore?.()
+        const label = store
+          ? [...store.graph.getAllNodes()].find((node) => node.text === 'متابعة')
+          : undefined
+        const measured = label ? store?.renderer?.measureTextNode(label) : null
+        return label && measured ? Math.abs(label.width - measured.width) : null
+      })
+    )
+    .toBeLessThan(1)
+})

@@ -72,6 +72,10 @@ export function createDOMOpenActions({
     const graph = sceneGraphFromStyledHTML(styled, { pageName })
     await yieldToUI()
     await applyImportedDocument(editor, graph, load)
+    // The layers were laid out before the page's fonts loaded; preparing the page in this editor,
+    // as opening any other document does, loads them and lays the text out at its real size.
+    await editor.switchPage(editor.state.currentPageId, { signal: load.signal })
+    load.signal.throwIfAborted()
     // Into a reused tab too, the document opens with the panels its kind starts with.
     state.showUI = resolveEditorProfile(editor.state).panelsOpen
     state.documentName = pageName
