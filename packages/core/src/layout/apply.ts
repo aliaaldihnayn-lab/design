@@ -5,6 +5,7 @@ import { enforcedAspectRatio } from '@lawha/scene-graph/layout'
 import { layoutConstrainedChildRect } from '@lawha/scene-graph/resize'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
+import { laysOutTurned, turnedPosition } from './turned'
 
 export type ComputeLayoutFn = (graph: SceneGraph, frameId: string) => void
 
@@ -214,6 +215,10 @@ function updateChildFromYoga(
   computeLayout: ComputeLayoutFn
 ): void {
   if (!child.visible || child.layoutPositioning === 'ABSOLUTE') return
+  if (laysOutTurned(graph, frame, child)) {
+    writeLayoutGeometry(graph, child.id, turnedPosition(child, yogaChild), computeLayout)
+    return
+  }
 
   const savedFig = keepsSaved && child.source.format === 'fig'
   const preservesImportedFrameGeometry =
@@ -292,6 +297,11 @@ export function applyYogaLayout(
     updateChildFromYoga(graph, frame, child, yogaChild, keepsSaved, computeLayout)
 
     if (!child.visible) continue
+    // A turned layer took its place as a box of its own size; it lays out its own layers.
+    if (laysOutTurned(graph, frame, child)) {
+      if (child.layoutMode !== 'NONE') computeLayout(graph, child.id)
+      continue
+    }
     if (preservesImportedInstanceInternals(child)) continue
 
     if (usesDetachedDerivedLayout(graph, child)) {

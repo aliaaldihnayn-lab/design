@@ -27,6 +27,7 @@ import { keepsSavedLayout, usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
+import { configureTurnedChild, laysOutTurned } from './layout/turned'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
   estimateTextSize,
@@ -194,6 +195,8 @@ function buildYogaTree(
       configureAbsoluteChild(yogaChild, child)
     } else if (!child.visible) {
       yogaChild.setDisplay(Display.None)
+    } else if (laysOutTurned(graph, frame, child)) {
+      configureTurnedChild(yogaChild, child)
     } else if (child.layoutMode === 'GRID') {
       configureChildAsGrid(yogaChild, child, frame, graph, direction)
     } else if (child.layoutMode !== 'NONE') {
