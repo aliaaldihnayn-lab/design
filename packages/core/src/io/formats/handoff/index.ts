@@ -3,11 +3,11 @@ import { zipSync, strToU8, type Zippable } from 'fflate'
 
 import type { SceneGraph } from '@lawha/scene-graph'
 import { colorToCSS } from '@lawha/scene-graph/color'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { exportDesignTokens } from '#core/io/formats/design-tokens'
 import { renderNodesToHTML } from '#core/io/formats/html'
-import { computeContentBounds } from '#core/io/formats/raster/render'
 import type { ExportAsset } from '#core/io/types'
 import { storiesToMarkdown } from '#core/stories/export'
 import { nonEmptyGroups, storyReport } from '#core/stories/report'
@@ -39,7 +39,7 @@ async function frameReference(
   scale: number
 ): Promise<Uint8Array | null> {
   const png = await input.rasterize([nodeId], scale)
-  const content = computeContentBounds(input.graph, [nodeId])
+  const content = computeGraphVisualBounds(input.graph, [nodeId])
   if (!png || !content) return png
   const box = input.graph.getAbsoluteBounds(nodeId)
   const dx = Math.round((box.x - content.minX) * scale)

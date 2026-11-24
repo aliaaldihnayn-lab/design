@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 
-import { computeContentBounds } from '@lawha/core/io/formats/raster'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { IMAGE_ATTACHMENT_MAX_EDGE } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
@@ -50,7 +50,7 @@ export async function analyzeAttachedImages(
 
   const nodeIds = [...store.state.selectedIds]
   if (nodeIds.length > 0) {
-    const bounds = computeContentBounds(store.graph, nodeIds)
+    const bounds = computeGraphVisualBounds(store.graph, nodeIds)
     if (bounds) {
       const width = bounds.maxX - bounds.minX
       const height = bounds.maxY - bounds.minY

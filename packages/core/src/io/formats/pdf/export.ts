@@ -1,7 +1,7 @@
 import type { SceneGraph } from '@lawha/scene-graph'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
-import { computeContentBounds } from '#core/io/formats/raster'
 import {
   renderNodesToSVG,
   type SVGExportOptions,
@@ -82,7 +82,7 @@ function preparePage(
   })
   if (!svg) return null
 
-  const bounds = computeContentBounds(graph, spec.nodeIds)
+  const bounds = computeGraphVisualBounds(graph, spec.nodeIds)
   if (!bounds) return null
 
   const width = bounds.maxX - bounds.minX

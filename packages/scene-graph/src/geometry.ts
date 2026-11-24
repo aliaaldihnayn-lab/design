@@ -1,4 +1,5 @@
 import { arrowCapOverflow } from './arrow-caps'
+import Matrix, { type Mat3 } from './matrix'
 import type { Rect, Vector } from './primitives'
 import { textLinesOverflow } from './text/overflow'
 import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
@@ -419,17 +420,71 @@ function transformedLocalBounds(node: VisualBoundsNode, local: Rect, abs: Vector
   }
 }
 
+/** The world box of a rect in a layer's own space, through the layer's world matrix. */
+function worldBoundsOfLocal(matrix: Mat3, local: Rect): VisualBounds {
+  const points = Matrix.mapPoints(matrix, [
+    local.x,
+    local.y,
+    local.x + local.width,
+    local.y,
+    local.x + local.width,
+    local.y + local.height,
+    local.x,
+    local.y + local.height
+  ])
+  const xs = [points[0], points[2], points[4], points[6]]
+  const ys = [points[1], points[3], points[5], points[7]]
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys)
+  }
+}
+
+/**
+ * Places a layer's own space in the world. With `worldMatrix`, the layer's matrix, its ancestors'
+ * turns and mirrors included; without it, its world position and its own turn and mirror alone,
+ * which is right only when no ancestor turns or mirrors.
+ */
+function localToWorld(
+  node: VisualBoundsNode,
+  getAbsolutePosition: (id: string) => Vector,
+  worldMatrix: ((id: string) => Mat3) | undefined
+): (local: Rect) => VisualBounds {
+  if (worldMatrix) {
+    const matrix = worldMatrix(node.id)
+    return (local) => worldBoundsOfLocal(matrix, local)
+  }
+  const abs = getAbsolutePosition(node.id)
+  return (local) => transformedLocalBounds(node, local, abs)
+}
+
 export function nodeVisualBounds(
   node: VisualBoundsNode,
-  getAbsolutePosition: (id: string) => Vector
+  getAbsolutePosition: (id: string) => Vector,
+  worldMatrix?: (id: string) => Mat3
 ): VisualBounds {
-  const abs = getAbsolutePosition(node.id)
-  const base = computeVisualBounds([node], getAbsolutePosition)
-  let bounds: VisualBounds = {
-    minX: base.x,
-    minY: base.y,
-    maxX: base.x + base.width,
-    maxY: base.y + base.height
+  const toWorld = localToWorld(node, getAbsolutePosition, worldMatrix)
+  let bounds: VisualBounds
+  if (worldMatrix) {
+    const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
+    const effects = effectOverflow(node.effects)
+    bounds = toWorld({ x: 0, y: 0, width: node.width, height: node.height })
+    bounds = {
+      minX: bounds.minX - stroke - effects.left,
+      minY: bounds.minY - stroke - effects.top,
+      maxX: bounds.maxX + stroke + effects.right,
+      maxY: bounds.maxY + stroke + effects.bottom
+    }
+  } else {
+    const base = computeVisualBounds([node], getAbsolutePosition)
+    bounds = {
+      minX: base.x,
+      minY: base.y,
+      maxX: base.x + base.width,
+      maxY: base.y + base.height
+    }
   }
 
   const hasNonInsideStroke = node.strokes?.some(
@@ -439,14 +494,12 @@ export function nodeVisualBounds(
     ...(node.fillGeometry ?? []),
     ...(hasNonInsideStroke ? (node.strokeGeometry ?? []) : [])
   ])
-  if (localGeometry) {
-    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
-  }
+  if (localGeometry) bounds = unionVisualBounds(bounds, toWorld(localGeometry)) ?? bounds
 
   const linesOverflow = textLinesOverflow(node)
   if (linesOverflow > 0) {
     const lines = { x: 0, y: 0, width: node.width, height: node.height + linesOverflow }
-    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, lines, abs)) ?? bounds
+    bounds = unionVisualBounds(bounds, toWorld(lines)) ?? bounds
   }
 
   bounds.maxY += textDecorationOverflow(node)
@@ -467,12 +520,13 @@ function collectDescendantVisualBounds(
   nodeId: string,
   getNode: (id: string) => VisualBoundsNode | undefined,
   getAbsolutePosition: (id: string) => Vector,
+  worldMatrix: ((id: string) => Mat3) | undefined,
   clip: VisualBounds | null = null
 ): VisualBounds | null {
   const node = getNode(nodeId)
   if (!node?.visible) return null
 
-  const own = nodeVisualBounds(node, getAbsolutePosition)
+  const own = nodeVisualBounds(node, getAbsolutePosition, worldMatrix)
   let bounds = clip ? intersectVisualBounds(own, clip) : own
 
   const isClippableContainer =
@@ -480,12 +534,14 @@ function collectDescendantVisualBounds(
   let childClip = clip
   if (isClippableContainer && node.clipsContent) {
     const abs = getAbsolutePosition(node.id)
-    const nodeClip = {
-      minX: abs.x,
-      minY: abs.y,
-      maxX: abs.x + node.width,
-      maxY: abs.y + node.height
-    }
+    const nodeClip = worldMatrix
+      ? worldBoundsOfLocal(worldMatrix(node.id), {
+          x: 0,
+          y: 0,
+          width: node.width,
+          height: node.height
+        })
+      : { minX: abs.x, minY: abs.y, maxX: abs.x + node.width, maxY: abs.y + node.height }
     childClip = childClip ? intersectVisualBounds(childClip, nodeClip) : nodeClip
     if (!childClip) return bounds
   }
@@ -493,23 +549,29 @@ function collectDescendantVisualBounds(
   for (const childId of node.childIds ?? []) {
     bounds = unionVisualBounds(
       bounds,
-      collectDescendantVisualBounds(childId, getNode, getAbsolutePosition, childClip)
+      collectDescendantVisualBounds(childId, getNode, getAbsolutePosition, worldMatrix, childClip)
     )
   }
 
   return bounds
 }
 
+/**
+ * What `nodeIds` and their descendants draw, in world space. Pass `worldMatrix` wherever a layer
+ * or an ancestor may turn or mirror: a position alone places a turned layer's box about the
+ * wrong centre and leaves its parent's turn out.
+ */
 export function computeDescendantVisualBounds(
   nodeIds: string[],
   getNode: (id: string) => VisualBoundsNode | undefined,
-  getAbsolutePosition: (id: string) => Vector
+  getAbsolutePosition: (id: string) => Vector,
+  worldMatrix?: (id: string) => Mat3
 ): VisualBounds | null {
   let bounds: VisualBounds | null = null
   for (const nodeId of nodeIds) {
     bounds = unionVisualBounds(
       bounds,
-      collectDescendantVisualBounds(nodeId, getNode, getAbsolutePosition)
+      collectDescendantVisualBounds(nodeId, getNode, getAbsolutePosition, worldMatrix)
     )
   }
   return bounds

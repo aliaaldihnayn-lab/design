@@ -1,3 +1,4 @@
+import { computeDescendantVisualBounds, type VisualBounds } from './geometry'
 import type { SceneGraph } from './graph'
 import Matrix, { type Mat3 } from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
@@ -46,6 +47,25 @@ function cornersOf(node: Pick<SceneNode, 'width' | 'height'>): number[] {
 
 export function getAxisAlignedWorldBounds(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>) {
   return boundsOfPoints(Matrix.mapPoints(getWorldMatrix(node, graph), cornersOf(node)))
+}
+
+/**
+ * What `nodeIds` and their descendants draw on the page, through each layer's world matrix, so a
+ * turned or mirrored layer, or one inside a turned frame, is bounded where it is drawn.
+ */
+export function computeGraphVisualBounds(
+  graph: Pick<SceneGraph, 'getNode' | 'getAbsolutePosition'>,
+  nodeIds: string[]
+): VisualBounds | null {
+  return computeDescendantVisualBounds(
+    nodeIds,
+    (id) => graph.getNode(id),
+    (id) => graph.getAbsolutePosition(id),
+    (id) => {
+      const node = graph.getNode(id)
+      return node ? getWorldMatrix(node, graph) : Matrix.identity()
+    }
+  )
 }
 
 /** World matrix of a parent; the document root and a missing parent are the identity. */

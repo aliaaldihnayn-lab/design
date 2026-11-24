@@ -1,6 +1,7 @@
 import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 
-import { computeDescendantVisualBounds, type VisualBounds } from '@lawha/scene-graph/geometry'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
+import type { VisualBounds } from '@lawha/scene-graph/geometry'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
@@ -31,11 +32,7 @@ async function recordStaged(
   signal.throwIfAborted()
   await renderer.prepareForExport(graph, pageId, nodeIds)
   signal.throwIfAborted()
-  const bounds = computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  const bounds = computeGraphVisualBounds(graph, nodeIds)
   if (!bounds || !fitsPreview(bounds)) return null
   return recordWorldPicture(renderer, bounds, (canvas) => {
     for (const id of nodeIds) renderer.renderNode(canvas, graph, id, {})

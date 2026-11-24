@@ -2,8 +2,10 @@ import { fromUint8Array } from 'js-base64'
 import pixelmatch from 'pixelmatch'
 import * as v from 'valibot'
 
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
+
 import type { FigmaAPI } from '#core/figma-api'
-import { computeContentBounds, type RGBAImage } from '#core/io/formats/raster'
+import { type RGBAImage } from '#core/io/formats/raster'
 import { findPageId } from '#core/io/subgraph'
 import { nodeComparisonInputSchema, toolNumber, defineTool } from '#core/tools/schema'
 import { boundedRasterScale, rasterScaleInputs } from '#core/tools/vector/export'
@@ -24,7 +26,7 @@ async function renderNode(
   scale: number
 ): Promise<Rendered | { error: string }> {
   const pageId = findPageId(figma.graph, id)
-  const bounds = computeContentBounds(figma.graph, [id])
+  const bounds = computeGraphVisualBounds(figma.graph, [id])
   if (!pageId || !bounds) return { error: `Node "${id}" has no visible content` }
   const bytes = await figma.exportImage?.([id], { scale, format: 'PNG', pageId })
   const image = bytes ? figma.rasterCodec?.decode(bytes) : null
@@ -99,8 +101,8 @@ export const diffVisual = defineTool({
     if (!fromNode) return { error: `Node "${args.from}" not found` }
     if (!figma.graph.getNode(args.to)) return { error: `Node "${args.to}" not found` }
 
-    const fromBounds = computeContentBounds(figma.graph, [args.from])
-    const toBounds = computeContentBounds(figma.graph, [args.to])
+    const fromBounds = computeGraphVisualBounds(figma.graph, [args.from])
+    const toBounds = computeGraphVisualBounds(figma.graph, [args.to])
     if (!fromBounds || !toBounds) return { error: 'Both nodes need visible content to compare' }
     // One scale for both sides, so equal designs produce equal pixels.
     const scale = boundedRasterScale(

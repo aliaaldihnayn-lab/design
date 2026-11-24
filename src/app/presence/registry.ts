@@ -1,7 +1,7 @@
 import { shallowRef, type ShallowRef } from 'vue'
 
 import { AI_ACTIVE_COLOR } from '@lawha/core/constants'
-import { computeContentBounds } from '@lawha/core/io/formats/raster'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 import type { Color } from '@lawha/scene-graph/primitives'
 import { randomHex } from '@lawha/scene-graph/random'
 
@@ -409,7 +409,7 @@ export function agentPlacement(
   fallbackPageId: string
 ): Pick<AgentPresence, 'pageId' | 'cursor' | 'selection' | 'outline'> | null {
   const present = nodeIds.filter((id) => store.graph.getNode(id))
-  const bounds = computeContentBounds(store.graph, present)
+  const bounds = computeGraphVisualBounds(store.graph, present)
   if (!bounds) return null
   const [first] = present
   const pageId = (first && store.graph.pageOf(first)) ?? fallbackPageId

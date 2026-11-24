@@ -65,8 +65,11 @@ describe('line rendering', () => {
       const width = image.width()
       const alphaAt = (x: number, y: number) => pixels[(y * width + x) * 4 + 3]
 
-      expect(alphaAt(10, 36)).toBeGreaterThan(0)
-      expect(alphaAt(22, 36)).toBe(0)
+      // The frame exports at its own size, the line turned down from its start at (10, 8).
+      expect([image.width(), image.height()]).toEqual([40, 40])
+      expect(alphaAt(10, 30)).toBeGreaterThan(0)
+      expect(alphaAt(10, 4)).toBe(0)
+      expect(alphaAt(22, 30)).toBe(0)
 
       image.delete()
     } finally {

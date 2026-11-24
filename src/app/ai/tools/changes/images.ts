@@ -2,11 +2,11 @@ import { promiseTimeout } from '@vueuse/core'
 
 import {
   comparePNGs,
-  computeContentBounds,
   createCanvasKitRasterCodec,
   renderRegionToImage
 } from '@lawha/core/io/formats/raster'
 import type { SceneGraph } from '@lawha/scene-graph'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 import type { VisualBounds } from '@lawha/scene-graph/geometry'
 
 import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
@@ -35,7 +35,7 @@ interface ChangeRegion {
 
 function regionOf(graph: SceneGraph, nodeIds: string[]): VisualBounds | null {
   const present = nodeIds.filter((id) => graph.getNode(id) !== undefined)
-  return present.length > 0 ? computeContentBounds(graph, present) : null
+  return present.length > 0 ? computeGraphVisualBounds(graph, present) : null
 }
 
 function unionRegion(regions: (VisualBounds | null)[]): VisualBounds | null {

@@ -2,8 +2,8 @@ import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import type { RenderColorSpace } from '@lawha/scene-graph/color'
-import { getWorldMatrix } from '@lawha/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@lawha/scene-graph/geometry'
+import { computeGraphVisualBounds, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import type { VisualBounds } from '@lawha/scene-graph/geometry'
 import type { Mat3 } from '@lawha/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -25,14 +25,6 @@ interface RenderOptions {
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
-}
-
-export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
-  return computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
 }
 
 function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: number) {
@@ -254,7 +246,7 @@ export function renderNodesToImage(
     throw new Error('Raster export selection must stay on a single page')
   }
 
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = computeGraphVisualBounds(graph, nodeIds)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX
@@ -316,7 +308,7 @@ export function thumbnailFrame(
   const page = graph.getNode(pageId)
   if (!page || page.childIds.length === 0) return null
 
-  const bounds = computeContentBounds(graph, page.childIds)
+  const bounds = computeGraphVisualBounds(graph, page.childIds)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX

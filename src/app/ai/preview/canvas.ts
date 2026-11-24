@@ -3,9 +3,9 @@ import { uniq } from 'es-toolkit/array'
 import { watch } from 'vue'
 
 import { recordJSXPreview, stageJSXPreview, type StagedJSXPreview } from '@lawha/core/design-jsx'
-import { computeContentBounds } from '@lawha/core/io/formats/raster'
 import type { JSXPreviewNode } from '@lawha/design-jsx'
 import type { SceneGraph } from '@lawha/scene-graph'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 import type { Rect, Vector } from '@lawha/scene-graph/primitives'
 
 import {
@@ -32,7 +32,7 @@ export interface PreviewFocus {
 }
 
 function nodeRect(graph: SceneGraph, nodeId: string): Rect | null {
-  const bounds = computeContentBounds(graph, [nodeId])
+  const bounds = computeGraphVisualBounds(graph, [nodeId])
   if (!bounds) return null
   return {
     x: bounds.minX,

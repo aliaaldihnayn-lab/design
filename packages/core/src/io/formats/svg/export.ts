@@ -1,9 +1,9 @@
 import type { RenderColorSpace } from '@lawha/scene-graph/color'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
-import { computeContentBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
@@ -473,7 +473,7 @@ export function renderNodesToSVG(
   nodeIds: string[],
   options: SVGExportOptions = {}
 ): string | null {
-  const bounds = computeContentBounds(graph, nodeIds)
+  const bounds = computeGraphVisualBounds(graph, nodeIds)
   if (!bounds) return null
 
   const { minX, minY, maxX, maxY } = bounds

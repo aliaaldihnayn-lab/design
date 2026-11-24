@@ -3,8 +3,7 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { parseFigFile } from '@lawha/core/io/formats/fig'
 import { computeAllLayouts } from '@lawha/core/layout'
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
-
-import { computeContentBounds } from '#core/io/formats/raster/render'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { parseFixture, readFixtureBytes } from '#tests/helpers/fig/fixtures'
 import {
@@ -272,7 +271,7 @@ describe('derived instance layout regressions', () => {
   test('exports WYSIWYG and logo visual overflow instead of clipping to node boxes', () => {
     const wysiwyg = previewChild(layoutGraph, layoutNodes, '_WYSIWYG-editor')
     expect(wysiwyg).toBeDefined()
-    const wysiwygBounds = wysiwyg ? computeContentBounds(layoutGraph, [wysiwyg.id]) : null
+    const wysiwygBounds = wysiwyg ? computeGraphVisualBounds(layoutGraph, [wysiwyg.id]) : null
     expect(wysiwygBounds?.minX).toBeCloseTo(5, 3)
     expect(wysiwygBounds?.minY).toBeCloseTo(577, 3)
     expect(wysiwygBounds ? wysiwygBounds.maxX - wysiwygBounds.minX : 0).toBeCloseTo(294, 3)
@@ -285,7 +284,7 @@ describe('derived instance layout regressions', () => {
       'logo-short-6'
     )
     expect(logoGroup).toBeDefined()
-    const logoBounds = logoGroup ? computeContentBounds(layoutGraph, [logoGroup.id]) : null
+    const logoBounds = logoGroup ? computeGraphVisualBounds(layoutGraph, [logoGroup.id]) : null
     const logoAbs = logoGroup ? layoutGraph.getAbsolutePosition(logoGroup.id) : { x: 0, y: 0 }
     const logo = logoGroup
     expect(logoBounds?.minX).toBeLessThanOrEqual(logoAbs.x)

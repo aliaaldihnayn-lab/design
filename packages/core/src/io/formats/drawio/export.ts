@@ -17,12 +17,15 @@ import {
   connectorSublayers,
   curveMidpoint
 } from '@lawha/scene-graph/connectors'
-import { getParentWorldMatrix, getWorldMatrix } from '@lawha/scene-graph/coordinate'
+import {
+  computeGraphVisualBounds,
+  getParentWorldMatrix,
+  getWorldMatrix
+} from '@lawha/scene-graph/coordinate'
 import { isGeneratedFrame, shapeWithTextLabel, stickySublayers } from '@lawha/scene-graph/generated'
 import Matrix from '@lawha/scene-graph/matrix'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
-import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG } from '#core/io/formats/svg'
 
 import { DEFAULT_FONT_FAMILY } from './paint'
@@ -260,7 +263,7 @@ class PageWriter {
 
   /** The box a layer covers on the page, square to it, in its parent cell's axes. */
   private bounds(node: SceneNode, parent: string): DrawIOGeometry {
-    const bounds = computeContentBounds(this.graph, [node.id])
+    const bounds = computeGraphVisualBounds(this.graph, [node.id])
     if (!bounds) return this.place(node, parent).geometry
     const from = this.originOf(parent)
     return {

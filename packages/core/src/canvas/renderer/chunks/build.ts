@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
-import { getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
-import { computeDescendantVisualBounds, type VisualBounds } from '@lawha/scene-graph/geometry'
+import { computeGraphVisualBounds, getNodeLocalMatrix } from '@lawha/scene-graph/coordinate'
+import type { VisualBounds } from '@lawha/scene-graph/geometry'
 import type { Mat3 } from '@lawha/scene-graph/matrix'
 import Matrix from '@lawha/scene-graph/matrix'
 
@@ -84,11 +84,7 @@ export function estimateCost(nodeCount: number, node: SceneNode): number {
 }
 
 export function subtreeBounds(graph: SceneGraph, nodeId: string) {
-  return computeDescendantVisualBounds(
-    [nodeId],
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  return computeGraphVisualBounds(graph, [nodeId])
 }
 
 /** One walk from the root composes the parent's transform and gathers the clips on the way. */

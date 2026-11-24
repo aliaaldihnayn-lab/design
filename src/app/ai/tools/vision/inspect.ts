@@ -2,7 +2,7 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { generateText, tool } from 'ai'
 import * as v from 'valibot'
 
-import { computeContentBounds } from '@lawha/core/io/formats/raster'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { createAIModelRuntime } from '@/app/ai/models'
 import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
@@ -59,7 +59,7 @@ export async function inspectRenderedDesign(
   if (nodeIds.length === 0) {
     nodeIds = store.graph.getChildren(pageId).map((node) => node.id)
   }
-  const bounds = computeContentBounds(store.graph, nodeIds)
+  const bounds = computeGraphVisualBounds(store.graph, nodeIds)
   if (!bounds) return { error: 'No visible design content to inspect.' }
   const width = bounds.maxX - bounds.minX
   const height = bounds.maxY - bounds.minY

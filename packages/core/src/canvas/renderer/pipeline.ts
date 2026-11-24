@@ -1,7 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@lawha/scene-graph'
-import { computeDescendantVisualBounds } from '@lawha/scene-graph/geometry'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { liveEffectHandlesForState } from '#core/canvas/live-effect-handles'
@@ -439,13 +439,7 @@ function recordScenePicture(
   const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
-    const sceneContentBounds = pageNode
-      ? computeDescendantVisualBounds(
-          pageNode.childIds,
-          (id) => graph.getNode(id),
-          (id) => graph.getAbsolutePosition(id)
-        )
-      : null
+    const sceneContentBounds = pageNode ? computeGraphVisualBounds(graph, pageNode.childIds) : null
     const sceneBounds = sceneContentBounds
       ? {
           x: sceneContentBounds.minX,

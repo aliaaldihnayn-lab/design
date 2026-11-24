@@ -2,12 +2,12 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { Fill, SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { BLACK, WHITE } from '@lawha/scene-graph/constants'
+import { computeGraphVisualBounds } from '@lawha/scene-graph/coordinate'
 import type { VisualBounds } from '@lawha/scene-graph/geometry'
 import { computeImageHash } from '@lawha/scene-graph/images'
 
 import type { PDFPageSpec } from '#core/io/formats/pdf/plan'
 import {
-  computeContentBounds,
   createCanvasKitRasterCodec,
   renderRegionToImage,
   type RasterCodec
@@ -264,7 +264,7 @@ export async function flattenTransparency(
         maxY: at.y + root.height + outset
       }
       for (const unit of transparentUnits(graph, root, hasAlpha)) {
-        const drawn = computeContentBounds(graph, [unit.id])
+        const drawn = computeGraphVisualBounds(graph, [unit.id])
         const box = drawn ? intersect(drawn, sheet) : null
         if (!box) continue
         const bounds = {
