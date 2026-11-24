@@ -73,7 +73,8 @@ test('dragging selected nested instance content reorders its auto-layout item', 
   })
   await canvas.waitForRender()
 
-  await canvas.drag(310, 140, 170, 140, 12)
+  // The label spans y 118 to 142; pressing its middle, not the resize band along its bottom edge.
+  await canvas.drag(310, 130, 170, 130, 12)
   await canvas.waitForRender()
 
   const childIds = await page.evaluate((frameId) => {
