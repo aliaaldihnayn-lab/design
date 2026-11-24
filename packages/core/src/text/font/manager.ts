@@ -731,7 +731,27 @@ export class FontManager {
       }
     }
 
+    if (targetFamilies.length === 0) {
+      await this.loadBundledFallbacks(manifest.localFamilies, targetFamilies, signal)
+    }
     return targetFamilies
+  }
+
+  /**
+   * With nothing installed and no download (offline, or a blocked font host), a fallback this
+   * package bundles, such as Noto Naskh Arabic, still draws the script instead of tofu boxes.
+   */
+  private async loadBundledFallbacks(
+    families: readonly string[],
+    targetFamilies: string[],
+    signal?: AbortSignal
+  ): Promise<void> {
+    for (const family of families) {
+      signal?.throwIfAborted()
+      const buffer = await this.loadBundledFont(family, 'Regular')
+      signal?.throwIfAborted()
+      if (buffer && !targetFamilies.includes(family)) targetFamilies.push(family)
+    }
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {

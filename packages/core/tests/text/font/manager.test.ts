@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { FIXTURES } from '#core-tests/helpers/paths'
-
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { FontManager, facesFromStyles } from '@lawha/core/text'
@@ -214,4 +213,28 @@ test('keeps the file it has when the same font is read or downloaded again', asy
   // Nothing replaced the file, so it draws under the family's own name with nothing else.
   expect(manager.renderFamily(family, 'Regular')).toBe(family)
   expect(manager.renderShardFamilies(family, 'Regular')).toEqual([])
+})
+
+test('draws Arabic with the bundled Noto Naskh Arabic when no font is installed or downloadable', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Linux')
+  const { provider, registrations } = countingProvider()
+  manager.attachProvider({} as CanvasKit, provider)
+
+  const fallbacks = await manager.ensureFallbackPack(['arabic'], 'مرحبا بالعالم')
+
+  expect(fallbacks.arabic).toEqual(['Noto Naskh Arabic'])
+  expect(manager.getArabicFallbackFamilies()).toEqual(['Noto Naskh Arabic'])
+  expect(manager.loadedData('Noto Naskh Arabic', 'Regular')?.byteLength).toBeGreaterThan(0)
+  expect(registrations.get('Noto Naskh Arabic')).toBe(1)
+})
+
+test('prefers an installed Arabic fallback to the bundled one', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)')
+  manager.setHostFontLoader(async (family) => (family === 'Geeza Pro' ? new ArrayBuffer(16) : null))
+
+  const fallbacks = await manager.ensureFallbackPack(['arabic'], 'مرحبا')
+
+  expect(fallbacks.arabic).toEqual(['Geeza Pro'])
 })
