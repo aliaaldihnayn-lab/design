@@ -133,6 +133,36 @@ describe('Google Docs', () => {
     expect(document.title).toBe('عقد')
   })
 
+  test('reads footnotes and where the body refers to them', () => {
+    // As `documents.get` returns them: a reference in the body, the note under `footnotes`.
+    const parsed = v.parse(googleDocumentSchema, {
+      body: {
+        content: [
+          {
+            paragraph: {
+              paragraphStyle: { direction: 'RIGHT_TO_LEFT' },
+              elements: [
+                run('نص'),
+                { footnoteReference: { footnoteId: 'kix.fn1', footnoteNumber: '1' } },
+                run('\n')
+              ]
+            }
+          }
+        ]
+      },
+      footnotes: {
+        'kix.fn1': { content: [{ paragraph: { elements: [run('مصدر الحاشية\n')] } }] }
+      }
+    })
+    const document = readGoogleDocument(parsed)
+    expect(document.body.content?.[0].content).toEqual([
+      { type: 'text', text: 'نص' },
+      { type: 'footnote', attrs: { id: 'kix.fn1' } }
+    ])
+    expect(document.footnotes.map((note) => note.content.map(nodeText))).toEqual([['مصدر الحاشية']])
+    expect(document.footnotes[0].id).toBe('kix.fn1')
+  })
+
   test('writes the body back block by block, so the Doc ends up in document order', () => {
     const body: WriterNode = {
       type: 'doc',

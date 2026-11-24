@@ -33,6 +33,7 @@ export interface GoogleParagraphElement {
   autoText?: { type?: string; textStyle?: GoogleTextStyle }
   pageBreak?: Record<string, unknown>
   inlineObjectElement?: { inlineObjectId?: string }
+  footnoteReference?: { footnoteId?: string; textStyle?: GoogleTextStyle }
 }
 
 export interface GoogleParagraph {
@@ -84,6 +85,7 @@ export interface GoogleDocument {
   body?: { content?: GoogleStructuralElement[] }
   headers?: Record<string, { content?: GoogleStructuralElement[] }>
   footers?: Record<string, { content?: GoogleStructuralElement[] }>
+  footnotes?: Record<string, { content?: GoogleStructuralElement[] }>
   lists?: Record<string, GoogleList>
   inlineObjects?: Record<string, GoogleInlineObject>
   documentStyle?: {

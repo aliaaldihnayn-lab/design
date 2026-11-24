@@ -110,7 +110,13 @@ const googleParagraphSchema = v.object({
           v.object({ type: v.optional(v.string()), textStyle: v.optional(googleTextStyleSchema) })
         ),
         pageBreak: v.optional(v.record(v.string(), v.unknown())),
-        inlineObjectElement: v.optional(v.object({ inlineObjectId: v.optional(v.string()) }))
+        inlineObjectElement: v.optional(v.object({ inlineObjectId: v.optional(v.string()) })),
+        footnoteReference: v.optional(
+          v.object({
+            footnoteId: v.optional(v.string()),
+            textStyle: v.optional(googleTextStyleSchema)
+          })
+        )
       })
     )
   ),
@@ -171,6 +177,7 @@ export const googleDocumentSchema: v.GenericSchema<GoogleDocument> = v.object({
   body: v.optional(googleSegmentSchema),
   headers: v.optional(v.record(v.string(), googleSegmentSchema)),
   footers: v.optional(v.record(v.string(), googleSegmentSchema)),
+  footnotes: v.optional(v.record(v.string(), googleSegmentSchema)),
   lists: v.optional(
     v.record(
       v.string(),

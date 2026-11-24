@@ -127,7 +127,9 @@ function paragraphInlines(paragraph: GoogleParagraph, state: ReadState): Array<W
       const type = element.autoText.type === 'PAGE_NUMBER' ? 'pageNumber' : 'pageCount'
       out.push(withMarks({ type }, googleMarks(element.autoText.textStyle)))
     } else if (element.pageBreak) out.push(null)
-    else if (element.inlineObjectElement) {
+    else if (element.footnoteReference?.footnoteId) {
+      out.push({ type: 'footnote', attrs: { id: element.footnoteReference.footnoteId } })
+    } else if (element.inlineObjectElement) {
       const image = inlineImage(element.inlineObjectElement.inlineObjectId, state)
       if (image) out.push(image)
     }
@@ -250,6 +252,11 @@ export function readGoogleDocument(source: GoogleDocument): WriterDocument {
     page: readPage(source),
     header: region(header?.content, state),
     footer: region(footer?.content, state),
+    // Each note the body refers to, by the Doc's own footnote id.
+    footnotes: Object.entries(source.footnotes ?? {}).map(([id, note]) => ({
+      id,
+      content: region(note.content, state)?.content ?? [{ type: 'paragraph' }]
+    })),
     title: source.title ?? ''
   })
 }
