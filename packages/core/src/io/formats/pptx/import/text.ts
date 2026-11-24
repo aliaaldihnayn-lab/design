@@ -109,9 +109,11 @@ export interface TextBody {
   /** EMU insets: left, top, right, bottom. */
   insets: [number, number, number, number]
   fontScale: number
+  /** Whether lines break at the box's width; `a:bodyPr wrap="none"` keeps each on one line. */
+  wraps: boolean
 }
 
-type TextLayout = Pick<TextBody, 'verticalAlign' | 'insets' | 'fontScale'>
+type TextLayout = Pick<TextBody, 'verticalAlign' | 'insets' | 'fontScale' | 'wraps'>
 
 /** Insets, anchor and autofit: the shape's, else those of the placeholders it stands in for. */
 function bodyLayout(bodyPrs: (Element | undefined)[]): TextLayout {
@@ -119,7 +121,9 @@ function bodyLayout(bodyPrs: (Element | undefined)[]): TextLayout {
     bodyPrs.map((el) => numAttr(el, name)).find((value) => value !== null) ?? null
   const anchor = bodyPrs.map((el) => attr(el, 'anchor')).find((value) => value !== null)
   const autofit = bodyPrs.map((el) => child(el, 'normAutofit')).find((el) => el !== undefined)
+  const wrap = bodyPrs.map((el) => attr(el, 'wrap')).find((value) => value !== null)
   return {
+    wraps: wrap !== 'none',
     verticalAlign: ANCHOR[anchor ?? 't'] ?? 'TOP',
     insets: [
       number('lIns') ?? 91440,
@@ -291,7 +295,8 @@ export function textNodeProps(body: TextBody, fallbackColor: Color = BLACK): Par
     textAlignHorizontal: body.base.align ?? 'LEFT',
     textAlignVertical: body.verticalAlign,
     textDirection: body.base.rtl ? 'RTL' : 'AUTO',
-    textAutoResize: 'NONE'
+    // Text that never wraps sizes its box to its lines rather than breaking them at its width.
+    textAutoResize: body.wraps ? 'NONE' : 'WIDTH_AND_HEIGHT'
   }
   if (base.letterSpacing) props.letterSpacing = base.letterSpacing
   if (base.lineHeight !== undefined) props.lineHeight = base.lineHeight

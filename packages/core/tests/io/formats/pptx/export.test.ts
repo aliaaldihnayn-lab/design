@@ -12,7 +12,7 @@ setDefaultTimeout(60_000)
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
-describe('exporting PPTX pictures of layers', () => {
+describe('PPTX round trips', () => {
   test('a turned or reflected vector is pictured upright and turned on the slide', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id
@@ -57,5 +57,43 @@ describe('exporting PPTX pictures of layers', () => {
     expect(pictured[0].rotation).toBeCloseTo(30, 1)
     expect(pictured[1]).toMatchObject({ flipX: true })
     expect(pictured[1].rotation).toBeCloseTo(-30, 1)
+  })
+
+  test('text sized to its lines comes back on one line, not broken at its width', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const slide = graph.createNode('FRAME', page, { name: 'Slide', width: 1280, height: 720 })
+    graph.createNode('TEXT', slide.id, {
+      name: 'Greeting',
+      x: 600,
+      y: 100,
+      width: 300,
+      height: 80,
+      text: 'السَّلَامُ عَلَيْكُمْ',
+      fontFamily: 'Noto Naskh Arabic',
+      fontSize: 44,
+      textDirection: 'RTL',
+      textAlignHorizontal: 'RIGHT',
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    const result = await io.exportContent(
+      'pptx',
+      { graph, target: { scope: 'node', nodeId: slide.id } },
+      { rasterize: () => Promise.resolve(null) }
+    )
+    if (typeof result.data === 'string') throw new Error('PPTX is binary')
+    const again = (await io.readDocument({ name: 'deck.pptx', data: new Uint8Array(result.data) }))
+      .graph
+    const text = expectDefined(
+      again
+        .getChildren(again.getChildren(again.getPages()[0].id)[0].id)
+        .find((node) => node.type === 'TEXT')
+    )
+    expect(text).toMatchObject({
+      text: 'السَّلَامُ عَلَيْكُمْ',
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      textDirection: 'RTL',
+      textAlignHorizontal: 'RIGHT'
+    })
   })
 })
