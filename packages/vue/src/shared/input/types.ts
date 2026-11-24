@@ -6,6 +6,7 @@ import type {
   NodeType,
   SceneNode,
   Stroke,
+  TextAutoResize,
   TextPathData,
   VectorNetwork
 } from '@lawha/scene-graph'
@@ -166,6 +167,8 @@ export interface DragResize {
   origSizing?: LayerSizing
   /** The sizing the latest step left, which the commit keeps. */
   appliedSizing?: LayerSizing
+  /** A text layer's auto-resize before the drag, taken on its first step. */
+  origTextAutoResize?: TextAutoResize
 }
 
 export interface DragMarquee {

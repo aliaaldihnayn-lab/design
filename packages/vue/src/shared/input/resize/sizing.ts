@@ -1,6 +1,6 @@
 import { pick } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode, TextAutoResize } from '@lawha/scene-graph'
 import { layoutSizing, layoutSizingUpdates, type LayoutSizingAxis } from '@lawha/scene-graph/layout'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
@@ -43,4 +43,20 @@ export function draggedSizing(
     Object.assign(sizing, pick(layoutSizingUpdates(graph, base, axis, 'FIXED'), SIZING_FIELDS))
   }
   return sizing
+}
+
+/**
+ * The auto-resize a handle drag leaves text with, as Figma sets it: text that sized its width
+ * wraps at the dragged width and keeps sizing its height, and text whose height was dragged keeps
+ * the box it was given.
+ */
+export function draggedTextAutoResize(
+  mode: TextAutoResize,
+  origRect: Rect,
+  rect: Rect
+): TextAutoResize {
+  const sizesHeight = mode === 'WIDTH_AND_HEIGHT' || mode === 'HEIGHT'
+  if (sizesHeight && rect.height !== origRect.height) return 'NONE'
+  if (mode === 'WIDTH_AND_HEIGHT' && rect.width !== origRect.width) return 'HEIGHT'
+  return mode
 }

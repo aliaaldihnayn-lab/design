@@ -41,6 +41,7 @@ type ResizeOriginal = Rect &
       | 'strokes'
       | 'textPathData'
       | 'textPathBox'
+      | 'textAutoResize'
     >
   >
 
@@ -142,6 +143,8 @@ export function createUndoActions(ctx: EditorContext) {
     const final: ResizeOriginal = hasGeometry
       ? createResizeSnapshot(node)
       : { x: node.x, y: node.y, width: node.width, height: node.height }
+    // A text layer the drag gave a fixed width or box changes back with its size.
+    if ('textAutoResize' in original) final.textAutoResize = node.textAutoResize
     ctx.undo.push({
       label: 'Resize',
       forward: () => {

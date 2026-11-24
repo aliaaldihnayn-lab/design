@@ -4,7 +4,7 @@ import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import { resizedPathTextGlyphs, type Editor } from '@lawha/core'
-import { computeAllLayouts } from '@lawha/core/layout'
+import { computeAllLayouts, sizeAutoResizingText } from '@lawha/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@lawha/core/text'
 import type { SceneNode, DerivedTextGlyph, TextPathData } from '@lawha/scene-graph'
 import {
@@ -33,7 +33,7 @@ import {
   turnedResizeFrame
 } from '#vue/shared/input/resize/frame'
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
-import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
+import { draggedSizing, draggedTextAutoResize, layerSizing } from '#vue/shared/input/resize/sizing'
 import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
@@ -204,6 +204,10 @@ export function applyResize(
   d.origSizing ??= layerSizing(node)
   d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
   Object.assign(changes, d.appliedSizing)
+  if (node.type === 'TEXT' && !node.textPathData) {
+    d.origTextAutoResize ??= node.textAutoResize
+    changes.textAutoResize = draggedTextAutoResize(d.origTextAutoResize, d.origRect, newRect)
+  }
   markResized(d, newRect, editor)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
@@ -220,6 +224,10 @@ export function applyResize(
     if (reflow) Object.assign(changes, reflow)
   }
   editor.graph.updateNodePreview(d.nodeId, changes)
+  // Text that now wraps at the dragged width takes the height its lines need.
+  if (changes.textAutoResize === 'HEIGHT') {
+    editor.graph.runPreviewUpdates(() => sizeAutoResizingText(editor.graph, d.nodeId, true))
+  }
   if (changes.fillGeometry || changes.strokeGeometry || changes.vectorNetwork) {
     editor.renderer?.invalidateVectorPath(d.nodeId)
   }
@@ -345,6 +353,9 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
     textPathBox: d.origTextPathBox
   })
   if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+  if (d.origTextAutoResize) {
+    editor.graph.updateNodePreview(d.nodeId, { textAutoResize: d.origTextAutoResize })
+  }
   editor.renderer?.invalidateVectorPath(d.nodeId)
   restoreEditedFields(d, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
@@ -408,6 +419,8 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
   if (!node) return
   if (!d.appliedRect || sameRect(d.appliedRect, d.origRect)) restoreEditedFields(d, editor)
   const finalChanges = snapshotResizeFinal(node, d.origStrokeGeometry.length > 0)
+  if (d.origTextAutoResize !== undefined && node.textAutoResize !== d.origTextAutoResize)
+    finalChanges.textAutoResize = node.textAutoResize
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
@@ -439,20 +452,34 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
     editor.commitGroupResize(d.nodeId, d.origRect, d.origChildren)
     editor.requestRepaint()
   } else {
-    editor.graph.updateNodePreview(d.nodeId, d.origRect)
-    // See the group branch — raw import payload survives geometric commits.
-    editor.graph.preserveSourceMetadataDuring(() => {
-      editor.updateNode(d.nodeId, finalChanges)
-    })
-    clearResizedRawGeometry(editor, d.nodeId)
-    const original: Parameters<typeof editor.commitResize>[1] = { ...d.origRect }
-    if (d.origVectorNetwork || node.vectorNetwork) original.vectorNetwork = d.origVectorNetwork
-    if (d.origFillGeometry.length > 0) original.fillGeometry = d.origFillGeometry
-    if (d.origStrokeGeometry.length > 0) original.strokeGeometry = d.origStrokeGeometry
-    if (d.origDerivedTextGlyphs?.length) original.derivedTextGlyphs = d.origDerivedTextGlyphs
-    if (d.origStrokes.length > 0) original.strokes = d.origStrokes
-    if (d.origTextPathData) original.textPathData = d.origTextPathData
-    if (d.origTextPathBox) original.textPathBox = d.origTextPathBox
-    editor.commitResize(d.nodeId, original)
+    commitLayerResize(d, editor, node, finalChanges)
   }
+}
+
+/** Commits a resized layer with no layers it places, recording what to put back on undo. */
+function commitLayerResize(
+  d: DragResize,
+  editor: Editor,
+  node: SceneNode,
+  finalChanges: Partial<SceneNode>
+) {
+  editor.graph.updateNodePreview(d.nodeId, d.origRect)
+  if (finalChanges.textAutoResize && d.origTextAutoResize) {
+    editor.graph.updateNodePreview(d.nodeId, { textAutoResize: d.origTextAutoResize })
+  }
+  // See the group branch — raw import payload survives geometric commits.
+  editor.graph.preserveSourceMetadataDuring(() => {
+    editor.updateNode(d.nodeId, finalChanges)
+  })
+  clearResizedRawGeometry(editor, d.nodeId)
+  const original: Parameters<typeof editor.commitResize>[1] = { ...d.origRect }
+  if (d.origVectorNetwork || node.vectorNetwork) original.vectorNetwork = d.origVectorNetwork
+  if (d.origFillGeometry.length > 0) original.fillGeometry = d.origFillGeometry
+  if (d.origStrokeGeometry.length > 0) original.strokeGeometry = d.origStrokeGeometry
+  if (d.origDerivedTextGlyphs?.length) original.derivedTextGlyphs = d.origDerivedTextGlyphs
+  if (d.origStrokes.length > 0) original.strokes = d.origStrokes
+  if (d.origTextPathData) original.textPathData = d.origTextPathData
+  if (d.origTextPathBox) original.textPathBox = d.origTextPathBox
+  if (finalChanges.textAutoResize) original.textAutoResize = d.origTextAutoResize
+  editor.commitResize(d.nodeId, original)
 }
