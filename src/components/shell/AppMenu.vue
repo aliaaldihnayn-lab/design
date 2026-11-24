@@ -1,21 +1,7 @@
 <script setup lang="ts">
 import { templateRef } from '@vueuse/core'
-import {
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarItem,
-  MenubarItemIndicator,
-  MenubarMenu,
-  MenubarPortal,
-  MenubarRoot,
-  MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger
-} from 'reka-ui'
+import { MenubarContent, MenubarMenu, MenubarPortal, MenubarRoot, MenubarTrigger } from 'reka-ui'
 import { useTemplateRef, watch } from 'vue'
-import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { useI18n } from '@lawha/vue/i18n'
 import { vTestId } from '@lawha/vue/testing'
@@ -24,26 +10,14 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import { useDocumentNameRename } from '@/app/shell/menu/document-name'
-import {
-  hasMenuSubItems,
-  isMenuCheckbox,
-  isMenuSeparator,
-  menuChecked,
-  menuDisabled,
-  menuLabel,
-  menuShortcut,
-  menuSubItems,
-  runMenuAction,
-  updateMenuChecked
-} from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { CloudDocumentStatusHost } from '@/components/cloud/integration'
+import AppMenuEntries from '@/components/shell/AppMenuEntries.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
-import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { IS_TAURI } from '@/constants'
@@ -60,9 +34,7 @@ watch(nameInput, (input) => {
 const { menu: t, settings } = useI18n()
 
 const { topMenus } = useAppMenu()
-const menuCls = useMenuUI()
 const mainMenuCls = useMenuUI({ content: 'min-w-52' })
-const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 // A narrow panel clips the menubar; fade the clipped side and offer a chevron so it reads as scrollable.
 const menubar = useTemplateRef<HTMLElement>('menubar')
@@ -131,81 +103,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
             <MenubarPortal>
               <MenubarContent :side-offset="4" align="start" :class="mainMenuCls.content">
                 <MenuScrollArea>
-                  <template v-for="(item, i) in menu.items" :key="i">
-                    <MenubarSeparator v-if="isMenuSeparator(item)" :class="menuCls.separator" />
-                    <MenubarSub v-else-if="hasMenuSubItems(item)">
-                      <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
-                        <span class="flex-1"
-                          ><bdi>{{ menuLabel(item) }}</bdi></span
-                        >
-                        <IconChevronRight class="size-3 text-muted rtl:-scale-x-100" />
-                      </MenubarSubTrigger>
-                      <MenubarPortal>
-                        <MenubarSubContent :side-offset="4" :class="subMenuCls.content">
-                          <MenuScrollArea>
-                            <template v-for="(sub, j) in menuSubItems(item)" :key="j">
-                              <MenubarSeparator
-                                v-if="isMenuSeparator(sub)"
-                                :class="menuCls.separator"
-                              />
-                              <MenubarCheckboxItem
-                                v-else-if="isMenuCheckbox(sub)"
-                                :model-value="menuChecked(sub)"
-                                :class="menuCls.item"
-                                @update:model-value="updateMenuChecked(sub, $event as boolean)"
-                              >
-                                <span class="flex-1"
-                                  ><bdi>{{ menuLabel(sub) }}</bdi></span
-                                >
-                                <MenubarItemIndicator class="text-surface">
-                                  <icon-lucide-check class="size-3.5" />
-                                </MenubarItemIndicator>
-                              </MenubarCheckboxItem>
-                              <MenubarItem
-                                v-else
-                                :class="menuCls.item"
-                                :disabled="menuDisabled(sub)"
-                                @select="runMenuAction(sub)"
-                              >
-                                <span class="flex-1"
-                                  ><bdi>{{ menuLabel(sub) }}</bdi></span
-                                >
-                                <AppShortcutText v-if="menuShortcut(sub)">{{
-                                  menuShortcut(sub)
-                                }}</AppShortcutText>
-                              </MenubarItem>
-                            </template>
-                          </MenuScrollArea>
-                        </MenubarSubContent>
-                      </MenubarPortal>
-                    </MenubarSub>
-                    <MenubarCheckboxItem
-                      v-else-if="isMenuCheckbox(item)"
-                      :model-value="menuChecked(item)"
-                      :class="menuCls.item"
-                      @update:model-value="updateMenuChecked(item, $event as boolean)"
-                    >
-                      <span class="flex-1"
-                        ><bdi>{{ menuLabel(item) }}</bdi></span
-                      >
-                      <MenubarItemIndicator class="text-surface">
-                        <icon-lucide-check class="size-3.5" />
-                      </MenubarItemIndicator>
-                    </MenubarCheckboxItem>
-                    <MenubarItem
-                      v-else
-                      :class="menuCls.item"
-                      :disabled="menuDisabled(item)"
-                      @select="runMenuAction(item)"
-                    >
-                      <span class="flex-1"
-                        ><bdi>{{ menuLabel(item) }}</bdi></span
-                      >
-                      <AppShortcutText v-if="menuShortcut(item)">{{
-                        menuShortcut(item)
-                      }}</AppShortcutText>
-                    </MenubarItem>
-                  </template>
+                  <AppMenuEntries :items="menu.items" />
                 </MenuScrollArea>
               </MenubarContent>
             </MenubarPortal>
