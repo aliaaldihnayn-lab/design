@@ -205,6 +205,36 @@ describe('PDF export', () => {
     expect(written.at(-1)).toContain('الصفحة الأخيرة')
   })
 
+  test('breaks a table row taller than a page between pages, keeping every line', async () => {
+    const lines = Array.from({ length: 90 }, (_, index) => paragraph('ltr', text(`Line ${index}`)))
+    const cell = (content: WriterNode[]): WriterNode => ({
+      type: 'tableCell',
+      attrs: { colspan: 1, rowspan: 1 },
+      content
+    })
+    const table: WriterNode = {
+      type: 'table',
+      content: [
+        { type: 'tableRow', content: [cell(lines), cell([paragraph('ltr', text('Short'))])] },
+        { type: 'tableRow', content: [cell([paragraph('ltr', text('Next row'))])] }
+      ]
+    }
+    const body: WriterNode = { type: 'doc', content: [table, paragraph('ltr', text('After'))] }
+    const pdf = await exportWriterPDF(createWriterDocument({ body }), { fonts })
+    // Each word and space is a span of its own; the text reads with single spaces.
+    const pages = (await writtenTexts(pdf)).map((page) => page.replace(/\s+/g, ' '))
+    expect(pages.length).toBeGreaterThan(1)
+    const written = pages.join(' ')
+    for (let index = 0; index < 90; index += 1) expect(written).toContain(`Line ${index} `)
+    expect(pages.at(-1)).toContain('Next row')
+    expect(pages.at(-1)).toContain('After')
+    // Every line is drawn on its page, none below the bottom edge.
+    for (const content of await pageContents(pdf)) {
+      const baselines = [...content.matchAll(/ (-?[\d.]+) Tm/g)].map(([, y = '']) => Number(y))
+      expect(Math.min(...baselines)).toBeGreaterThan(0)
+    }
+  })
+
   test('closes each text span while its font is set, so readers place its text', async () => {
     const body: WriterNode = {
       type: 'doc',

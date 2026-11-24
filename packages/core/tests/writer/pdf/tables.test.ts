@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { placeCells, rowBands } from '#core/writer/pdf/cells'
 import type { TableCell } from '#core/writer/pdf/flow'
-import { placeCells, rowBands } from '#core/writer/pdf/paginate'
 
 const cell = (colspan = 1, rowspan = 1): TableCell => ({
   blocks: [],

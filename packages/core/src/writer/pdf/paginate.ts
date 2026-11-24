@@ -2,7 +2,8 @@ import type { HorizontalExtent } from '@lawha/scene-graph/primitives'
 
 import type { PageSetup } from '#core/writer/model'
 
-import type { FlowBlock, ParagraphBlock, RunStyle, TableBlock, TableCell } from './flow'
+import { borderOps, extentOf, offset, placeCells, rowBands, type LaidCell } from './cells'
+import type { FlowBlock, ParagraphBlock, RunStyle, TableBlock } from './flow'
 import type { FontSet } from './fonts'
 import { layoutLines, type FieldText, type GlyphPiece, type Line } from './lines'
 
@@ -29,7 +30,6 @@ export interface LaidOutPage {
 const PT_PER_TWIP = 1 / 20
 const CELL_PADDING = 5.4
 const CELL_PADDING_Y = 2
-const BORDER = 0.5
 const MARKER_GAP = 6
 
 type Frame = HorizontalExtent
@@ -319,6 +319,12 @@ class Paginator {
     }
     for (const band of rowBands(placed, block.rows.length)) {
       const bandHeight = heights.slice(band.from, band.to).reduce((a, b) => a + b, 0)
+      const pageHeight = this.bottom - this.setup.margins.top * PT_PER_TWIP
+      if (bandHeight > pageHeight) {
+        // Taller than a page: it starts here and breaks between its lines, as Word lets rows.
+        this.splitBand(laid, band, heights)
+        continue
+      }
       if (!this.empty && this.y + bandHeight > this.bottom) this.open(this.setup)
       const tops: number[] = []
       let y = this.y
@@ -349,6 +355,70 @@ class Paginator {
       this.empty = false
     }
     this.y += 6
+  }
+
+  /**
+   * Draws rows too tall for any page across as many pages as they need: each page takes the
+   * lines and pictures that end above its bottom, and every cell is boxed on each page it
+   * reaches. A line is never cut, so the band breaks between lines.
+   */
+  private splitBand(
+    laid: ReadonlyArray<LaidCell>,
+    band: { from: number; to: number },
+    heights: readonly number[]
+  ) {
+    const tops: number[] = []
+    let bandHeight = 0
+    for (let row = band.from; row < band.to; row += 1) {
+      tops[row] = bandHeight
+      bandHeight += heights[row] ?? 0
+    }
+    const cells = laid
+      .filter((entry) => entry.row >= band.from && entry.row < band.to)
+      .map((entry) => {
+        const top = tops[entry.row] ?? 0
+        const last = Math.min(band.to, entry.row + entry.cell.rowspan)
+        return { entry, top, height: heights.slice(entry.row, last).reduce((a, b) => a + b, 0) }
+      })
+    const items = cells.flatMap(({ entry, top }) =>
+      entry.ops.map((op) => extentOf(offset(op, top + CELL_PADDING_Y)))
+    )
+    let start = 0
+    let pending = items
+    for (;;) {
+      const end = start + (this.bottom - this.y)
+      const fits = pending.filter((item) => item.bottom <= end)
+      // One item taller than a whole page goes on it anyway, so the loop always moves on.
+      const here = fits.length ? fits : pending.slice(0, 1)
+      const shift = this.y - start
+      for (const { entry, top, height } of cells) {
+        const from = Math.max(top, start)
+        const to = Math.min(top + height, end, bandHeight)
+        if (to <= from) continue
+        const background = entry.cell.background ?? (entry.cell.header ? '#f2f2f2' : null)
+        const width = entry.right - entry.left
+        if (background) {
+          this.page.ops.push({
+            kind: 'rect',
+            x: entry.left,
+            y: from + shift,
+            width,
+            height: to - from,
+            color: background
+          })
+        }
+        this.page.ops.push(...borderOps(entry.left, from + shift, width, to - from))
+      }
+      this.page.ops.push(...here.map((item) => offset(item.op, shift)))
+      this.empty = false
+      pending = pending.filter((item) => !here.includes(item))
+      if (!pending.length) {
+        this.y += bandHeight - start
+        return
+      }
+      start = Math.min(...pending.map((item) => item.top))
+      this.open(this.setup)
+    }
   }
 
   /** Each page's header, footer and watermark, once the body is laid out. */
@@ -413,76 +483,6 @@ class Paginator {
       this.flow(blocks)
     }
   }
-}
-
-function offset(op: DrawOp, dy: number): DrawOp {
-  switch (op.kind) {
-    case 'glyphs':
-      return { ...op, baseline: op.baseline + dy }
-    case 'watermark':
-      return { ...op, cy: op.cy + dy }
-    default:
-      return { ...op, y: op.y + dy }
-  }
-}
-
-function borderOps(x: number, y: number, width: number, height: number): DrawOp[] {
-  const color = '#000000'
-  return [
-    { kind: 'rect', x, y, width, height: BORDER, color },
-    { kind: 'rect', x, y: y + height - BORDER, width, height: BORDER, color },
-    { kind: 'rect', x, y, width: BORDER, height, color },
-    { kind: 'rect', x: x + width - BORDER, y, width: BORDER, height, color }
-  ]
-}
-
-/** A cell with the row it starts in and the grid column it starts at. */
-interface PlacedCell {
-  cell: TableCell
-  row: number
-  column: number
-}
-
-/**
- * Puts each cell in the table's grid. A cell that runs down several rows keeps its columns in
- * the rows below, whose own cells start after it, as HTML and Word lay merged cells out.
- */
-export function placeCells(rows: readonly TableCell[][]): PlacedCell[] {
-  const taken = new Map<number, number>()
-  const placed: PlacedCell[] = []
-  rows.forEach((cells, row) => {
-    let column = 0
-    for (const cell of cells) {
-      while ((taken.get(column) ?? -1) >= row) column += 1
-      placed.push({ cell, row, column })
-      for (let offset = 0; offset < cell.colspan; offset += 1) {
-        taken.set(column + offset, row + cell.rowspan - 1)
-      }
-      column += cell.colspan
-    }
-  })
-  return placed
-}
-
-/** Runs of rows a page must not break inside, because a cell runs down across them. */
-export function rowBands(
-  placed: readonly PlacedCell[],
-  count: number
-): Array<{ from: number; to: number }> {
-  const bands: Array<{ from: number; to: number }> = []
-  let from = 0
-  let to = 0
-  for (let row = 0; row < count; row += 1) {
-    for (const entry of placed) {
-      if (entry.row === row) to = Math.max(to, Math.min(count, row + entry.cell.rowspan))
-    }
-    to = Math.max(to, row + 1)
-    if (to === row + 1) {
-      bands.push({ from, to })
-      from = to
-    }
-  }
-  return bands
 }
 
 /** A cell's left and right edges; a right-to-left table puts its first column on the right. */
