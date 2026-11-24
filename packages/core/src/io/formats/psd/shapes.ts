@@ -7,6 +7,7 @@ import type {
 } from 'ag-psd'
 
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@lawha/scene-graph'
+import { WHITE } from '@lawha/scene-graph/constants'
 import { fitEnclosingGroups } from '@lawha/scene-graph/group-bounds'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
@@ -157,12 +158,10 @@ function addPathVector(
   parentId: string,
   paths: readonly BezierPath[],
   props: Partial<SceneNode>,
-  includeOpenRegions: boolean
+  includeOpenRegions: boolean,
+  fillRule: 'EVENODD' | 'NONZERO'
 ): SceneNode | null {
-  const evenOdd = paths.some((path) => path.fillRule === 'even-odd')
-  const network = parseSVGPath(pathData(paths), evenOdd ? 'EVENODD' : 'NONZERO', {
-    includeOpenRegions
-  })
+  const network = parseSVGPath(pathData(paths), fillRule, { includeOpenRegions })
   if (network.segments.length === 0) return null
   // The layer sits at its curves' bounds, its path moved to start there.
   const box = computeAccurateBounds(network)
@@ -177,21 +176,77 @@ function addPathVector(
 }
 
 /**
- * Paths Photoshop combines by subtracting, intersecting or excluding as a boolean group: each
- * path an operand, applied in order to what the paths before it make, as Photoshop combines them.
+ * A path's components: Photoshop combines each with the shapes before it by its operation, while
+ * a subpath without one joins the component before it, filled with it even-odd (an "O" and its
+ * counter), as Photoshop fills a compound path.
  */
-function addBooleanPaths(
+interface Component {
+  operation: BooleanOperation
+  paths: BezierPath[]
+}
+
+function components(paths: readonly BezierPath[]): Component[] {
+  const result: Component[] = []
+  for (const path of paths) {
+    const last = result.at(-1)
+    if (path.operation === undefined && last) last.paths.push(path)
+    else result.push({ operation: BOOLEAN_OPERATIONS[path.operation ?? 'combine'], paths: [path] })
+  }
+  return result
+}
+
+/** Twice the signed area of a closed path's anchor polygon: positive turns clockwise on screen. */
+function signedArea(path: BezierPath): number {
+  let area = 0
+  const knots = path.knots
+  for (let i = 0; i < knots.length; i++) {
+    const [, , x1, y1] = knots[i].points
+    const [, , x2, y2] = knots[(i + 1) % knots.length].points
+    area += x1 * y2 - x2 * y1
+  }
+  return area
+}
+
+/** The same path drawn the other way round, each knot's handles swapped. */
+function reversed(path: BezierPath): BezierPath {
+  return {
+    ...path,
+    knots: path.knots.toReversed().map((knot) => {
+      const [inX, inY, x, y, outX, outY] = knot.points
+      return { ...knot, points: [outX, outY, x, y, inX, inY] }
+    })
+  }
+}
+
+/**
+ * Paths Photoshop combines by subtracting, intersecting or excluding as a boolean group: each
+ * component an operand, applied in order to what the ones before it make, as Photoshop combines
+ * them.
+ */
+function addBooleanComponents(
   graph: SceneGraph,
   parentId: string,
-  paths: readonly BezierPath[],
-  props: Partial<SceneNode>
+  parts: readonly Component[],
+  props: Partial<SceneNode>,
+  canvas: { width: number; height: number }
 ): SceneNode | null {
   // Each operand is made when it is combined, so it stacks above what it combines with.
   let result: SceneNode | null = null
-  for (const [index, path] of paths.entries()) {
-    const vector = addPathVector(graph, parentId, [path], { name: `Path ${index + 1}` }, false)
+  // A first path that subtracts cuts from a shape covering the whole canvas, as in Photoshop.
+  if (parts[0]?.operation === 'SUBTRACT') {
+    result = graph.createNode('RECTANGLE', parentId, { name: 'Canvas', x: 0, y: 0, ...canvas })
+  }
+  for (const [index, part] of parts.entries()) {
+    const vector = addPathVector(
+      graph,
+      parentId,
+      part.paths,
+      { name: `Path ${index + 1}` },
+      false,
+      part.paths.length > 1 ? 'EVENODD' : 'NONZERO'
+    )
     if (!vector) continue
-    const operation = BOOLEAN_OPERATIONS[path.operation ?? 'combine']
+    const operation = index === 0 && !result ? 'UNION' : part.operation
     if (!result) {
       result = vector
     } else if (result.type === 'BOOLEAN_OPERATION' && result.booleanOperation === operation) {
@@ -207,10 +262,40 @@ function addBooleanPaths(
   return graph.getNode(result.id) ?? null
 }
 
-/** Whether the paths combine other than by adding up, so they make a boolean group. */
-function combinesByBoolean(paths: readonly BezierPath[]): boolean {
+/**
+ * The layer drawing `paths` as Photoshop fills them: one vector when they add up, its shapes
+ * turned the same way so that where they overlap stays filled, or a boolean group otherwise or
+ * when a stroke must follow their joint outline.
+ */
+function addPaths(
+  graph: SceneGraph,
+  parentId: string,
+  paths: readonly BezierPath[],
+  props: Partial<SceneNode>,
+  includeOpenRegions: boolean,
+  canvas: { width: number; height: number }
+): SceneNode | null {
+  const parts = components(paths)
+  const adds = parts.slice(1).every((part) => part.operation === 'UNION')
+  // A stroke follows the outline of the shapes together, which only a boolean group draws.
+  const stroked = parts.length > 1 && (props.strokes?.length ?? 0) > 0
+  if (
+    adds &&
+    !stroked &&
+    parts[0].operation !== 'SUBTRACT' &&
+    parts.every((part) => part.paths.length === 1)
+  ) {
+    const turned = parts.map(({ paths: [path] }) =>
+      !path.open && signedArea(path) < 0 ? reversed(path) : path
+    )
+    return addPathVector(graph, parentId, turned, props, includeOpenRegions, 'NONZERO')
+  }
+  if (parts.length === 1 && parts[0].operation !== 'SUBTRACT') {
+    return addPathVector(graph, parentId, paths, props, includeOpenRegions, 'EVENODD')
+  }
   return (
-    paths.length > 1 && paths.slice(1).some((path) => (path.operation ?? 'combine') !== 'combine')
+    addBooleanComponents(graph, parentId, parts, props, canvas) ??
+    addPathVector(graph, parentId, paths, props, includeOpenRegions, 'EVENODD')
   )
 }
 
@@ -236,15 +321,38 @@ export function addShapeLayer(
     // A fill layer with no path fills the whole canvas.
     return graph.createNode('RECTANGLE', parentId, { ...props, x: 0, y: 0, ...canvas })
   }
-  if (combinesByBoolean(paths)) {
-    const shape = addBooleanPaths(graph, parentId, paths, props)
-    if (shape) return shape
-  }
-  return addPathVector(
+  return addPaths(
     graph,
     parentId,
     paths,
     props,
-    props.fills.length > 0 && props.strokes.length === 0
+    props.fills.length > 0 && props.strokes.length === 0,
+    canvas
+  )
+}
+
+/**
+ * A vector mask on a layer that is not a shape: a white vector of its paths that masks the layer
+ * above it, or null when the paths draw nothing.
+ */
+export function addVectorMask(
+  graph: SceneGraph,
+  parentId: string,
+  paths: readonly BezierPath[],
+  name: string,
+  canvas: { width: number; height: number }
+): SceneNode | null {
+  return addPaths(
+    graph,
+    parentId,
+    paths,
+    {
+      name,
+      fills: [{ type: 'SOLID', color: { ...WHITE }, opacity: 1, visible: true }],
+      isMask: true,
+      maskType: 'ALPHA'
+    },
+    true,
+    canvas
   )
 }

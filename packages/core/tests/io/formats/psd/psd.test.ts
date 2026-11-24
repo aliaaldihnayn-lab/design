@@ -81,12 +81,13 @@ describe('opening PSD', () => {
       expectDefined(graph.getNode(id))
     )
     expect(background.name).toBe('Background')
-    expect(group).toMatchObject({ name: 'Shapes', type: 'FRAME' })
+    // A group is the box of what it holds, as Photoshop selects it.
+    expect(group).toMatchObject({ name: 'Shapes', type: 'GROUP', x: 20, y: 30, width: 40 })
     const red = expectDefined(graph.getNode(group.childIds[0]))
     expect(red).toMatchObject({
       name: 'Red',
-      x: 20,
-      y: 30,
+      x: 0,
+      y: 0,
       width: 40,
       height: 40,
       blendMode: 'MULTIPLY'

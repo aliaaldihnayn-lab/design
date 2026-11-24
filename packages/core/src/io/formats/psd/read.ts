@@ -3,9 +3,9 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
 import { BLACK } from '@lawha/scene-graph/constants'
+import { groupBounds } from '@lawha/scene-graph/group-bounds'
 import { computeImageHash } from '@lawha/scene-graph/images'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
-import type { Vector } from '@lawha/scene-graph/primitives'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -15,9 +15,10 @@ import { computeAccurateBounds } from '#core/vector/curve-math'
 
 import { psdColor } from './color'
 import { layerStyle, psdBlendMode, type LayerStyle, type PatternFill } from './effects'
+import { activeRasterMask, addRasterMask } from './masks'
 import { pixelOutline } from './outline'
 import { preparePSDRuntime } from './runtime'
-import { addShapeLayer, isEditableShapeLayer } from './shapes'
+import { addShapeLayer, addVectorMask, isEditableShapeLayer } from './shapes'
 
 /**
  * Photoshop and Affinity `.psd`/`.psb` files as editable layers: one frame the size of the
@@ -40,6 +41,8 @@ interface Context {
   /** The document's light angle, which layer styles that use global light take. */
   globalAngle: number
   patternFill: PatternFill
+  /** Frames standing in for groups while the layers are read, made groups once all are in. */
+  groups: Set<string>
 }
 
 interface ImageDataLike {
@@ -75,16 +78,16 @@ function imageFill(ctx: Context, pixels: ImageDataLike): Fill | null {
   }
 }
 
-function common(layer: Layer) {
+function common(layer: Layer, shown = !layer.hidden) {
   return {
     name: layer.name ?? 'Layer',
-    visible: !layer.hidden,
+    visible: shown,
     opacity: layer.opacity ?? 1,
     blendMode:
       layer.blendMode === 'pass through'
         ? 'PASS_THROUGH'
         : (psdBlendMode(layer.blendMode) ?? 'NORMAL')
-  }
+  } satisfies Partial<SceneNode>
 }
 
 function bounds(layer: Layer) {
@@ -98,7 +101,7 @@ function bounds(layer: Layer) {
   }
 }
 
-function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector, style: LayerStyle) {
+function addText(ctx: Context, parentId: string, layer: Layer, shown: boolean, style: LayerStyle) {
   const text = layer.text
   if (!text) return
   const box = bounds(layer)
@@ -112,9 +115,9 @@ function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector, s
     visible: true
   }
   ctx.graph.createNode('TEXT', parentId, {
-    ...common(layer),
-    x: box.x - origin.x,
-    y: box.y - origin.y,
+    ...common(layer, shown),
+    x: box.x,
+    y: box.y,
     width: box.width,
     height: box.height,
     text: text.text.replace(/\r/g, '\n'),
@@ -130,44 +133,206 @@ function addText(ctx: Context, parentId: string, layer: Layer, origin: Vector, s
   })
 }
 
-function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) {
-  if (layer.children) {
-    // A group covers the canvas, so its layers keep their canvas coordinates.
-    const group = ctx.graph.createNode('FRAME', parentId, {
-      ...common(layer),
-      x: -origin.x,
-      y: -origin.y,
-      width: ctx.canvas.width,
-      height: ctx.canvas.height,
-      fills: [],
-      clipsContent: false
+/**
+ * A group while layers are read into it: a frame over the canvas, so the layers keep their canvas
+ * coordinates and nothing fits it, or the groups around it, to what it holds so far.
+ */
+function stageGroup(ctx: Context, parentId: string, props: Partial<SceneNode>): SceneNode {
+  const frame = ctx.graph.createNode('FRAME', parentId, {
+    ...props,
+    x: 0,
+    y: 0,
+    width: ctx.canvas.width,
+    height: ctx.canvas.height,
+    fills: [],
+    clipsContent: false
+  })
+  ctx.groups.add(frame.id)
+  return frame
+}
+
+function depth(graph: SceneGraph, id: string): number {
+  let count = 0
+  for (let node = graph.getNode(id); node?.parentId; node = graph.getNode(node.parentId)) count++
+  return count
+}
+
+/**
+ * Turns the staged frames into groups fitted around what they show, innermost first, keeping
+ * every layer where it is on the canvas, as Photoshop's groups have no box of their own.
+ */
+function finishGroups(ctx: Context) {
+  const { graph } = ctx
+  const staged = [...ctx.groups].sort((a, b) => depth(graph, b) - depth(graph, a))
+  for (const id of staged) {
+    const frame = expectNode(graph, id)
+    const parentId = frame.parentId
+    if (!parentId) continue
+    const index = expectNode(graph, parentId).childIds.indexOf(id)
+    const children = graph.getChildren(id)
+    const box = groupBounds(graph, children, parentId, { x: 0, y: 0 })
+    if (children.length === 0) {
+      // An empty group has nothing to size it by and stays an empty frame in the layer list.
+      graph.updateNode(id, box)
+      continue
+    }
+    const group = graph.createNode('GROUP', parentId, {
+      name: frame.name,
+      visible: frame.visible,
+      opacity: frame.opacity,
+      blendMode: frame.blendMode,
+      effects: frame.effects,
+      ...box
     })
-    for (const child of layer.children) addLayer(ctx, group.id, child, { x: 0, y: 0 })
+    graph.insertChildAt(group.id, parentId, index)
+    for (const child of children) {
+      graph.insertChildAt(child.id, group.id, Infinity)
+      graph.updateNode(child.id, { x: child.x - box.x, y: child.y - box.y })
+    }
+    graph.deleteNode(id)
+  }
+  ctx.groups.clear()
+}
+
+/** What a set of layers shows, through the staged groups among them, in canvas pixels. */
+function shownLayers(ctx: Context, nodes: readonly SceneNode[]): SceneNode[] {
+  return nodes.flatMap((node) => {
+    if (!node.visible) return []
+    if (!ctx.groups.has(node.id)) return [node]
+    return shownLayers(ctx, ctx.graph.getChildren(node.id))
+  })
+}
+
+/** A vector mask on a layer other than a shape layer, whose vector mask is its shape. */
+function maskingPaths(ctx: Context, layer: Layer) {
+  const mask = layer.vectorMask
+  if (!mask || mask.disable || mask.paths.length === 0) return null
+  if (!layer.children && isEditableShapeLayer(layer, ctx.patternFill)) return null
+  return mask.paths
+}
+
+/** Whether the layer draws through a mask, and so sits in a group with it. */
+function isMasked(ctx: Context, layer: Layer): boolean {
+  return activeRasterMask(layer.mask) || maskingPaths(ctx, layer) !== null
+}
+
+/** Groups `ids`, the layers one Photoshop layer made, under its masks, where the first was. */
+function wrapInMasks(ctx: Context, parentId: string, layer: Layer, ids: string[]): string[] {
+  const { graph } = ctx
+  const nodes = ids.map((id) => graph.getNode(id)).filter((node) => node !== undefined)
+  const shown = shownLayers(ctx, nodes)
+  if (shown.length === 0) return ids
+  const content = groupBounds(graph, shown, parentId, { x: 0, y: 0 })
+  const name = layer.name ?? 'Layer'
+  const wrapper = stageGroup(ctx, parentId, { name, visible: !layer.hidden })
+  graph.insertChildAt(wrapper.id, parentId, expectNode(graph, parentId).childIds.indexOf(ids[0]))
+  // Photoshop applies a layer's vector mask and its raster mask together: one masks the other's.
+  let target = wrapper.id
+  const paths = maskingPaths(ctx, layer)
+  if (paths && addVectorMask(graph, target, paths, 'Vector mask', ctx.canvas)) {
+    if (activeRasterMask(layer.mask)) target = stageGroup(ctx, target, { name }).id
+  }
+  if (activeRasterMask(layer.mask)) {
+    addRasterMask(graph, target, layer.mask, content, (pixels) => imageFill(ctx, pixels))
+  }
+  for (const id of ids) graph.insertChildAt(id, target, Infinity)
+  return [wrapper.id]
+}
+
+function expectNode(graph: SceneGraph, id: string): SceneNode {
+  const node = graph.getNode(id)
+  if (!node) throw new Error(`Missing layer ${id}`)
+  return node
+}
+
+/** Adds one Photoshop layer, returning the layers it made in `parentId`, bottom first. */
+function addLayer(ctx: Context, parentId: string, layer: Layer): string[] {
+  const parent = expectNode(ctx.graph, parentId)
+  const before = parent.childIds.length
+  const masked = isMasked(ctx, layer)
+  // A masked layer's visibility goes to the group that holds it with its masks.
+  const shown = masked ? true : !layer.hidden
+  addLayerContent(ctx, parentId, layer, shown)
+  const ids = parent.childIds.slice(before)
+  return masked && ids.length > 0 ? wrapInMasks(ctx, parentId, layer, ids) : ids
+}
+
+/**
+ * Photoshop's clipping masks: the layers marked to clip draw only inside the pixels of the layer
+ * below them. They go in a group with that base layer, above a mask of its pixels.
+ */
+function startClipping(
+  ctx: Context,
+  parentId: string,
+  base: { layer: Layer; ids: string[] }
+): string | null {
+  const { graph } = ctx
+  const pixels = base.layer.imageData
+  if (!pixels || pixels.width === 0 || pixels.height === 0) return null
+  const fill = imageFill(ctx, pixels)
+  if (!fill) return null
+  const parent = expectNode(graph, parentId)
+  const index = parent.childIds.indexOf(base.ids[0])
+  const group = stageGroup(ctx, parentId, {
+    name: base.layer.name ?? 'Layer',
+    visible: !base.layer.hidden
+  })
+  graph.insertChildAt(group.id, parentId, index)
+  for (const id of base.ids) graph.insertChildAt(id, group.id, Infinity)
+  graph.createNode('RECTANGLE', group.id, {
+    name: 'Clipping mask',
+    ...bounds(base.layer),
+    width: pixels.width,
+    height: pixels.height,
+    fills: [fill],
+    isMask: true,
+    maskType: 'ALPHA'
+  })
+  return group.id
+}
+
+function addLayers(ctx: Context, parentId: string, layers: readonly Layer[]) {
+  let base: { layer: Layer; ids: string[] } | null = null
+  let clipping: string | null = null
+  for (const layer of layers) {
+    const ids = addLayer(ctx, parentId, layer)
+    if (layer.clipping && base) {
+      clipping ??= startClipping(ctx, parentId, base)
+      if (clipping) for (const id of ids) ctx.graph.insertChildAt(id, clipping, Infinity)
+      continue
+    }
+    base = ids.length > 0 ? { layer, ids } : null
+    clipping = null
+  }
+}
+
+function addLayerContent(ctx: Context, parentId: string, layer: Layer, shown: boolean) {
+  const style = layerStyle(layer.effects, ctx.globalAngle, ctx.patternFill)
+  if (layer.children) {
+    const group = stageGroup(ctx, parentId, { ...common(layer, shown), effects: style.effects })
+    addLayers(ctx, group.id, layer.children)
     return
   }
   const pixels = layer.imageData
-  const style = layerStyle(layer.effects, ctx.globalAngle, ctx.patternFill)
   if (layer.text) {
     // The rendered text stays underneath, hidden, as the exact look if a font is missing.
-    if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
-    addText(ctx, parentId, layer, origin, style)
+    if (pixels) addPixels(ctx, parentId, layer, pixels, false)
+    addText(ctx, parentId, layer, shown, style)
     return
   }
   if (isEditableShapeLayer(layer, ctx.patternFill)) {
     // So does a shape's, in case it cannot be redrawn exactly (a boolean of paths, say).
-    if (pixels) addPixels(ctx, parentId, layer, pixels, origin, false)
+    if (pixels) addPixels(ctx, parentId, layer, pixels, false)
     const shape = addShapeLayer(
       ctx.graph,
       parentId,
       layer,
-      { ...common(layer), effects: style.effects },
+      { ...common(layer, shown), effects: style.effects },
       ctx.canvas,
       ctx.patternFill
     )
     if (shape) {
       ctx.graph.updateNode(shape.id, {
-        x: shape.x - origin.x,
-        y: shape.y - origin.y,
         fills: [...shape.fills, ...style.overlays],
         strokes: [...shape.strokes, ...style.strokes]
       })
@@ -176,9 +341,9 @@ function addLayer(ctx: Context, parentId: string, layer: Layer, origin: Vector) 
   }
   if (!pixels) return
   const styled = style.overlays.length > 0 || style.strokes.length > 0
-  if (styled && addStyledPixels(ctx, parentId, layer, pixels, origin, style)) return
+  if (styled && addStyledPixels(ctx, parentId, layer, pixels, shown, style)) return
   // Pixels cast shadows and glows from what they draw.
-  addPixels(ctx, parentId, layer, pixels, origin, !layer.hidden, style.effects)
+  addPixels(ctx, parentId, layer, pixels, shown, style.effects)
 }
 
 /**
@@ -191,7 +356,7 @@ function addStyledPixels(
   parentId: string,
   layer: Layer,
   pixels: ImageDataLike,
-  origin: Vector,
+  shown: boolean,
   style: LayerStyle
 ): boolean {
   const rgba = toRGBA8(pixels.data)
@@ -203,9 +368,9 @@ function addStyledPixels(
   const box = bounds(layer)
   const size = { width: pixels.width, height: pixels.height }
   const group = ctx.graph.createNode('GROUP', parentId, {
-    ...common(layer),
-    x: box.x - origin.x,
-    y: box.y - origin.y,
+    ...common(layer, shown),
+    x: box.x,
+    y: box.y,
     ...size
   })
   const name = layer.name ?? 'Layer'
@@ -230,7 +395,6 @@ function addPixels(
   parentId: string,
   layer: Layer,
   pixels: ImageDataLike,
-  origin: Vector,
   visible: boolean,
   effects: SceneNode['effects'] = []
 ) {
@@ -242,8 +406,8 @@ function addPixels(
     ...common(layer),
     name: layer.text ? `${layer.name ?? 'Text'} (pixels)` : (layer.name ?? 'Layer'),
     visible,
-    x: box.x - origin.x,
-    y: box.y - origin.y,
+    x: box.x,
+    y: box.y,
     width: pixels.width,
     height: pixels.height,
     fills: [fill],
@@ -315,7 +479,8 @@ export async function readPSDDocument(
         data: toRGBA8(pixels.data)
       }),
     globalAngle: psd.imageResources?.globalAngle ?? 120,
-    patternFill: () => null
+    patternFill: () => null,
+    groups: new Set()
   }
   ctx.patternFill = createPatternFill(ctx, collectPatterns(psd))
   const frame = graph.createNode('FRAME', page.id, {
@@ -328,10 +493,11 @@ export async function readPSDDocument(
     clipsContent: true
   })
   if (psd.children && psd.children.length > 0) {
-    for (const layer of psd.children) addLayer(ctx, frame.id, layer, { x: 0, y: 0 })
+    addLayers(ctx, frame.id, psd.children)
+    finishGroups(ctx)
   } else if (psd.imageData) {
     // A flattened file: the composite is the one layer.
-    addPixels(ctx, frame.id, { name: 'Background' }, psd.imageData, { x: 0, y: 0 }, true)
+    addPixels(ctx, frame.id, { name: 'Background' }, psd.imageData, true)
   }
   return graph
 }
