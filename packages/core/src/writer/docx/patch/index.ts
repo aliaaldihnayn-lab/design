@@ -10,7 +10,13 @@ import {
   regionContentType,
   watermarkXML
 } from '#core/writer/docx/parts'
-import { newInlineState, openDocx, readDocx, readSourcedBlocks } from '#core/writer/docx/read'
+import {
+  inheritRegions,
+  newInlineState,
+  openDocx,
+  readDocx,
+  readSourcedBlocks
+} from '#core/writer/docx/read'
 import { footnoteXML, PartWriter } from '#core/writer/docx/write'
 import { attrOf, DOCUMENT_NAMESPACES, kid, kids, NS, parseXML, REL } from '#core/writer/docx/xml'
 import type { WriterDocument, WriterNode } from '#core/writer/model'
@@ -267,7 +273,11 @@ export function patchDocx(
     generated: []
   }
 
-  const chunks = chunksOf(readSourcedBlocks(opened.body, newInlineState(opened.context)))
+  const sourced = readSourcedBlocks(opened.body, newInlineState(opened.context))
+  // As `readDocx` does, so a section that continues the previous one's header or footer reads
+  // the same as the model and is kept.
+  inheritRegions(sourced.map((block) => block.node))
+  const chunks = chunksOf(sourced)
   const blocks = model.body.content ?? []
   state.generated.push(
     patchBody(opened.body, chunks, blocks, state.documentRels, textWidthOf(model))

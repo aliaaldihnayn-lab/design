@@ -20,7 +20,12 @@ import {
 const fixture = (name: string) => new Uint8Array(readFileSync(join(FIXTURES, `writer/${name}`)))
 
 const WORD = ['word-custom-xml.docx', 'word-header-footer.docx', 'word-sections.docx']
-const ALL = [...WORD, 'libreoffice-sections.docx', 'libreoffice-arabic.docx']
+const ALL = [
+  ...WORD,
+  'libreoffice-sections.docx',
+  'libreoffice-arabic.docx',
+  'lawha-section-headers.docx'
+]
 
 function parts(bytes: Uint8Array): Record<string, string> {
   return Object.fromEntries(

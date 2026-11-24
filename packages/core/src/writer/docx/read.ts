@@ -377,7 +377,9 @@ export const newInlineState = (context: ReadContext): InlineState => ({
  * of its own continues the one before (ECMA-376 17.10.5). Returns what the last break had, for
  * the document's own section.
  */
-function inheritRegions(content: WriterNode[]): Record<'header' | 'footer', WriterNode | null> {
+export function inheritRegions(
+  content: readonly WriterNode[]
+): Record<'header' | 'footer', WriterNode | null> {
   const current: Record<'header' | 'footer', WriterNode | null> = { header: null, footer: null }
   for (const node of content) {
     if (node.type !== 'sectionBreak') continue
