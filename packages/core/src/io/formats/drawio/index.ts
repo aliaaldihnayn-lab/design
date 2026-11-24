@@ -151,6 +151,8 @@ class PageBuilder {
         ...own,
         rotation: own.rotation + kind.rotation,
         shapeWithTextType: kind.shape,
+        // draw.io draws a rectangle with square corners, where FigJam's are rounded by default.
+        ...(kind.shape === 'SQUARE' ? { cornerRadius: 0 } : {}),
         // draw.io sized it, so it keeps its size, as a FigJam shape whose height was set does.
         shapeTruncates: true,
         ...shapePaint(cell.style),

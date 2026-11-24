@@ -54,6 +54,19 @@ describe('opening draw.io files', () => {
 })
 
 describe('draw.io shapes', () => {
+  test('a rectangle keeps square corners and a rounded one rounds them', async () => {
+    const graph = await read(
+      file(
+        vertex('a', 'whiteSpace=wrap;html=1;', [0, 0, 120, 60], 'Square') +
+          vertex('b', 'rounded=1;whiteSpace=wrap;html=1;', [0, 100, 120, 60], 'Rounded')
+      )
+    )
+    const [square, rounded] = onPage(graph)
+    expect(square).toMatchObject({ shapeWithTextType: 'SQUARE', cornerRadius: 0 })
+    expect(rounded.shapeWithTextType).toBe('ROUNDED_RECTANGLE')
+    expect(rounded.cornerRadius).toBeGreaterThan(0)
+  })
+
   test('become FigJam shapes with text of the same kind, sized and painted as drawn', async () => {
     const graph = await read(
       file(
