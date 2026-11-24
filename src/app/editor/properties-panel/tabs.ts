@@ -247,7 +247,7 @@ export function splitTabRow<T>(
   const fit = Math.max(0, Math.floor((space.available - space.active - space.icon) / space.icon))
   const rank = (tab: T) => {
     const index = priority.indexOf(tab)
-    return index < 0 ? priority.length : index
+    return index === -1 ? priority.length : index
   }
   const kept = new Set(others.toSorted((a, b) => rank(a) - rank(b)).slice(0, fit))
   return {
