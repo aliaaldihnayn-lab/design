@@ -2,16 +2,18 @@ import { readPsd, type Layer, type PatternInfo, type Psd } from 'ag-psd'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph, type Fill, type SceneNode } from '@lawha/scene-graph'
-import { BLACK } from '@lawha/scene-graph/constants'
+import { BLACK, WHITE } from '@lawha/scene-graph/constants'
 import { groupBounds } from '@lawha/scene-graph/group-bounds'
 import { computeImageHash } from '@lawha/scene-graph/images'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
+import type { Rect } from '@lawha/scene-graph/primitives'
 import { transformVectorNetwork } from '@lawha/scene-graph/vector-network'
 
 import { getCanvasKit } from '#core/canvaskit'
 import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
+import { psdColor } from './color'
 import { layerStyle, psdBlendMode, type LayerStyle, type PatternFill } from './effects'
 import { activeRasterMask, addRasterMask } from './masks'
 import { pixelOutline } from './outline'
@@ -42,6 +44,8 @@ interface Context {
   patternFill: PatternFill
   /** Frames standing in for groups while the layers are read, made groups once all are in. */
   groups: Set<string>
+  /** Artboards among them, which stay frames: their box on the canvas and their background. */
+  artboards: Map<string, { box: Rect; fills: Fill[] }>
 }
 
 interface ImageDataLike {
@@ -139,6 +143,25 @@ function stageGroup(ctx: Context, parentId: string, props: Partial<SceneNode>): 
   return frame
 }
 
+/** Photoshop's artboard backgrounds: white, black, transparent, or a colour of its own. */
+function artboardOf(artboard: NonNullable<Layer['artboard']>): { box: Rect; fills: Fill[] } {
+  const { left, top, right, bottom } = artboard.rect
+  const box = { x: left, y: top, width: right - left, height: bottom - top }
+  const solid = (color: Fill['color']): Fill[] => [
+    { type: 'SOLID', color, opacity: 1, visible: true }
+  ]
+  switch (artboard.backgroundType) {
+    case 2:
+      return { box, fills: solid({ ...BLACK }) }
+    case 3:
+      return { box, fills: [] }
+    case 4:
+      return { box, fills: solid(psdColor(artboard.color)) }
+    default:
+      return { box, fills: solid({ ...WHITE }) }
+  }
+}
+
 function depth(graph: SceneGraph, id: string): number {
   let count = 0
   for (let node = graph.getNode(id); node?.parentId; node = graph.getNode(node.parentId)) count++
@@ -158,7 +181,16 @@ function finishGroups(ctx: Context) {
     if (!parentId) continue
     const index = expectNode(graph, parentId).childIds.indexOf(id)
     const children = graph.getChildren(id)
-    const box = groupBounds(graph, children, parentId, { x: 0, y: 0 })
+    const artboard = ctx.artboards.get(id)
+    const box = artboard?.box ?? groupBounds(graph, children, parentId, { x: 0, y: 0 })
+    if (artboard) {
+      // An artboard is a frame of its own size that clips what it holds, over its background.
+      graph.updateNode(id, { ...box, fills: artboard.fills, clipsContent: true })
+      for (const child of children) {
+        graph.updateNode(child.id, { x: child.x - box.x, y: child.y - box.y })
+      }
+      continue
+    }
     if (children.length === 0) {
       // An empty group has nothing to size it by and stays an empty frame in the layer list.
       graph.updateNode(id, box)
@@ -320,6 +352,7 @@ function addLayerContent(ctx: Context, parentId: string, layer: Layer, shown: bo
   const style = layerStyle(layer.effects, ctx.globalAngle, ctx.patternFill)
   if (layer.children) {
     const group = stageGroup(ctx, parentId, { ...common(layer, shown), effects: style.effects })
+    if (layer.artboard) ctx.artboards.set(group.id, artboardOf(layer.artboard))
     addLayers(ctx, group.id, layer.children)
     return
   }
@@ -490,7 +523,8 @@ export async function readPSDDocument(
       }),
     globalAngle: psd.imageResources?.globalAngle ?? 120,
     patternFill: () => null,
-    groups: new Set()
+    groups: new Set(),
+    artboards: new Map()
   }
   ctx.patternFill = createPatternFill(ctx, collectPatterns(psd))
   const frame = graph.createNode('FRAME', page.id, {

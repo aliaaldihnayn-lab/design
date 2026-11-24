@@ -120,6 +120,31 @@ describe('opening PSD groups', () => {
   })
 })
 
+describe('opening PSD artboards', () => {
+  test('an artboard is a frame of its own box that clips its layers over its background', async () => {
+    const { graph, frame } = await open([
+      {
+        name: 'Card',
+        artboard: {
+          rect: { left: 20, top: 10, right: 80, bottom: 70 },
+          backgroundType: 4,
+          color: { r: 255, g: 0, b: 0 }
+        },
+        children: [pixels('Spill', 50, 40, 110, 80, BLUE)]
+      }
+    ])
+    const board = named(graph, frame, 'Card')
+    expect(board).toMatchObject({ type: 'FRAME', x: 20, y: 10, width: 60, height: 60 })
+    expect(board.clipsContent).toBe(true)
+    expect(named(graph, board, 'Spill')).toMatchObject({ x: 30, y: 30 })
+    const at = await renderedAt(graph, frame)
+    expect(at(30, 20)).toEqual([255, 0, 0])
+    expect(at(70, 60)).toEqual([0, 0, 255])
+    // Past the artboard its layers are clipped away.
+    expect(at(100, 75)).toEqual([255, 255, 255])
+  })
+})
+
 describe('opening PSD masks', () => {
   test('layers clipped to the layer below draw only inside its pixels', async () => {
     const { graph, frame } = await open([
