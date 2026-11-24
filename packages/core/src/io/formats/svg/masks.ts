@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import type { SceneNode } from '@lawha/scene-graph'
 
 import { nextDefId, type SVGExportContext } from './defs'
@@ -21,7 +23,7 @@ const CLIP_SHAPES = new Set([
  */
 function clipShapes(node: SVGNode, transform = ''): SVGNode[] {
   const own = typeof node.attrs.transform === 'string' ? node.attrs.transform : ''
-  const combined = [transform, own].filter(Boolean).join(' ')
+  const combined = compact([transform, own]).join(' ')
   if (CLIP_SHAPES.has(node.tag)) {
     const attrs: Record<string, string | number> = {}
     for (const [key, value] of Object.entries(node.attrs)) {
@@ -44,7 +46,7 @@ function maskDefinition(
 ): Record<string, string> | null {
   // An outline mask clips to the mask's shape, which every PDF and SVG reader draws as a clip;
   // alpha and luminance masks keep the mask's paint.
-  if (mask.maskType === 'VECTOR' || !mask.maskType) {
+  if (mask.maskType === 'VECTOR') {
     const shapes = clipShapes(rendered)
     if (shapes.length === 0) return null
     const id = nextDefId(ctx, 'mask')
