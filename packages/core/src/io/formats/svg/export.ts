@@ -442,6 +442,29 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   return svg('g', groupAttrs, ...validChildren)
 }
 
+/**
+ * A pattern's tile as the canvas draws it: the source layer's fills and children at its own
+ * origin, without its turn, flips, opacity, strokes, or effects.
+ */
+function renderPatternTile(ctx: SVGExportContext) {
+  return (source: SceneNode) =>
+    renderNode(
+      {
+        ...source,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: false,
+        flipY: false,
+        opacity: 1,
+        blendMode: 'NORMAL',
+        strokes: [],
+        effects: []
+      },
+      ctx
+    )
+}
+
 function isGroupLike(node: SceneNode): boolean {
   return node.type === 'GROUP'
 }
@@ -489,6 +512,7 @@ export function renderNodesToSVG(
     fontAlias: options.fontAlias,
     imageAdjust: options.imageAdjust
   }
+  ctx.renderPatternTile = renderPatternTile(ctx)
 
   const contentNodes: SVGNode[] = []
 
@@ -547,6 +571,7 @@ export function renderNodeSVGElement(
   }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
 ): SVGNode | null {
   const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
+  ctx.renderPatternTile = renderPatternTile(ctx)
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

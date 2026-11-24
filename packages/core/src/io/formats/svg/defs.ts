@@ -22,6 +22,7 @@ import {
 import { imageMimeType } from '@lawha/scene-graph/images'
 import type { Color } from '@lawha/scene-graph/primitives'
 
+import { patternTileLayout, resolvePatternSource, wrappedPositions } from '#core/canvas/fills'
 import { hasAdjustments } from '#core/canvas/image-adjust'
 import type { FontFaceRef } from '#core/text/font/faces'
 
@@ -60,6 +61,10 @@ export interface SVGExportContext {
   textLayout?: SVGTextLayout
   imageAdjust?: SVGImageAdjust
   fontAlias?: SVGFontAlias
+  /** Draws the layer a pattern fill tiles, at its own origin; without it patterns are dropped. */
+  renderPatternTile?: (source: SceneNode) => SVGNode | null
+  /** The pattern sources being drawn, so a tile filled with a pattern of itself stops. */
+  patternSources?: Set<string>
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
@@ -288,6 +293,67 @@ export function createFilterDef(
   }
 }
 
+/**
+ * A pattern fill as an SVG pattern in the layer's space, tiled as the canvas tiles it: the source
+ * layer scaled and spaced, every other row or column shifted for a brick tiling, and the whole
+ * moved by the offset and turned about the layer's middle.
+ */
+function createPatternDef(
+  fill: Fill,
+  node: SceneNode,
+  ctx: SVGExportContext
+): { id: string; node: SVGNode } | null {
+  const sourceId = fill.sourceNodeId
+  if (!sourceId || !ctx.renderPatternTile || sourceId === node.id) return null
+  const source = resolvePatternSource(ctx.graph, sourceId)
+  const sources = (ctx.patternSources ??= new Set())
+  if (!source || source.width <= 0 || source.height <= 0 || sources.has(source.id)) return null
+  sources.add(source.id)
+  let tile: SVGNode | null
+  try {
+    tile = ctx.renderPatternTile(source)
+  } finally {
+    sources.delete(source.id)
+  }
+  if (!tile) return null
+  const layout = patternTileLayout(source, fill)
+  const size = { x: source.width * layout.scale, y: source.height * layout.scale }
+  const copies = layout.positions
+    .flatMap((position) => wrappedPositions(position, size, layout.rect))
+    .map((position) =>
+      svg(
+        'g',
+        {
+          transform: `translate(${round(position.x)}, ${round(position.y)}) scale(${round(layout.scale, 4)})`
+        },
+        tile
+      )
+    )
+  const offset = fill.patternOffset ?? { x: 0, y: 0 }
+  const degrees = fill.patternRotation ?? 0
+  const placement = [
+    ...(degrees
+      ? [`rotate(${round(degrees)}, ${round(node.width / 2)}, ${round(node.height / 2)})`]
+      : []),
+    ...(offset.x || offset.y ? [`translate(${round(offset.x)}, ${round(offset.y)})`] : [])
+  ]
+  const id = nextDefId(ctx, 'pattern')
+  return {
+    id,
+    node: svg(
+      'pattern',
+      {
+        id,
+        patternUnits: 'userSpaceOnUse',
+        width: round(layout.rect.width),
+        height: round(layout.rect.height),
+        ...(placement.length > 0 ? { patternTransform: placement.join(' ') } : {})
+      },
+      ...copies
+    )
+  }
+}
+
 export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext): string | null {
   if (!fill.visible) return null
 
@@ -305,6 +371,14 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
 
   if (fill.type === 'IMAGE') {
     const pattern = createImagePattern(fill, node, ctx)
+    if (pattern) {
+      ctx.defs.push(pattern.node)
+      return `url(#${pattern.id})`
+    }
+  }
+
+  if (fill.type === 'PATTERN') {
+    const pattern = createPatternDef(fill, node, ctx)
     if (pattern) {
       ctx.defs.push(pattern.node)
       return `url(#${pattern.id})`
