@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { openDevView } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
@@ -96,7 +97,7 @@ function lintPanel(page: Page) {
 }
 
 async function openLint(page: Page) {
-  await page.getByRole('tab', { name: /^Lint/ }).click()
+  await openDevView(page, 'lint')
   await expect(lintPanel(page).getByText('Low text contrast')).toBeVisible()
 }
 
@@ -460,7 +461,7 @@ test('A marker opens an issue past the rows its group shows at first', async () 
 
 test('A group lists its first rows and shows the rest on request', async () => {
   await addNotes(editor.page)
-  await editor.page.getByRole('tab', { name: /^Lint/ }).click()
+  await openDevView(editor.page, 'lint')
   const rows = lintPanel(editor.page).locator('[data-rule-id="min-text-size"] [data-issue-id]')
   await expect(rows).toHaveCount(50)
 

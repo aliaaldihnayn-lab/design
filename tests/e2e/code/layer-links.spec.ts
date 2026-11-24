@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { openDevView } from '#tests/helpers/properties'
 
 const editor = useEditorSetup('/?test&no-rulers')
 
@@ -67,7 +68,7 @@ test.beforeEach(async () => {
 })
 
 async function openCode(page: Page) {
-  await page.getByTestId('properties-tab-code').click()
+  await openDevView(page, 'code')
   await expect(codeLine(page, 'name="Swatch"')).toBeVisible()
 }
 

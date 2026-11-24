@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
@@ -183,6 +184,7 @@ test('a screen with a kit select runs live in the prototype player', async () =>
     },
     { screen: screenId, select: id }
   )
+  await openPropertiesTab(editor.page, 'prototype')
   await editor.page.getByTestId('prototype-present').click()
   const player = editor.page.getByTestId('prototype-player')
   await expect(player.getByTestId('prototype-live-screen')).toBeVisible()

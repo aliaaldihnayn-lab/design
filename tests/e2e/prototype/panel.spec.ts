@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 /** A screen with a button and a label, and two variables a prototype can use. */
 async function open(page: Page) {
@@ -45,6 +46,7 @@ function interactionsOf(page: Page, id: string) {
 
 test('a conditional is built in the panel: comparisons, then and otherwise', async ({ page }) => {
   const ids = await open(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-add').click()
   await page.getByTestId('prototype-action').first().click()
   await page.getByRole('option', { name: 'Conditional' }).click()
@@ -77,6 +79,7 @@ test('the panel binds a text layer to a variable and an action to a per-instance
 }) => {
   const ids = await open(page)
   await page.evaluate((id) => window.lawha?.getStore?.().select([id]), ids.label)
+  await openPropertiesTab(page, 'prototype')
   const bindings = page.getByTestId('prototype-bindings')
   await bindings.getByRole('combobox', { name: 'Text shows' }).click()
   await page.getByRole('option', { name: 'count' }).click()

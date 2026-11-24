@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 interface AppIds {
   login: string
@@ -89,6 +90,7 @@ test('auto-linking connects forward, navigation and back, and the player follows
   page
 }) => {
   const ids = await open(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-auto').click()
   await expect
     .poll(() =>
@@ -142,6 +144,7 @@ test('an after-delay interaction moves on by itself', async ({ page }) => {
     },
     { login: ids.login, home: ids.home }
   )
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-present').click()
   const name = page.getByTestId('prototype-screen-name')
   await expect(name).toHaveText('Sign in')
@@ -152,6 +155,7 @@ test('the interaction editor shows the linked button and saves a new transition'
   page
 }) => {
   const ids = await open(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-auto').click()
   await page.evaluate((id) => window.lawha?.getStore?.().select([id]), ids.button)
   await expect(page.getByTestId('prototype-interaction')).toHaveCount(1)

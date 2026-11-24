@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openDevView } from '#tests/helpers/properties'
 
 test('the Inspect tab shows the selected layer’s properties and its CSS, SwiftUI, UIKit, Compose and Android XML', async ({
   page
@@ -9,7 +10,7 @@ test('the Inspect tab shows the selected layer’s properties and its CSS, Swift
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
-  await page.getByTestId('properties-tab-inspect').click()
+  await openDevView(page, 'inspect')
   await expect(page.getByTestId('inspect-panel')).toBeVisible()
   await expect(page.getByTestId('inspect-code')).toHaveCount(0)
 

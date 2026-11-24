@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 test('component sets are added to the page on demand, without building the system', async ({
   page
@@ -10,6 +11,7 @@ test('component sets are added to the page on demand, without building the syste
   await canvas.waitForInit()
   await canvas.clearCanvas()
 
+  await openPropertiesTab(page, 'system')
   await page
     .getByTestId('design-system-section')
     .getByRole('button', { name: 'Add component sets' })

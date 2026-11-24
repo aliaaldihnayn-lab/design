@@ -4,6 +4,7 @@ import { noodle, noodlePoint } from '@lawha/core/prototype'
 import type { Rect } from '@lawha/scene-graph/primitives'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 interface Ids {
   a: string
@@ -110,6 +111,7 @@ test('Smart Animate resizes the matched card by its geometry, keeping its corner
   page
 }) => {
   const ids = await build(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-present').click()
   const name = page.getByTestId('prototype-screen-name')
   await expect(name).toHaveText('A')
@@ -183,6 +185,7 @@ test('an overlay opens and closes with Smart Animate from the layers it shares',
     },
     { card: ids.card, b: ids.b }
   )
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-present').click()
   await page.locator(`[data-hotspot="${ids.card}"]`).click()
   const smart = page.getByTestId('prototype-smart-animate')
@@ -202,6 +205,7 @@ test('an overlay opens and closes with Smart Animate from the layers it shares',
 
 test('a scrolling frame scrolls its content and its hotspots scroll with it', async ({ page }) => {
   const ids = await build(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-present').click()
   const region = page.locator(`[data-scroll="${ids.list}"]`)
   await expect(region).toBeVisible()
@@ -216,6 +220,7 @@ test('connections draw as noodles, and dragging the handle to a screen links it'
   page
 }) => {
   const ids = await build(page)
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-show-connections').click()
   const layer = page.getByTestId('prototype-connections')
   await expect(layer).toHaveAttribute('data-connections', '2')
@@ -277,6 +282,7 @@ test('a noodle is selected by clicking it, deleted with Delete, and retargeted b
     store.requestRender()
     return screen.id
   })
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-show-connections').click()
   const layer = page.getByTestId('prototype-connections')
   await expect(layer).toHaveAttribute('data-connections', '2')
@@ -407,6 +413,7 @@ test('a fixed layer stays put and a sticky one sticks while its frame scrolls; n
     return { header, sticky, carousel: carousel.id }
   }, ids.list)
 
+  await openPropertiesTab(page, 'prototype')
   await page.getByTestId('prototype-present').click()
   const list = page.locator(`[data-scroll="${ids.list}"]`)
   await expect(list).toBeVisible()

@@ -4,7 +4,7 @@ import type { ExportSetting } from '@lawha/scene-graph'
 
 import { expectInViewport } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { propertyItems, propertySection } from '#tests/helpers/properties'
+import { openPropertiesTab, propertyItems, propertySection } from '#tests/helpers/properties'
 
 let page: Page
 let canvas: CanvasHelper
@@ -19,6 +19,8 @@ test.beforeAll(async ({ browser }) => {
   await canvas.waitForInit()
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 100, 100)
+  // Export settings live in the Export tab, which stays chosen as the selection changes.
+  await openPropertiesTab(page, 'export')
 })
 
 test.afterAll(async () => {

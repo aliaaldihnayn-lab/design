@@ -1,6 +1,6 @@
 import { expect, expectInViewport, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
-import { propertyItems, propertySection } from '#tests/helpers/properties'
+import { propertyItems, propertySection, openPropertiesTab } from '#tests/helpers/properties'
 
 const editor = useEditorSetup()
 
@@ -177,9 +177,13 @@ test('effect settings expand semantically and row remove stays visible', async (
 })
 
 test('paint effect and export rows share compact visual anatomy', async () => {
+  await openPropertiesTab(editor.page, 'export')
   const exportSection = propertySection(editor.page, 'Export')
   await exportSection.getByRole('button', { name: 'Add export' }).click()
   await editor.canvas.waitForRender()
+  await expect(exportSection.locator('[data-property="exportSettings"]')).toHaveCount(1)
+  // Export rows now live in their own tab; the paint and effect rows stay in Design.
+  await openPropertiesTab(editor.page, 'design')
   await editor.page.mouse.move(0, 0)
 
   await expect(designPanel()).toHaveScreenshot('design-panel-paint-effects-export.png')

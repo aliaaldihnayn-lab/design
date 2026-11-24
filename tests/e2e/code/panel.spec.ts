@@ -9,6 +9,7 @@ import {
   waitForNode,
   waitForNodeNamed
 } from '#tests/helpers/code-panel'
+import { openDevView } from '#tests/helpers/properties'
 
 const editor = useEditorSetup()
 
@@ -16,10 +17,6 @@ test.beforeEach(async () => {
   await editor.page.reload()
   await editor.canvas.waitForInit()
 })
-
-function codeTab() {
-  return editor.page.getByTestId('properties-tab-code')
-}
 
 function designTab() {
   return editor.page.getByTestId('properties-tab-design')
@@ -35,7 +32,7 @@ function codeEditor() {
 
 /** Opens the editor; with nothing selected that means choosing to write new Design JSX. */
 async function openCodePanel() {
-  await codeTab().click()
+  await openDevView(editor.page, 'code')
   const writeJSX = codePanel().getByRole('button', { name: 'Write JSX' })
   await expect(codeEditor().or(writeJSX)).toBeVisible()
   if (await writeJSX.isVisible()) await writeJSX.click()

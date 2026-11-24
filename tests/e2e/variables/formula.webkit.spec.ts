@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
+import { openPropertiesTab } from '#tests/helpers/properties'
 import {
   formulaSceneState,
   pasteFormulaText,
@@ -17,6 +18,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function openToken(page: Page, id: string) {
+  await openPropertiesTab(page, 'system')
   await page
     .getByRole('region', { name: 'Variables' })
     .getByRole('button', { name: 'Open variables' })

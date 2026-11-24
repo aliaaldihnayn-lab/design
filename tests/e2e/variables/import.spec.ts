@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 const editor = useEditorSetup()
 
@@ -13,6 +14,7 @@ const theme = (background: string) =>
   })
 
 test('design token files import as a collection with a mode per file', async () => {
+  await openPropertiesTab(editor.page, 'system')
   await editor.page
     .getByRole('region', { name: 'Variables' })
     .getByRole('button', { name: 'Open variables' })

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 test('one click turns the design into variables, binds them, documents them, and undoes as one step', async ({
   page
@@ -43,6 +44,7 @@ test('one click turns the design into variables, binds them, documents them, and
     return cta.id
   })
 
+  await openPropertiesTab(page, 'system')
   await page.getByTestId('design-system-build').click()
   const read = () =>
     page.evaluate((id) => {

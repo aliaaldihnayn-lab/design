@@ -1,5 +1,6 @@
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 // The editor's first load after a dependency change can take a while.
 test.describe.configure({ timeout: 60_000 })
@@ -25,7 +26,7 @@ test('an instance offers its main component stories and copies them only when as
     return instance.id
   })
 
-  await page.getByTestId('properties-tab-stories').click()
+  await openPropertiesTab(page, 'stories')
   const panel = page.getByTestId('stories-panel')
   await expect(panel.locator('[data-slot="layer-stories"]')).toContainText('No user stories')
   const copy = panel.locator('[data-action="copy-main-stories"]')

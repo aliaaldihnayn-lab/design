@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openPropertiesTab } from '#tests/helpers/properties'
 
 test('building the system adds Dark mode, text styles and component sets to the docs page', async ({
   page
@@ -41,6 +42,7 @@ test('building the system adds Dark mode, text styles and component sets to the 
     })
     store.select([])
   })
+  await openPropertiesTab(page, 'system')
   await page.getByTestId('design-system-build').click()
 
   const report = () =>

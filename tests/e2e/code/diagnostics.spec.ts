@@ -1,10 +1,11 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { openDevView } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear()
 
 test("the Design JSX editor flags props an element does not take, and accepts each element's own", async () => {
   const page = editor.page
-  await page.getByTestId('properties-tab-code').click()
+  await openDevView(page, 'code')
   const writeJSX = page.getByTestId('code-panel-root').getByRole('button', { name: 'Write JSX' })
   const content = page.locator('[data-slot="code-editor"] .cm-content')
   await expect(content.or(writeJSX)).toBeVisible()

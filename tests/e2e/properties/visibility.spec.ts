@@ -1,6 +1,6 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
-import { propertyItems, propertySection } from '#tests/helpers/properties'
+import { propertyItems, propertySection, openPropertiesTab } from '#tests/helpers/properties'
 import { getSelectedNode } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
@@ -44,7 +44,9 @@ test('empty list sections expose semantic empty state', async () => {
   await expect(propertySection(editor.page, 'Fill')).not.toHaveAttribute('data-empty')
   await expect(propertySection(editor.page, 'Stroke')).toHaveAttribute('data-empty', '')
   await expect(propertySection(editor.page, 'Effects')).toHaveAttribute('data-empty', '')
+  await openPropertiesTab(editor.page, 'export')
   await expect(propertySection(editor.page, 'Export')).toHaveAttribute('data-empty', '')
+  await openPropertiesTab(editor.page, 'design')
 })
 
 test('stroke visibility supports repeat click and undo redo', async () => {

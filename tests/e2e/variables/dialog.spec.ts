@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { openPropertiesTab } from '#tests/helpers/properties'
 import { variablesAddTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
@@ -19,14 +20,16 @@ function variableRows() {
   return editor.page.getByTestId('variable-row')
 }
 
-function openVariables() {
-  return editor.page
+async function openVariables() {
+  await openPropertiesTab(editor.page, 'system')
+  await editor.page
     .getByRole('region', { name: 'Variables' })
     .getByRole('button', { name: 'Open variables' })
+    .click()
 }
 
 test('empty variables dialog offers to create a collection', async () => {
-  await openVariables().click()
+  await openVariables()
 
   const dialog = editor.page.getByTestId('variables-dialog')
   await expect(dialog).toBeVisible()
@@ -39,7 +42,7 @@ test('empty variables dialog offers to create a collection', async () => {
 test('variables dialog opens on the token list, collection, and stylesheet', async () => {
   await createColorVariable('primary-color')
 
-  await openVariables().click()
+  await openVariables()
   const dialog = editor.page.getByTestId('variables-dialog')
   await expect(dialog).toBeVisible()
   await expect(variableRows()).toHaveCount(1)
@@ -182,7 +185,7 @@ test('color swatch opens color picker', async () => {
   // close dialog if open from previous test
   await editor.page.keyboard.press('Escape')
   await editor.page.waitForTimeout(200)
-  await openVariables().click()
+  await openVariables()
   await expect(editor.page.getByTestId('variables-dialog')).toBeVisible({ timeout: 3000 })
 
   await variableRows().filter({ hasText: 'SwatchVar' }).click()
