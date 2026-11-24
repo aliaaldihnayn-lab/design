@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
+import { fontFixture } from '#core-tests/helpers/paths'
 import {
   decodePDFRawStream,
   PDFArray,
@@ -204,5 +205,14 @@ describe('design PDF text', () => {
     expect(content).toMatch(/BT \/LawhaF\d+ [\d.]+ Tf\n0 0 0 1 k/)
     const texts = (await reopened(result.data)).map((layer) => layer.text)
     expect(texts.map((text) => text.normalize('NFD'))).toContain(VOCALIZED.normalize('NFD'))
+  })
+  test('a CFF OpenType font is embedded too, which jsPDF could not', async () => {
+    const otf = await fontFixture('NotoSansCJK-Test.otf')
+    await fontManager.markLoaded('PDF Glyph CFF', 'Regular', otf)
+    const result = await exported(page({ text: '中文', fontFamily: 'PDF Glyph CFF' }))
+    expect(result.fonts).toEqual({ embedded: ['PDF Glyph CFF Regular'], fallback: [] })
+    expect(new TextDecoder('latin1').decode(result.data)).toContain('/CIDFontType0')
+    const [layer] = await reopened(result.data)
+    expect(layer?.text).toBe('中文')
   })
 })

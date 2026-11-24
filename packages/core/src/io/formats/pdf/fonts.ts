@@ -79,8 +79,9 @@ export interface PDFFontEmbedding {
   /** Each instance's alias, or null once it could not be cut. */
   instances: Map<string, string | null>
   pending: PendingInstance[]
-  /** The aliases the pages named text by. */
+  /** The aliases the pages named text by, and the faces they asked for, by label. */
   named: Set<string>
+  asked: Set<string>
   aliases: number
   report: PDFFontReport
 }
@@ -158,6 +159,7 @@ export function planFontEmbedding(
     instances: new Map(),
     pending: [],
     named: new Set(),
+    asked: new Set(),
     aliases: 0,
     report: { embedded: [], fallback: [] }
   }
@@ -193,6 +195,7 @@ function instanceAlias(
 export function embeddedFontAlias(embedding: PDFFontEmbedding): SVGFontAlias {
   return (font) => {
     const key = faceKey(font)
+    embedding.asked.add(faceLabel(font))
     // A fallback face or shard is planned the first time the pages draw characters in it.
     if (!embedding.planned.has(key) && embedding.fallbackFile) {
       const file = font.file ?? 0
@@ -210,12 +213,14 @@ export function embeddedFontAlias(embedding: PDFFontEmbedding): SVGFontAlias {
 
 /**
  * Leaves out the faces no text was named by, such as those whose text is drawn glyph by glyph
- * instead, so jsPDF embeds no file the pages do not use.
+ * instead, so jsPDF embeds no file the pages do not use, nor reports one it would not embed.
  */
 export function dropUnnamedFaces(embedding: PDFFontEmbedding): void {
   for (const [key, face] of embedding.faces) {
     if (!embedding.named.has(face.alias)) embedding.faces.delete(key)
   }
+  const { report } = embedding
+  report.fallback = report.fallback.filter(({ face }) => embedding.asked.has(face))
 }
 
 /**
