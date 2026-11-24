@@ -195,12 +195,25 @@ export function corePropertiesXML(title: string, creator: string): string {
 }
 
 /** Word's watermark: a VML WordArt shape behind the text, anchored in the header. */
+/**
+ * Word's WordArt shape type (`o:spt="136"`) that a watermark's text path draws on. The shape
+ * names it by id, so the part defines it, as Word writes it; LibreOffice draws no watermark
+ * without it.
+ */
+const TEXT_PATH_SHAPE_TYPE =
+  '<v:shapetype id="_x0000_t136" coordsize="21600,21600" o:spt="136" adj="10800" path="m@7,l@8,m@5,21600l@6,21600e">' +
+  '<v:formulas><v:f eqn="sum #0 0 10800"/><v:f eqn="prod #0 2 1"/><v:f eqn="sum 21600 0 @1"/><v:f eqn="sum 0 0 @2"/><v:f eqn="sum 21600 0 @3"/><v:f eqn="if @0 @3 0"/><v:f eqn="if @0 21600 @1"/><v:f eqn="if @0 0 @2"/><v:f eqn="if @0 @4 21600"/><v:f eqn="mid @5 @6"/><v:f eqn="mid @8 @5"/><v:f eqn="mid @7 @8"/><v:f eqn="mid @6 @7"/><v:f eqn="sum @6 0 @5"/></v:formulas>' +
+  '<v:path textpathok="t" o:connecttype="custom" o:connectlocs="@9,0;@10,10800;@11,21600;@12,10800" o:connectangles="270,180,90,0"/>' +
+  '<v:textpath on="t" fitshape="t"/><v:handles><v:h position="#0,bottomRight" xrange="6629,14971"/></v:handles>' +
+  '<o:lock v:ext="edit" text="t" shapetype="t"/></v:shapetype>'
+
 export function watermarkXML(watermarkText: string, color = '#C0C0C0'): string {
   return (
     '<w:p><w:r><w:pict>' +
+    TEXT_PATH_SHAPE_TYPE +
     `<v:shape id="PowerPlusWaterMarkObject" o:spid="_x0000_s2049" type="#_x0000_t136" style="position:absolute;margin-left:0;margin-top:0;width:460pt;height:115pt;rotation:315;z-index:-251657216;mso-position-horizontal:center;mso-position-horizontal-relative:margin;mso-position-vertical:center;mso-position-vertical-relative:margin" o:allowincell="f" fillcolor="${escapeText(color)}" stroked="f">` +
     '<v:fill opacity=".5"/>' +
-    `<v:textpath style="font-family:&quot;Calibri&quot;;font-size:1pt" string="${escapeText(watermarkText)}"/>` +
+    `<v:textpath on="t" style="font-family:&quot;Calibri&quot;;font-size:1pt" string="${escapeText(watermarkText)}"/>` +
     '</v:shape></w:pict></w:r></w:p>'
   )
 }

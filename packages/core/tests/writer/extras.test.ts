@@ -1,6 +1,7 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { PDFDocument } from '@cantoo/pdf-lib'
+import { strFromU8, unzipSync, zipSync } from 'fflate'
 import * as v from 'valibot'
 
 import { encryptPDF } from '@lawha/core/pdf-sign'
@@ -77,6 +78,18 @@ describe('document extras', () => {
     expect(document.body.content).toEqual(body)
     expect(document.footnotes).toEqual(footnotes)
     expect(document.watermark).toEqual({ text: 'سري' })
+  })
+
+  test('writes the watermark on a shape type the header defines, as Word does', () => {
+    const files = unzipSync(writeDocx(createWriterDocument({ watermark: { text: 'مسودة' } })))
+    const header = Object.entries(files).find(([path]) => /^word\/header\d*\.xml$/.test(path))
+    const xml = header ? strFromU8(header[1]) : ''
+    // LibreOffice draws no watermark whose shape names a type the part does not define.
+    const used = /<v:shape [^>]*type="#([^"]+)"/.exec(xml)?.[1]
+    expect(used).toBeDefined()
+    expect(xml).toContain(`<v:shapetype id="${used}"`)
+    // The shape type comes first with a text path of its own, which is not the watermark.
+    expect(readDocx(zipSync(files)).watermark).toEqual({ text: 'مسودة' })
   })
 
   test('encrypts a Word document with a password and opens it again', () => {

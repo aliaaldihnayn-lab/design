@@ -273,7 +273,12 @@ function readHeaderFooter(
   const path = resolvePath(context.base, rel.target)
   const root = parseXML(readText(context.files, path) ?? '')
   if (!root) return null
-  const watermark = attrOf(find(root, 'textpath'), 'string')
+  // The watermark's text is on its shape's text path; Word defines the shape type before it,
+  // whose own text path has no text.
+  const watermark =
+    Array.from(root.getElementsByTagNameNS('urn:schemas-microsoft-com:vml', 'textpath'))
+      .map((path) => attrOf(path, 'string'))
+      .find((text) => text) ?? null
   const state: InlineState = { context: partContext(context, path), comments: [], field: null }
   const content = readBlocks(root, state).filter(
     (node) => !(node.type === 'paragraph' && !node.content?.length)
