@@ -18,7 +18,7 @@ import {
 } from '#core/text/font/glyphs'
 import type { ShapingFeature } from '#core/text/font/harfbuzz'
 import { laidOutText } from '#core/text/keycap'
-import { utf16IndicesByUtf8 } from '#core/text/utf8'
+import { utf16IndicesByUtf8, utf8Length } from '#core/text/utf8'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
 
@@ -163,12 +163,13 @@ function runOutline(
   shaped: string,
   run: GlyphRun,
   characterAt: (offset: number) => number,
-  sourceAt: (index: number) => number
+  sourceAt: (index: number) => number,
+  runEnd: (run: GlyphRun) => number
 ): RunOutline | null {
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
   const start = Math.min(...offsets)
-  const end = Math.max(...offsets)
+  const end = characterAt(runEnd(run))
   // A glyph covers the characters up to the next greater offset in the run, whatever its
   // direction; the sorted offsets give that once for every glyph.
   const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
@@ -269,12 +270,16 @@ function lineRunOutline(
   shaped: string,
   run: GlyphRun,
   endsTruncated: boolean,
-  indices: { characterAt: (offset: number) => number; sourceAt: (index: number) => number }
+  indices: {
+    characterAt: (offset: number) => number
+    sourceAt: (index: number) => number
+    runEnd: (run: GlyphRun) => number
+  }
 ): { outline: RunOutline | null; ellipsis: boolean } {
-  const { characterAt, sourceAt } = indices
+  const { characterAt, sourceAt, runEnd } = indices
   const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
   if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
-  const outline = runOutline(node, shaped, run, characterAt, sourceAt)
+  const outline = runOutline(node, shaped, run, characterAt, sourceAt, runEnd)
   return { outline: endsTruncated && outline?.glyphs ? null : outline, ellipsis: false }
 }
 
@@ -369,6 +374,27 @@ function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[]
  * marker before the glyphs of its first line, as Figma saves them. Returns `null` when the
  * layout's lines do not match its shaped lines.
  */
+/**
+ * Where each run's characters end, as a UTF-8 offset. A left-to-right run's offsets end with
+ * it, but a right-to-left run's are in visual order and end where it starts, so its last
+ * character, a space or a whole word's final letter, would otherwise fall outside it: it ends at
+ * the next character any run starts a glyph at, or the end of the text.
+ */
+function runEnds(
+  lines: ReturnType<Paragraph['getShapedLines']>,
+  text: string
+): (run: GlyphRun) => number {
+  const starts = uniq(lines.flatMap((line) => line.runs.flatMap((run) => Array.from(run.offsets))))
+  starts.push(utf8Length(text))
+  starts.sort((a, b) => a - b)
+  return (run) => {
+    const last = Math.max(...run.offsets)
+    // Left to right, the closing offset is the end itself.
+    if (run.offsets.at(-1) === last && Math.min(...run.offsets) < last) return last
+    return starts.find((offset) => offset > last) ?? last
+  }
+}
+
 export function laidOutGlyphs(
   node: SceneNode,
   layout: TextLayout,
@@ -381,6 +407,7 @@ export function laidOutGlyphs(
   const characterAt = utf16IndicesByUtf8(text)
   // The runs drew the text as laid out, a keycap mark as a zero-width space.
   const shaped = laidOutText(text)
+  const runEnd = runEnds(lines, shaped)
   const sourceAt = sourceIndices(node, text)
   const markers = new Map(layout.getMarkers().map((marker) => [marker.lineNumber, marker]))
   const glyphs: LaidOutGlyph[] = []
@@ -394,7 +421,8 @@ export function laidOutGlyphs(
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
       const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
         characterAt,
-        sourceAt
+        sourceAt,
+        runEnd
       })
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY

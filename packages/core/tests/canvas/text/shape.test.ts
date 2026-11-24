@@ -9,8 +9,8 @@ import { SceneGraph } from '@lawha/scene-graph'
 import type { SceneNode } from '@lawha/scene-graph'
 import { pixelLength } from '@lawha/scene-graph/text'
 
-import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
@@ -350,6 +350,39 @@ describe('text shaping for saved glyphs', () => {
     } finally {
       fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
     }
+  })
+
+  test('keeps the last character of each right-to-left run where the layout puts it', async () => {
+    const naskh = await Bun.file(testFont('NotoNaskhArabic-Regular.ttf')).arrayBuffer()
+    await fontManager.markLoaded('Noto Naskh Arabic', 'Regular', naskh)
+    // Arabic, a space, Latin in a fallback, a space, then Arabic again: each Arabic run's
+    // offsets are in visual order and end where it starts, not where it ends.
+    const text = 'لوحة Lawha تصميم'
+    const shaped = expectDefined(
+      await shape({
+        text,
+        fontFamily: 'Noto Naskh Arabic',
+        fontSize: 30,
+        textDirection: 'RTL',
+        width: 600,
+        textAutoResize: 'WIDTH_AND_HEIGHT'
+      }),
+      'shaped text'
+    )
+    const drawn = new Set(shaped.glyphs.map((glyph) => glyph.firstCharacter))
+    // The space after the first word and the last letter of the text are both shaped.
+    expect(drawn.has(4)).toBe(true)
+    expect(drawn.has(text.length - 1)).toBe(true)
+    // The first word sits a space's width right of the Latin, not on it.
+    const latinEnd = Math.max(
+      ...shaped.glyphs
+        .filter((glyph) => (glyph.firstCharacter ?? -1) >= 5 && (glyph.firstCharacter ?? 0) <= 9)
+        .map((glyph) => glyph.x + glyph.advance)
+    )
+    const space = expectDefined(shaped.glyphs.find((glyph) => glyph.firstCharacter === 4))
+    const word = shaped.glyphs.filter((glyph) => (glyph.firstCharacter ?? 99) <= 3)
+    expect(space.x).toBeCloseTo(latinEnd, 1)
+    expect(Math.min(...word.map((glyph) => glyph.x))).toBeGreaterThan(latinEnd + 2)
   })
 
   test('outlines a variable font at the instance the text is set in', async () => {
