@@ -1,4 +1,5 @@
 import type { Fill, SceneNode } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 import { photoMessages } from '@lawha/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -8,11 +9,17 @@ import { removeImageBackground } from './model'
 
 const busyStores = new WeakSet<EditorStore>()
 
-/** The index of the layer's top visible image fill, or -1. */
+/**
+ * The index of the layer's top visible image fill, or -1. The paint layer the pixel tools keep on
+ * top is paint, not the photo, so it is passed over.
+ */
 function imageFillIndex(node: SceneNode): number {
+  const paint = readPluginData(node.pluginData, LAWHA_PLUGIN_DATA.paintLayer)?.hash
   for (let i = node.fills.length - 1; i >= 0; i--) {
     const fill = node.fills[i]
-    if (fill.type === 'IMAGE' && fill.imageHash && fill.visible) return i
+    if (fill.type === 'IMAGE' && fill.imageHash && fill.visible && fill.imageHash !== paint) {
+      return i
+    }
   }
   return -1
 }
@@ -31,8 +38,12 @@ export function canRemoveBackground(store: EditorStore): boolean {
 /**
  * Replaces the selected layer's image with a copy whose background is transparent. One undo
  * step brings the original back; the original stays in the file until it is saved without it.
+ * `remove` makes the cut-out, the on-device model unless another is given.
  */
-export async function removeBackgroundFromSelection(store: EditorStore): Promise<void> {
+export async function removeBackgroundFromSelection(
+  store: EditorStore,
+  remove: (bytes: Uint8Array) => Promise<Uint8Array> = removeImageBackground
+): Promise<void> {
   const node = selectedImageNode(store)
   if (!node || busyStores.has(store)) return
   const index = imageFillIndex(node)
@@ -43,7 +54,7 @@ export async function removeBackgroundFromSelection(store: EditorStore): Promise
   busyStores.add(store)
   toast.info(messages.removingBackground)
   try {
-    const cutout = await removeImageBackground(bytes)
+    const cutout = await remove(bytes)
     const current = store.graph.getNode(node.id)
     if (!current || current.fills[index]?.imageHash !== fill.imageHash) {
       throw new Error('The image changed while the background was being removed')
