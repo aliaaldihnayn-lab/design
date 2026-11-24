@@ -17,7 +17,7 @@ import {
   publicationSettings,
   topLevelAncestor
 } from './pages'
-import { reflowThread, threadOf } from './threads'
+import { reflowThread, separateCopiedFrames, threadOf } from './threads'
 
 export {
   appliedMaster,
@@ -43,6 +43,7 @@ export {
   linkTextFrames,
   reflowThread,
   releaseDeletedFrames,
+  separateCopiedFrames,
   sliceRuns,
   threadFrames,
   threadOf,
@@ -235,12 +236,16 @@ export function textFitsFrame(frame: SceneNode, text: string, runs: StyleRun[] =
 
 /** Flows every story with a frame on the canvas page through its frames again. */
 export function reflowStories(graph: SceneGraph, canvasId: string): string[] {
+  const separated = separateCopiedFrames(graph)
   const stories = new Set<string>()
   for (const node of graph.getAllNodes()) {
     const thread = threadOf(node)
     if (thread && canvasOf(graph, node)?.id === canvasId) stories.add(thread.story)
   }
-  return [...stories].flatMap((story) => reflowThread(graph, story, textFitsFrame))
+  return [
+    ...separated,
+    ...[...stories].flatMap((story) => reflowThread(graph, story, textFitsFrame))
+  ]
 }
 
 /** Whether a layer takes part in a publication: a master, page number, or threaded frame. */

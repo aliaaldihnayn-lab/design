@@ -273,3 +273,50 @@ export function releaseDeletedFrames(graph: SceneGraph, rootIds: Iterable<string
   }
   return [...heads].filter((id) => graph.getNode(id) && !going.has(id))
 }
+
+/**
+ * Gives copies of threaded frames stories of their own. A copied frame keeps the thread it was
+ * copied from, so duplicating or pasting one would pour the story through the copy too; as in
+ * Affinity Publisher, copies of frames from one story that are made together are linked to each
+ * other instead, in the same order, and a copy on its own is a plain frame holding the text it
+ * showed. The original is the frame of each place in a story that was made first. Returns the
+ * frames written.
+ */
+export function separateCopiedFrames(graph: SceneGraph): string[] {
+  /** Per story, the frames at each place in it, in the order they were made. */
+  const places = new Map<string, Map<number, SceneNode[]>>()
+  for (const node of graph.getAllNodes()) {
+    const thread = threadOf(node)
+    if (!thread) continue
+    const story = places.get(thread.story) ?? new Map<number, SceneNode[]>()
+    places.set(thread.story, story)
+    story.set(thread.order, [...(story.get(thread.order) ?? []), node])
+  }
+  const written: string[] = []
+  for (const story of places.values()) {
+    // The second frame made at each place belongs to the first copy, the third to the second.
+    const copies: SceneNode[][] = []
+    for (const [, frames] of [...story].toSorted(([a], [b]) => a - b)) {
+      frames.slice(1).forEach((frame, copy) => {
+        copies[copy] = [...(copies[copy] ?? []), frame]
+      })
+    }
+    for (const frames of copies) {
+      const head = frames[0]
+      frames.forEach((frame, order) => {
+        const thread = threadOf(frame)
+        graph.updateNode(frame.id, {
+          pluginData: withPluginData(
+            frame.pluginData,
+            LAWHA_PLUGIN_DATA.textThread,
+            frames.length === 1
+              ? undefined
+              : { story: head.id, order, lead: order === 0 ? '' : (thread?.lead ?? '') }
+          )
+        })
+        written.push(frame.id)
+      })
+    }
+  }
+  return written
+}

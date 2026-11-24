@@ -5,6 +5,7 @@ import type { SceneNode } from '@lawha/scene-graph'
 import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
 
 import { getTextMeasurer, setTextMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
+import { threadFrames } from '#core/publisher'
 
 /** Ten pixels a character on lines as wide as the frame, twenty pixels a line. */
 function measure(node: SceneNode, maxWidth?: number) {
@@ -276,6 +277,55 @@ describe('threaded text frames', () => {
       await flush()
       expect(editor.graph.getNode(b.id)?.text).toBe('aaaa bbbb cccc dddd')
       expect(editor.graph.getNode(c.id)?.text).toBe('eeee')
+    } finally {
+      setTextMeasurer(previous)
+    }
+  })
+  test('a duplicated frame leaves the story it was copied from as it was', async () => {
+    const { editor, canvas } = publication()
+    const frame = (x: number, text: string) =>
+      editor.graph.createNode('TEXT', canvas, {
+        x,
+        y: 600,
+        width: 100,
+        height: 40,
+        text,
+        textAutoResize: 'NONE'
+      })
+    const a = frame(0, 'aaaa bbbb cccc dddd eeee ffff gggg hhhh')
+    const b = frame(200, '')
+    const previous = getTextMeasurer()
+    setTextMeasurer(measure)
+    try {
+      const story = editor.linkTextFrames(a.id, b.id) ?? ''
+      const texts = () => threadFrames(editor.graph, story).map((node) => node.text)
+      expect(texts()).toEqual(['aaaa bbbb cccc dddd', 'eeee ffff gggg hhhh'])
+
+      editor.select([b.id])
+      editor.duplicateSelected()
+      await flush()
+      expect(texts()).toEqual(['aaaa bbbb cccc dddd', 'eeee ffff gggg hhhh'])
+      const [copy] = [...editor.state.selectedIds].flatMap((id) => editor.graph.getNode(id) ?? [])
+      expect(copy.id).not.toBe(b.id)
+      expect(copy.text).toBe('eeee ffff gggg hhhh')
+      expect(readPluginData(copy.pluginData, LAWHA_PLUGIN_DATA.textThread)).toBeUndefined()
+
+      // Both frames copied together keep their story between them.
+      editor.select([a.id, b.id])
+      editor.duplicateSelected()
+      await flush()
+      expect(texts()).toEqual(['aaaa bbbb cccc dddd', 'eeee ffff gggg hhhh'])
+      const copies = [...editor.state.selectedIds].flatMap((id) => editor.graph.getNode(id) ?? [])
+      const copied = readPluginData(copies[0].pluginData, LAWHA_PLUGIN_DATA.textThread)
+      expect(copied?.story).not.toBe(story)
+      expect(threadFrames(editor.graph, copied?.story ?? '').map((node) => node.text)).toEqual([
+        'aaaa bbbb cccc dddd',
+        'eeee ffff gggg hhhh'
+      ])
+
+      editor.undoAction()
+      await flush()
+      expect(texts()).toEqual(['aaaa bbbb cccc dddd', 'eeee ffff gggg hhhh'])
     } finally {
       setTextMeasurer(previous)
     }
