@@ -14,6 +14,7 @@ import {
   styleRefColor,
   visibleSolid
 } from './paint'
+import { presetPath, type Adjust } from './presets'
 import {
   ANGLE_UNIT,
   HAIRLINE_PX,
@@ -103,27 +104,6 @@ function placedShape(
 
 // ── Geometry ─────────────────────────────────────────────
 
-function presetPath(preset: string, w: number, h: number): string | null {
-  switch (preset) {
-    case 'triangle':
-      return `M${w / 2} 0L${w} ${h}L0 ${h}Z`
-    case 'rtTriangle':
-      return `M0 0L0 ${h}L${w} ${h}Z`
-    case 'diamond':
-      return `M${w / 2} 0L${w} ${h / 2}L${w / 2} ${h}L0 ${h / 2}Z`
-    case 'parallelogram': {
-      const offset = Math.min(w, h) * 0.25
-      return `M${offset} 0L${w} 0L${w - offset} ${h}L0 ${h}Z`
-    }
-    case 'hexagon': {
-      const offset = Math.min(w, h) * 0.25
-      return `M${offset} 0L${w - offset} 0L${w} ${h / 2}L${w - offset} ${h}L${offset} ${h}L0 ${h / 2}Z`
-    }
-    default:
-      return null
-  }
-}
-
 /** An `a:arcTo` from `current`: OOXML gives radii and angles, SVG the arc's end. */
 function arcCommand(command: Element, sx: number, sy: number, current: Vector) {
   const rx = (numAttr(command, 'wR') ?? 0) * sx
@@ -178,6 +158,20 @@ function customPath(geometry: Element, w: number, h: number): string | null {
 
 // ── Shapes ───────────────────────────────────────────────
 
+/** A preset's adjust values (`a:avLst/a:gd`, `val N`): the shape's own, else what it inherits. */
+function presetAdjust(geometries: (Element | undefined)[]): Adjust {
+  return (name, fallback) => {
+    for (const el of geometries) {
+      const guide = children(child(child(el, 'prstGeom'), 'avLst'), 'gd').find(
+        (gd) => attr(gd, 'name') === name
+      )
+      const value = /val\s+(-?\d+)/.exec(attr(guide, 'fmla') ?? '')?.[1]
+      if (value !== undefined) return Number(value)
+    }
+    return fallback
+  }
+}
+
 /** The layer for a shape's own geometry and paint, or null for a shape that paints nothing. */
 function createGeometry(
   ctx: ShapeContext,
@@ -195,8 +189,10 @@ function createGeometry(
     .find((value) => value !== null)
   const custom = geometries.map((el) => child(el, 'custGeom')).find((el) => el !== undefined)
   const props = { ...base, ...paint }
-  if (custom || (preset && presetPath(preset, width, height))) {
-    const d = custom ? customPath(custom, width, height) : presetPath(preset ?? '', width, height)
+  const adjust = presetAdjust(geometries)
+  const outline = preset ? presetPath(preset, width, height, adjust) : null
+  if (custom || outline) {
+    const d = custom ? customPath(custom, width, height) : outline
     if (!d) return null
     return ctx.graph.createNode('VECTOR', parentId, {
       ...props,
@@ -207,13 +203,11 @@ function createGeometry(
   }
   if (preset === 'ellipse') return ctx.graph.createNode('ELLIPSE', parentId, props)
   if (preset && preset !== 'rect' && preset !== 'roundRect') skip(ctx, `shape ${preset}`)
-  const gd = child(child(child(spPr, 'prstGeom'), 'avLst'), 'gd')
-  const adjust = Number(/val\s+(-?\d+)/.exec(attr(gd, 'fmla') ?? '')?.[1] ?? 16667)
   return ctx.graph.createNode('RECTANGLE', parentId, {
     ...props,
     cornerRadius:
       preset === 'roundRect'
-        ? Math.round(((Math.min(width, height) * adjust) / 100000) * 100) / 100
+        ? Math.round(((Math.min(width, height) * adjust('adj', 16667)) / 100000) * 100) / 100
         : 0
   })
 }
