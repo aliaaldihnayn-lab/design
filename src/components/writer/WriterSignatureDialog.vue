@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
 import { fromUint8Array } from 'js-base64'
 import { computed, nextTick, ref, watch } from 'vue'
 
 import type { Vector } from '@lawha/scene-graph/primitives'
 import { useWriterMessages } from '@lawha/vue/i18n'
 
+import { WRITER_FONTS_STYLESHEET } from '@/app/writer/fonts'
 import { placedSize, SIGNATURE_FONTS, trimmedPNG, typedSignature } from '@/app/writer/signature'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialog } from '@/components/ui/dialog'
@@ -15,6 +17,9 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ insert: [image: { src: string; width: number; height: number }] }>()
 const t = useWriterMessages()
+// The script faces a typed signature is drawn in, wherever the dialog opens, such as the page a
+// signer reaches from their email.
+useHead({ link: [{ key: 'writer-fonts', rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }] })
 
 type Mode = 'draw' | 'type' | 'upload'
 const mode = ref<Mode>('draw')

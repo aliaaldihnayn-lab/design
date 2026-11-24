@@ -65,7 +65,7 @@ const ui = writer()
 
 useHead({
   title: computed(() => writerTitle.value || t.value.untitled),
-  link: [{ rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }]
+  link: [{ key: 'writer-fonts', rel: 'stylesheet', href: WRITER_FONTS_STYLESHEET }]
 })
 
 const { editor, pages, sheets, sections } = useWriterEditor(() => t.value.untitled)
