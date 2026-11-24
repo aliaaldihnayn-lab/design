@@ -35,6 +35,7 @@ export type {
   IOData,
   ReadDocumentInput,
   ReadDocumentResult,
+  ReadWarning,
   ExportTarget,
   ExportRequest,
   ExportAsset,

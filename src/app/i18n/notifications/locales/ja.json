@@ -32,5 +32,6 @@
   "tokensLeftOut": "スタイルシートに含まれていません: {names}",
   "designTokensLeftOut": "デザイントークンに含まれていません: {names}",
   "designTokensImported": "{count} 個のデザイントークンを読み込みました。",
-  "unsupportedVariableExpressions": "Lawha はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}"
+  "unsupportedVariableExpressions": "Lawha はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}",
+  "pdfPageLimit": "全 {total} ページのうち最初の {read} ページを開きました。残りを開くには PDF を分割してください。"
 }

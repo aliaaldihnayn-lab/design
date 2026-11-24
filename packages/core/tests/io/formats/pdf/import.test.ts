@@ -267,3 +267,31 @@ describe('opening a PDF with layers turned off', () => {
     ])
   })
 })
+
+describe('opening a long PDF', () => {
+  function pages(count: number): Uint8Array {
+    const kids = Array.from({ length: count }, (_, index) => `${index + 3} 0 R`).join(' ')
+    return pdfOf([
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      `<< /Type /Pages /Kids [${kids}] /Count ${count} >>`,
+      ...Array.from(
+        { length: count },
+        () => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>'
+      )
+    ])
+  }
+
+  test('opens the first 50 pages and says how many were left out', async () => {
+    const { graph, warnings } = await io.readDocument({ name: 'book.pdf', data: pages(52) })
+    expect(graph.getPages()[0].childIds).toHaveLength(50)
+    expect(warnings?.map(({ code, subject }) => ({ code, subject }))).toEqual([
+      { code: 'pdf-page-limit', subject: '50/52' }
+    ])
+  })
+
+  test('a PDF within the limit opens whole without a warning', async () => {
+    const { graph, warnings } = await io.readDocument({ name: 'short.pdf', data: pages(3) })
+    expect(graph.getPages()[0].childIds).toHaveLength(3)
+    expect(warnings).toBeUndefined()
+  })
+})

@@ -17,6 +17,7 @@ export const notificationMessageDefaults = {
   unsupportedVariableExpressions: params(
     'Lawha can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
   ),
+  pdfPageLimit: params('Opened the first {read} of {total} pages. Split the PDF to open the rest.'),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
   xPath: 'XPath',

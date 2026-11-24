@@ -32,5 +32,6 @@
   "tokensLeftOut": "Не вошли в таблицу стилей: {names}.",
   "designTokensLeftOut": "Не вошли в дизайн-токены: {names}.",
   "designTokensImported": "Импортировано дизайн-токенов: {count}.",
-  "unsupportedVariableExpressions": "Lawha пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}."
+  "unsupportedVariableExpressions": "Lawha пока не умеет вычислять эти переменные, поэтому слои сохраняют значения из файла: {names}.",
+  "pdfPageLimit": "Открыты первые {read} из {total} страниц. Разделите PDF, чтобы открыть остальные."
 }

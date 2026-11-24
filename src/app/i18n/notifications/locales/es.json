@@ -32,5 +32,6 @@
   "tokensLeftOut": "No incluido en la hoja de estilos: {names}.",
   "designTokensLeftOut": "No incluidos en los design tokens: {names}.",
   "designTokensImported": "Se importaron {count} design tokens.",
-  "unsupportedVariableExpressions": "Lawha aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}."
+  "unsupportedVariableExpressions": "Lawha aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}.",
+  "pdfPageLimit": "Se abrieron las primeras {read} de {total} páginas. Divide el PDF para abrir el resto."
 }

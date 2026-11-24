@@ -32,5 +32,6 @@
   "tokensLeftOut": "Pominięte w arkuszu stylów: {names}.",
   "designTokensLeftOut": "Pominięte w tokenach projektowych: {names}.",
   "designTokensImported": "Zaimportowano tokeny projektowe: {count}.",
-  "unsupportedVariableExpressions": "Lawha nie potrafi jeszcze obliczyć tych zmiennych, więc warstwy zachowują wartości zapisane w pliku: {names}."
+  "unsupportedVariableExpressions": "Lawha nie potrafi jeszcze obliczyć tych zmiennych, więc warstwy zachowują wartości zapisane w pliku: {names}.",
+  "pdfPageLimit": "Otwarto pierwsze {read} z {total} stron. Podziel plik PDF, aby otworzyć pozostałe."
 }

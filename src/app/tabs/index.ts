@@ -3,7 +3,7 @@ import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { createDocumentGraph } from '@lawha/core'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
+import { BUILTIN_IO_FORMATS, IORegistry, type ReadWarning } from '@lawha/core/io'
 import { figThumbnailPageId, populateFigPage } from '@lawha/core/io/formats/fig'
 import { computeAllLayouts } from '@lawha/core/layout'
 import type { DocumentKind, SceneGraph } from '@lawha/scene-graph'
@@ -18,6 +18,7 @@ import { documentAssetReader } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { isFigArchiveName } from '@/app/document/io/names'
+import { warnReadDocument } from '@/app/document/io/read-warnings'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { setActiveEditorStore } from '@/app/editor/active-store'
@@ -603,6 +604,7 @@ export async function openFileInNewTab(
     const isFig = isFigArchiveName(file.name)
     let imported: SceneGraph
     let sourceFormat: string
+    let warnings: ReadWarning[] = []
     if (isFig) {
       load.update({ phase: 'decoding', detail: file.name })
       imported = await readFigForTab(file, load.signal)
@@ -619,6 +621,7 @@ export async function openFileInNewTab(
       )
       imported = result.graph
       sourceFormat = result.sourceFormat
+      warnings = result.warnings ?? []
     }
 
     await showImportedGraph(
@@ -630,6 +633,7 @@ export async function openFileInNewTab(
       },
       load
     )
+    warnReadDocument(warnings)
     if (isFig && path) {
       void cacheOpenedFigCover(path, store).catch((error) => {
         console.warn('[Recent files] Failed to cache the thumbnail', error)

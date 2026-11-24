@@ -32,5 +32,6 @@
   "tokensLeftOut": "Esclusi dal foglio di stile: {names}.",
   "designTokensLeftOut": "Esclusi dai design token: {names}.",
   "designTokensImported": "Importati {count} design token.",
-  "unsupportedVariableExpressions": "Lawha non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}."
+  "unsupportedVariableExpressions": "Lawha non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}.",
+  "pdfPageLimit": "Aperte le prime {read} pagine su {total}. Dividi il PDF per aprire le altre."
 }

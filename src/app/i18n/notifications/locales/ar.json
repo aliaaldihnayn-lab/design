@@ -9,6 +9,7 @@
   "designTokensLeftOut": "لم تُضمَّن في رموز التصميم: {names}.",
   "designTokensImported": "رموز التصميم المستوردة: {count}.",
   "unsupportedVariableExpressions": "لا يستطيع Lawha حساب هذه المتغيّرات بعد، لذا تحتفظ الطبقات بالقيم المحفوظة في الملف: {names}.",
+  "pdfPageLimit": "فُتحت أول {read} صفحة من أصل {total}. قسّم ملف PDF لفتح بقية الصفحات.",
   "nodeID": "معرّف العقدة",
   "nodeIDs": "معرّفات العقد",
   "xPath": "XPath",

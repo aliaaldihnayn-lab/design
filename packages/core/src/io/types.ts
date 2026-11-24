@@ -32,6 +32,16 @@ export interface ReadDocumentInput {
 export interface ReadDocumentResult {
   graph: SceneGraph
   sourceFormat: string
+  /** What the file held that did not come in, by code for front ends to translate. */
+  warnings?: ReadWarning[]
+}
+
+/** A warning reading a file gives, by code for front ends to translate, with an English message. */
+export interface ReadWarning {
+  code: 'pdf-page-limit'
+  /** What the warning is about, such as how many pages came in of how many. */
+  subject?: string
+  message: string
 }
 
 export interface ExportTargetDocument {

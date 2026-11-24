@@ -22,7 +22,12 @@ export interface PDFReadOptions {
   name?: string
   /** At most this many pages; very long PDFs are rarely design files. Default 50. */
   maxPages?: number
+  /** Told how many pages came in when the file holds more than `maxPages`. */
+  onPageLimit?: (read: number, total: number) => void
 }
+
+/** Pages a PDF opens with at most, by default. */
+export const MAX_PDF_IMPORT_PAGES = 50
 
 const PAGE_GAP = 100
 
@@ -156,7 +161,7 @@ export async function previewPDFPages(
   // Layers a viewer hides are hidden in the preview too.
   const optionalContent = await doc.getOptionalContentConfig().catch(() => null)
   try {
-    const count = Math.min(doc.numPages, options.maxPages ?? 50)
+    const count = Math.min(doc.numPages, options.maxPages ?? MAX_PDF_IMPORT_PAGES)
     for (let index = 1; index <= count; index++) {
       const page = await doc.getPage(index)
       const { width, height } = page.getViewport({ scale: 1 })
@@ -189,7 +194,8 @@ export async function readPDFDocument(
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const ops: PDFOps = { ...pdfjs.OPS }
-  const count = Math.min(doc.numPages, options.maxPages ?? 50)
+  const count = Math.min(doc.numPages, options.maxPages ?? MAX_PDF_IMPORT_PAGES)
+  if (count < doc.numPages) options.onPageLimit?.(count, doc.numPages)
   const optionalContent = await doc.getOptionalContentConfig().catch(() => null)
   let x = 0
   try {

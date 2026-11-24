@@ -32,5 +32,6 @@
   "tokensLeftOut": "Nicht im Stylesheet enthalten: {names}.",
   "designTokensLeftOut": "Nicht in den Design-Tokens enthalten: {names}.",
   "designTokensImported": "{count} Design-Tokens importiert.",
-  "unsupportedVariableExpressions": "Lawha kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}."
+  "unsupportedVariableExpressions": "Lawha kann diese Variablen noch nicht auswerten, daher behalten Ebenen die in der Datei gespeicherten Werte: {names}.",
+  "pdfPageLimit": "Die ersten {read} von {total} Seiten wurden geöffnet. Teile das PDF, um die übrigen zu öffnen."
 }

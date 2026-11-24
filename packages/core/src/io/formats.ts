@@ -33,6 +33,8 @@ import type {
   IOFormatAdapter,
   RasterExportOptions,
   ReadDocumentInput,
+  ReadDocumentResult,
+  ReadWarning,
   SVGExportOptions
 } from './types'
 
@@ -424,6 +426,27 @@ export const svgFormat: IOFormatAdapter<'svg'> = {
   }
 }
 
+/** A PDF, or the PDF inside an Illustrator file, as layers, saying when pages were left out. */
+async function readPDFLayers(
+  input: ReadDocumentInput,
+  context: IOContext | undefined,
+  sourceFormat: 'pdf' | 'ai'
+): Promise<ReadDocumentResult> {
+  const { readPDFDocument } = await import('./formats/pdf/import')
+  const warnings: ReadWarning[] = []
+  const graph = await readPDFDocument(input.data, {
+    canvasKit: context?.canvasKit,
+    name: input.name?.replace(sourceFormat === 'ai' ? /\.ai$/i : /\.pdf$/i, ''),
+    onPageLimit: (read, total) =>
+      warnings.push({
+        code: 'pdf-page-limit',
+        subject: `${read}/${total}`,
+        message: `Opened the first ${read} of ${total} pages. Split the PDF to open the rest.`
+      })
+  })
+  return { graph, sourceFormat, ...(warnings.length > 0 ? { warnings } : {}) }
+}
+
 export const pdfFormat: IOFormatAdapter<'pdf'> = {
   id: 'pdf',
   label: 'PDF',
@@ -436,12 +459,7 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   // Text layers are sized to their text as they are read.
   laysOutOnRead: true,
   async readDocument(input, context) {
-    const { readPDFDocument } = await import('./formats/pdf/import')
-    const graph = await readPDFDocument(input.data, {
-      canvasKit: context?.canvasKit,
-      name: input.name?.replace(/\.pdf$/i, '')
-    })
-    return { graph, sourceFormat: 'pdf' }
+    return readPDFLayers(input, context, 'pdf')
   },
   async exportContent(request) {
     const target = resolveExportNodes(request)
@@ -657,12 +675,7 @@ export const aiFormat: IOFormatAdapter<'ai'> = {
         'This Illustrator file has no PDF inside. In Illustrator, save it again with “Create PDF Compatible File” on.'
       )
     }
-    const { readPDFDocument } = await import('./formats/pdf/import')
-    const graph = await readPDFDocument(input.data, {
-      canvasKit: context?.canvasKit,
-      name: input.name?.replace(/\.ai$/i, '')
-    })
-    return { graph, sourceFormat: 'ai' }
+    return readPDFLayers(input, context, 'ai')
   }
 }
 
