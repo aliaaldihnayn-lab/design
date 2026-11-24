@@ -6,6 +6,7 @@ import { FIXTURES } from '#core-tests/helpers/paths'
 import { strFromU8, unzipSync } from 'fflate'
 
 import {
+  createWriterDocument,
   nodeText,
   readDocx,
   writeDocx,
@@ -129,6 +130,30 @@ describe('saving a Word file back', () => {
     const sections = (document: WriterDocument) =>
       writerSections(document).map((section) => section.header && nodeText(section.header))
     expect(sections(readDocx(saved))).toEqual(sections(read))
+  })
+
+  test('numbers new tracked changes after the ones the file keeps', () => {
+    const change = (text: string): WriterNode => ({
+      type: 'paragraph',
+      attrs: { dir: 'rtl' },
+      content: [
+        {
+          type: 'text',
+          text,
+          marks: [{ type: 'insertion', attrs: { author: 'سارة', date: '2026-01-02T00:00:00Z' } }]
+        }
+      ]
+    })
+    const source = writeDocx(
+      createWriterDocument({ body: { type: 'doc', content: [change('أول'), change('ثان')] } })
+    )
+    const read = readDocx(source)
+    const content = [...(read.body.content ?? []), change('ثالث')]
+    const saved = writeDocx({ ...read, body: { ...read.body, content } }, { source })
+    const xml = parts(saved)['word/document.xml'] ?? ''
+    const ids = [...xml.matchAll(/<w:(?:ins|del) w:id="(\d+)"/g)].map(([, id]) => id)
+    expect(ids).toHaveLength(3)
+    expect(new Set(ids).size).toBe(3)
   })
 
   test('keeps custom XML parts, numbering and styles of a Word file', () => {

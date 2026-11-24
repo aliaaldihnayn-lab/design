@@ -243,6 +243,18 @@ function patchSharedParts(
   }
 }
 
+/** The highest `w:id` of the tracked changes in `root`, which kept blocks carry on. */
+function highestRevisionId(root: Element): number {
+  let highest = 0
+  for (const name of ['ins', 'del']) {
+    for (const element of Array.from(root.getElementsByTagNameNS(NS.w, name))) {
+      const id = Number(attrOf(element, 'id'))
+      if (Number.isFinite(id)) highest = Math.max(highest, id)
+    }
+  }
+  return highest
+}
+
 export interface PatchDocxOptions {
   creator?: string
 }
@@ -266,7 +278,8 @@ export function patchDocx(
     ...numberingBases(files, numberingPath),
     mediaPrefix: 'lawha-image',
     keepNumbers: true,
-    existingParts: new Set(Object.keys(files))
+    existingParts: new Set(Object.keys(files)),
+    revisionBase: highestRevisionId(opened.root)
   })
   const documentRelsBefore = readRelationships(files, opened.documentPath)
   const state: PatchState = {

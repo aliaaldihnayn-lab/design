@@ -30,6 +30,8 @@ export interface PackageOptions {
   keepNumbers?: boolean
   /** Part paths already in the package, which new header and footer parts must not reuse. */
   existingParts?: ReadonlySet<string>
+  /** The highest tracked change id the package's kept markup uses; new ones number after it. */
+  revisionBase?: number
 }
 
 const keptNumber = (id: string, prefix: string) => {
@@ -107,7 +109,7 @@ export class PackageWriter {
 
   revisionNumber(): number {
     this.revisions += 1
-    return 1000 + this.revisions
+    return Math.max(1000, this.options.revisionBase ?? 0) + this.revisions
   }
 
   /** The headings a table of contents lists: levels one to three. */
