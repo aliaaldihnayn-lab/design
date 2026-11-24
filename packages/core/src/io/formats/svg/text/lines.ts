@@ -127,6 +127,21 @@ function fallbackSegments(line: SVGTextLine, from: number, to: number): Fallback
   return segments
 }
 
+/**
+ * Whether a span is tracked text to write letter by letter. Letters joined by shaping, as Arabic,
+ * stay one span, which keeps them joined.
+ */
+function placesLetters(
+  node: SceneNode,
+  piece: TextPiece,
+  line: SVGTextLine,
+  from: number,
+  to: number
+): boolean {
+  if ((piece.style?.letterSpacing ?? node.letterSpacing).value === 0) return false
+  return line.characters !== undefined && !RIGHT_TO_LEFT.test(node.text.slice(from, to))
+}
+
 /** A tracked span as one span per letter, each where the editor draws it. */
 function letterSpans(
   node: SceneNode,
@@ -174,10 +189,7 @@ function lineSpans(
     )) {
       if (to <= from) continue
       const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
-      const tracked = (piece.style?.letterSpacing ?? node.letterSpacing).value !== 0
-      const text = node.text.slice(from, to)
-      // Letters joined by shaping, as Arabic, stay one span, which keeps them joined.
-      if (placeTrackedLetters && tracked && line.characters && !RIGHT_TO_LEFT.test(text)) {
+      if (placeTrackedLetters && placesLetters(node, piece, line, from, to)) {
         spans.push(...letterSpans(node, line, from, to, y, attrs))
         continue
       }
