@@ -355,7 +355,7 @@ onBeforeUnmount(() => editor.value?.destroy())
           :pages="pages.pages"
           :watermark="writerDocument.watermark?.text"
         >
-          <template #header><WriterRegion kind="header" /></template>
+          <template #header><WriterRegion kind="header" :body="editor" /></template>
           <template #footnotes><WriterFootnotes :editor="editor" /></template>
           <template #footer><WriterRegion kind="footer" /></template>
         </WriterPaper>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EditorContent, useEditor } from '@tiptap/vue-3'
+import { EditorContent, useEditor, type Editor } from '@tiptap/vue-3'
 import { onBeforeUnmount, watch } from 'vue'
 
 import { nodeText, type WriterNode } from '@lawha/core/writer'
@@ -16,8 +16,13 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 
 import { writer } from './ui'
 
-/** The header or footer: a small editor in the page margin, repeated on every printed page. */
-const { kind } = defineProps<{ kind: 'header' | 'footer' }>()
+/**
+ * The header or footer: a small editor in the page margin, repeated on every printed page. The
+ * header sits on the first page, which is the first section's: when the first section break has
+ * a header of its own (a Word file with several), that is the one shown and edited, through the
+ * body `editor` that holds the break; otherwise the document's.
+ */
+const { kind, body = null } = defineProps<{ kind: 'header' | 'footer'; body?: Editor | null }>()
 const t = useWriterMessages()
 const ui = writer()
 
@@ -35,19 +40,48 @@ function isEmpty(node: WriterNode): boolean {
   return !field
 }
 
+/** The first section break when it carries this region of its own. */
+function ownedByFirstSection(): boolean {
+  if (kind !== 'header') return false
+  const first = writerDocument.value.body.content?.find((node) => node.type === 'sectionBreak')
+  return first?.attrs?.header !== undefined
+}
+
+const shown = () =>
+  (ownedByFirstSection()
+    ? (writerDocument.value.body.content?.find((node) => node.type === 'sectionBreak')?.attrs
+        ?.header as WriterNode | null | undefined)
+    : writerDocument.value[kind]) ?? EMPTY
+
+/** Writes the region onto the first section break in the body editor; false when it has none. */
+function setFirstSectionRegion(value: WriterNode | null): boolean {
+  if (!body || !ownedByFirstSection()) return false
+  let position = -1
+  body.state.doc.forEach((node, offset) => {
+    if (position === -1 && node.type.name === 'sectionBreak') position = offset
+  })
+  const node = position === -1 ? null : body.state.doc.nodeAt(position)
+  if (!node) return false
+  body.view.dispatch(
+    body.state.tr.setNodeMarkup(position, undefined, { ...node.attrs, [kind]: value })
+  )
+  return true
+}
+
 const editor = useEditor({
   extensions: writerExtensions({ region: true, placeholder: t.value[kind] }),
-  content: writerDocument.value[kind] ?? EMPTY,
+  content: shown(),
   enableCoreExtensions: { textDirection: false },
   editorProps: { attributes: { 'data-test-id': `writer-${kind}` } },
   onUpdate: ({ editor: instance }) => {
     const json = instance.getJSON() as WriterNode
-    updateWriterDocument({ [kind]: isEmpty(json) ? null : json })
+    const value = isEmpty(json) ? null : json
+    if (!setFirstSectionRegion(value)) updateWriterDocument({ [kind]: value })
   }
 })
 
 watch([writerRevision, writerRegionsRevision], () => {
-  editor.value?.commands.setContent(writerDocument.value[kind] ?? EMPTY, { emitUpdate: false })
+  editor.value?.commands.setContent(shown(), { emitUpdate: false })
 })
 
 onBeforeUnmount(() => editor.value?.destroy())
