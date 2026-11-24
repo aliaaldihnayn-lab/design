@@ -391,6 +391,8 @@ function runMarkup(run: Run): string | null {
   const base = faceAttrs(ordered[0].font)
   const italic = run.slanted && !base.includes('font-style') ? ' font-style="italic"' : ''
   const spacing = letterSpacing ? ` letter-spacing="${n(letterSpacing)}"` : ''
+  // The length the PDF drew the text at, which sizes the layer until its fonts can measure it.
+  const length = ` textLength="${n(right - left + letterSpacing)}"`
   const anchor = rtl ? ' text-anchor="end" direction="rtl"' : ''
-  return `<text transform="${matrixAttr(m)}" font-size="${n(run.size)}"${base}${italic}${spacing}${anchor}${run.paint.attrs}>${textContent(ordered, base)}</text>`
+  return `<text transform="${matrixAttr(m)}" font-size="${n(run.size)}"${base}${italic}${spacing}${length}${anchor}${run.paint.attrs}>${textContent(ordered, base)}</text>`
 }

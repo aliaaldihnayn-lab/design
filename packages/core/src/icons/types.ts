@@ -114,6 +114,8 @@ export interface SVGTextPiece {
   x: number
   y: number
   anchor: 'start' | 'middle' | 'end'
+  /** The width the author says the text takes (`textLength`), when it says. */
+  textLength?: number
   runs: SVGTextRun[]
 }
 

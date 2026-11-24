@@ -120,7 +120,10 @@ export function collectTextPieces(element: Element, scope: Scope): SVGTextPiece[
   }
   walk(element, scope.presentation)
   pieces.push(current)
-  return pieces.map(collapseWhitespace).filter((piece) => piece.runs.length > 0)
+  const kept = pieces.map(collapseWhitespace).filter((piece) => piece.runs.length > 0)
+  // `textLength` gives the length of the whole text, so only text all in one place keeps it.
+  const textLength = num(element, 'textLength')
+  return kept.length === 1 && textLength > 0 ? [{ ...kept[0], textLength }] : kept
 }
 
 export function textInfo(

@@ -7,7 +7,7 @@ import Matrix from '@lawha/scene-graph/matrix'
 import { pixelLength } from '@lawha/scene-graph/text'
 
 import type { SVGElementLayer } from '#core/icons/types'
-import { measureTextForLayout } from '#core/layout/text-measurement'
+import { estimateTextSize, getTextMeasurer } from '#core/layout/text-measurement'
 import type {
   SVGVectorizeResult,
   VectorizedText,
@@ -68,6 +68,18 @@ function styleRuns(runs: Run[], scale: number): StyleRun[] {
 }
 
 /**
+ * The size of a text layer's characters: measured in its fonts, or, where they cannot be measured
+ * yet, as long as `textLength` says the text is, rather than an estimate that places the text
+ * apart from where it was drawn.
+ */
+function textSize(node: SceneNode, textLength: number | undefined) {
+  const measured = getTextMeasurer()?.(node)
+  if (measured) return measured
+  const estimate = estimateTextSize(node)
+  return textLength === undefined ? estimate : { ...estimate, width: Math.ceil(textLength) }
+}
+
+/**
  * A text layer sized to its characters and placed as Figma places SVG text: its top a font size
  * above the baseline, its left, centre, or right edge on `x` by `text-anchor`.
  */
@@ -91,7 +103,7 @@ function createTextPiece(
     lineHeight: null,
     width: 0
   })
-  const size = measureTextForLayout(node)
+  const size = textSize(node, piece.textLength === undefined ? undefined : piece.textLength * scale)
   const width = size.width / scale
   const left = width * ANCHOR_OFFSET[piece.anchor]
   const world = Matrix.multiply(
