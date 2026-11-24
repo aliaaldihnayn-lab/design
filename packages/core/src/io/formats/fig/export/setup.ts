@@ -11,7 +11,8 @@ import {
   parseGuidOrNull,
   type FigNodeChangeExportRuntime,
   makeCanvasNodeChange,
-  makeDocumentNodeChange
+  makeDocumentNodeChange,
+  mergePluginData
 } from '@lawha/fig/node-change'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@lawha/kiwi/fig/codec'
 import { stringToGuid } from '@lawha/kiwi/fig/guid'
@@ -310,6 +311,8 @@ function buildCanvasEntries(
       }
     )
     applyImportedCanvasFields(page, canvasNc)
+    // A page keeps what plugins and Lawha store on it, such as its publication settings.
+    if (page.pluginData.length > 0) canvasNc.pluginData = mergePluginData(page.pluginData)
     if (page.internalOnly) canvasNc.internalOnly = true
     canvasEntries.push({ page, canvasGuid, canvasNc })
   }
