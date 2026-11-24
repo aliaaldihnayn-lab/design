@@ -4,7 +4,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { strToU8, zipSync } from 'fflate'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
-import type { SceneNode } from '@lawha/scene-graph'
+import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -68,6 +68,10 @@ function corners(node: SceneNode): [number, number][] {
   return network.vertices.map((vertex) => [Math.round(vertex.x), Math.round(vertex.y)])
 }
 
+function textOf(graph: SceneGraph, group: SceneNode): SceneNode {
+  return expectDefined(graph.getChildren(group.id).find((layer) => layer.type === 'TEXT'))
+}
+
 describe('opening PPTX preset shapes', () => {
   test('an arrow keeps its outline: shaft and head by its adjust values', async () => {
     const { named } = await read()
@@ -107,5 +111,19 @@ describe('opening PPTX preset shapes', () => {
     const star = named('Star')
     expect(star.type).toBe('VECTOR')
     expect(corners(star)).toHaveLength(10)
+  })
+})
+
+describe('opening PPTX shape text', () => {
+  test("takes the shape style's font colour over the deck's default text colour", async () => {
+    const { graph, named } = await read()
+    const label = textOf(graph, named('Label'))
+    expect(label.fills[0].color).toMatchObject({ r: 1, g: 1, b: 1 })
+  })
+
+  test("keeps a run's own colour over the shape style's", async () => {
+    const { graph, named } = await read()
+    const label = textOf(graph, named('Own colour'))
+    expect(label.fills[0].color).toMatchObject({ r: 1, g: 1, b: 0 })
   })
 })

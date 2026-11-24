@@ -3,7 +3,7 @@ import type { Element } from '@xmldom/xmldom'
 import type { Fill, SceneNode } from '@lawha/scene-graph'
 import { BLACK } from '@lawha/scene-graph/constants'
 import { parseSVGPath } from '@lawha/scene-graph/parse-path'
-import type { Vector } from '@lawha/scene-graph/primitives'
+import type { Color, Vector } from '@lawha/scene-graph/primitives'
 
 import { addGraphicFrame } from './graphic-frame'
 import {
@@ -259,7 +259,9 @@ function createLine(
 function textInherited(
   ctx: ShapeContext,
   info: PlaceholderInfo | null,
-  inherited: Element[]
+  inherited: Element[],
+  /** The colour the shape's style gives its text (`a:fontRef`), over the inherited list styles. */
+  fontColor: Color | null = null
 ): (level: number) => TextStyle {
   const { masterRoot, defaultText } = ctx.placeholders
   const lists = [
@@ -269,11 +271,13 @@ function textInherited(
   // Text that names no font is set in the theme's body font.
   const fonts: TextStyle = { latin: ctx.theme.fonts.minor }
   if (ctx.theme.fonts.minorCS) fonts.cs = ctx.theme.fonts.minorCS
-  return (level) =>
-    lists.reduce<TextStyle>(
-      (style, list) => ({ ...style, ...levelStyle(list, level, ctx.theme) }),
+  return (level) => {
+    const style = lists.reduce<TextStyle>(
+      (merged, list) => ({ ...merged, ...levelStyle(list, level, ctx.theme) }),
       fonts
     )
+    return fontColor ? { ...style, color: fontColor } : style
+  }
 }
 
 /**
@@ -331,11 +335,12 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
   }
 
   const txBody = child(shape, 'txBody')
+  const fontColor = styleRefColor(style, 'fontRef', ctx.theme)
   const body = txBody
     ? readTextBody(
         txBody,
         ctx.theme,
-        textInherited(ctx, info, inherited),
+        textInherited(ctx, info, inherited, fontColor),
         inherited.map((shape) => child(shape, 'txBody')).filter((el) => el !== undefined)
       )
     : null
@@ -343,7 +348,6 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
   if (!hasPaint && !body) return
 
   const turn = placement(box)
-  const fontColor = styleRefColor(style, 'fontRef', ctx.theme) ?? BLACK
   if (!body) {
     createGeometry(
       ctx,
@@ -369,7 +373,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
     const cx = box.x + box.width / 2 + dx * Math.cos(angle) - dy * Math.sin(angle)
     const cy = box.y + box.height / 2 + dx * Math.sin(angle) + dy * Math.cos(angle)
     ctx.graph.createNode('TEXT', parentId, {
-      ...textNodeProps(body, fontColor),
+      ...textNodeProps(body, fontColor ?? BLACK),
       name,
       visible,
       effects: [...effects, ...textEffects(ctx, txBody)],
@@ -407,7 +411,7 @@ function addShape(ctx: ShapeContext, parentId: string, shape: Element, space: Sp
     { fills, strokes, effects }
   )
   ctx.graph.createNode('TEXT', group.id, {
-    ...textNodeProps(body, fontColor),
+    ...textNodeProps(body, fontColor ?? BLACK),
     name: `${name} text`,
     effects: textEffects(ctx, txBody),
     x: Math.round(left * 100) / 100,
