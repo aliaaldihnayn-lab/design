@@ -2,10 +2,11 @@
 import { EditorContent, type Editor } from '@tiptap/vue-3'
 import { computed } from 'vue'
 
-import type { PageSetup } from '@lawha/core/writer'
+import type { PageSetup, WriterDefaults } from '@lawha/core/writer'
 
 import { paperWidth, type PaginationSection } from '@/app/writer/editor/pagination'
 import { PAGE_GAP, paginationSection } from '@/app/writer/editor/pagination/regions'
+import { documentFontStyle } from '@/app/writer/fonts'
 
 import { writer } from './ui'
 
@@ -20,7 +21,8 @@ const {
   firstPage = page,
   sheets = [],
   pages = 1,
-  watermark = null
+  watermark = null,
+  defaults = null
 } = defineProps<{
   editor: Editor
   /** The document's own page setup, which its last section and the paper's column use. */
@@ -32,6 +34,8 @@ const {
   /** How many pages the body fills. */
   pages?: number
   watermark?: string | null
+  /** The document's default text face and size, which unstyled text shows in. */
+  defaults?: WriterDefaults | null
 }>()
 const ui = writer()
 
@@ -62,9 +66,11 @@ const sheetBoxes = computed(() => {
   })
 })
 
+const text = computed(() => documentFontStyle(defaults, 'Inter, system-ui, sans-serif'))
 const paperStyle = computed(() => {
   const left = textLeft(base.value)
   return {
+    fontFamily: text.value.fontFamily,
     width: `${width.value}px`,
     minHeight: `${drawn.value.reduce((sum, sheet) => sum + sheet.height, 0) + (drawn.value.length - 1) * PAGE_GAP}px`,
     paddingLeft: `${left}px`,
@@ -98,7 +104,7 @@ const bottomStyle = computed(() => ({
     </div>
     <div :style="topStyle"><slot name="header" /></div>
     <div :class="ui.body()">
-      <EditorContent :editor="editor" :class="ui.content()" />
+      <EditorContent :editor="editor" :class="ui.content()" :style="{ fontSize: text.fontSize }" />
       <slot name="footnotes" />
     </div>
     <div :style="bottomStyle" class="flex flex-col justify-end"><slot name="footer" /></div>

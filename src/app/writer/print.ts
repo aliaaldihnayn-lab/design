@@ -9,6 +9,8 @@ import {
   type WriterNode
 } from '@lawha/core/writer'
 
+import { documentFontStyle } from './fonts'
+
 /**
  * The document as a printable page for the browser's print dialog, whose "Save as PDF" gives
  * the PDF: the page size and margins through `@page`, the header and footer in its margin boxes
@@ -113,7 +115,13 @@ export function printableHTML(document: WriterDocument, options: PrintOptions): 
   const fonts = options.fontsStylesheet
     ? `<link rel="stylesheet" href="${escapeText(options.fontsStylesheet)}">`
     : ''
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeText(document.title)}</title>${fonts}<style>${pageCSS}${PRINT_CONTENT_CSS}</style></head><body>${watermark}${options.bodyHTML}${footnotes}</body></html>`
+  // The document's own default face and size, over the paper's.
+  const text = documentFontStyle(document.defaults, 'Calibri, Arial, sans-serif')
+  const textCSS =
+    text.fontFamily || text.fontSize
+      ? `body { ${text.fontFamily ? `font-family: ${text.fontFamily};` : ''} ${text.fontSize ? `font-size: ${text.fontSize};` : ''} }`
+      : ''
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeText(document.title)}</title>${fonts}<style>${pageCSS}${PRINT_CONTENT_CSS}${textCSS}</style></head><body>${watermark}${options.bodyHTML}${footnotes}</body></html>`
 }
 
 /** Prints the page from a hidden frame; the browser's dialog offers Save as PDF. */

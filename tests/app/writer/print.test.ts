@@ -49,4 +49,15 @@ describe('printing documents', () => {
       '<div class="writer-watermark" aria-hidden="true"><span>سري</span></div>'
     )
   })
+
+  test("prints unstyled text in the document's own default face and size", () => {
+    const html = printableHTML(
+      createWriterDocument({
+        defaults: { fontFamily: 'Cambria', fontFamilyComplex: 'Arial', fontSize: 12 }
+      }),
+      { bodyHTML: '' }
+    )
+    expect(html).toContain('font-family: "Cambria", "Arial", Calibri, Arial, sans-serif;')
+    expect(html).toContain('font-size: 12pt;')
+  })
 })
