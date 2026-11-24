@@ -173,12 +173,11 @@ export async function openFileDialog() {
         types: [
           {
             description: 'Design file',
+            // Every format the app reads, PDF, Illustrator and Photoshop files included.
             accept: {
-              'application/octet-stream': ['.fig', '.jam'],
-              'application/json': ['.pen'],
-              'text/html': ['.html', '.htm'],
-              'application/xhtml+xml': ['.xhtml'],
-              'text/plain': ['.pen']
+              'application/octet-stream': READABLE_DOCUMENT_EXTENSIONS.map(
+                (extension) => `.${extension}`
+              )
             }
           }
         ]
