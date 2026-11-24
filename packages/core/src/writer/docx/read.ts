@@ -278,7 +278,7 @@ function readHeaderFooter(
   const watermark =
     Array.from(root.getElementsByTagNameNS('urn:schemas-microsoft-com:vml', 'textpath'))
       .map((path) => attrOf(path, 'string'))
-      .find((text) => text) ?? null
+      .find(Boolean) ?? null
   const state: InlineState = { context: partContext(context, path), comments: [], field: null }
   const content = readBlocks(root, state).filter(
     (node) => !(node.type === 'paragraph' && !node.content?.length)
