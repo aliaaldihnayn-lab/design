@@ -22,6 +22,7 @@ import * as Instances from './instances'
 import { LayoutWrites } from './layout/writes'
 import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
+import { remapLiveBlendIds } from './path-effects/copy'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
 import { markSourceFieldsEdited } from './source-metadata'
@@ -757,11 +758,16 @@ export class SceneGraph {
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
     if (src.status) markSourceFieldsEdited(clone, ['status'])
 
+    const copies = new Map<string, string>()
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      const child = this.cloneTree(childId, clone.id)
+      if (child) copies.set(childId, child.id)
     }
+    // A live blend names its children; the copy's blend names the copies.
+    const pluginData = remapLiveBlendIds(clone.pluginData, (id) => copies.get(id) ?? id)
+    if (pluginData !== clone.pluginData) this.updateNode(clone.id, { pluginData: [...pluginData] })
 
-    return clone
+    return this.nodes.get(clone.id) ?? clone
   }
 
   createInstance(

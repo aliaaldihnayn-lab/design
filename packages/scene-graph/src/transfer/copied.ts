@@ -3,6 +3,7 @@ import { isEqual, mapValues } from 'es-toolkit'
 import { componentPropertyDefinitions } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { remapInstanceOverrideState } from '../instances/overrides'
+import { remapLiveBlendIds } from '../path-effects/copy'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 
 function swapPropertyIds(definitions: readonly ComponentPropertyDefinition[]): string[] {
@@ -42,14 +43,16 @@ function remappedReferences(
     if (endpoint?.nodeId && mapped(endpoint.nodeId) !== endpoint.nodeId)
       changes[field] = { ...endpoint, nodeId: mapped(endpoint.nodeId) }
   }
+  const pluginData = remapLiveBlendIds(node.pluginData, mapped)
+  if (!isEqual(pluginData, node.pluginData)) changes.pluginData = [...pluginData]
   return changes
 }
 
 /**
  * Points copied layers at one another, as `prepareNodeTransfer` does for a paste: an instance's
  * main component, the layers its overrides change and the components they swap in, the
- * components an instance-swap property defaults to or is set to, and the layers a connector's
- * ends follow. `mappedIds` maps each copied layer to its copy, such as a library copy or a design
+ * components an instance-swap property defaults to or is set to, the layers a connector's
+ * ends follow, and the ends, steps, and spine of a live blend. `mappedIds` maps each copied layer to its copy, such as a library copy or a design
  * JSX render folded into the layers it replaces; a reference outside the copy stays as it is, and
  * so do variable IDs, since the copies keep their source's variables.
  */

@@ -1,5 +1,6 @@
 import { cloneNodeProps } from '../copy'
 import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
+import { remapLiveBlendIds } from '../path-effects/copy'
 import { referencedStyleIds } from '../shared-styles'
 import { remapStyleRunReferences, styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
@@ -99,6 +100,9 @@ export function prepareNodeTransfer(
     const endpoint = result[field]
     if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
   }
+  // A pasted live blend steps between the pasted ends, not the ones it was copied from.
+  if (result.pluginData)
+    result.pluginData = [...remapLiveBlendIds(result.pluginData, (id) => refs.nodes.get(id) ?? id)]
   for (const region of result.vectorNetwork?.regions ?? [])
     if (region.fillStyleId) region.fillStyleId = style(region.fillStyleId)
   result.componentPropertyDefinitions = source.componentPropertyDefinitions.map((definition) => ({
