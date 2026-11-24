@@ -12,11 +12,13 @@ import {
   svgToVectorPaths,
   type SVGVectorizeResult,
   type VectorizedClip,
+  type VectorizedImage,
   type VectorizedPath,
   type VectorizedText
 } from '#core/vector/vectorize/svg/to-vectors'
 
 import { parseSVGDocument } from './document'
+import { createSVGImage } from './image'
 import { parseSVGSize, svgRootId } from './metadata'
 import { createSVGText } from './text/import'
 
@@ -52,7 +54,12 @@ export function prepareSVGImport(
       defaultColor: options.defaultColor,
       preserveAspectRatio: true
     }
-  ) ?? { paths: [], texts: [], contentBounds: { x: 0, y: 0, width: 0, height: 0 } }
+  ) ?? {
+    paths: [],
+    texts: [],
+    images: [],
+    contentBounds: { x: 0, y: 0, width: 0, height: 0 }
+  }
   return { width, height, name: svgRootId(source), sized, ...vectorized }
 }
 
@@ -127,11 +134,23 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
       parentIds.add(parentId)
     }
   })
-  const textsByPath = groupBy(data.texts, (text) => text.pathIndex)
-  const textsAt = (index: number) => (textsByPath[index] ?? []).map(textDrawable)
+  const imageDrawable = (image: VectorizedImage): Drawable => ({
+    elements: image.elements,
+    clips: image.clips,
+    create: (parentId, element) => {
+      if (createSVGImage(graph, parentId, image, element)) parentIds.add(parentId)
+    }
+  })
+  // Texts and images keep their place among the paths, in the order they were drawn.
+  const between = [
+    ...data.texts.map((text) => ({ index: text.pathIndex, drawable: textDrawable(text) })),
+    ...data.images.map((image) => ({ index: image.pathIndex, drawable: imageDrawable(image) }))
+  ]
+  const byPath = groupBy(between, (entry) => entry.index)
+  const at = (index: number) => (byPath[index] ?? []).map((entry) => entry.drawable)
   return [
-    ...data.paths.flatMap((path, index) => [...textsAt(index), pathDrawable(path)]),
-    ...textsAt(data.paths.length)
+    ...data.paths.flatMap((path, index) => [...at(index), pathDrawable(path)]),
+    ...at(data.paths.length)
   ]
 }
 

@@ -1,6 +1,11 @@
 import type { Element } from '@xmldom/xmldom'
 
-import type { SVGClipPathRegion, SVGElementLayer, SVGTextInfo } from '#core/icons/types'
+import type {
+  SVGClipPathRegion,
+  SVGElementLayer,
+  SVGImageInfo,
+  SVGTextInfo
+} from '#core/icons/types'
 
 import {
   inlineStyles,
@@ -15,6 +20,8 @@ export interface Traversal {
   nextKey: number
   /** `<text>` elements in drawing order; each records how many paths precede it. */
   texts: SVGTextInfo[]
+  /** `<image>` elements in drawing order, placed among paths like texts. */
+  images: SVGImageInfo[]
 }
 
 /** What an element inherits from the elements around it. */

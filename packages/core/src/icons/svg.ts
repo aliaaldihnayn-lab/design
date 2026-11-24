@@ -25,6 +25,7 @@ import type {
   IconPathInfo,
   SVGClipPathRegion,
   SVGElementLayer,
+  SVGImageInfo,
   SVGTextInfo
 } from './types'
 
@@ -205,6 +206,32 @@ function collectClipPath(
   }
 }
 
+/** An `<image>` with a box, placed among the paths drawn before it. */
+function collectImage(
+  element: Element,
+  scope: Scope,
+  traversal: Traversal,
+  clip: number | null,
+  pathIndex: number
+): void {
+  const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
+  const width = num(element, 'width')
+  const height = num(element, 'height')
+  if (!href || width <= 0 || height <= 0) return
+  traversal.images.push({
+    href,
+    x: num(element, 'x'),
+    y: num(element, 'y'),
+    width,
+    height,
+    preserveAspectRatio: element.getAttribute('preserveAspectRatio')?.trim() !== 'none',
+    transform: scope.transform,
+    clipPaths: scope.clipPaths.length > 0 ? scope.clipPaths : undefined,
+    elements: [...scope.elements, elementLayer(traversal, element, 'shape', scope, clip)],
+    pathIndex
+  })
+}
+
 function collectPaths(
   element: Element,
   inherited: Scope,
@@ -231,6 +258,10 @@ function collectPaths(
       const layer = elementLayer(traversal, element, 'shape', scope, clip)
       traversal.texts.push({ ...text, elements: [...scope.elements, layer] })
     }
+    return
+  }
+  if (tagName === 'image') {
+    collectImage(element, scope, traversal, clip, result.length)
     return
   }
   if (SHAPE_NAMES.has(tagName)) {
@@ -278,6 +309,7 @@ function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGE
 export interface SVGContent {
   paths: IconPathInfo[]
   texts: SVGTextInfo[]
+  images: SVGImageInfo[]
 }
 
 function collectDocument(root: Element): SVGContent {
@@ -287,7 +319,7 @@ function collectDocument(root: Element): SVGContent {
     if (id) elementsById.set(id, element)
   }
   const paths: IconPathInfo[] = []
-  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [] }
+  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [], images: [] }
   collectPaths(
     root,
     {
@@ -301,7 +333,7 @@ function collectDocument(root: Element): SVGContent {
     traversal,
     paths
   )
-  return { paths, texts: traversal.texts }
+  return { paths, texts: traversal.texts, images: traversal.images }
 }
 
 export function extractPathsFromElements(
@@ -317,7 +349,7 @@ export function extractPathsFromElements(
 
 export function extractSVGContent(svgBody: string): SVGContent {
   const root = parseSVGFragment(svgBody)?.documentElement
-  return root ? collectDocument(root) : { paths: [], texts: [] }
+  return root ? collectDocument(root) : { paths: [], texts: [], images: [] }
 }
 
 /** Whether a shape shows: a hidden element hides everything in it, as a hidden layer does. */

@@ -21,6 +21,7 @@ import type {
   SVGClipPathInfo,
   SVGClipPathRegion,
   SVGElementLayer,
+  SVGImageInfo,
   SVGTextPiece,
   SVGTextRun
 } from '#core/icons/types'
@@ -104,9 +105,19 @@ export interface VectorizedText {
   pathIndex: number
 }
 
+/** An SVG `<image>` box, placed by the matrix from its element's coordinates. */
+export type VectorizedImage = Pick<
+  SVGImageInfo,
+  'href' | 'x' | 'y' | 'width' | 'height' | 'preserveAspectRatio' | 'elements' | 'pathIndex'
+> & {
+  matrix: Mat3
+  clips?: VectorizedClip[]
+}
+
 export interface SVGVectorizeResult {
   paths: VectorizedPath[]
   texts: VectorizedText[]
+  images: VectorizedImage[]
   /** Tight bounds of the shown paths' geometry in the target coordinate space. */
   contentBounds: Rect
 }
@@ -116,8 +127,8 @@ export function svgToVectorPaths(
   bounds: Size,
   options?: { defaultColor?: string; preserveAspectRatio?: boolean }
 ): SVGVectorizeResult | null {
-  const { paths, texts } = extractSVGContent(svgText)
-  if (paths.length === 0 && texts.length === 0) return null
+  const { paths, texts, images } = extractSVGContent(svgText)
+  if (paths.length === 0 && texts.length === 0 && images.length === 0) return null
 
   const space = parseSVGCoordinateSpace(svgText)
   if (space.width <= 0 || space.height <= 0) return null
@@ -177,6 +188,11 @@ export function svgToVectorPaths(
       clips: text.clipPaths && vectorizeClips(text.clipPaths, viewport, null, clipCache),
       elements: text.elements,
       pathIndex: text.pathIndex
+    })),
+    images: images.map(({ transform, clipPaths, ...image }) => ({
+      ...image,
+      matrix: transformMatrix(transform, viewport),
+      clips: clipPaths && vectorizeClips(clipPaths, viewport, null, clipCache)
     })),
     contentBounds: unionPathBounds(vectorized.filter(isSVGPathShown))
   }

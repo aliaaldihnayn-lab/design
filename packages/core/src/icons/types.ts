@@ -127,6 +127,23 @@ export interface SVGTextInfo {
   pathIndex: number
 }
 
+/** An `<image>`: its href (a data: URL when the SVG carries the picture) and its box. */
+export interface SVGImageInfo {
+  href: string
+  x: number
+  y: number
+  width: number
+  height: number
+  /** False for `preserveAspectRatio="none"`, which stretches the picture over the box. */
+  preserveAspectRatio: boolean
+  transform: string | null
+  clipPaths?: SVGClipPathRegion[]
+  /** As for a path; the last entry is the `<image>` element. */
+  elements: SVGElementLayer[]
+  /** How many paths come before the image in drawing order. */
+  pathIndex: number
+}
+
 export type SVGClipPathInfo = Pick<IconPathInfo, 'd' | 'fillRule' | 'transform'> & {
   /** False when `visibility` or `display` hides the shape, which Figma keeps as a hidden layer. */
   visible: boolean
