@@ -4,7 +4,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import type { SceneGraph } from '@lawha/scene-graph'
 
 import { getCanvasKit } from '#core/canvaskit'
-import { createCanvasKitRasterCodec } from '#core/io/formats/raster'
+import { computeContentBounds, createCanvasKitRasterCodec } from '#core/io/formats/raster'
 
 import { preparePSDRuntime } from './runtime'
 
@@ -46,16 +46,18 @@ export async function writePSDDocument(input: PSDWriteInput): Promise<Uint8Array
     const restore = { opacity: node.opacity, visible: node.visible }
     graph.updateNode(id, { opacity: 1, visible: true })
     let pixels: ReturnType<typeof decode> = null
+    // A render starts where what the layer draws starts, shadows and turned corners included,
+    // which need not be around its box evenly.
+    let drawn: ReturnType<typeof computeContentBounds> = null
     try {
       pixels = decode(await input.rasterize([id]))
+      drawn = computeContentBounds(graph, [id])
     } finally {
       graph.updateNode(id, restore)
     }
-    if (!pixels) continue
-    const box = graph.getAbsoluteBounds(id)
-    // A render covers effects drawn outside the box (shadows), centred on it.
-    const left = Math.round(box.x - origin.x - (pixels.width - box.width) / 2)
-    const top = Math.round(box.y - origin.y - (pixels.height - box.height) / 2)
+    if (!pixels || !drawn) continue
+    const left = Math.round(drawn.minX - origin.x)
+    const top = Math.round(drawn.minY - origin.y)
     layers.push({
       name: node.name,
       left,
