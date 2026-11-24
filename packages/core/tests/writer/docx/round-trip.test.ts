@@ -115,6 +115,16 @@ describe('docx round trip', () => {
     expect(xml).toContain('<w:bidiVisual/>')
   })
 
+  test('sizes a WebP picture without a size of its own from its pixels', () => {
+    // 60×40, lossless.
+    const webp = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4TBUAAAAvO8AJAAcQ0f/+B4CE8H+9GNH/1AcA'
+    const { document } = roundTrip([
+      paragraph({ dir: 'ltr' }, { type: 'image', attrs: { src: webp } })
+    ])
+    const image = document.body.content?.[0].content?.[0]
+    expect(image?.attrs).toMatchObject({ width: 60, height: 40 })
+  })
+
   test('keeps page setup, header and footer with page numbers', () => {
     const header: WriterNode = { type: 'doc', content: [paragraph({ dir: 'rtl' }, text('ترويسة'))] }
     const footer: WriterNode = {
