@@ -115,11 +115,14 @@ export async function openWordDocument(): Promise<WriterFileOutcome> {
   }
 }
 
-/** The document as Word bytes, patched into the package it came from when there is one. */
+/**
+ * The document as Word bytes, patched into the package it came from when there is one. A file's
+ * own title stays as it is; the name it is saved under titles one that has none.
+ */
 function currentBytes(): Uint8Array {
   const source = writerSource.value
   return writeDocx(
-    { ...writerDocument.value, title: writerName.value || writerDocument.value.title },
+    { ...writerDocument.value, title: writerDocument.value.title || writerName.value },
     { source: source && source.kind !== 'google' ? source.package : null }
   )
 }
