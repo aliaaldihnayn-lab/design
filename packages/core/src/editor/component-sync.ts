@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 
-import { computeAllLayouts } from '#core/layout'
+import { layoutNodeAndAncestors } from '#core/layout/mutations'
 
 const isComponent = (node: SceneNode) => node.type === 'COMPONENT'
 
@@ -33,36 +33,36 @@ function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
   return result.reverse()
 }
 
-type ComputeLayouts = (graph: SceneGraph, scopeId?: string) => void
+type LayoutNode = (graph: SceneGraph, nodeId: string) => void
 
 /**
- * Only the pages that actually changed need layout work: the edited subtrees, the components
- * they belong to, and every instance of those components, which may sit on another page.
+ * Only the layers a sync changed need layout work: the synced components and every instance of
+ * them, which may sit on another page, each with the auto-layout frames above it. Laying out
+ * their whole pages instead costs as much as the page holds on every sync, which a build that
+ * draws many components one after another pays thousands of times.
  */
-function affectedPageIds(
-  graph: SceneGraph,
-  editedIds: Iterable<string>,
-  componentIds: Iterable<string>
-): Set<string> {
-  const pageIds = new Set<string>()
-  const addPageOf = (nodeId: string) => {
-    // Layout recomputation is scoped to pages.
-    const pageId = graph.pageOf(nodeId)
-    if (pageId) pageIds.add(pageId)
-  }
-
-  for (const id of editedIds) addPageOf(id)
+function syncedLayoutRoots(graph: SceneGraph, componentIds: Iterable<string>): string[] {
+  const candidates = new Set<string>()
   for (const componentId of componentIds) {
-    addPageOf(componentId)
-    for (const instance of graph.getInstances(componentId)) addPageOf(instance.id)
+    if (!graph.getNode(componentId)) continue
+    candidates.add(componentId)
+    for (const instance of graph.getInstances(componentId)) candidates.add(instance.id)
   }
-  return pageIds
+  // A root inside another root is laid out with it.
+  return [...candidates].filter((id) => {
+    let parentId = graph.getNode(id)?.parentId ?? null
+    while (parentId) {
+      if (candidates.has(parentId)) return false
+      parentId = graph.getNode(parentId)?.parentId ?? null
+    }
+    return true
+  })
 }
 
 export function createComponentSyncScheduler(
   getGraph: () => SceneGraph,
   requestRender: () => void,
-  computeLayouts: ComputeLayouts = computeAllLayouts
+  layoutNode: LayoutNode = layoutNodeAndAncestors
 ) {
   let pendingComponentSync: Set<string> | null = null
   let isFlushingComponentSync = false
@@ -79,11 +79,10 @@ export function createComponentSyncScheduler(
         const component = graph.closest(id, isComponent)
         if (component) componentIds.add(component.id)
       }
-      graph.syncInstancesTogether(componentSyncOrder(graph, componentIds))
+      const order = componentSyncOrder(graph, componentIds)
+      graph.syncInstancesTogether(order)
       if (componentIds.size > 0) {
-        const pageIds = affectedPageIds(graph, ids, componentIds)
-        if (pageIds.size === 0) computeLayouts(graph)
-        else for (const pageId of pageIds) computeLayouts(graph, pageId)
+        for (const id of syncedLayoutRoots(graph, order)) layoutNode(graph, id)
         requestRender()
       }
     } finally {

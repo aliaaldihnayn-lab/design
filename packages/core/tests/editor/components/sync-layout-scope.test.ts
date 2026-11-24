@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { computeAllLayouts } from '@lawha/core/layout'
 import { SceneGraph } from '@lawha/scene-graph'
 
 import { createComponentSyncScheduler } from '#core/editor/component-sync'
+import { layoutNodeAndAncestors } from '#core/layout/mutations'
 
 function createGraph() {
   const graph = new SceneGraph()
@@ -50,15 +50,24 @@ function createGraph() {
 }
 
 describe('component sync layout scope', () => {
-  test('recomputes only the pages that changed, including cross-page instances', async () => {
-    const { graph, componentPage, instancePage, unrelatedPage, label } = createGraph()
-    const scopes: (string | undefined)[] = []
+  test('lays out only the synced component and its instances, including cross-page ones', async () => {
+    const {
+      graph,
+      componentPage,
+      instancePage,
+      unrelatedPage,
+      unrelated,
+      label,
+      component,
+      instance
+    } = createGraph()
+    const scopes: string[] = []
     const { scheduleComponentSync } = createComponentSyncScheduler(
       () => graph,
       () => undefined,
-      (innerGraph, scopeId) => {
-        scopes.push(scopeId)
-        computeAllLayouts(innerGraph, scopeId)
+      (innerGraph, nodeId) => {
+        scopes.push(nodeId)
+        layoutNodeAndAncestors(innerGraph, nodeId)
       }
     )
 
@@ -66,20 +75,50 @@ describe('component sync layout scope', () => {
     scheduleComponentSync(label.id)
 
     await Promise.resolve()
-    expect([...scopes].sort()).toEqual([componentPage.id, instancePage.id].sort())
-    expect(scopes).not.toContain(unrelatedPage.id)
-    expect(scopes).not.toContain(undefined)
+    expect([...scopes].sort()).toEqual([component.id, instance.id].sort())
+    for (const page of [componentPage, instancePage, unrelatedPage, unrelated])
+      expect(scopes).not.toContain(page.id)
+  })
+
+  test('an instance inside a synced component is laid out with it, once', async () => {
+    const { graph, component, label } = createGraph()
+    const card = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+      name: 'Card',
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG'
+    })
+    const nested = expectDefined(graph.createInstance(component.id, card.id, {}), 'nested')
+    const scopes: string[] = []
+    const { scheduleComponentSync } = createComponentSyncScheduler(
+      () => graph,
+      () => undefined,
+      (innerGraph, nodeId) => {
+        scopes.push(nodeId)
+        layoutNodeAndAncestors(innerGraph, nodeId)
+      }
+    )
+
+    graph.updateNode(label.id, { text: 'A much longer label than before' })
+    scheduleComponentSync(label.id)
+
+    await Promise.resolve()
+    expect(scopes).toContain(card.id)
+    expect(scopes).not.toContain(nested.id)
+    // The card hugs the nested button, which follows its component.
+    expect(graph.getNode(nested.id)?.width).toBe(graph.getNode(component.id)?.width)
+    expect(graph.getNode(card.id)?.width).toBe(graph.getNode(nested.id)?.width)
   })
 
   test('an edit outside any component does no layout work', async () => {
     const { graph, unrelated } = createGraph()
-    const scopes: (string | undefined)[] = []
+    const scopes: string[] = []
     const { scheduleComponentSync } = createComponentSyncScheduler(
       () => graph,
       () => undefined,
-      (innerGraph, scopeId) => {
-        scopes.push(scopeId)
-        computeAllLayouts(innerGraph, scopeId)
+      (innerGraph, nodeId) => {
+        scopes.push(nodeId)
+        layoutNodeAndAncestors(innerGraph, nodeId)
       }
     )
 
@@ -92,13 +131,13 @@ describe('component sync layout scope', () => {
 
   test('layout writing its own results schedules no sync', async () => {
     const { graph, label } = createGraph()
-    const scopes: (string | undefined)[] = []
+    const scopes: string[] = []
     const { scheduleComponentSync } = createComponentSyncScheduler(
       () => graph,
       () => undefined,
-      (innerGraph, scopeId) => {
-        scopes.push(scopeId)
-        computeAllLayouts(innerGraph, scopeId)
+      (innerGraph, nodeId) => {
+        scopes.push(nodeId)
+        layoutNodeAndAncestors(innerGraph, nodeId)
       }
     )
 
@@ -115,8 +154,7 @@ describe('component sync layout scope', () => {
     const { graph, instance, component } = createGraph()
     const { scheduleComponentSync } = createComponentSyncScheduler(
       () => graph,
-      () => undefined,
-      computeAllLayouts
+      () => undefined
     )
 
     // Widen the component's padding, which moves its label; the instance must follow.
