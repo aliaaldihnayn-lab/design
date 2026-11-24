@@ -471,3 +471,32 @@ test("a run's own zero spacing is written, so it does not inherit the layer's", 
   })
   expect(svg).toContain('<tspan letter-spacing="0">b</tspan>')
 })
+
+describe('SVG right-to-left text', () => {
+  test('starts each word at its own glyphs, leaving out the spaces around it', () => {
+    // Laid out right to left: "لوحة" on the right, its space to its left, then "Lawha".
+    const text = 'لوحة Lawha'
+    const edges = new Map([
+      [0, { left: 150, right: 160 }],
+      [1, { left: 140, right: 150 }],
+      [2, { left: 130, right: 140 }],
+      [3, { left: 120, right: 130 }],
+      [4, { left: 112, right: 120 }],
+      ...[5, 6, 7, 8, 9].map((index): [number, { left: number; right: number }] => [
+        index,
+        { left: 60 + (index - 5) * 10, right: 70 + (index - 5) * 10 }
+      ])
+    ])
+    const svg = exportText(
+      {
+        text,
+        textDirection: 'RTL',
+        styleRuns: [{ start: 5, length: 5, style: { fontFamily: 'Inter' } }]
+      },
+      [{ start: 0, end: text.length, x: 60, y: 18, width: 100, characters: edges }]
+    )
+    // A renderer starting the span at its left edge would otherwise put the space on the
+    // word's right, and the word a space too far left, over its neighbour.
+    expect(textElement(svg)).toContain('<tspan x="120" y="18">لوحة</tspan>')
+  })
+})

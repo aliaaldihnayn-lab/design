@@ -124,6 +124,23 @@ function fallbackSegments(line: SVGTextLine, from: number, to: number): Fallback
   return segments
 }
 
+const RIGHT_TO_LEFT = /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}]/u
+
+/**
+ * A right-to-left span without the spaces at its ends. Laid out right to left, a space after a
+ * word sits to its left, but a renderer starting the span at its left edge in the SVG's own
+ * left-to-right order puts it on the right, so the word lands a space too far left, over its
+ * neighbour. Each word is placed at its own glyphs' edge instead, and the gaps stay as laid out.
+ */
+function trimmedRightToLeft(text: string, from: number, to: number): [number, number] {
+  if (!RIGHT_TO_LEFT.test(text.slice(from, to))) return [from, to]
+  let start = from
+  let stop = to
+  while (start < stop && /\s/.test(text[start])) start++
+  while (stop > start && /\s/.test(text[stop - 1])) stop--
+  return [start, stop]
+}
+
 function lineSpans(
   node: SceneNode,
   pieces: readonly TextPiece[],
@@ -145,14 +162,15 @@ function lineSpans(
       Math.max(piece.from, line.start),
       Math.min(piece.to, end)
     )) {
-      if (to <= from) continue
+      const [start, stop] = trimmedRightToLeft(node.text, from, to)
+      if (stop <= start) continue
       const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
       // Every span starts at its left edge, in either direction, since renderers disagree on
       // which side `text-anchor` and `direction` place. Without character edges the first span
       // of a line starts at the line's left edge, and the rest follow on from it.
-      const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
+      const left = spanEdges(line, start, stop)?.left ?? (spans.length === 0 ? line.x : null)
       const position = left === null ? {} : { x: round(left), y }
-      spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
+      spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, start, stop)))
     }
   }
   return spans
