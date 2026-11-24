@@ -33,6 +33,15 @@ function text(props: Parameters<SceneGraph['createNode']>[2]) {
 }
 
 describe('text export', () => {
+  test('auto-width text breaks only at its own line breaks; sized text wraps', () => {
+    const auto = text({ text: 'One line\nTwo', textAutoResize: 'WIDTH_AND_HEIGHT' }).html
+    const wrapping = text({ text: 'Wraps', textAutoResize: 'HEIGHT' }).html
+    const single = text({ text: 'Cut', textAutoResize: 'WIDTH_AND_HEIGHT', maxLines: 1 }).html
+    expect(auto).toMatch(/white-space: pre[;"]/)
+    expect(wrapping).toContain('white-space: pre-wrap')
+    expect(single).toContain('white-space: nowrap')
+  })
+
   test('writes runs as spans that set only what differs from the text', () => {
     const { html } = text({
       text: 'Hello world',

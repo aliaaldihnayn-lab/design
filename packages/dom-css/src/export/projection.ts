@@ -387,8 +387,17 @@ function styleFromTextNode(
   }
   const textTransform = textCaseToCSS(node.textCase)
   if (textTransform) style['text-transform'] = textTransform
-  style['white-space'] = node.maxLines === 1 ? 'nowrap' : 'pre-wrap'
+  style['white-space'] = textWhiteSpace(node)
   return style
+}
+
+/**
+ * How the text breaks: auto-width text only at its own line breaks, as it grows to its longest
+ * line rather than wrapping inside a max-width or a narrow parent; other text wraps.
+ */
+function textWhiteSpace(node: SceneNode): string {
+  if (node.maxLines === 1) return 'nowrap'
+  return node.textAutoResize === 'WIDTH_AND_HEIGHT' ? 'pre' : 'pre-wrap'
 }
 
 function imageSourceURL(node: SceneNode): string | undefined {
