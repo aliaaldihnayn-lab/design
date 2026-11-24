@@ -150,7 +150,7 @@ function decoration(spec: InspectSpec): string[] {
     )
   if (spec.blur) lines.push(`.blur(radius: ${num(spec.blur / 2)})`)
   if (spec.opacity < 1) lines.push(`.opacity(${num(spec.opacity)})`)
-  if (spec.rotation !== 0) lines.push(`.rotationEffect(.degrees(${num(-spec.rotation)}))`)
+  if (spec.rotation !== 0) lines.push(`.rotationEffect(.degrees(${num(spec.rotation)}))`)
   return lines
 }
 

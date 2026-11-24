@@ -168,7 +168,7 @@ export function inspectAndroidXML(spec: InspectSpec): string {
   const shadow = spec.shadows.find((item) => !item.inner)
   if (shadow) attrs.push(`android:elevation="${dp(shadow.blur / 2)}"`)
   if (spec.opacity < 1) attrs.push(`android:alpha="${num(spec.opacity)}"`)
-  if (spec.rotation !== 0) attrs.push(`android:rotation="${num(-spec.rotation)}"`)
+  if (spec.rotation !== 0) attrs.push(`android:rotation="${num(spec.rotation)}"`)
 
   const lines = [`<!-- res/layout: ${escapeXML(spec.name)} -->`, `<${tag}`]
   lines.push(...attrs.map((attr) => `    ${attr}`))

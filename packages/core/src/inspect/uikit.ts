@@ -182,7 +182,7 @@ export function inspectUIKit(spec: InspectSpec): string {
   if (spec.opacity < 1) lines.push(`${view}.alpha = ${num(spec.opacity)}`)
   if (spec.rotation !== 0)
     lines.push(
-      `${view}.transform = CGAffineTransform(rotationAngle: ${num(-spec.rotation)} * .pi / 180)`
+      `${view}.transform = CGAffineTransform(rotationAngle: ${num(spec.rotation)} * .pi / 180)`
     )
   if (gradient) {
     lines.push('// Once laid out, in layoutSubviews():')

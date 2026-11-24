@@ -259,4 +259,20 @@ describe('inspect', () => {
     expect(xml).toContain('android:startColor="#FFFF0000"')
     expect(xml).toContain('android:endColor="#FF0000FF"')
   })
+
+  test('a turned layer turns the same way in every language', () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const node = figma.createRectangle()
+    node.resize(100, 50)
+    // Figma turns counterclockwise; CSS and every native toolkit here turn clockwise.
+    node.rotation = 30
+    const spec = must(inspectLayer(graph, node.id))
+    const css = /transform: rotate\((-?[\d.]+)deg\);/.exec(inspectCSS(spec))
+    expect(Number(css?.[1])).toBeCloseTo(-30)
+    expect(inspectSwiftUI(spec)).toContain('.rotationEffect(.degrees(-30))')
+    expect(inspectCompose(spec)).toContain('.rotate(-30f)')
+    expect(inspectUIKit(spec)).toContain('CGAffineTransform(rotationAngle: -30 * .pi / 180)')
+    expect(inspectAndroidXML(spec)).toContain('android:rotation="-30"')
+  })
 })

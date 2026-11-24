@@ -62,7 +62,7 @@ function composeBrush(gradient: InspectGradient, spec: InspectSpec): string {
 function paintModifiers(spec: InspectSpec): string[] {
   const out: string[] = []
   const shape = shapeOf(spec)
-  if (spec.rotation !== 0) out.push(`rotate(${num(-spec.rotation)}f)`)
+  if (spec.rotation !== 0) out.push(`rotate(${num(spec.rotation)}f)`)
   for (const shadow of spec.shadows.filter((s) => !s.inner))
     out.push(`shadow(elevation = ${dp(shadow.blur / 2)}, shape = ${shape})`)
   const solid = spec.fills.find((p) => p.kind === 'solid')
