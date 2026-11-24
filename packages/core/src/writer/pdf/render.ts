@@ -219,9 +219,11 @@ function glyphOperators(
   const skew = piece.face.syntheticItalic ? SKEW : 0
   const { size } = piece
   // The piece's text as written, for readers that copy text through ActualText rather than
-  // glyph by glyph, which a font that draws one glyph for several letters cannot map.
+  // glyph by glyph, which a font that draws one glyph for several letters cannot map. The span
+  // closes before `Q`: readers such as Poppler place its text with the state at `EMC`, and the
+  // state `Q` restores has no font, which would leave the text no size or place.
   const parts = [
-    `/Span << /ActualText <FEFF${utf16Hex(piece.text)}> >> BDC q`,
+    `q /Span << /ActualText <FEFF${utf16Hex(piece.text)}> >> BDC`,
     `BT /${font.name} ${num(size)} Tf ${num(r)} ${num(g)} ${num(b)} rg`
   ]
   if (piece.face.syntheticBold) {
@@ -257,7 +259,7 @@ function glyphOperators(
   flush()
   if (rise) parts.push('0 Ts')
   // `q`…`Q` keeps the faked bold's render mode and stroke from the pieces after it.
-  parts.push('ET', 'Q EMC')
+  parts.push('ET', 'EMC Q')
   return parts.join('\n')
 }
 

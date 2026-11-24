@@ -48,8 +48,8 @@ const paragraph = (dir: 'rtl' | 'ltr', ...content: WriterNode[]): WriterNode => 
   content
 })
 
-/** Each page's text as written, from the ActualText of its spans. */
-async function writtenTexts(pdf: Uint8Array): Promise<string[]> {
+/** Each page's content stream operators. */
+async function pageContents(pdf: Uint8Array): Promise<string[]> {
   const loaded = await PDFDocument.load(pdf)
   return loaded.getPages().map((page) => {
     const contents = page.node.Contents()
@@ -59,15 +59,19 @@ async function writtenTexts(pdf: Uint8Array): Promise<string[]> {
       .map((entry) => loaded.context.lookup(entry))
       .filter((stream): stream is PDFRawStream => stream instanceof PDFRawStream)
       .map((stream) => new TextDecoder().decode(decodePDFRawStream(stream).decode()))
-      .flatMap((content) =>
-        [...content.matchAll(/\/ActualText <FEFF([0-9A-F]*)>/g)].map(([, hex = '']) =>
-          String.fromCharCode(
-            ...(hex.match(/.{4}/g) ?? []).map((unit) => Number.parseInt(unit, 16))
-          )
-        )
+      .join('\n')
+  })
+}
+
+/** Each page's text as written, from the ActualText of its spans. */
+async function writtenTexts(pdf: Uint8Array): Promise<string[]> {
+  return (await pageContents(pdf)).map((content) =>
+    [...content.matchAll(/\/ActualText <FEFF([0-9A-F]*)>/g)]
+      .map(([, hex = '']) =>
+        String.fromCharCode(...(hex.match(/.{4}/g) ?? []).map((unit) => Number.parseInt(unit, 16)))
       )
       .join(' ')
-  })
+  )
 }
 
 async function pageTexts(pdf: Uint8Array): Promise<string[]> {
@@ -199,6 +203,21 @@ describe('PDF export', () => {
     written.forEach((page) => expect(page).toContain('ترويسة'))
     expect(written[0]).toContain('عقد خدمات')
     expect(written.at(-1)).toContain('الصفحة الأخيرة')
+  })
+
+  test('closes each text span while its font is set, so readers place its text', async () => {
+    const body: WriterNode = {
+      type: 'doc',
+      content: [paragraph('ltr', text('Hello world', [{ type: 'bold' }]), text(' again'))]
+    }
+    const [content = ''] = await pageContents(
+      await exportWriterPDF(createWriterDocument({ body }), { fonts })
+    )
+    const spans = [...content.matchAll(/BDC([\s\S]*?)EMC/g)].map(([, inside = '']) => inside)
+    expect(spans.length).toBeGreaterThan(0)
+    // Text extractors such as Poppler set a span's ActualText with the state at its `EMC`; a
+    // `Q` before it restores a state with no font, and the text would have no size.
+    for (const inside of spans) expect(inside.split(/\s+/)).not.toContain('Q')
   })
 
   test('embeds the fonts it draws in, falling back for characters a face lacks', async () => {
