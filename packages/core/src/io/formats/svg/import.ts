@@ -1,4 +1,4 @@
-import { groupBy } from 'es-toolkit/array'
+import { groupBy, sortBy } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@lawha/scene-graph'
 import { WHITE } from '@lawha/scene-graph/constants'
@@ -142,10 +142,23 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
     }
   })
   // Texts and images keep their place among the paths, in the order they were drawn.
-  const between = [
-    ...data.texts.map((text) => ({ index: text.pathIndex, drawable: textDrawable(text) })),
-    ...data.images.map((image) => ({ index: image.pathIndex, drawable: imageDrawable(image) }))
-  ]
+  // Their own elements, numbered in document order, order those between the same paths.
+  const order = (elements: SVGElementLayer[]) => elements.at(-1)?.key ?? 0
+  const between = sortBy(
+    [
+      ...data.texts.map((text) => ({
+        index: text.pathIndex,
+        order: order(text.elements),
+        drawable: textDrawable(text)
+      })),
+      ...data.images.map((image) => ({
+        index: image.pathIndex,
+        order: order(image.elements),
+        drawable: imageDrawable(image)
+      }))
+    ],
+    [(entry) => entry.order]
+  )
   const byPath = groupBy(between, (entry) => entry.index)
   const at = (index: number) => (byPath[index] ?? []).map((entry) => entry.drawable)
   return [

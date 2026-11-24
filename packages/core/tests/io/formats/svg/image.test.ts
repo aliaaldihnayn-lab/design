@@ -37,6 +37,23 @@ describe('SVG <image>', () => {
     expect(siblings.indexOf(image.id)).toBe(1)
   })
 
+  test('keeps its place among texts drawn with no shape between them', () => {
+    const graph = new SceneGraph()
+    const root = expectDefined(
+      createSVGNodes(
+        graph,
+        graph.getPages()[0].id,
+        `<svg width="200" height="100"><text x="5" y="20">Under</text>` +
+          `<image href="${HREF}" width="80" height="40"/><text x="5" y="60">Over</text></svg>`
+      )
+    )
+    expect(graph.getChildren(root.id).map((node) => node.text || node.type)).toEqual([
+      'Under',
+      'RECTANGLE',
+      'Over'
+    ])
+  })
+
   test('takes the scale of its transform as its size, and stretches without an aspect ratio', () => {
     const { image } = imported(
       `<svg width="400" height="400" viewBox="0 0 400 400">` +
