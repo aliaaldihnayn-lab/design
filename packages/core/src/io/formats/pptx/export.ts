@@ -11,6 +11,7 @@ import {
   inch,
   nodeBox,
   nodeScale,
+  pictureBox,
   pt,
   transformNodeVector,
   type SlideBox
@@ -520,7 +521,7 @@ async function addFallbackImage(
     ctx.stats.skipped += 1
     return
   }
-  const box = nodeBox(ctx, node)
+  const box = pictureBox(nodeBox(ctx, node), data, ctx.fallbackScale, ctx.pxPerInch)
   ctx.slide.addImage({
     data: `data:image/png;base64,${fromUint8Array(data)}`,
     x: box.x,

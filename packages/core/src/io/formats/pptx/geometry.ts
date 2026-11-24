@@ -99,3 +99,31 @@ function getNodeTransform(ctx: PPTXGeometryContext, node: SceneNode): NodeTransf
   const radians = mirrored ? Math.atan2(-matrix[3], matrix[4]) : Math.atan2(matrix[3], matrix[0])
   return { matrix, scaleX, scaleY, mirrored, radians }
 }
+
+/**
+ * The box a layer's picture fills: the layer's box, grown about its centre to the picture's size
+ * where what the layer draws reaches past its box (a stroke, a shadow), so it is not squeezed in.
+ */
+export function pictureBox(
+  box: SlideBox,
+  png: Uint8Array,
+  scale: number,
+  pxPerInch: number
+): SlideBox {
+  // A PNG's width and height are the first fields of its header chunk, big-endian.
+  const header = String.fromCharCode(...png.subarray(12, 16))
+  if (png.length < 24 || header !== 'IHDR') return box
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength)
+  const w = view.getUint32(16) / scale / pxPerInch
+  const h = view.getUint32(20) / scale / pxPerInch
+  if (!(w > box.w) && !(h > box.h)) return box
+  const width = Math.max(w, box.w)
+  const height = Math.max(h, box.h)
+  return {
+    ...box,
+    x: box.x - (width - box.w) / 2,
+    y: box.y - (height - box.h) / 2,
+    w: width,
+    h: height
+  }
+}

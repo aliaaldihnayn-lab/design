@@ -4,7 +4,10 @@ import { extractExportGraph } from '#core/io/subgraph'
 
 import type { PPTXExportOptions, PPTXRasterize } from './types'
 
-/** Builds a rasterizer that keeps fallback subtrees transparent and isolated. */
+/**
+ * Builds a rasterizer that keeps fallback subtrees transparent and isolated, and draws them
+ * upright: the slide turns and reflects the picture as it does the layer.
+ */
 export function makeIsolatedRasterize(
   graph: SceneGraph,
   context?: PPTXExportOptions['context']
@@ -24,6 +27,13 @@ export function makeIsolatedRasterize(
 
     const targets = new Set(extracted.nodeIds)
     for (const nodeId of extracted.nodeIds) {
+      // The picture is placed turned and reflected as the layer is, so it is drawn upright.
+      for (let node = extracted.graph.getNode(nodeId); node;) {
+        node.rotation = 0
+        node.flipX = false
+        node.flipY = false
+        node = node.parentId ? extracted.graph.getNode(node.parentId) : undefined
+      }
       let cursor = extracted.graph.getNode(nodeId)?.parentId ?? null
       while (cursor) {
         const ancestor = extracted.graph.getNode(cursor)
