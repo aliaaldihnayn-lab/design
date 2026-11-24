@@ -1,6 +1,6 @@
 import { strFromU8 } from 'fflate'
 
-import { readStyleSheet, type StyleSheet } from './styles'
+import { readStyleSheet, readThemeFonts, type StyleSheet } from './styles'
 import { attrOf, kids, parseXML, valOf } from './xml'
 
 /** The package's parts by path; a path the package lacks reads as undefined. */
@@ -65,7 +65,11 @@ export function readRels(files: PackageFiles, partPath: string): Map<string, Rel
 }
 
 export function readStyles(files: PackageFiles): StyleSheet {
-  return readStyleSheet(readText(files, 'word/styles.xml'))
+  const theme = Object.keys(files).find((path) => /^word\/theme\/[^/]+\.xml$/.test(path))
+  return readStyleSheet(
+    readText(files, 'word/styles.xml'),
+    readThemeFonts(theme ? readText(files, theme) : null)
+  )
 }
 
 export function readNumbering(files: PackageFiles): Numbering {

@@ -43,4 +43,15 @@ describe('reading Word files from other producers', () => {
     const compound = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])
     expect(() => readDocx(compound)).toThrow('encrypted')
   })
+
+  test('reads the theme fonts Word documents name for their default text', () => {
+    const read = (name: string) => readDocx(readFileSync(join(FIXTURES, `writer/${name}`)))
+    // Word 2016's theme: Calibri body text, Arial for Arabic (`minorHAnsi`, `minorBidi`).
+    expect(read('word-sections.docx').defaults).toMatchObject({
+      fontFamily: 'Calibri',
+      fontFamilyComplex: 'Arial'
+    })
+    // python-docx's template names Cambria as its theme body font.
+    expect(read('python-docx-rich.docx').defaults?.fontFamily).toBe('Cambria')
+  })
 })

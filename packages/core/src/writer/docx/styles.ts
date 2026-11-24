@@ -56,6 +56,8 @@ export interface StyleSheet {
   /** The default paragraph style's id, used where a paragraph names none. */
   defaultParagraphStyle: string | null
   styles: Map<string, StyleEntry>
+  /** The theme's fonts, which run properties resolve theme references through. */
+  theme: ThemeFonts
 }
 
 const HEX = /^[0-9a-f]{6}$/i
@@ -68,8 +70,47 @@ function definedEntries<T extends object>(value: T): Partial<T> {
 
 const toggle = (parent: Element | null, name: string) => toggleOf(parent, name) ?? undefined
 
-/** The properties a `w:rPr` sets itself. */
-export function readRunProperties(rPr: Element | null): RunProperties {
+/**
+ * The theme's fonts (`a:fontScheme`), which runs name as `minorHAnsi` or `majorBidi` rather than
+ * by family. The complex-script face is the theme's `a:cs`, else its Arabic script font.
+ */
+export interface ThemeFonts {
+  major?: string
+  minor?: string
+  majorComplex?: string
+  minorComplex?: string
+}
+
+export function readThemeFonts(source: string | null): ThemeFonts {
+  const root = parseXML(source ?? '')
+  const scheme = kids(root, 'themeElements').flatMap((elements) => kids(elements, 'fontScheme'))
+  const face = (collection: Element | null, name: string) =>
+    attrOf(kid(collection, name), 'typeface') || undefined
+  const arabic = (collection: Element | null) =>
+    attrOf(
+      kids(collection, 'font').find((font) => attrOf(font, 'script') === 'Arab') ?? null,
+      'typeface'
+    ) || undefined
+  const major = kid(scheme[0] ?? null, 'majorFont')
+  const minor = kid(scheme[0] ?? null, 'minorFont')
+  return definedEntries<ThemeFonts>({
+    major: face(major, 'latin'),
+    minor: face(minor, 'latin'),
+    majorComplex: face(major, 'cs') ?? arabic(major),
+    minorComplex: face(minor, 'cs') ?? arabic(minor)
+  })
+}
+
+/** The family a theme font reference (`w:asciiTheme`, `w:cstheme`) stands for. */
+function themeFont(reference: string | null, theme: ThemeFonts): string | undefined {
+  if (!reference) return undefined
+  const major = reference.startsWith('major')
+  if (reference.endsWith('Bidi')) return major ? theme.majorComplex : theme.minorComplex
+  return major ? theme.major : theme.minor
+}
+
+/** The properties a `w:rPr` sets itself; theme fonts it names resolve through `theme`. */
+export function readRunProperties(rPr: Element | null, theme: ThemeFonts = {}): RunProperties {
   if (!rPr) return {}
   const fonts = kid(rPr, 'rFonts')
   const u = kid(rPr, 'u')
@@ -90,8 +131,13 @@ export function readRunProperties(rPr: Element | null): RunProperties {
       vertAlign === 'superscript' || vertAlign === 'subscript' || vertAlign === 'baseline'
         ? vertAlign
         : undefined,
-    font: attrOf(fonts, 'ascii') ?? attrOf(fonts, 'hAnsi') ?? undefined,
-    fontComplex: attrOf(fonts, 'cs') ?? undefined,
+    // A theme reference wins over the family named beside it, as in Word.
+    font:
+      themeFont(attrOf(fonts, 'asciiTheme') ?? attrOf(fonts, 'hAnsiTheme'), theme) ??
+      attrOf(fonts, 'ascii') ??
+      attrOf(fonts, 'hAnsi') ??
+      undefined,
+    fontComplex: themeFont(attrOf(fonts, 'cstheme'), theme) ?? attrOf(fonts, 'cs') ?? undefined,
     size: size > 0 ? size : undefined,
     sizeComplex: sizeComplex > 0 ? sizeComplex : undefined,
     color: color && HEX.test(color) ? color.toLowerCase() : undefined,
@@ -119,7 +165,7 @@ export const mergeRun = (...layers: RunProperties[]): RunProperties =>
 const mergeParagraph = (...layers: ParagraphProperties[]): ParagraphProperties =>
   Object.assign({}, ...layers) as ParagraphProperties
 
-export function readStyleSheet(source: string | null): StyleSheet {
+export function readStyleSheet(source: string | null, theme: ThemeFonts = {}): StyleSheet {
   const root = parseXML(source ?? '')
   const styles = new Map<string, StyleEntry>()
   const names = new Map<string, string>()
@@ -135,21 +181,22 @@ export function readStyleSheet(source: string | null): StyleSheet {
       type,
       name,
       basedOn: valOf(style, 'basedOn'),
-      run: readRunProperties(kid(style, 'rPr')),
+      run: readRunProperties(kid(style, 'rPr'), theme),
       paragraph: readParagraphProperties(kid(style, 'pPr'))
     })
     const isDefault = ['1', 'true', 'on'].includes(attrOf(style, 'default') ?? '')
     if (type === 'paragraph' && isDefault) defaultParagraphStyle = id
   }
   const defaults = kid(root, 'docDefaults')
-  const docRun = readRunProperties(kid(kid(defaults, 'rPrDefault'), 'rPr'))
+  const docRun = readRunProperties(kid(kid(defaults, 'rPrDefault'), 'rPr'), theme)
   const docParagraph = readParagraphProperties(kid(kid(defaults, 'pPrDefault'), 'pPr'))
   const sheet: StyleSheet = {
     names,
     defaultRun: docRun,
     defaultParagraph: docParagraph,
     defaultParagraphStyle,
-    styles
+    styles,
+    theme
   }
   if (defaultParagraphStyle) {
     sheet.defaultRun = mergeRun(docRun, styleRun(sheet, defaultParagraphStyle))

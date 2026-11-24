@@ -75,7 +75,7 @@ const ROLE_CHARACTER_STYLES = new Set([
 /** The marks of a run element in its paragraph, its styles resolved. */
 function elementMarks(rPr: Element | null, state: InlineState, sample: string): WriterMark[] {
   const sheet = state.context.styles
-  const own = readRunProperties(rPr)
+  const own = readRunProperties(rPr, sheet.theme)
   const characterStyle = valOf(rPr, 'rStyle')
   const role = ROLE_CHARACTER_STYLES.has(sheet.names.get(characterStyle ?? '') ?? '')
   const props = effectiveRun(sheet, state.paragraphStyle ?? null, role ? null : characterStyle, own)
