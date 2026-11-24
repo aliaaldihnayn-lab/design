@@ -1,11 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="28 28 228 228">
-  <path id="lawha-body" data-part="body" fill="#4F46E5" d="M176 44H206V170A78 78 0 0 1 50 170V150H80V170A48 48 0 0 0 176 170Z"/>
-  <path data-part="upper" fill="#3730A3" d="M176 44H206V88H176Z"/>
-  <path data-part="middle" fill="#818CF8" d="M176 88H206V130H176Z"/>
-  <path data-part="lower" fill="#6366F1" d="M176 130H206V170H176Z"/>
-  <path data-part="point" fill="#312E81" d="M50 150H80V170H50Z"/>
-  <path data-part="handle" fill="#EA580C" d="M154 28H198V72H154Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M164 38H188V62H164Z"/>
-  <path data-part="handle" fill="#EA580C" d="M100 225A27 27 0 1 1 46 225A27 27 0 1 1 100 225Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M90 225A17 17 0 1 1 56 225A17 17 0 1 1 90 225Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="10 10 80 80">
+  <path data-part="body" fill="#000000" d="M22.8598 74L18 54.8518L69.6355 49.8059L26.8692 45.407L28.5701 26L79.5981 31.0458L78.1402 48.9003L83 68.0485L22.8598 74Z"/>
 </svg>

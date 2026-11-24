@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 
 import sharp from 'sharp'
 
-import { brand, targetFiles } from './config.ts'
+import { androidDensities, brand, targetFiles } from './config.ts'
 import type { BrandTarget } from './config.ts'
 import type { BrandFiles } from './web.ts'
 
@@ -74,6 +74,13 @@ export async function validateMaskable(data: Buffer): Promise<void> {
 }
 
 function pngSize(name: string): number | undefined {
+  const android = /^mipmap-(\w+)\/ic_launcher(_round|_foreground)?\.png$/.exec(name)
+  if (android) {
+    const legacy = Object.entries(androidDensities).find(([density]) => density === android[1])?.[1]
+    if (!legacy) return undefined
+    return android[2] === '_foreground' ? Math.round((legacy * 108) / 48) : legacy
+  }
+  if (name === 'brand/mark-1024.png' || name === 'brand/mark-dark-1024.png') return 1024
   if (name === 'brand/app-icon-1024.png') return 1024
   if (name === 'apple-touch-icon.png') return 180
   if (name === 'brand/favicon-96x96.png') return 96
@@ -119,9 +126,41 @@ export async function validateFiles(files: BrandFiles, target: BrandTarget): Pro
       canonicalIcns(data)
     }
   }
+  if (target === 'android') await validateAndroid(files)
   if (target === 'web') {
     const maskable = files.get('brand/pwa-maskable-512.png')
     assert.ok(maskable)
     await validateMaskable(maskable)
+  }
+}
+
+/**
+ * The adaptive foreground is transparent outside the mark and keeps the mark inside Android's
+ * 66dp safe circle; the background layer is the brand peach.
+ */
+export async function validateAndroid(files: BrandFiles): Promise<void> {
+  const color = files.get('values/ic_launcher_background.xml')?.toString()
+  assert.ok(color?.includes(`>${brand.background}<`), 'Adaptive background must be the brand color')
+  for (const density of Object.keys(androidDensities)) {
+    const name = `mipmap-${density}/ic_launcher_foreground.png`
+    const data = files.get(name)
+    assert.ok(data, name)
+    const { data: pixels, info } = await sharp(data)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+    const radius = (info.width * 33) / 108
+    let opaque = 0
+    for (let y = 0; y < info.height; y++) {
+      for (let x = 0; x < info.width; x++) {
+        if (pixels[(y * info.width + x) * 4 + 3] === 0) continue
+        opaque++
+        assert.ok(
+          Math.hypot(x + 0.5 - info.width / 2, y + 0.5 - info.height / 2) <= radius,
+          `Mark exceeds the adaptive safe zone in ${name}`
+        )
+      }
+    }
+    assert.ok(opaque > 0, `Empty adaptive foreground: ${name}`)
   }
 }

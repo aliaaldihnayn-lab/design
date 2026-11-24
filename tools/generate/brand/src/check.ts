@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 
+import { generateAndroid } from './android.ts'
 import { targetFiles } from './config.ts'
 import type { BrandTarget } from './config.ts'
 import { generateDesktop } from './desktop.ts'
@@ -11,7 +12,12 @@ export async function checkBrandAssets(
   root: string,
   selected: readonly BrandTarget[]
 ): Promise<void> {
-  const generators = { web: generateWeb, docs: generateWeb, desktop: generateDesktop }
+  const generators = {
+    web: generateWeb,
+    docs: generateWeb,
+    desktop: generateDesktop,
+    android: generateAndroid
+  }
   for (const target of selected) {
     const first = await generators[target](root)
     const second = await generators[target](root)

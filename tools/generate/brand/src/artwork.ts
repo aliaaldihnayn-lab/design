@@ -14,23 +14,10 @@ export async function loadArtwork(root: string) {
   return { adapter, main, micro }
 }
 
-export function recolor(
-  source: string,
-  adapter: ImageAdapter,
-  mode: 'dark' | 'mono' | 'mono-dark'
-) {
+/** The mark in one flat color: `ink` for light surfaces, `paper` for dark ones. */
+export function recolor(source: string, adapter: ImageAdapter, mode: 'ink' | 'paper') {
   const svg = stringToSVG(source, adapter)
-  if (mode === 'dark') {
-    for (const [part, color] of Object.entries(brand.darkPalette)) {
-      for (const path of svg.find(`[data-part="${part}"]`)) path.fill(color)
-    }
-    for (const grid of svg.find('[data-detail="grid"]')) grid.opacity(brand.darkGridOpacity)
-  } else {
-    for (const detail of svg.find('[data-detail]')) detail.remove()
-    for (const path of svg.find('[data-part]')) {
-      path.fill(mode === 'mono' ? brand.darkBackground : brand.background)
-    }
-  }
+  for (const path of svg.find('[data-part]')) path.fill(mode === 'ink' ? brand.ink : brand.paper)
   return svg.svg()
 }
 
@@ -39,7 +26,7 @@ export function appArtwork(
   source: string,
   adapter: ImageAdapter,
   kind: 'web' | 'maskable' | 'tile' | 'desktop'
-) {
+): string {
   const svg = adapter.createSvg().size(1024, 1024).viewbox(0, 0, 1024, 1024)
   const rounded = kind === 'tile' || kind === 'desktop'
   const inset = kind === 'desktop' ? brand.tileInset : 0
@@ -50,6 +37,30 @@ export function appArtwork(
   if (rounded) background.radius(brand.tileRadius)
   const regularScale = kind === 'tile' ? brand.tileScale : brand.appScale
   const scale = kind === 'maskable' ? brand.maskableScale : regularScale
+  const mark = stringToSVG(source, adapter).size(1024 * scale, 1024 * scale)
+  mark.move((1024 * (1 - scale)) / 2, (1024 * (1 - scale)) / 2)
+  svg.add(mark)
+  return svg.svg()
+}
+
+/** The mark alone on a transparent square, for Android's adaptive foreground layer. */
+export function foregroundArtwork(source: string, adapter: ImageAdapter): string {
+  const svg = adapter.createSvg().size(1024, 1024).viewbox(0, 0, 1024, 1024)
+  const scale = brand.androidForegroundScale
+  const mark = stringToSVG(recolor(source, adapter, 'ink'), adapter).size(
+    1024 * scale,
+    1024 * scale
+  )
+  mark.move((1024 * (1 - scale)) / 2, (1024 * (1 - scale)) / 2)
+  svg.add(mark)
+  return svg.svg()
+}
+
+/** The mark on a peach circle, for launchers that ask for a round legacy icon. */
+export function roundArtwork(source: string, adapter: ImageAdapter): string {
+  const svg = adapter.createSvg().size(1024, 1024).viewbox(0, 0, 1024, 1024)
+  svg.circle(1024).fill(brand.background)
+  const scale = brand.androidRoundScale
   const mark = stringToSVG(source, adapter).size(1024 * scale, 1024 * scale)
   mark.move((1024 * (1 - scale)) / 2, (1024 * (1 - scale)) / 2)
   svg.add(mark)

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { lock } from 'proper-lockfile'
 
+import { generateAndroid } from './android.ts'
 import { assertOwnedPath, fingerprint, isCached, publish } from './cache.ts'
 import { repositoryRoot, targets } from './config.ts'
 import type { BrandTarget } from './config.ts'
@@ -32,7 +33,11 @@ export async function ensureBrandAssets(
     for (const target of selected) {
       if (!options.force && (await isCached(root, target, key))) continue
       const files =
-        target === 'desktop' ? await generateDesktop(root) : (web ??= await generateWeb(root))
+        target === 'desktop'
+          ? await generateDesktop(root)
+          : target === 'android'
+            ? await generateAndroid(root)
+            : (web ??= await generateWeb(root))
       await validateFiles(files, target)
       await publish(root, target, key, files)
       console.info(`Generated ${target} brand assets`)

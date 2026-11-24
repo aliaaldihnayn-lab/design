@@ -11,7 +11,7 @@ export type BrandFiles = Map<string, Buffer>
 
 export async function generateWeb(root: string): Promise<BrandFiles> {
   const { adapter, main, micro } = await loadArtwork(root)
-  const darkMicro = recolor(micro, adapter, 'dark')
+  const darkMicro = recolor(micro, adapter, 'paper')
   const app = appArtwork(main, adapter, 'web')
   const tile = appArtwork(main, adapter, 'tile')
   const favicon = appArtwork(micro, adapter, 'tile')
@@ -42,11 +42,18 @@ export async function generateWeb(root: string): Promise<BrandFiles> {
   files.set('brand/app-icon.svg', Buffer.from(tile))
   files.set('brand/app-icon-1024.png', await sharp(Buffer.from(tile)).png().toBuffer())
   files.set('brand/mark.svg', Buffer.from(main))
-  files.set('brand/mark-dark.svg', Buffer.from(recolor(main, adapter, 'dark')))
+  files.set('brand/mark-dark.svg', Buffer.from(recolor(main, adapter, 'paper')))
   files.set('brand/mark-micro.svg', Buffer.from(micro))
   files.set('brand/mark-micro-dark.svg', Buffer.from(darkMicro))
-  files.set('brand/mark-mono.svg', Buffer.from(recolor(main, adapter, 'mono')))
-  files.set('brand/mark-mono-dark.svg', Buffer.from(recolor(main, adapter, 'mono-dark')))
+  files.set('brand/mark-mono.svg', Buffer.from(recolor(main, adapter, 'ink')))
+  files.set('brand/mark-mono-dark.svg', Buffer.from(recolor(main, adapter, 'paper')))
+  // Mark-only rasters on transparency, black for light surfaces and white for dark ones.
+  for (const [name, svg] of [
+    ['brand/mark-1024.png', main],
+    ['brand/mark-dark-1024.png', recolor(main, adapter, 'paper')]
+  ] as const) {
+    files.set(name, await sharp(Buffer.from(svg)).resize(1024, 1024).png().toBuffer())
+  }
   for (const size of [192, 512]) {
     files.set(
       `brand/pwa-${size}.png`,

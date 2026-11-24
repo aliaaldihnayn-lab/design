@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { generateAndroid } from '#brand/android'
 import { checkBrandAssets } from '#brand/check'
 import { brand, repositoryRoot, webFiles } from '#brand/config'
 import { generateDesktop } from '#brand/desktop'
@@ -50,58 +51,77 @@ describe('brand generation', () => {
     expect(icoSizes(file('favicon.ico')).sort((a, b) => a - b)).toEqual([16, 32, 48])
   })
 
-  test('preserves transparent counters and renders the micro master at 16px', async () => {
-    // The bowl is a half ring about (128, 170): its hole is open, the ring between radii 48 and 78 is solid.
-    const [hole, ring] = [
-      [128, 190],
-      [128, 233]
+  test('draws the master polygon solid, with its open notch and margin transparent', async () => {
+    // Points in the 100-unit master: both bands of the mark, the notch that opens to the left
+    // between them, and the margin the owner's artwork leaves around it.
+    const inside = [
+      [50, 35],
+      [50, 65]
+    ] as const
+    const notch = [30, 50] as const
+    const margin = [
+      [10, 10],
+      [88, 88]
     ] as const
     for (const [name, size] of [
       ['mark', 256],
-      ['mark-micro', 16]
+      ['mark-micro', 16],
+      ['mark-micro', 32]
     ] as const) {
-      const pixels = await sharp(file(`brand/${name}.svg`))
+      const source = master(name)
+      const pixels = await sharp(file(`brand/${name}.svg`), { density: (72 * size) / 16 })
+        .resize(size, size)
         .ensureAlpha()
         .raw()
         .toBuffer()
       expect(pixels.length).toBe(size * size * 4)
       const alphaAt = ([x, y]: readonly [number, number]) => {
-        const [px, py] = pixelOf(master(name), size, x, y)
+        const [px, py] = pixelOf(source, size, x, y)
         return pixels[(py * size + px) * 4 + 3]
       }
-      expect(alphaAt(hole)).toBe(0)
-      expect(alphaAt(ring)).toBe(255)
+      for (const spot of inside) expect(alphaAt(spot)).toBe(255)
+      for (const spot of margin) expect(alphaAt(spot)).toBe(0)
+      // At 16px the notch is under two pixels tall; it still reads as a gap, not ink.
+      if (size >= 32) expect(alphaAt(notch)).toBe(0)
+      else expect(alphaAt(notch)).toBeLessThan(128)
     }
   })
 
-  test('preserves orange handle borders and white centers in both themes and sizes', async () => {
-    // Where the square handle's centre and border, and the circular handle's centre, sit in each master.
-    const spots = {
-      mark: { square: [176, 46], border: [164, 46], circle: [73, 225] },
-      'mark-micro': { square: [176, 50], border: [159, 50], circle: [73, 225] }
-    } as const
+  test('keeps the micro master the same polygon as the main master', () => {
+    const path = (source: string) => /data-part="body"[^>]*\sd="([^"]+)"/.exec(source)?.[1]
+    expect(path(master('mark-micro'))).toBe(path(master('mark')))
+    expect(path(master('mark'))).toBeTruthy()
+  })
+
+  test('draws the mark in the master ink on light surfaces and white on dark ones', async () => {
     for (const name of ['mark', 'mark-micro'] as const) {
       const source = master(name)
+      expect(partFill(source, 'body').toUpperCase()).toBe(brand.ink)
       for (const suffix of ['', '-dark']) {
         const pixels = await sharp(file(`brand/${name}${suffix}.svg`), { density: 1152 })
           .resize(256, 256)
           .ensureAlpha()
           .raw()
           .toBuffer()
-        const center = rgbaOf(
-          suffix ? brand.darkPalette['handle-surface'] : partFill(source, 'handle-surface')
+        const [x, y] = pixelOf(source, 256, 50, 35)
+        const offset = (y * 256 + x) * 4
+        expect([...pixels.subarray(offset, offset + 4)]).toEqual(
+          rgbaOf(suffix ? brand.paper : partFill(source, 'body'))
         )
-        const border = rgbaOf(suffix ? brand.darkPalette.handle : partFill(source, 'handle'))
-        for (const [spot, rgba] of [
-          [spots[name].square, center],
-          [spots[name].circle, center],
-          [spots[name].border, border]
-        ] as const) {
-          const [x, y] = pixelOf(source, 256, ...spot)
-          const offset = (y * 256 + x) * 4
-          expect([...pixels.subarray(offset, offset + 4)]).toEqual(rgba)
-        }
       }
+    }
+    for (const [name, color] of [
+      ['brand/mark-1024.png', brand.ink],
+      ['brand/mark-dark-1024.png', brand.paper]
+    ] as const) {
+      const { data, info } = await sharp(file(name))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+      expect([info.width, info.height]).toEqual([1024, 1024])
+      expect(data[3]).toBe(0)
+      const offset = (Math.round(0.35 * 1024) * 1024 + 512) * 4
+      expect([...data.subarray(offset, offset + 4)]).toEqual(rgbaOf(color))
     }
   })
 
@@ -111,7 +131,7 @@ describe('brand generation', () => {
     expect(file('brand/mark-micro-dark.svg').equals(file('brand/mark-micro.svg'))).toBe(false)
   })
 
-  test('keeps monochrome artwork flat rather than retaining the decorative grid', async () => {
+  test('keeps monochrome artwork flat: black for light surfaces, white for dark', async () => {
     for (const suffix of ['', '-dark']) {
       const pixels = await sharp(file(`brand/mark-mono${suffix}.svg`))
         .ensureAlpha()
@@ -123,10 +143,7 @@ describe('brand generation', () => {
           colors.add(pixels.subarray(offset, offset + 3).toString('hex'))
       }
       expect(colors.size).toBeGreaterThan(0)
-      const expected = Buffer.from(
-        (suffix ? brand.background : brand.darkBackground).slice(1),
-        'hex'
-      )
+      const expected = Buffer.from((suffix ? brand.paper : brand.ink).slice(1), 'hex')
       for (const color of colors) {
         // Overlapping antialiased edges can round a channel down by one.
         expect(
@@ -136,7 +153,8 @@ describe('brand generation', () => {
     }
   })
 
-  test('shares the ivory rounded tile across profile and any-purpose PWA assets', async () => {
+  test('shares the peach rounded tile, with the black mark, across profile and any-purpose PWA assets', async () => {
+    const peach = rgbaOf(brand.background)
     for (const [name, size] of [
       ['brand/app-icon-1024.png', 1024],
       ['brand/favicon-96x96.png', 96],
@@ -149,7 +167,7 @@ describe('brand generation', () => {
         .toBuffer({ resolveWithObject: true })
       expect([info.width, info.height]).toEqual([size, size])
       expect(data[3]).toBe(0)
-      // No desktop-style inset: the ivory reaches the midpoint of each edge.
+      // No desktop-style inset: the peach reaches the midpoint of each edge.
       for (const [x, y] of [
         [size / 2, 0],
         [0, size / 2],
@@ -157,14 +175,46 @@ describe('brand generation', () => {
         [size / 2, size - 1]
       ]) {
         const edge = (y * size + x) * 4
-        expect([...data.subarray(edge, edge + 4)]).toEqual([245, 245, 239, 255])
+        expect([...data.subarray(edge, edge + 4)]).toEqual(peach)
       }
       const offset = (Math.round((size * 80) / 1024) * size + size / 2) * 4
-      expect([...data.subarray(offset, offset + 4)]).toEqual([245, 245, 239, 255])
+      expect([...data.subarray(offset, offset + 4)]).toEqual(peach)
+      // The mark's upper band, in the ink, where the owner's artwork puts it.
+      const ink = (Math.round(size * 0.36) * size + size / 2) * 4
+      expect([...data.subarray(ink, ink + 4)]).toEqual(rgbaOf(brand.ink))
     }
     const svg = await sharp(file('brand/app-icon.svg')).ensureAlpha().raw().toBuffer()
     const png = await sharp(file('brand/app-icon-1024.png')).ensureAlpha().raw().toBuffer()
     expect(svg.equals(png)).toBe(true)
+  })
+
+  test('builds the Android adaptive icon as a black mark over the peach background', async () => {
+    const android = await generateAndroid(repositoryRoot)
+    await validateFiles(android, 'android')
+    const background = android.get('values/ic_launcher_background.xml')?.toString() ?? ''
+    expect(background).toContain(`<color name="ic_launcher_background">${brand.background}</color>`)
+    for (const name of ['ic_launcher.xml', 'ic_launcher_round.xml']) {
+      const xml = android.get(`mipmap-anydpi-v26/${name}`)?.toString() ?? ''
+      expect(xml).toContain('@color/ic_launcher_background')
+      expect(xml).toContain('@mipmap/ic_launcher_foreground')
+    }
+    const { data, info } = await sharp(android.get('mipmap-xxxhdpi/ic_launcher_foreground.png'))
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+    expect([info.width, info.height]).toEqual([432, 432])
+    expect(data[3]).toBe(0)
+    const center = (216 * 432 + 216) * 4
+    const band = (Math.round(432 * (0.5 - 0.15 * brand.androidForegroundScale)) * 432 + 216) * 4
+    expect(data[center + 3]).toBe(0)
+    expect([...data.subarray(band, band + 4)]).toEqual(rgbaOf(brand.ink))
+    // A foreground that fills the canvas leaves the safe zone and is rejected.
+    const wrong = new Map(android)
+    wrong.set(
+      'mipmap-xxxhdpi/ic_launcher_foreground.png',
+      await sharp(file('brand/pwa-512.png')).resize(432, 432).png().toBuffer()
+    )
+    await expect(validateFiles(wrong, 'android')).rejects.toThrow('safe zone')
   })
 
   test('rejects a transparent maskable icon', async () => {
@@ -193,7 +243,7 @@ describe('brand generation', () => {
   }, 30_000)
 
   test('web output is byte-reproducible across repeated adapter instances', async () => {
-    await checkBrandAssets(repositoryRoot, ['web'])
+    await checkBrandAssets(repositoryRoot, ['web', 'android'])
   })
 
   test('normalizes ICNS frame ordering without changing frame bytes', () => {

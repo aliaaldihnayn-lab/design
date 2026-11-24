@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 [ -e tauri ] || ln -s ../node_modules/@tauri-apps/cli/tauri.js tauri
 [ -d gen/android ] || node tauri android init --ci
+# Launcher icons are generated from assets/brand, not committed.
+(cd .. && bun run generate:icons --target android)
 cp -r icons/android/* gen/android/app/src/main/res/
 node tauri android build --apk --target aarch64 --ci
 BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"

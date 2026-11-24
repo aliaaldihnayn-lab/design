@@ -13,7 +13,7 @@ const { values, positionals } = parseArgs({
 })
 const command = v.parse(v.picklist(['generate', 'check']), positionals[0] ?? 'generate')
 if (positionals.length > 1)
-  throw new Error('Usage: brand [generate|check] [--target web|docs|desktop] [--force]')
+  throw new Error('Usage: brand [generate|check] [--target web|docs|desktop|android] [--force]')
 const selected = v.parse(v.array(v.picklist(targets)), values.target ?? [...targets])
 if (command === 'check') await checkBrandAssets(repositoryRoot, selected)
 else await ensureBrandAssets(selected, { force: values.force })

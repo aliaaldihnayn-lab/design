@@ -22,7 +22,7 @@ const sources = {
   'app-icon': 'app-icon'
 } as const
 const source = computed(() => {
-  // The ivory tile owns its background and always uses the light palette.
+  // The peach tile owns its background and always draws the black mark.
   const suffix = variant !== 'app-icon' && appearance === 'dark' ? '-dark' : ''
   return `/brand/${sources[variant]}${suffix}.svg`
 })
