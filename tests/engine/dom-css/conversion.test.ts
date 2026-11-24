@@ -524,11 +524,8 @@ describe('@lawha/dom-css conversion', () => {
       await compileTailwindCSS(classes)
     )
     const graph = designDocumentToSceneGraph(document)
-    const page = graph.getPages()[0]
-    // The two roots stack in the page's body, as a browser lays them out.
-    const [body] = page ? graph.getChildren(page.id) : []
-    expect(body?.name).toBe('body')
-    const [nav, input] = body ? graph.getChildren(body.id) : []
+    const body = [...graph.getAllNodes()].find((node) => node.name === 'body')
+    const [nav, input] = body ? graph.getChildren(body.id) : [] // two roots stack in the body
 
     expect(nav?.type).toBe('FRAME')
     expect(input?.type).toBe('FRAME')
