@@ -7,7 +7,10 @@ import uharfbuzz as hb
 from fontTools.ttLib import TTFont
 from fontTools import subset
 
-FONTS = '/home/claude/wt/slot1/tests/fixtures/fonts/'
+import os
+# Run as `python3 illustrator.py illustrator-box.ai` with fontTools and uharfbuzz installed;
+# FreeSans comes from GNU FreeFont (fonts-freefont-ttf).
+FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'fonts') + '/'
 FF = '/usr/share/fonts/truetype/freefont/'
 
 class PDF:
