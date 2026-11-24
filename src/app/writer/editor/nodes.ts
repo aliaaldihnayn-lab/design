@@ -75,7 +75,11 @@ export const SectionBreak = Node.create({
         return parsed.success ? parsed.output : null
       },
       renderHTML: (attrs) => ({ 'data-page': JSON.stringify(attrs.page) })
-    }
+    },
+    // The section's own header and footer, as read from Word (`null` for none); left out, the
+    // section shows the document's. Kept in the JSON only, so saving does not lose them.
+    header: { default: undefined, rendered: false },
+    footer: { default: undefined, rendered: false }
   }),
   parseHTML: () => [{ tag: 'div[data-section-break]' }],
   renderHTML: ({ HTMLAttributes }) => [

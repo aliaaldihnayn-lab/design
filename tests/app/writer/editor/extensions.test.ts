@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import { getSchema } from '@tiptap/core'
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom'
+import { strFromU8, unzipSync } from 'fflate'
 
 import { createWriterDocument, readDocx, writeDocx, type WriterNode } from '@lawha/core/writer'
 
@@ -77,5 +79,43 @@ describe('writer editor schema', () => {
         .map((child) => child.attrs?.page)
     )
     expect(breaks).toHaveLength(1)
+  })
+
+  test.each([
+    'python-docx-rich.docx',
+    'python-docx-arabic.docx',
+    'lawha-section-headers.docx',
+    'libreoffice-arabic.docx',
+    'libreoffice-sections.docx',
+    'word-header-footer.docx',
+    'word-sections.docx'
+  ])('saving %s from the editor unchanged keeps every part as it was', (name) => {
+    const source = new Uint8Array(readFileSync(testPath(`fixtures/writer/${name}`)))
+    const read = readDocx(source)
+    const body = schema.nodeFromJSON(read.body).toJSON() as WriterNode
+    // The main part is parsed and serialized again, so it is compared as a tree.
+    const serialize = (xml: string) =>
+      new XMLSerializer().serializeToString(
+        new DOMParser().parseFromString(xml, 'text/xml').documentElement
+      )
+    const parts = (bytes: Uint8Array) =>
+      Object.fromEntries(
+        Object.entries(unzipSync(bytes)).map(([path, data]) => [
+          path,
+          path.endsWith('document.xml') ? serialize(strFromU8(data)) : strFromU8(data)
+        ])
+      )
+    expect(parts(writeDocx({ ...read, body }, { source }))).toEqual(parts(source))
+  })
+
+  test('keeps the header and footer a section break was read with', () => {
+    const source = readFileSync(testPath('fixtures/writer/lawha-section-headers.docx'))
+    const read = readDocx(new Uint8Array(source)).body
+    const breaks = (node: WriterNode) =>
+      (node.content ?? []).filter((child) => child.type === 'sectionBreak')
+    const kept = breaks(schema.nodeFromJSON(read).toJSON() as WriterNode)
+    expect(kept.map((child) => [child.attrs?.header, child.attrs?.footer])).toEqual(
+      breaks(read).map((child) => [child.attrs?.header, child.attrs?.footer])
+    )
   })
 })
