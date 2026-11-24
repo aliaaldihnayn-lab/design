@@ -12,6 +12,7 @@ import { makeDiamondGradient } from './gradients/diamond'
 import { adjustedImageShader, hasAdjustments, IMAGE_ADJUST_SKSL } from './image-adjust'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
+import { withWorldViewport } from './renderer/picture'
 import { compiledEffect } from './renderer/shaders'
 import { drawOutline, withNodeOutline } from './shapes'
 
@@ -106,7 +107,7 @@ export function applyFill(
   node: SceneNode,
   graph: SceneGraph,
   fillIndex = 0,
-  patternStack = new Set<string>()
+  patternStack = r.patternSources
 ): boolean {
   clearFillShader(r)
 
@@ -134,6 +135,9 @@ export function applyFill(
 
   return false
 }
+
+/** A culling viewport that culls nothing. */
+const UNCULLED = { minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 }
 
 interface PatternTileLayout {
   rect: Rect
@@ -163,15 +167,45 @@ export function patternTileLayout(source: SceneNode, fill: Fill): PatternTileLay
   const height = scaledHeight + gapY
   const x = patternAlignmentOffset(fill.horizontalAlignment, gapX, scaledWidth, 'x')
   const y = patternAlignmentOffset(fill.verticalAlignment, gapY, scaledHeight, 'y')
-  const positions = [{ x, y }]
 
+  // A brick tiling repeats every other row (or column), shifted by half a tile: its tile holds
+  // two rows (or columns), the second moved along by half.
   if (fill.patternTileType === 'HORIZONTAL_HEXAGONAL') {
-    positions.push({ x: x + width / 2, y: y + height / 2 })
-  } else if (fill.patternTileType === 'VERTICAL_HEXAGONAL') {
-    positions.push({ x: x + width / 2, y: y - height / 2 })
+    return {
+      rect: { x: 0, y: 0, width, height: height * 2 },
+      scale,
+      positions: [
+        { x, y },
+        { x: x + width / 2, y: y + height }
+      ]
+    }
   }
+  if (fill.patternTileType === 'VERTICAL_HEXAGONAL') {
+    return {
+      rect: { x: 0, y: 0, width: width * 2, height },
+      scale,
+      positions: [
+        { x, y },
+        { x: x + width, y: y + height / 2 }
+      ]
+    }
+  }
+  return { rect: { x: 0, y: 0, width, height }, scale, positions: [{ x, y }] }
+}
 
-  return { rect: { x: 0, y: 0, width, height }, scale, positions }
+/**
+ * Where a copy at `position` is drawn in a repeating tile of `rect`: there, and again a tile
+ * over wherever it crosses the tile's edge, so the part outside comes in from the other side.
+ */
+export function wrappedPositions(position: Vector, size: Vector, rect: Rect): Vector[] {
+  const shifts = (start: number, length: number, span: number) =>
+    [-span, 0, span].filter((shift) => start + shift < span && start + shift + length > 0)
+  return shifts(position.x, size.x, rect.width).flatMap((dx) =>
+    shifts(position.y, size.y, rect.height).map((dy) => ({
+      x: position.x + dx,
+      y: position.y + dy
+    }))
+  )
 }
 
 function recordPatternSource(
@@ -184,30 +218,44 @@ function recordPatternSource(
   const bounds = r.ck.LTRBRect(0, 0, layout.rect.width, layout.rect.height)
   const recorder = new r.ck.PictureRecorder()
   const canvas = recorder.beginRecording(bounds)
+  const size = { x: source.width * layout.scale, y: source.height * layout.scale }
 
-  for (const position of layout.positions) {
-    canvas.save()
-    canvas.translate(position.x, position.y)
-    canvas.scale(layout.scale, layout.scale)
-    if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
-      paintFills(
-        r,
-        source.fills,
-        source,
-        graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
-        { patternStack }
-      )
+  // The tile draws the source's children wherever the source is, so nothing of it is culled.
+  withWorldViewport(r, UNCULLED, () => {
+    for (const position of layout.positions.flatMap((p) =>
+      wrappedPositions(p, size, layout.rect)
+    )) {
+      canvas.save()
+      canvas.translate(position.x, position.y)
+      canvas.scale(layout.scale, layout.scale)
+      if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
+        paintFills(
+          r,
+          source.fills,
+          source,
+          graph,
+          (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
+          { patternStack }
+        )
+      }
+      if (source.clipsContent)
+        canvas.clipRect(
+          r.ck.LTRBRect(0, 0, source.width, source.height),
+          r.ck.ClipOp.Intersect,
+          true
+        )
+      for (const childId of source.childIds) r.renderNode(canvas, graph, childId, {})
+      canvas.restore()
     }
-    canvas.restore()
-  }
+  })
 
   const picture = recorder.finishRecordingAsPicture()
   recorder.delete()
   return picture
 }
 
-function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | null {
+/** The layer a pattern fill tiles: by id, or the layer copied from that id, such as in an instance. */
+export function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | null {
   const direct = graph.getNode(sourceId)
   if (direct) return direct
   for (const node of graph.getAllNodes()) {

@@ -1,4 +1,4 @@
-import { SceneGraph } from '@lawha/scene-graph'
+import { SceneGraph, type SceneNode } from '@lawha/scene-graph'
 import { referencedStyleIds } from '@lawha/scene-graph/shared-styles'
 import { styleRunReferences } from '@lawha/scene-graph/text'
 import { variableValueReferences } from '@lawha/scene-graph/variables'
@@ -196,6 +196,18 @@ function resolveInstanceComponentId(source: SceneGraph, componentId: string): st
   return componentId
 }
 
+/** The layers a node's pattern paints tile, which a copy needs to draw them. */
+function patternSources(source: SceneGraph, node: SceneNode): SceneNode[] {
+  return [...node.fills, ...node.strokes].flatMap((paint) => {
+    const id = paint.type === 'PATTERN' ? paint.sourceNodeId : undefined
+    if (!id) return []
+    const tile =
+      source.getNode(id) ?? [...source.nodes.values()].find((other) => other.source.id === id)
+    return tile ? [tile] : []
+  })
+}
+
+/** The main components a copy's instances draw from and the layers its patterns tile. */
 function collectComponentDependencies(
   source: SceneGraph,
   ids: Set<string>,
@@ -206,6 +218,12 @@ function collectComponentDependencies(
     changed = false
     for (const id of Array.from(ids)) {
       const node = source.getNode(id)
+      for (const tile of node ? patternSources(source, node) : []) {
+        if (ids.has(tile.id)) continue
+        collectAncestors(source, tile.id, ids)
+        collectDescendants(source, tile.id, ids)
+        changed = true
+      }
       if (node?.type !== 'INSTANCE' || !node.componentId) continue
       const componentId = resolveInstanceComponentId(source, node.componentId)
       const component = source.getNode(componentId)

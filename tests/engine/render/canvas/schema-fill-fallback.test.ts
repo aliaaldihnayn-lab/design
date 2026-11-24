@@ -44,7 +44,8 @@ function createRenderer() {
       TileMode: { Repeat: 'repeat' }
     },
     resolveFillColor: mock((fill: Fill) => fill.color),
-    makeRRect: mock(() => 'rrect')
+    makeRRect: mock(() => 'rrect'),
+    patternSources: new Set<string>()
   })
 }
 

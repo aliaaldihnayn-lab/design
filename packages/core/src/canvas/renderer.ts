@@ -143,6 +143,11 @@ export class SkiaRenderer {
   viewportWidth = 0
   viewportHeight = 0
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
+  /**
+   * The pattern sources whose tiles are being recorded, so a layer inside a tile that is filled
+   * with a pattern of that tile again stops instead of recursing.
+   */
+  readonly patternSources = new Set<string>()
   pageId: string | null = null
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */

@@ -33,23 +33,38 @@ describe('canvas pattern fills', () => {
     })
   })
 
-  test('adds an offset source copy for hexagonal pattern tiles', () => {
-    const layout = patternTileLayout(
-      { width: 20, height: 10 } as SceneNode,
-      {
-        type: 'PATTERN',
-        patternTileType: 'HORIZONTAL_HEXAGONAL',
-        patternSpacing: { x: 0, y: 0 },
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        opacity: 1,
-        visible: true
-      } as Fill
-    )
+  test('a brick tile holds two rows, the second shifted by half a tile', () => {
+    const hexagonal = (patternTileType: Fill['patternTileType']) =>
+      patternTileLayout(
+        { width: 20, height: 10 } as SceneNode,
+        {
+          type: 'PATTERN',
+          patternTileType,
+          patternSpacing: { x: 0, y: 0 },
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true
+        } as Fill
+      )
 
-    expect(layout.positions).toEqual([
-      { x: 0, y: 0 },
-      { x: 10, y: 5 }
-    ])
+    // Rows of whole tiles 10 px apart, every other one moved along by 10 px: a copy half a tile
+    // down would overlap the row above it.
+    expect(hexagonal('HORIZONTAL_HEXAGONAL')).toEqual({
+      rect: { x: 0, y: 0, width: 20, height: 20 },
+      scale: 1,
+      positions: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ]
+    })
+    expect(hexagonal('VERTICAL_HEXAGONAL')).toEqual({
+      rect: { x: 0, y: 0, width: 40, height: 10 },
+      scale: 1,
+      positions: [
+        { x: 0, y: 0 },
+        { x: 20, y: 5 }
+      ]
+    })
   })
 })
 
