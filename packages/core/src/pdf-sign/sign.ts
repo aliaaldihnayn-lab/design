@@ -13,7 +13,7 @@ import {
 } from '@cantoo/pdf-lib'
 import forge from 'node-forge'
 
-import { cadesDetachedSignature, verifyCadesDetached } from './cms'
+import { cadesDetachedSignature, derElement, verifyCadesDetached } from './cms'
 import {
   summarizeCertificate,
   type CertificateSummary,
@@ -204,7 +204,9 @@ export function verifyPDFSignatures(pdf: Uint8Array): PDFSignatureCheck[] {
   for (const match of text.matchAll(/\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/g)) {
     const [a, b, c, d] = match.slice(1, 5).map(Number)
     const contents = text.slice(a + b, c).replace(/^<|>$/g, '')
-    const der = forge.util.hexToBytes(contents.replace(/(00)+$/, ''))
+    // The CMS is padded with zeros to the placeholder's size; its own length says where it ends,
+    // since the signature value may itself end in a zero byte.
+    const der = derElement(forge.util.hexToBytes(contents))
     const md = forge.md.sha256.create()
     md.update(text.slice(a, a + b))
     md.update(text.slice(c, c + d))

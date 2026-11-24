@@ -93,6 +93,18 @@ export function cadesDetachedSignature(digest: string, credentials: SigningCrede
   return asn1.toDer(contentInfo).getBytes()
 }
 
+/** The first DER element in `bytes`, without what follows it, such as a placeholder's padding. */
+export function derElement(bytes: string): string {
+  const first = bytes.length > 1 ? bytes.charCodeAt(1) : 0
+  if (first < 0x80) return bytes.slice(0, 2 + first)
+  const count = first & 0x7f
+  let length = 0
+  for (let index = 0; index < count; index += 1) {
+    length = length * 256 + bytes.charCodeAt(2 + index)
+  }
+  return bytes.slice(0, 2 + count + length)
+}
+
 export interface CMSCheck {
   /** The signed attributes' message digest matches the content. */
   digestMatches: boolean
@@ -105,6 +117,10 @@ export interface CMSCheck {
 export function verifyCadesDetached(der: string, digest: string): CMSCheck {
   const contentInfo = asn1.fromDer(der)
   const signedData = childAt(childAt(contentInfo, 1), 0)
+  // What readers check first: a SignedData whose encapsulated content is plain data.
+  const structured =
+    oidOf(childAt(contentInfo, 0)) === OID.signedData &&
+    oidOf(childAt(childAt(signedData, 2), 0)) === OID.data
   const certificates = childAt(signedData, 3)
   const signerInfos = childAt(signedData, 4)
   const signer = forge.pki.certificateFromAsn1(childAt(certificates, 0))
@@ -125,7 +141,11 @@ export function verifyCadesDetached(der: string, digest: string): CMSCheck {
   } catch {
     signatureValid = false
   }
-  return { digestMatches: stored === digest, signatureValid, signer }
+  return { digestMatches: stored === digest, signatureValid: structured && signatureValid, signer }
+}
+
+function oidOf(node: forge.asn1.Asn1): string | null {
+  return node.type === Type.OID && typeof node.value === 'string' ? asn1.derToOid(node.value) : null
 }
 
 function childAt(node: forge.asn1.Asn1, index: number): forge.asn1.Asn1 {

@@ -2,6 +2,7 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib'
 import { toUint8Array } from 'js-base64'
+import forge from 'node-forge'
 
 import {
   createSelfSignedCredentials,
@@ -10,7 +11,8 @@ import {
   SigningCredentialsError,
   summarizeCertificate,
   verifyPDFSignatures,
-  writePKCS12
+  writePKCS12,
+  type SigningCredentials
 } from '@lawha/core/pdf-sign'
 
 setDefaultTimeout(30_000)
@@ -80,4 +82,65 @@ describe('PDF signing', () => {
     )
     expect(() => readPKCS12(p12, 'wrong')).toThrow(SigningCredentialsError)
   })
+
+  test('finds a signature whose value ends in a zero byte, as one in 256 do', async () => {
+    // A key from a fixed seed and a fixed file, so the same reasons give the same signatures.
+    const prng = forge.random.createInstance()
+    prng.seedFileSync = (length: number) => 'x'.repeat(length)
+    const keys = forge.pki.rsa.generateKeyPair({ bits: 1024, e: 0x10001, prng })
+    const certificate = forge.pki.createCertificate()
+    certificate.publicKey = keys.publicKey
+    certificate.serialNumber = '01'
+    certificate.validity.notBefore = new Date('2026-01-01T00:00:00Z')
+    certificate.validity.notAfter = new Date('2027-01-01T00:00:00Z')
+    certificate.setSubject([{ name: 'commonName', value: 'Fixed' }])
+    certificate.setIssuer([{ name: 'commonName', value: 'Fixed' }])
+    certificate.sign(keys.privateKey, forge.md.sha256.create())
+    const fixed: SigningCredentials = { privateKey: keys.privateKey, certificate, chain: [] }
+    const document = await PDFDocument.create({ updateMetadata: false })
+    document.addPage([200, 200])
+    const pdf = await document.save()
+    let endsInZero = 0
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      const signed = await signPDF(pdf, fixed, {
+        reason: String(attempt),
+        date: new Date('2026-06-01T00:00:00Z')
+      })
+      const signature = certificateSignatureValue(signed)
+      if (signature.endsWith('00')) endsInZero += 1
+      expect(verifyPDFSignatures(signed)).toEqual([
+        expect.objectContaining({ intact: true, coversWholeFile: true })
+      ])
+    }
+    expect(endsInZero).toBeGreaterThan(0)
+  })
+
+  test('reports a signature whose CMS is no longer SignedData as broken', async () => {
+    const signed = await signPDF(await samplePDF(), await credentials)
+    const text = new TextDecoder('latin1').decode(signed)
+    // The last byte of the SignedData OID (1.2.840.113549.1.7.2) at the start of /Contents.
+    const at = text.lastIndexOf('/Contents <') + '/Contents <'.length + 28
+    const tampered = signed.slice()
+    tampered[at] = '0'.charCodeAt(0)
+    tampered[at + 1] = '3'.charCodeAt(0)
+    expect(verifyPDFSignatures(tampered)).toEqual([expect.objectContaining({ intact: false })])
+  })
 })
+
+/** The hex of the RSA signature value: the last element of the CMS, before the zero padding. */
+function certificateSignatureValue(signed: Uint8Array): string {
+  const text = new TextDecoder('latin1').decode(signed)
+  const hex = text.slice(text.lastIndexOf('/Contents <') + '/Contents <'.length).split('>')[0]
+  const der = forge.util.hexToBytes(hex)
+  const node = forge.asn1.fromDer(der.slice(0, 4 + (der.charCodeAt(2) << 8) + der.charCodeAt(3)))
+  const signedData = childValue(childValue(node, 1), 0)
+  const signerInfo = childValue(childValue(signedData, 4), 0)
+  const value = childValue(signerInfo, 5).value
+  return typeof value === 'string' ? forge.util.bytesToHex(value) : ''
+}
+
+function childValue(node: forge.asn1.Asn1, index: number): forge.asn1.Asn1 {
+  const child = Array.isArray(node.value) ? node.value[index] : undefined
+  if (!child) throw new Error('Unexpected CMS shape')
+  return child
+}
