@@ -19,7 +19,9 @@ export function makeFigmaFromStore(
   pageId = store.state.currentPageId
 ): FigmaAPI {
   const api = new FigmaAPI(store.graph, { fetch: imageFetch })
-  api.setRenderer(store.renderer ?? null)
+  // The editor tells its renderer of every change; an API per tool run binding its own
+  // listeners would keep each one, and the renderer and canvas it had, for the graph's life.
+  api.setRenderer(store.renderer ?? null, { ownerInvalidates: true })
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
   api.currentPage = api.wrapNode(pageId)

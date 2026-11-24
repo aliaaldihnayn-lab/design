@@ -131,14 +131,19 @@ export class FigmaAPI implements NodeProxyHost {
   /**
    * The renderer that measures for the API: boolean results and flattened vectors. It keeps
    * each boolean operation's result between readings, so the API tells it when a change lands
-   * inside one, as the editor does for its renderers.
+   * inside one, as the editor does for its renderers. An editor's own renderer is already told
+   * by the editor: `ownerInvalidates` leaves it to the editor, so the API adds no listeners to
+   * the graph, which would outlive the API and keep the renderer and its canvas alive.
    */
-  setRenderer(renderer: SkiaRenderer | null): void {
+  setRenderer(
+    renderer: SkiaRenderer | null,
+    { ownerInvalidates = false }: { ownerInvalidates?: boolean } = {}
+  ): void {
     this._unbindRendererEvents?.()
     this._unbindRendererEvents = null
     this._renderer = renderer
     setMeasuringRenderer(this, renderer)
-    if (!renderer) return
+    if (!renderer || ownerInvalidates) return
     const graph = this.graph
     const invalidate = (id: string | null | undefined) =>
       invalidateBooleanAncestors(graph, [renderer], id)
