@@ -65,8 +65,12 @@ describe('line rendering', () => {
       const width = image.width()
       const alphaAt = (x: number, y: number) => pixels[(y * width + x) * 4 + 3]
 
-      expect(alphaAt(10, 36)).toBeGreaterThan(0)
-      expect(alphaAt(22, 36)).toBe(0)
+      // The export covers the frame from its own corner, so image pixels are canvas pixels: the
+      // line turns about its start at (10, 8) and runs down to (10, 32), not about its middle.
+      expect(image.height()).toBe(40)
+      expect(alphaAt(10, 31)).toBeGreaterThan(0)
+      expect(alphaAt(10, 35)).toBe(0)
+      expect(alphaAt(22, 31)).toBe(0)
 
       image.delete()
     } finally {

@@ -29,3 +29,32 @@ describe('text lines past a fixed-size box', () => {
     expect(nodeVisualBounds(text({ derivedTextHeight: 30 }), at).maxY).toBe(60)
   })
 })
+
+// A turned or reflected layer's absolute position is where its own origin lands, its turned
+// corner, as `getAbsolutePosition` gives it; its visual bounds still cover its whole box.
+describe('turned and reflected layers', () => {
+  const box = (props: Partial<VisualBoundsNode>): VisualBoundsNode => ({
+    id: 'box',
+    type: 'RECTANGLE',
+    visible: true,
+    width: 50,
+    height: 20,
+    ...props
+  })
+
+  test('cover the box turned about its centre', () => {
+    // A 50 × 20 box at (120, 30) turned 30°: its origin lands at (128.35, 18.84).
+    const origin = () => ({ x: 128.349_364_905_389, y: 18.839_745_962_155_6 })
+    const bounds = nodeVisualBounds(box({ rotation: 30 }), origin)
+    expect(bounds.minX).toBeCloseTo(118.35, 2)
+    expect(bounds.maxX).toBeCloseTo(171.65, 2)
+    expect(bounds.minY).toBeCloseTo(18.84, 2)
+    expect(bounds.maxY).toBeCloseTo(61.16, 2)
+  })
+
+  test('cover the box reflected about its centre', () => {
+    // Reflected across, the box's origin lands at its right edge.
+    const bounds = nodeVisualBounds(box({ flipX: true }), () => ({ x: 170, y: 30 }))
+    expect(bounds).toEqual({ minX: 120, minY: 30, maxX: 170, maxY: 50 })
+  })
+})

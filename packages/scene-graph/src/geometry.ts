@@ -1,4 +1,6 @@
 import { arrowCapOverflow } from './arrow-caps'
+import { getNodeLocalMatrix } from './coordinate'
+import Matrix from './matrix'
 import type { Rect, Vector } from './primitives'
 import { textLinesOverflow } from './text/overflow'
 import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
@@ -285,7 +287,10 @@ export function computeVisualBounds(
       id: string
       width: number
       height: number
+      type?: string
       rotation?: number
+      flipX?: boolean
+      flipY?: boolean
       strokes?: Stroke[]
       strokeCap?: StrokeCap
       vectorNetwork?: VectorNetwork | null
@@ -298,7 +303,8 @@ export function computeVisualBounds(
 
   for (const n of nodes) {
     const abs = getAbsolutePosition(n.id)
-    const bbox = rotatedBBox(abs.x, abs.y, n.width, n.height, n.rotation ?? 0)
+    const box = transformedLocalBounds(n, { x: 0, y: 0, width: n.width, height: n.height }, abs)
+    const bbox = { left: box.minX, top: box.minY, right: box.maxX, bottom: box.maxY }
     const stroke = strokeOverflow(n.strokes, n.strokeCap, n.vectorNetwork, n)
     const effects = effectOverflow(n.effects)
     includePoint(bounds, bbox.left - stroke - effects.left, bbox.top - stroke - effects.top)
@@ -391,19 +397,38 @@ export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): 
   return bounds.minX === Infinity ? null : boundsToRect(bounds)
 }
 
-function transformLocalPoint(node: VisualBoundsNode, point: Vector): Vector {
-  let x = node.flipX ? node.width - point.x : point.x
-  let y = node.flipY ? node.height - point.y : point.y
-  const rotation = node.rotation ?? 0
-  if (rotation !== 0) {
-    const rotated = rotatePoint(x, y, node.width / 2, node.height / 2, degToRad(rotation))
-    x = rotated.x
-    y = rotated.y
-  }
-  return { x, y }
+/** What turns and reflects a layer within its box, as the renderer applies it. */
+type LocalPlacement = Pick<
+  VisualBoundsNode,
+  'width' | 'height' | 'rotation' | 'flipX' | 'flipY'
+> & {
+  type?: string
 }
 
-function transformedLocalBounds(node: VisualBoundsNode, local: Rect, abs: Vector): VisualBounds {
+/**
+ * Where a point of a layer's box lands, from where the layer's own origin lands: the absolute
+ * position of a turned or reflected layer is its turned corner, not its box's.
+ */
+function transformLocalPoint(node: LocalPlacement, point: Vector): Vector {
+  if (!node.rotation && !node.flipX && !node.flipY) return point
+  const matrix = getNodeLocalMatrix(
+    {
+      type: node.type === 'LINE' ? 'LINE' : 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: node.width,
+      height: node.height,
+      rotation: node.rotation ?? 0,
+      flipX: node.flipX ?? false,
+      flipY: node.flipY ?? false
+    },
+    { x: 0, y: 0 }
+  )
+  const [x, y, originX, originY] = Matrix.mapPoints(matrix, [point.x, point.y, 0, 0])
+  return { x: x - originX, y: y - originY }
+}
+
+function transformedLocalBounds(node: LocalPlacement, local: Rect, abs: Vector): VisualBounds {
   const points = [
     { x: local.x, y: local.y },
     { x: local.x + local.width, y: local.y },

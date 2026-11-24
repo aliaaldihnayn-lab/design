@@ -3,7 +3,11 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SkiaRenderer } from '@lawha/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@lawha/core/io/formats/raster'
+import {
+  computeContentBounds,
+  initCanvasKit,
+  renderNodesToImage
+} from '@lawha/core/io/formats/raster'
 import { SceneGraph, type Effect } from '@lawha/scene-graph'
 
 const ck = await initCanvasKit()
@@ -207,4 +211,28 @@ test('selection export draws a selected layer once when its frame is selected to
 
   expect(pixelAt(10, 10)[3]).toBe(128)
   expect(pixelAt(30, 30)[3]).toBe(0)
+})
+
+test('a turned or reflected layer exports whole, its image the box it covers', () => {
+  for (const turn of [{ rotation: 30 }, { rotation: -60, flipX: true }, { flipY: true }]) {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { width: 200, height: 120, fills: [] })
+    const box = graph.createNode('RECTANGLE', frame.id, {
+      x: 120,
+      y: 30,
+      width: 50,
+      height: 20,
+      fills: solidFill(1, 0, 0),
+      ...turn
+    })
+    const at = exportedRgba(graph, page.id, box.id)
+    // The box's centre is the image's centre, and the box reaches each of its edges.
+    const bounds = expectDefined(computeContentBounds(graph, [box.id]))
+    const width = Math.ceil(bounds.maxX - bounds.minX)
+    const height = Math.ceil(bounds.maxY - bounds.minY)
+    expect(at(Math.floor(width / 2), Math.floor(height / 2))).toEqual([255, 0, 0, 255])
+    expect(bounds.minX + (bounds.maxX - bounds.minX) / 2).toBeCloseTo(145, 5)
+    expect(bounds.minY + (bounds.maxY - bounds.minY) / 2).toBeCloseTo(40, 5)
+  }
 })
