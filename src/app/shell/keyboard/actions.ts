@@ -5,9 +5,9 @@ import { generatedFrameText } from '@lawha/scene-graph/generated'
 import type { useEditorCommands } from '@lawha/vue/editor/commands'
 import type { useViewportKind } from '@lawha/vue/editor/viewport-kind'
 
-import type { PropertiesTab } from '@/app/ai/chat/panel'
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/active-store'
+import type { PropertiesTab } from '@/app/editor/properties-panel/tabs'
 
 type KeyboardActionsOptions = {
   store: EditorStore

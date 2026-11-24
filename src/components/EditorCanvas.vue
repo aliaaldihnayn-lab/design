@@ -36,11 +36,11 @@ import { useTextEdit } from '@lawha/vue/canvas/text-edit'
 import { toolCursor } from '@lawha/vue/editor/tool-cursor'
 import { autoLayoutValueAnchor, type AutoLayoutValueField } from '@lawha/vue/shared/input'
 
-import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
+import { showDevView } from '@/app/editor/properties-panel/state'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -184,7 +184,6 @@ watch(isActivePane, (active) => {
 })
 onUnmounted(cleanupInteractions)
 
-const { activeTab: propertiesTab } = useAIChat()
 const openStatusLabel = shallowRef<PlacedStatusLabel | null>(null)
 const { cursor: statusLabelCursor } = useCanvasStatusLabels(canvasRef, store, {
   hitTest: hitTestStatusLabel,
@@ -201,7 +200,7 @@ const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanva
     onHover: (marker) => store.designCheck.highlightMarker(marker?.nodeIds ?? null),
     onActivate: (marker) => {
       activatePane()
-      propertiesTab.value = 'lint'
+      showDevView('lint')
       // An edge pin leads to its nearest issue; a marker opens every layer it covers.
       const nodeIds = marker.direction ? marker.nodeIds.slice(0, 1) : marker.nodeIds
       store.designCheck.openMarker(nodeIds)

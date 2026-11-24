@@ -701,3 +701,11 @@ zh-cn:settings.jira
 zh-cn:stories.jira
 zh-cn:stories.jiraSitePlaceholder
 zh-cn:metrics.github
+de:panels.tabSystem
+de:panels.tabExport
+de:panels.tabDev
+fr:panels.tabPrototype
+fr:panels.tabExport
+fr:panels.tabDev
+pl:panels.tabSystem
+pl:panels.tabDev

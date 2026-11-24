@@ -4,8 +4,8 @@ import { computed, ref } from 'vue'
 import { nonEmptyGroups, storyReport, type StoryGroup } from '@lawha/core/stories'
 import { readEpics, readNodeStories, type Epic, type UserStory } from '@lawha/scene-graph/stories'
 
-import { propertiesTab } from '@/app/ai/chat/panel'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
+import { propertiesTab } from '@/app/editor/properties-panel/state'
 
 /** Whether story pins show on the canvas (View → User stories). */
 export const showStoryPins = useStorage('lawha:story-pins', true)

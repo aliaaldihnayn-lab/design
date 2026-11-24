@@ -1,7 +1,6 @@
 import { IS_BROWSER } from '@lawha/core/constants'
 
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
-import { propertiesTab } from '@/app/ai/chat/panel'
 import { createChatSessionManager } from '@/app/ai/chat/session'
 import {
   apiKeyStatus,
@@ -24,6 +23,7 @@ import {
 import { designModelProfile } from '@/app/ai/models'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import { propertiesTab } from '@/app/editor/properties-panel/state'
 import {
   pexelsKeyStatus,
   unsplashKeyStatus,
