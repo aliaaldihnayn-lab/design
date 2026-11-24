@@ -79,7 +79,7 @@ describe('pixel tools for agents', () => {
 describe('mask_layer_from_selection', () => {
   test('masks a layer with an ellipse, inverted', async () => {
     const { figma, graph, id } = await setup()
-    const result = tool('mask_layer_from_selection')(figma, {
+    const result = await tool('mask_layer_from_selection')(figma, {
       id,
       shape: 'ellipse',
       rect: { x: 0, y: 0, width: 40, height: 20 },
@@ -94,7 +94,7 @@ describe('mask_layer_from_selection', () => {
   test('refuses an empty selection', async () => {
     const { figma, id } = await setup()
     expect(
-      tool('mask_layer_from_selection')(figma, {
+      await tool('mask_layer_from_selection')(figma, {
         id,
         shape: 'rect',
         rect: { x: 0, y: 0, width: 0, height: 0 }
@@ -115,7 +115,7 @@ describe('clone_pixels', () => {
       points: [{ x: 5, y: 10 }]
     })
     expect(
-      tool('clone_pixels')(figma, {
+      await tool('clone_pixels')(figma, {
         id,
         source: { x: 5, y: 10 },
         points: [{ x: 30, y: 10 }],
@@ -191,5 +191,36 @@ describe('pixel tools sample the rendered layer', () => {
     const filled = Number(field(result, 'filled_pixels'))
     expect(filled).toBeGreaterThan(100)
     expect(filled).toBeLessThan(1000)
+  })
+
+  test('clone_pixels copies the gradient the layer shows, not transparency', async () => {
+    const { figma, id } = await gradient()
+    await tool('clone_pixels')(figma, {
+      id,
+      source: { x: 97, y: 4 },
+      points: [{ x: 3, y: 4 }],
+      size: 4,
+      hardness: 1
+    })
+    const cloned = await tool('sample_pixel_color')(figma, { id, x: 3, y: 4 })
+    expect(cloned).toMatchObject({ alpha: 1 })
+    expect(String(field(cloned, 'hex')).slice(1, 3) > 'D0').toBe(true)
+  })
+
+  test('mask_layer_from_selection selects similar pixels as the gradient shows them', async () => {
+    const { figma, id } = await gradient()
+    const result = await tool('mask_layer_from_selection')(figma, {
+      id,
+      shape: 'similar',
+      point: { x: 2, y: 4 },
+      tolerance: 0.1
+    })
+    expect(result).toMatchObject({ layer_id: id })
+    // The dark end is kept and the light end, far from the clicked pixel, is masked out.
+    expect(await tool('sample_pixel_color')(figma, { id, x: 2, y: 4 })).toMatchObject({ alpha: 1 })
+    expect(await tool('sample_pixel_color')(figma, { id, x: 97, y: 4, sample: 'all' })).toEqual({
+      hex: '#000000',
+      alpha: 0
+    })
   })
 })

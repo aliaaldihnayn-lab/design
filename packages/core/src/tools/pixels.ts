@@ -213,8 +213,8 @@ const rectSchema = v.strictObject({
 export const maskFromSelection = defineTool({
   name: 'mask_layer_from_selection',
   description:
-    "Mask a shape or frame (such as a photo) with a pixel selection, as Affinity's New Mask Layer does: a mask layer of the selection's shape goes under it and both go in a group, hiding what lies outside. Select a rectangle or ellipse (rect, in the layer's own coordinates) or, with similar, the pixels like the one at point within tolerance 0–1 (magic wand). invert masks out the selection instead; feather softens the edge over that many of the layer's pixels. Returns the group.",
-  execution: { kind: 'sync', mutation: 'document' },
+    "Mask a shape or frame (such as a photo) with a pixel selection, as Affinity's New Mask Layer does: a mask layer of the selection's shape goes under it and both go in a group, hiding what lies outside. Select a rectangle or ellipse (rect, in the layer's own coordinates) or, with similar, the pixels like the one at point within tolerance 0–1 as the layer shows them (magic wand; sample all reads every layer on the page). invert masks out the selection instead; feather softens the edge over that many of the layer's pixels. Returns the group.",
+  execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     shape: v.picklist(['rect', 'ellipse', 'similar']),
@@ -223,9 +223,10 @@ export const maskFromSelection = defineTool({
     tolerance: unitSchema,
     contiguous: v.optional(v.boolean(), true),
     invert: v.optional(v.boolean(), false),
-    feather: v.optional(toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(500))), 0)
+    feather: v.optional(toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(500))), 0),
+    sample: sampleSchema
   }),
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
     const { node, surface, codec } = loaded
@@ -233,7 +234,7 @@ export const maskFromSelection = defineTool({
     if (args.shape === 'similar') {
       if (!args.point) return { error: 'similar needs a point' }
       const at = toGrid(node, surface, args.point)
-      const shown = compositeOver(surface.base, surface.paint)
+      const shown = await shownForTool(figma, node, surface, args.sample)
       mask = selectSimilar(shown, at.x, at.y, args.tolerance ?? 0.15, args.contiguous)
     } else {
       if (!args.rect) return { error: `${args.shape} needs a rect` }
@@ -262,15 +263,16 @@ export const maskFromSelection = defineTool({
 export const clonePixels = defineTool({
   name: 'clone_pixels',
   description:
-    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but solves it into its surroundings (Poisson seamless cloning), so the patch takes the tone and shading around it with no seam, to hide blemishes. Goes into the paint layer, so the photo underneath is kept.",
-  execution: { kind: 'sync', mutation: 'document' },
+    "Retouch a shape or frame (such as a photo) with Affinity's clone stamp or, with heal, its healing brush: paint along points, copying the layer as it shows from source, a point in the layer's own coordinates, at the same offset from the first point. heal keeps the copied texture but solves it into its surroundings (Poisson seamless cloning), so the patch takes the tone and shading around it with no seam, to hide blemishes. Copies what the layer shows, as the canvas draws it (gradients, adjustments, paint); sample all copies every layer on the page there. Goes into the paint layer, so the photo underneath is kept.",
+  execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     source: pointSchema,
     ...strokeInputs,
-    heal: v.optional(v.boolean(), false)
+    heal: v.optional(v.boolean(), false),
+    sample: sampleSchema
   }),
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     const tip = brushTip(args, 0.5)
     const loaded = loadForTool(figma, args.id)
     if ('error' in loaded) return loaded
@@ -278,7 +280,7 @@ export const clonePixels = defineTool({
     const points = args.points.map((point) => toGrid(node, surface, point))
     const source = toGrid(node, surface, args.source)
     const sampling = {
-      source: compositeOver(surface.base, surface.paint),
+      source: await shownForTool(figma, node, surface, args.sample),
       offset: { x: source.x - points[0].x, y: source.y - points[0].y }
     }
     const before = surface.paint.data.slice()
