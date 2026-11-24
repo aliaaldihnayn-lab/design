@@ -94,10 +94,10 @@ describe('writer editor schema', () => {
     const read = readDocx(source)
     const body = schema.nodeFromJSON(read.body).toJSON() as WriterNode
     // The main part is parsed and serialized again, so it is compared as a tree.
-    const serialize = (xml: string) =>
-      new XMLSerializer().serializeToString(
-        new DOMParser().parseFromString(xml, 'text/xml').documentElement
-      )
+    const serialize = (xml: string) => {
+      const root = new DOMParser().parseFromString(xml, 'text/xml').documentElement
+      return root ? new XMLSerializer().serializeToString(root) : xml
+    }
     const parts = (bytes: Uint8Array) =>
       Object.fromEntries(
         Object.entries(unzipSync(bytes)).map(([path, data]) => [
