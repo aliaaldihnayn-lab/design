@@ -48,7 +48,10 @@ export function createClipboardCopyActions(ctx: EditorContext) {
     if (selectedNodes.length === 0) return { html: '', plainText: '' }
     const snapshot = captureClipboardSnapshot(ctx.graph, selectedNodes)
     if (options.properties) snapshot.properties = true
-    const plainText = snapshot.nodes.map((node) => node.name).join('\n')
+    // Another app gets a text layer's words, as Figma gives them, and other layers' names.
+    const plainText = snapshot.nodes
+      .map((node) => (node.type === 'TEXT' ? node.text : node.name))
+      .join('\n')
     const html = await buildFigmaClipboardHTML(
       snapshot.nodes,
       graphForSnapshot(ctx, snapshot),

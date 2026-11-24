@@ -77,3 +77,19 @@ export async function pasteLayerText(
     (await pasteMermaidText(editor, text, cursorPos))
   )
 }
+
+/**
+ * Paste plain text from another app as a text layer that sizes to it, at the cursor or in the
+ * middle of the view, as Figma does; one undo step. False for text with nothing to show.
+ */
+export function pastePlainText(editor: Editor, text: string, cursorPos?: Vector): boolean {
+  const normalized = text.replaceAll(/\r\n?/g, '\n')
+  if (!normalized.trim()) return false
+  const { x, y } = pastePoint(editor, cursorPos)
+  editor.undo.runBatch('Paste', () => {
+    const id = editor.createShape('TEXT', x, y, 1, 1)
+    editor.updateNodeWithUndo(id, { text: normalized, textAutoResize: 'WIDTH_AND_HEIGHT' }, 'Paste')
+    editor.select([id])
+  })
+  return true
+}

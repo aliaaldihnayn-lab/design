@@ -9,6 +9,7 @@ import {
   isLayerText,
   pasteClipboardHTML,
   pasteLayerText,
+  pastePlainText,
   pastePoint
 } from '@/app/editor/clipboard/paste/content'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
@@ -101,13 +102,20 @@ export function bindEditorClipboard(store: EditorStore) {
     }
 
     if (isTauri()) {
-      void tauriSystemClipboard.paste(store, undefined)
+      void tauriSystemClipboard.paste(store, undefined).then((pasted) => {
+        if (!pasted) pastePlainText(store, text, cursorPos)
+        return undefined
+      })
       return
     }
 
-    const memoryHTML = getInMemoryClipboardHTML()
+    // The last copy made here, when the clipboard still holds it or shows nothing newer; text
+    // copied in another app since is pasted as a text layer instead.
+    const memoryHTML = getInMemoryClipboardHTML(text || undefined)
     if (memoryHTML) {
       void pasteClipboardHTML(store, memoryHTML)
+      return
     }
+    pastePlainText(store, text, cursorPos)
   })
 }

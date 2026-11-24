@@ -58,3 +58,51 @@ test('browser menu copy writes rich and plain Lawha clipboard formats', async ()
     )
     .toBe(before + 1)
 })
+
+test('text copied in another app after a copy here pastes as a text layer, not the old layers', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.page.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    const id = store.createShape('TEXT', 100, 100, 10, 10)
+    store.updateNodeWithUndo(id, { text: 'مرحبا بالعالم', textAutoResize: 'WIDTH_AND_HEIGHT' })
+    store.select([id])
+  })
+  await editor.page.evaluate(() => navigator.clipboard.writeText(''))
+  await editor.page.keyboard.press('ControlOrMeta+c')
+  // Another app copies a line of text over the copy made here.
+  const copiedText = await editor.page.evaluate(async () => {
+    let read = ''
+    for (let attempt = 0; attempt < 50 && !read; attempt++) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50)
+      })
+      read = await navigator.clipboard.readText().catch(() => '')
+    }
+    await navigator.clipboard.writeText('نص من تطبيق آخر 42')
+    return read
+  })
+  // Another app gets the text layer's words, not its name.
+  expect(copiedText).toBe('مرحبا بالعالم')
+
+  await editor.page.evaluate(() => window.lawha?.getStore?.()?.clearSelection())
+  await editor.page.keyboard.press('ControlOrMeta+v')
+  const layers = () =>
+    editor.page.evaluate(() => {
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
+      return store.graph.getChildren(store.state.currentPageId).map((node) => ({
+        type: node.type,
+        text: node.text,
+        selected: store.state.selectedIds.has(node.id),
+        sized: node.width > 1 && node.height > 1
+      }))
+    })
+  await expect.poll(layers).toEqual([
+    { type: 'TEXT', text: 'مرحبا بالعالم', selected: false, sized: true },
+    { type: 'TEXT', text: 'نص من تطبيق آخر 42', selected: true, sized: true }
+  ])
+
+  await editor.canvas.undo()
+  await expect.poll(async () => (await layers()).length).toBe(1)
+})
