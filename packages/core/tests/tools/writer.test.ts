@@ -4,7 +4,15 @@ import * as v from 'valibot'
 
 import { FigmaAPI } from '@lawha/core/figma-api'
 import { ALL_TOOLS, isToolExposed, setWriterHost } from '@lawha/core/tools'
-import { createWriterDocument, nodeText, PAGE_SIZES, type WriterDocument } from '@lawha/core/writer'
+import {
+  createWriterDocument,
+  defaultPageSetup,
+  nodeText,
+  PAGE_SIZES,
+  writerSections,
+  type WriterDocument,
+  type WriterNode
+} from '@lawha/core/writer'
 import { SceneGraph } from '@lawha/scene-graph'
 
 const figma = new FigmaAPI(new SceneGraph())
@@ -128,5 +136,47 @@ describe('document tools', () => {
       'does not exist'
     )
     expect(state.document).toBe(before)
+  })
+
+  test('replace text in footnotes and in each section header too', () => {
+    const paragraph = (text: string): WriterNode => ({
+      type: 'paragraph',
+      attrs: { dir: 'rtl' },
+      content: [{ type: 'text', text }]
+    })
+    const region = (text: string): WriterNode => ({ type: 'doc', content: [paragraph(text)] })
+    const { state, unregister } = openDocument(
+      createWriterDocument({
+        header: region('شركة ألف — الملحق'),
+        body: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              attrs: { dir: 'rtl' },
+              content: [
+                { type: 'text', text: 'يلتزم الطرف' },
+                { type: 'footnote', attrs: { id: 'fn1' } }
+              ]
+            },
+            {
+              type: 'sectionBreak',
+              attrs: { page: defaultPageSetup(), header: region('شركة ألف'), footer: null }
+            },
+            paragraph('الملحق')
+          ]
+        },
+        footnotes: [{ id: 'fn1', content: [paragraph('شركة ألف هي الطرف الأول')] }]
+      })
+    )
+    cleanup = unregister
+    const result = tool('edit_document')({
+      operations: [{ op: 'replace_text', find: 'شركة ألف', replace: 'شركة باء' }]
+    })
+    expect(result).toEqual({ blocks: 3, notes: ['replace_text: replaced 3'] })
+    expect(
+      writerSections(state.document).map((section) => section.header && nodeText(section.header))
+    ).toEqual(['شركة باء', 'شركة باء — الملحق'])
+    expect(state.document.footnotes[0].content.map(nodeText)).toEqual(['شركة باء هي الطرف الأول'])
   })
 })

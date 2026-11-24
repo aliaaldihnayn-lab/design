@@ -174,6 +174,15 @@ export function replaceBlock(
 
 function mapText(node: WriterNode, map: (text: string) => string): WriterNode {
   if (node.type === 'text') return { ...node, text: map(node.text ?? '') }
+  if (node.type === 'sectionBreak') {
+    // A section's own header and footer, as read from Word, are its attributes.
+    const attrs = { ...node.attrs }
+    for (const kind of ['header', 'footer'] as const) {
+      const region = attrs[kind]
+      if (isNode(region)) attrs[kind] = mapText(region, map)
+    }
+    return { ...node, attrs }
+  }
   if (!node.content) return node
   return {
     ...node,
@@ -183,11 +192,17 @@ function mapText(node: WriterNode, map: (text: string) => string): WriterNode {
   }
 }
 
+const isNode = (value: unknown): value is WriterNode =>
+  typeof value === 'object' && value !== null && 'type' in value && typeof value.type === 'string'
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-/** Replaces text everywhere in the body, header and footer; a match stays within one run. */
+/**
+ * Replaces text everywhere: the body, every section's header and footer, and the footnotes; a
+ * match stays within one run.
+ */
 export function replaceText(
   model: WriterDocument,
   find: string,
@@ -206,7 +221,11 @@ export function replaceText(
     ...model,
     body: mapText(model.body, map),
     header: model.header ? mapText(model.header, map) : null,
-    footer: model.footer ? mapText(model.footer, map) : null
+    footer: model.footer ? mapText(model.footer, map) : null,
+    footnotes: model.footnotes.map((note) => ({
+      ...note,
+      content: note.content.map((block) => mapText(block, map))
+    }))
   }
   return { model: count ? next : model, count }
 }
