@@ -48,6 +48,7 @@ export const headlessHTMLReader: IOFormatAdapter<'html'> = {
   extensions: ['html', 'htm'],
   mimeTypes: ['text/html'],
   support: { readDocument: true },
+  laysOutOnRead: true,
   async readDocument(input) {
     const { graph } = await readHTMLDocument(new TextDecoder().decode(input.data))
     return { graph, sourceFormat: 'html' }

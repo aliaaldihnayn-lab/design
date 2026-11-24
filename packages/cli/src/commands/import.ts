@@ -7,7 +7,7 @@ import { readHTMLDocument, type ReadHTMLResult } from '@lawha/core/io/formats/ht
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
-import { writeFigDocument } from '#cli/headless'
+import { layOutInDocumentFonts, measureTextHeadlessly, writeFigDocument } from '#cli/headless'
 
 const OUTPUT_FORMATS = new Set(['fig', 'json'])
 
@@ -50,11 +50,14 @@ async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | u
 }
 
 async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
-  return readHTMLDocument(await readTextFile(requireFile(args.file)), {
+  await measureTextHeadlessly()
+  const imported = await readHTMLDocument(await readTextFile(requireFile(args.file)), {
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName
   })
+  await layOutInDocumentFonts(imported.graph)
+  return imported
 }
 
 async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) {

@@ -57,4 +57,32 @@ describe('import CLI', () => {
     const { width, height } = figThumbnailSize(await readFile(figPath))
     expect(width / height).toBeCloseTo(100 / 400, 2)
   })
+
+  test('sizes text in the font it names, so its box holds what it draws', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'lawha-import-'))
+    const htmlPath = join(dir, 'button.html')
+    const figPath = join(dir, 'button.fig')
+    await writeFile(
+      htmlPath,
+      `<div dir="rtl" style="display:flex;font-family:'Noto Naskh Arabic'">
+        <span style="padding:8px 16px;background:#e8632c">متابعة</span>
+      </div>`
+    )
+    expect((await cli(['import', htmlPath, '-o', figPath])).exitCode).toBe(0)
+
+    const { graph } = await io.readDocument({
+      name: figPath,
+      data: new Uint8Array(await readFile(figPath))
+    })
+    const label = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
+    const glyphs = label?.derivedTextGlyphs ?? []
+    expect(glyphs.length).toBeGreaterThan(0)
+    // The saved glyphs are shaped in Noto Naskh Arabic; a box sized in a stand-in font is wider
+    // than they are and draws them off to one side of their padding.
+    const left = Math.min(...glyphs.map((glyph) => glyph.x))
+    const right = Math.max(...glyphs.map((glyph) => glyph.x + (glyph.advance ?? 0)))
+    expect(left).toBeGreaterThanOrEqual(0)
+    expect(right).toBeLessThanOrEqual((label?.width ?? 0) + 0.5)
+    expect(right - left).toBeGreaterThan((label?.width ?? 0) * 0.75)
+  })
 })

@@ -6,7 +6,12 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { populateAllFigPages, populateFigPage } from '@lawha/core/io/formats/fig'
 import { headlessHTMLReader } from '@lawha/core/io/formats/html/import'
 import { initCanvasKit } from '@lawha/core/io/formats/raster'
-import { computeAllLayouts, installTextMeasurer, sizeAutoResizingText } from '@lawha/core/layout'
+import {
+  computeAllLayouts,
+  installTextMeasurer,
+  layoutAuthoredNodes,
+  sizeAutoResizingText
+} from '@lawha/core/layout'
 import { writeFileAtomic } from '@lawha/core/node/fs'
 import { prepareGraphFonts, type DocumentFontStatus } from '@lawha/core/text'
 import type { SceneGraph } from '@lawha/scene-graph'
@@ -38,14 +43,28 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
   // A format laid out as it is read places its layers by their text's size, which is measured
   // as an export draws it rather than estimated.
-  if (io.findReader(filePath)?.laysOutOnRead) await measureTextHeadlessly()
+  const laysOut = io.findReader(filePath)?.laysOutOnRead === true
+  if (laysOut) await measureTextHeadlessly()
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
     readAsset: documentAssetReader(filePath)
   })
+  if (laysOut) await layOutInDocumentFonts(graph)
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
+}
+
+/**
+ * Lays out a document that was laid out as it was read again, once the fonts its text names are
+ * loaded: read first, its text was measured in whatever faces the measurer started with, so
+ * auto-sized text and the frames that hug it came out the size of a stand-in, and its glyphs
+ * drew offset in their boxes.
+ */
+export async function layOutInDocumentFonts(graph: SceneGraph): Promise<void> {
+  const pageIds = graph.getPages(true).map((page) => page.id)
+  await prepareGraphFonts(graph, pageIds)
+  layoutAuthoredNodes(graph, pageIds)
 }
 
 let textMeasurer: Promise<void> | null = null
