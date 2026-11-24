@@ -525,7 +525,10 @@ describe('@lawha/dom-css conversion', () => {
     )
     const graph = designDocumentToSceneGraph(document)
     const page = graph.getPages()[0]
-    const [nav, input] = page ? graph.getChildren(page.id) : []
+    // The two roots stack in the page's body, as a browser lays them out.
+    const [body] = page ? graph.getChildren(page.id) : []
+    expect(body?.name).toBe('body')
+    const [nav, input] = body ? graph.getChildren(body.id) : []
 
     expect(nav?.type).toBe('FRAME')
     expect(input?.type).toBe('FRAME')
