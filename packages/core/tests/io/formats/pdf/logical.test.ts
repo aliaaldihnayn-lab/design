@@ -33,4 +33,15 @@ describe('text drawn by glyphs, back to the characters it spells', () => {
     ).toBe('\u0634\u0631\u0643\u0629AB\u0662\u0660')
     expect(logicalText(visual('(', 'ب', ')', ' ', 'ا'))).toBe('ا (ب)')
   })
+
+  test('a left-to-right line keeps its order, an Arabic word in it read from its right', () => {
+    const line = visual(...'the ', 'ة', 'م', 'ق', 'ل', 'ا', ' ', 'ة', 'ك', 'ر', 'ش', ...' (Al) in')
+    expect(logicalText(line)).toBe('the شركة القمة (Al) in')
+  })
+
+  test('a bracket between a Latin word and a number in Arabic takes the line’s direction', () => {
+    // `شركة 2024 (Riyadh)` drawn right to left: the closing bracket shows first, mirrored.
+    const line = visual(...'(Riyadh) 2024 ', 'ة', 'ك', 'ر', 'ش')
+    expect(logicalText(line)).toBe('شركة 2024 (Riyadh)')
+  })
 })

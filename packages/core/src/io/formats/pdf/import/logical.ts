@@ -53,10 +53,16 @@ export function isRightToLeft(text: string): boolean {
 }
 
 const ARABIC_DIGITS = /^[\u0660-\u0669\u06F0-\u06F9]+$/u
+const DIGITS = /^\p{Nd}+$/u
 
-/** Arabic-Indic digits are Arabic numbers in the bidirectional algorithm, apart from Latin. */
-function numberKind(text: string): 'arabic-number' | 'left-to-right' {
-  return ARABIC_DIGITS.test(text) ? 'arabic-number' : 'left-to-right'
+/**
+ * Arabic-Indic digits are Arabic numbers in the bidirectional algorithm, and other digits
+ * European numbers, apart from Latin: a bracket or space between a word and a number takes the
+ * line's direction, so each is a run of its own.
+ */
+function numberKind(text: string): 'arabic-number' | 'number' | 'left-to-right' {
+  if (ARABIC_DIGITS.test(text)) return 'arabic-number'
+  return DIGITS.test(text) ? 'number' : 'left-to-right'
 }
 
 /** Whether a cluster reads left to right inside right-to-left text: Latin, digits. */
@@ -73,6 +79,7 @@ function isLeftToRight(text: string): boolean {
 export function logicalOrder<T extends VisualCluster>(clusters: readonly T[]): T[] {
   const texts = clusters.map((cluster) => cluster.text)
   if (!texts.some(isRightToLeft)) return [...clusters]
+  if (!readsRightToLeft(texts)) return leftToRightOrder(clusters)
   const segments: T[][] = []
   let index = 0
   while (index < clusters.length) {
@@ -96,6 +103,44 @@ export function logicalOrder<T extends VisualCluster>(clusters: readonly T[]): T
     index = end + 1
   }
   return segments.reverse().flat()
+}
+
+/**
+ * Whether a line reads right to left. A paragraph takes the direction of its first strong letter,
+ * which a right-to-left line shows at its right end and a left-to-right one at its left; a line
+ * with letters of both directions reads left to right only when both ends are left to right.
+ */
+function readsRightToLeft(texts: readonly string[]): boolean {
+  const strong = texts.filter((text) => /\p{L}/u.test(text))
+  return strong.length === 0 || [strong[0], strong.at(-1)].some((text) => isRightToLeft(text ?? ''))
+}
+
+/**
+ * A left-to-right line keeps its order, with each run of right-to-left letters (and the spaces
+ * and brackets between them) read from its right end.
+ */
+function leftToRightOrder<T extends VisualCluster>(clusters: readonly T[]): T[] {
+  const ordered: T[] = []
+  let index = 0
+  while (index < clusters.length) {
+    if (!isRightToLeft(clusters[index].text)) {
+      ordered.push(clusters[index])
+      index++
+      continue
+    }
+    let end = index
+    for (let next = index; next < clusters.length; next++) {
+      const text = clusters[next].text
+      if (isRightToLeft(text)) end = next
+      else if (/[\p{L}\p{N}]/u.test(text)) break
+    }
+    for (const cluster of clusters.slice(index, end + 1).toReversed()) {
+      const mirrored = MIRRORED[cluster.text]
+      ordered.push(mirrored ? { ...cluster, text: mirrored } : cluster)
+    }
+    index = end + 1
+  }
+  return ordered
 }
 
 export function logicalText(clusters: readonly VisualCluster[]): string {
