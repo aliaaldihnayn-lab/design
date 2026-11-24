@@ -18,6 +18,7 @@ import { layoutAuthoredNodes } from '#core/layout'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import { publicationPDFPages } from './formats/pdf/plan'
 import type { PDFPrintOptions } from './formats/pdf/print'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -446,7 +447,9 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
     if (!target) throw new Error('Nothing to export')
     // Embedded, as Figma embeds every face its PDFs draw.
     const { exportPDFDocument } = await import('./formats/pdf/document')
-    const data = (await exportPDFDocument(request.graph, [target], { embedFonts: true }))?.data
+    // A publication's pages each print on a page of their own, in reading order.
+    const specs = publicationPDFPages(request.graph, target.pageId, target.nodeIds) ?? [target]
+    const data = (await exportPDFDocument(request.graph, specs, { embedFonts: true }))?.data
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'pdf',
@@ -474,11 +477,13 @@ export const pdfPrintFormat: IOFormatAdapter<'pdf-print'> = {
   async exportContent(request, options?: PDFPrintOptions, context?: IOContext) {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const specs = target.nodeIds.map((nodeId) => ({
-      pageId: findPageId(request.graph, nodeId) ?? target.pageId,
-      nodeIds: [nodeId],
-      label: request.graph.getNode(nodeId)?.name
-    }))
+    const specs =
+      publicationPDFPages(request.graph, target.pageId, target.nodeIds) ??
+      target.nodeIds.map((nodeId) => ({
+        pageId: findPageId(request.graph, nodeId) ?? target.pageId,
+        nodeIds: [nodeId],
+        label: request.graph.getNode(nodeId)?.name
+      }))
     const { exportPrintPDF } = await import('./formats/pdf/print')
     const result = await exportPrintPDF(request.graph, specs, {
       canvasKit: context?.canvasKit,

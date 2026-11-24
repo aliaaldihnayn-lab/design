@@ -1,4 +1,7 @@
 import type { SceneGraph } from '@lawha/scene-graph'
+import { LAWHA_PLUGIN_DATA, readPluginData } from '@lawha/scene-graph/plugin-data'
+
+import { isMasterPage, masterPages, publicationPages } from '#core/publisher/pages'
 
 export const PDF_MODES = ['single', 'frames', 'pages'] as const
 export type PDFMode = (typeof PDF_MODES)[number]
@@ -41,6 +44,34 @@ function visibleChildren(graph: SceneGraph, pageId: string): string[] {
 }
 
 /**
+ * The PDF pages of a publication's pages among `nodeIds`, one each in reading order, as Affinity
+ * Publisher exports a document: master pages print only through the pages they are applied to.
+ * Null unless `pageId` is a publication (it has master pages or publication settings) and every
+ * layer named is one of its pages or masters, so other exports keep their layer order.
+ */
+export function publicationPDFPages(
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: readonly string[]
+): PDFPageSpec[] | null {
+  const canvas = graph.getNode(pageId)
+  if (canvas?.type !== 'CANVAS') return null
+  const publication =
+    readPluginData(canvas.pluginData, LAWHA_PLUGIN_DATA.publication) !== undefined ||
+    masterPages(graph, pageId).length > 0
+  if (!publication) return null
+  const pages = publicationPages(graph, pageId)
+  const named = new Set(nodeIds)
+  const known = new Set(pages.map((page) => page.id))
+  const listed = [...named].filter((id) => graph.getNode(id)?.visible !== false)
+  if (!listed.every((id) => known.has(id) || isMasterPage(graph.getNode(id)))) return null
+  const specs = pages
+    .filter((page) => named.has(page.id))
+    .map((page) => ({ pageId, nodeIds: [page.id], label: page.name }))
+  return specs.length > 0 ? specs : null
+}
+
+/**
  * Decides which PDF pages an export makes. Pure over the scene graph, so it needs neither jsPDF
  * nor a DOM. Throws PDFPlanError when the request names something missing or exports nothing.
  */
@@ -52,15 +83,20 @@ export function planPDFPages(graph: SceneGraph, input: PDFPlanInput): PDFPageSpe
     specs.push({ pageId: input.currentPageId, nodeIds: ids })
   } else if (input.mode === 'frames') {
     const ids = input.ids?.length ? [...input.ids] : visibleChildren(graph, input.currentPageId)
-    for (const id of ids) {
-      const node = graph.getNode(id)
-      if (!node) throw new PDFPlanError(`Node "${id}" not found`)
-      specs.push({
-        pageId: pageIdOfNode(graph, id) ?? input.currentPageId,
-        nodeIds: [id],
-        label: node.name
-      })
-    }
+    const publication = input.ids?.length
+      ? null
+      : publicationPDFPages(graph, input.currentPageId, ids)
+    if (publication) specs.push(...publication)
+    else
+      for (const id of ids) {
+        const node = graph.getNode(id)
+        if (!node) throw new PDFPlanError(`Node "${id}" not found`)
+        specs.push({
+          pageId: pageIdOfNode(graph, id) ?? input.currentPageId,
+          nodeIds: [id],
+          label: node.name
+        })
+      }
   } else {
     const designPages = graph.getPages()
     const selected = input.pageIds?.length

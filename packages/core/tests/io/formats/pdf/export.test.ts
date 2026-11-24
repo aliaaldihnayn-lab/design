@@ -3,9 +3,12 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { fontFixture } from '#core-tests/helpers/paths'
 
+import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 import { SceneGraph } from '@lawha/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
+import { latin1 } from '#core/io/formats/pdf/print/file'
+import { createMasterPage } from '#core/publisher'
 import { fontManager } from '#core/text/font/manager'
 
 /** A page with a red square and a gradient, drawn without a browser DOM, as the CLI exports. */
@@ -194,5 +197,32 @@ test('asks a web font for the forms jsPDF writes Arabic letters in', async () =>
     fontManager.setOnlineFontProviders(
       Object.fromEntries(providers.map((provider) => [provider, true]))
     )
+  }
+})
+
+const WHITE = {
+  type: 'SOLID',
+  color: { r: 1, g: 1, b: 1, a: 1 },
+  opacity: 1,
+  visible: true
+} as const
+
+test('a publication exports a PDF page for each of its pages, its master pages left out', async () => {
+  const graph = new SceneGraph()
+  const canvas = graph.getPages()[0].id
+  for (const x of [0, 400, 800]) {
+    graph.createNode('FRAME', canvas, { x, width: 300, height: 400, fills: [WHITE] })
+  }
+  createMasterPage(graph, canvas, { width: 300, height: 400 })
+  const io = new IORegistry(BUILTIN_IO_FORMATS)
+  for (const format of ['pdf', 'pdf-print'] as const) {
+    const result = await io.exportContent(format, {
+      graph,
+      target: { scope: 'page', pageId: canvas }
+    })
+    const data = result.data
+    if (typeof data === 'string') throw new Error('PDF is binary')
+    const sizes = [...latin1(data).matchAll(/\/MediaBox\s*\[([^\]]*)\]/g)].map((m) => m[1])
+    expect(sizes).toHaveLength(3)
   }
 })

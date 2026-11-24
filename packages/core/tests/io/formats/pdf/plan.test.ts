@@ -3,7 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@lawha/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api'
-import { MAX_PDF_PAGES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
+import {
+  MAX_PDF_PAGES,
+  PDFPlanError,
+  planPDFPages,
+  publicationPDFPages
+} from '#core/io/formats/pdf/plan'
+import { arrangePages, createMasterPage, publicationPages } from '#core/publisher'
 
 /** Page "Cards" (Front, Back, hidden Draft), page "Posters" (Poster), empty page "Blank". */
 function document() {
@@ -112,5 +118,46 @@ describe('planPDFPages', () => {
     expect(() => planPDFPages(graph, { mode: 'frames', currentPageId: cards.id })).toThrow(
       /limit is 200/
     )
+  })
+})
+
+describe('publication PDF pages', () => {
+  /** Three pages reordered to read Three, Two, One against their layer order, and a master. */
+  function publication() {
+    const graph = new SceneGraph()
+    const canvas = graph.getPages()[0].id
+    const pages = ['One', 'Two', 'Three'].map((name) =>
+      graph.createNode('FRAME', canvas, { name, width: 300, height: 400 })
+    )
+    arrangePages(graph, pages.toReversed(), { spreads: false, direction: 'ltr' }, { x: 0, y: 0 })
+    const master = createMasterPage(graph, canvas, { width: 300, height: 400 })
+    return { graph, canvas, pages, master }
+  }
+
+  test('a publication exports its pages in reading order, without its masters', () => {
+    const { graph, canvas, master } = publication()
+    const order = publicationPages(graph, canvas).map((page) => page.name)
+    expect(order).toEqual(['Three', 'Two', 'One'])
+    const everything = graph.getNode(canvas)?.childIds ?? []
+    const specs = publicationPDFPages(graph, canvas, everything)
+    expect(specs?.map((spec) => spec.label)).toEqual(order)
+    expect(specs?.flatMap((spec) => spec.nodeIds)).not.toContain(master.id)
+    expect(
+      planPDFPages(graph, { mode: 'frames', currentPageId: canvas }).map((spec) => spec.label)
+    ).toEqual(order)
+  })
+
+  test('pages chosen in any order still export in reading order', () => {
+    const { graph, canvas, pages } = publication()
+    const specs = publicationPDFPages(graph, canvas, [pages[0].id, pages[2].id])
+    expect(specs?.map((spec) => spec.label)).toEqual(['Three', 'One'])
+  })
+
+  test('other layers and canvases that are not publications keep their export', () => {
+    const { graph, canvas, pages } = publication()
+    const note = graph.createNode('TEXT', canvas, { text: 'Note' })
+    expect(publicationPDFPages(graph, canvas, [pages[0].id, note.id])).toBeNull()
+    const { graph: plain, cards, front, back } = document()
+    expect(publicationPDFPages(plain, cards.id, [back.id, front.id])).toBeNull()
   })
 })
