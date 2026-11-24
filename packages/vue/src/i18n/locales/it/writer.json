@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "Salva PDF crittografato",
   "openEncrypted": "Apri",
   "wrongPassword": "La password non è corretta.",
+  "unsupportedKey": "Il tipo di chiave di questo certificato non è supportato. Usa un certificato con chiave RSA.",
+  "certificateUnreadable": "Questo file non contiene un certificato con la relativa chiave privata.",
   "stampHidden": "Invisibile",
   "deleteFootnote": "Elimina nota a piè di pagina",
   "stampPlaced": "Visibile, dove la posizioni",

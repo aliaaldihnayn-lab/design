@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "Сохранить зашифрованный PDF",
   "openEncrypted": "Открыть",
   "wrongPassword": "Неверный пароль.",
+  "unsupportedKey": "Тип ключа этого сертификата не поддерживается. Используйте сертификат с ключом RSA.",
+  "certificateUnreadable": "В этом файле нет сертификата с закрытым ключом.",
   "stampHidden": "Невидимая",
   "deleteFootnote": "Удалить сноску",
   "stampPlaced": "Видимая, там, где вы её разместите",

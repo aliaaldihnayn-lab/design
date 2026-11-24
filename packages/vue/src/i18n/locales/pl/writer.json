@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "Zapisz zaszyfrowany PDF",
   "openEncrypted": "Otwórz",
   "wrongPassword": "Hasło jest nieprawidłowe.",
+  "unsupportedKey": "Typ klucza tego certyfikatu nie jest obsługiwany. Użyj certyfikatu z kluczem RSA.",
+  "certificateUnreadable": "Ten plik nie zawiera certyfikatu z kluczem prywatnym.",
   "stampHidden": "Niewidoczny",
   "deleteFootnote": "Usuń przypis",
   "stampPlaced": "Widoczny, tam gdzie go umieścisz",

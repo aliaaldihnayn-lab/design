@@ -219,6 +219,9 @@ export const writerMessageDefaults = {
   saveEncryptedPDF: 'Save encrypted PDF',
   openEncrypted: 'Open',
   wrongPassword: 'The password is not correct.',
+  unsupportedKey:
+    "This certificate's key type is not supported. Use a certificate with an RSA key.",
+  certificateUnreadable: 'This file has no certificate with its private key.',
   deleteFootnote: 'Delete footnote',
   stampPlaced: 'Visible, where you place it',
   placeSignature: 'Click or drag on the page to place the signature',

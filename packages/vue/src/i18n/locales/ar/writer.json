@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "حفظ PDF مشفّر",
   "openEncrypted": "فتح",
   "wrongPassword": "كلمة المرور غير صحيحة.",
+  "unsupportedKey": "نوع مفتاح هذه الشهادة غير مدعوم. استخدم شهادة بمفتاح RSA.",
+  "certificateUnreadable": "لا يحتوي هذا الملف على شهادة مع مفتاحها الخاص.",
   "stampHidden": "مخفي",
   "deleteFootnote": "حذف الحاشية",
   "stampPlaced": "ظاهر، في الموضع الذي تختاره",

@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "暗号化した PDF を保存",
   "openEncrypted": "開く",
   "wrongPassword": "パスワードが正しくありません。",
+  "unsupportedKey": "この証明書の鍵の種類には対応していません。RSA 鍵の証明書を使用してください。",
+  "certificateUnreadable": "このファイルには秘密鍵付きの証明書がありません。",
   "stampHidden": "非表示",
   "deleteFootnote": "脚注を削除",
   "stampPlaced": "表示（配置した位置）",

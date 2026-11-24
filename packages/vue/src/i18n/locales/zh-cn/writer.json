@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "保存加密的 PDF",
   "openEncrypted": "打开",
   "wrongPassword": "密码不正确。",
+  "unsupportedKey": "不支持此证书的密钥类型。请使用带 RSA 密钥的证书。",
+  "certificateUnreadable": "此文件中没有带私钥的证书。",
   "stampHidden": "不可见",
   "deleteFootnote": "删除脚注",
   "stampPlaced": "可见，放在你指定的位置",

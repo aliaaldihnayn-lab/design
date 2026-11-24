@@ -47,13 +47,16 @@ export type SigningOutcome =
   | { status: 'done' }
   | {
       status: 'failed'
-      reason: 'wrong-password' | 'no-certificate' | 'invalid' | 'error'
+      reason: 'wrong-password' | 'no-certificate' | 'unsupported-key' | 'invalid' | 'error'
       detail: string
     }
 
 function failure(error: unknown): SigningOutcome {
   if (error instanceof SigningCredentialsError) {
-    const reason = error.reason === 'wrong-password' ? 'wrong-password' : 'invalid'
+    const reason =
+      error.reason === 'wrong-password' || error.reason === 'unsupported-key'
+        ? error.reason
+        : 'invalid'
     return { status: 'failed', reason, detail: error.reason }
   }
   return {

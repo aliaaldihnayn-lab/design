@@ -34,6 +34,28 @@ const PNG = toUint8Array(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
 )
 
+/** A PKCS #12 with an ECDSA P-256 key, password `secret`, made by OpenSSL for this test. */
+const ECDSA_P12 = toUint8Array(
+  [
+    'MIIEDAIBAzCCA8IGCSqGSIb3DQEHAaCCA7MEggOvMIIDqzCCAmIGCSqGSIb3DQEHBqCCAlMwggJPAgEAMIICSAYJKo',
+    'ZIhvcNAQcBMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAiEf71AXkKPKQICCAAwDAYIKoZIhvcNAgkFADAd',
+    'BglghkgBZQMEASoEEOooBLgJkPJTEHR28DVk61CAggHgcq1jszm9+NvBbWM5rbDFjX/o5433I6jCDM6WjfkXZh+S/J',
+    'LJ0i3VaTAVK9tjgu5p3953/2VudgvCNCmNp1mH+v/0ZeUoY3aU+V43xcoMNaZzF5HHiCFEFt5YbVXUlgdHFc1y2k62',
+    'styYw4E1eKQwVVsE4UceDjOtyIGa5cRWlpWhnUABIbm+0QWImiJy4l7uLoYX1lT1naoJiqtfLA97VgVmSz+O7JP5nA',
+    'Rq1Vs2ZRFhn6ym1dBjRhId1TdXWxPadbDxVlhUVo2mpDaSmpP7l6njQo7n43GRXq59AdkpkdZqVo6m7MQekhqr7vVO',
+    'zIGG5rwT7Zbj1UbygzNXmFVw3zCEilhVQs1fAt5o9V1mMe0vkhQb0aUGpsk9EH+azRQ2JB8OxJ8aSrUXEg1GwyZRAl',
+    'xiKCmg22WN2XJ7tFcVcp5tbZPQAATw8eps/+/tmi3zgkfLGhXA7NYpfrY+3zLYLoK4iuYCZmrd48mESQlsyQ46rWYZ',
+    'DQ1/Gb1vj1S4h18n/u+uymkwKWxr0vyS/XGBe/RBcspJIKG1Ap1GCp2wBqGSvzEAVzRc0Ja3qZ/pvtGePiVZFLJf2D',
+    'SFpfkexoRiHWBYKUeNQ7DX5zCjQ1ID9WYAM3zz1gs9C56n1rkH09aPMIIBQQYJKoZIhvcNAQcBoIIBMgSCAS4wggEq',
+    'MIIBJgYLKoZIhvcNAQwKAQKgge8wgewwVwYJKoZIhvcNAQUNMEowKQYJKoZIhvcNAQUMMBwECOs8LggVsSKMAgIIAD',
+    'AMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQUVIMM6/QB21AFXK5sEi+SgSBkFABO3+XU/MkdMyR7gfZMU9CEsI+',
+    'YEoTB9ME2gYAge8xS3xBamdoBMVEjodg0JHK56GniUzunrvH2q/h7TFjxfag/9hRaDW6KJ3hOh3Iezvcz2EE5k1HAW',
+    'O/iW0ITtBf1guputRTvrXmzVtreV9HWRNmnZ3RB8K30+gpvjLtOqdU24RGcxD7FFPsn2hiva5LCjElMCMGCSqGSIb3',
+    'DQEJFTEWBBSm1AKZjBV9LcO+ybjuLxIM6kXrgDBBMDEwDQYJYIZIAWUDBAIBBQAEIIR9kRB1Gvfl9Hn/416TwvhuO8',
+    'uKBbHcWbvbsP1Wk3bmBAhZrBq80x94HwICCAA='
+  ].join('')
+)
+
 const credentials = createSelfSignedCredentials({
   name: 'علي الدهنين',
   email: 'signer@example.com',
@@ -81,6 +103,15 @@ describe('PDF signing', () => {
       summarizeCertificate((await credentials).certificate).fingerprint
     )
     expect(() => readPKCS12(p12, 'wrong')).toThrow(SigningCredentialsError)
+  })
+
+  test('tells a certificate with a key it cannot sign with from one without a key', () => {
+    expect(() => readPKCS12(ECDSA_P12, 'secret')).toThrow(
+      expect.objectContaining({ reason: 'unsupported-key' })
+    )
+    expect(() => readPKCS12(ECDSA_P12, 'wrong')).toThrow(
+      expect.objectContaining({ reason: 'wrong-password' })
+    )
   })
 
   test('finds a signature whose value ends in a zero byte, as one in 256 do', async () => {

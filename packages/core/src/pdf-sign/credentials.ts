@@ -76,7 +76,8 @@ export function readPKCS12(bytes: Uint8Array, password: string): SigningCredenti
     ...(p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] ?? [])
   ]
   const key = keyBags.find((bag) => bag.key)?.key
-  if (!key) throw new SigningCredentialsError('no-key')
+  // forge decodes only RSA keys; a bag it could not decode holds another kind, such as ECDSA.
+  if (!key) throw new SigningCredentialsError(keyBags.length ? 'unsupported-key' : 'no-key')
   if (!('n' in key)) throw new SigningCredentialsError('unsupported-key')
   const certificates = (
     p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] ?? []

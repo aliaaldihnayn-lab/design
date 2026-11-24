@@ -683,6 +683,7 @@ ja:writer.cloudRequired
 ja:writer.downloadSigned
 ja:writer.saveEncryptedDocx
 ja:writer.saveEncryptedPDF
+ja:writer.unsupportedKey
 zh-cn:writer.openWord
 zh-cn:writer.downloadDocx
 zh-cn:writer.exportPDF
@@ -705,6 +706,7 @@ zh-cn:writer.cloudRequired
 zh-cn:writer.downloadSigned
 zh-cn:writer.saveEncryptedDocx
 zh-cn:writer.saveEncryptedPDF
+zh-cn:writer.unsupportedKey
 ja:stories.exportMarkdown
 ja:stories.exportCSV
 zh-cn:stories.exportMarkdown

@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "Guardar PDF cifrado",
   "openEncrypted": "Abrir",
   "wrongPassword": "La contraseña no es correcta.",
+  "unsupportedKey": "El tipo de clave de este certificado no es compatible. Usa un certificado con clave RSA.",
+  "certificateUnreadable": "Este archivo no contiene un certificado con su clave privada.",
   "stampHidden": "Invisible",
   "deleteFootnote": "Eliminar nota al pie",
   "stampPlaced": "Visible, donde la coloques",

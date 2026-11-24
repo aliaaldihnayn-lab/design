@@ -210,6 +210,8 @@
   "saveEncryptedPDF": "Verschlüsseltes PDF speichern",
   "openEncrypted": "Öffnen",
   "wrongPassword": "Das Kennwort ist nicht korrekt.",
+  "unsupportedKey": "Der Schlüsseltyp dieses Zertifikats wird nicht unterstützt. Verwenden Sie ein Zertifikat mit RSA-Schlüssel.",
+  "certificateUnreadable": "Diese Datei enthält kein Zertifikat mit privatem Schlüssel.",
   "stampHidden": "Unsichtbar",
   "deleteFootnote": "Fußnote löschen",
   "stampPlaced": "Sichtbar, wo Sie es platzieren",

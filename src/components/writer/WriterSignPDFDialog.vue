@@ -82,6 +82,8 @@ function report(outcome: SigningOutcome): boolean {
   }
   if (outcome.reason === 'wrong-password') error.value = t.value.wrongPassword
   else if (outcome.reason === 'no-certificate') error.value = t.value.noCertificate
+  else if (outcome.reason === 'unsupported-key') error.value = t.value.unsupportedKey
+  else if (outcome.reason === 'invalid') error.value = t.value.certificateUnreadable
   else error.value = t.value.signFailed({ error: outcome.detail })
   return false
 }
