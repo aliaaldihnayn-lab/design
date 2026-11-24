@@ -84,6 +84,11 @@ function cloneNode(node: DesignNode): DesignNode {
   }
 }
 
+/**
+ * A top-level layer sits on the stage where it sits on the canvas. Layers inside keep the
+ * placement the projection gave them: laid out by their parent's flex or grid, or absolutely
+ * placed where the parent has no auto layout, so auto layout still runs in the page.
+ */
 function standaloneStyleForNode(
   node: DesignElement,
   parent: DesignElement | undefined,
@@ -91,11 +96,11 @@ function standaloneStyleForNode(
 ): DesignStyleDeclaration {
   const style = { ...node.inlineStyle }
   const source = node.sourceSceneNode
-  if (!source) return style
+  if (!source || parent) return style
 
   style.position = 'absolute'
-  style.left = `${source.x - (parent ? 0 : origin.minX)}px`
-  style.top = `${source.y - (parent ? 0 : origin.minY)}px`
+  style.left = `${source.x - origin.minX}px`
+  style.top = `${source.y - origin.minY}px`
   return style
 }
 
