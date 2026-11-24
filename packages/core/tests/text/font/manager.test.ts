@@ -84,6 +84,16 @@ test('repeated and concurrent fallback preparation reuses host font bytes', asyn
   expect([...reads.values()].every((count) => count === 1)).toBe(true)
 })
 
+test('Arabic falls back to the bundled Noto Naskh Arabic offline', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Linux')
+  manager.setHostFontLoader(async () => null)
+  const fallbacks = await manager.ensureFallbackPack(['arabic'], 'مرحبا')
+  expect(fallbacks.arabic).toEqual(['Noto Naskh Arabic'])
+  expect(manager.getArabicFallbackFamilies()).toEqual(['Noto Naskh Arabic'])
+  expect(manager.loadedData('Noto Naskh Arabic', 'Regular')?.byteLength).toBeGreaterThan(0)
+})
+
 test('an unavailable host font can be retried and replacing its loader invalidates cached bytes', async () => {
   const manager = offlineManager()
   let reads = 0

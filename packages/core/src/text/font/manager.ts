@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- font loading and registration share FontManager lifecycle state */
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import { uniq } from 'es-toolkit'
 
 import type { FontVariation, SceneGraph } from '@lawha/scene-graph'
 import {
@@ -731,7 +732,32 @@ export class FontManager {
       }
     }
 
+    if (targetFamilies.length === 0) {
+      await this.addBundledFallbacks(
+        uniq([...manifest.localFamilies, ...manifest.remoteFamilies]),
+        targetFamilies,
+        signal
+      )
+    }
+
     return targetFamilies
+  }
+
+  /**
+   * Offline, or where no installed font covers a script, a fallback Lawha ships (Noto Naskh
+   * Arabic) still draws its letters instead of missing-glyph boxes.
+   */
+  private async addBundledFallbacks(
+    families: string[],
+    targetFamilies: string[],
+    signal?: AbortSignal
+  ): Promise<void> {
+    for (const family of families) {
+      signal?.throwIfAborted()
+      const data = await this.loadBundledFont(family, 'Regular')
+      signal?.throwIfAborted()
+      if (data && !targetFamilies.includes(family)) targetFamilies.push(family)
+    }
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
