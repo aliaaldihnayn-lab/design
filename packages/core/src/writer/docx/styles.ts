@@ -109,6 +109,19 @@ function themeFont(reference: string | null, theme: ThemeFonts): string | undefi
   return major ? theme.major : theme.minor
 }
 
+/** The Latin and complex-script families `w:rFonts` names; a theme reference wins, as in Word. */
+function runFonts(
+  fonts: Element | null,
+  theme: ThemeFonts
+): Pick<RunProperties, 'font' | 'fontComplex'> {
+  const latinTheme = attrOf(fonts, 'asciiTheme') ?? attrOf(fonts, 'hAnsiTheme')
+  return {
+    font:
+      themeFont(latinTheme, theme) ?? attrOf(fonts, 'ascii') ?? attrOf(fonts, 'hAnsi') ?? undefined,
+    fontComplex: themeFont(attrOf(fonts, 'cstheme'), theme) ?? attrOf(fonts, 'cs') ?? undefined
+  }
+}
+
 /** The properties a `w:rPr` sets itself; theme fonts it names resolve through `theme`. */
 export function readRunProperties(rPr: Element | null, theme: ThemeFonts = {}): RunProperties {
   if (!rPr) return {}
@@ -131,13 +144,7 @@ export function readRunProperties(rPr: Element | null, theme: ThemeFonts = {}): 
       vertAlign === 'superscript' || vertAlign === 'subscript' || vertAlign === 'baseline'
         ? vertAlign
         : undefined,
-    // A theme reference wins over the family named beside it, as in Word.
-    font:
-      themeFont(attrOf(fonts, 'asciiTheme') ?? attrOf(fonts, 'hAnsiTheme'), theme) ??
-      attrOf(fonts, 'ascii') ??
-      attrOf(fonts, 'hAnsi') ??
-      undefined,
-    fontComplex: themeFont(attrOf(fonts, 'cstheme'), theme) ?? attrOf(fonts, 'cs') ?? undefined,
+    ...runFonts(fonts, theme),
     size: size > 0 ? size : undefined,
     sizeComplex: sizeComplex > 0 ? sizeComplex : undefined,
     color: color && HEX.test(color) ? color.toLowerCase() : undefined,
