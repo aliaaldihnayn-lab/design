@@ -23,6 +23,27 @@ describe('recordEdit', () => {
     expect(editor.undo.canUndo).toBe(false)
   })
 
+  test('undo and redo keep the layers still on the page selected, and drop the rest', () => {
+    const { editor, pageId, card } = setup()
+    editor.select([card.id])
+
+    // As a panel edits the selected layer through a tool: it stays selected through undo.
+    editor.recordEdit({ label: 'Move' }, () => editor.graph.updateNode(card.id, { x: 40 }))
+    editor.undo.undo()
+    expect([...editor.state.selectedIds]).toEqual([card.id])
+    editor.undo.redo()
+    expect([...editor.state.selectedIds]).toEqual([card.id])
+
+    // A layer the edit made goes with it.
+    let made = ''
+    editor.recordEdit({ label: 'Add' }, () => {
+      made = editor.graph.createNode('ELLIPSE', pageId, { width: 10, height: 10 }).id
+    })
+    editor.select([card.id, made])
+    editor.undo.undo()
+    expect([...editor.state.selectedIds]).toEqual([card.id])
+  })
+
   test('joins a batch open around it, unless it records its own step', () => {
     const { editor, card } = setup()
 

@@ -367,7 +367,11 @@ export function restoreDocumentChange(
     if (ctx.graph.getNode(pageId)) computeAllLayouts(ctx.graph, pageId)
   }
   if (pageIds.has(ctx.state.currentPageId)) {
-    ctx.setSelectedIds(new Set())
+    // Layers the edit left on the page stay selected, so undoing a panel's edit keeps the panel.
+    const kept = [...ctx.state.selectedIds].filter(
+      (id) => ctx.graph.pageOf(id) === ctx.state.currentPageId
+    )
+    if (kept.length !== ctx.state.selectedIds.size) ctx.setSelectedIds(new Set(kept))
     ctx.state.hoveredNodeId = null
   }
   ctx.requestRender()
