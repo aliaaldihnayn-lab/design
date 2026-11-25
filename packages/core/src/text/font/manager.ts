@@ -688,6 +688,24 @@ export class FontManager {
     }
   }
 
+  /**
+   * A fallback this build bundles, such as Noto Naskh Arabic, draws its script when the machine
+   * has none installed, offline as well, before any download.
+   */
+  private async loadBundledFallbacks(
+    families: readonly string[],
+    targetFamilies: string[],
+    signal?: AbortSignal
+  ): Promise<void> {
+    for (const family of families) {
+      signal?.throwIfAborted()
+      if (!this.bundled.file(family, 'Regular')) continue
+      const buffer = await this.loadBundledFont(family, 'Regular')
+      signal?.throwIfAborted()
+      if (buffer && !targetFamilies.includes(family)) targetFamilies.push(family)
+    }
+  }
+
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
     targetFamilies: string[],
@@ -709,6 +727,10 @@ export class FontManager {
       ) {
         targetFamilies.push(family)
       }
+    }
+
+    if (targetFamilies.length === 0) {
+      await this.loadBundledFallbacks(manifest.localFamilies, targetFamilies, signal)
     }
 
     if (targetFamilies.length === 0 || characters) {

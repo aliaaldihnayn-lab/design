@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { FIXTURES } from '#core-tests/helpers/paths'
-
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { FontManager, facesFromStyles } from '@lawha/core/text'
@@ -63,6 +62,18 @@ test('a new catalog tells listeners to ask for their families again', () => {
   stop()
   manager.setHostFontCatalog([])
   expect(resets).toBe(1)
+})
+
+test('Arabic falls back to the bundled Noto Naskh Arabic when none is installed or online', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Linux')
+  const { provider, registrations } = countingProvider()
+  manager.attachProvider({} as CanvasKit, provider)
+  const { arabic } = await manager.ensureFallbackPack(['arabic'], 'الصفحة')
+  expect(arabic).toEqual(['Noto Naskh Arabic'])
+  expect(manager.getArabicFallbackFamilies()).toEqual(['Noto Naskh Arabic'])
+  expect(manager.loadedData('Noto Naskh Arabic', 'Regular')).not.toBeNull()
+  expect(registrations.get('Noto Naskh Arabic')).toBe(1)
 })
 
 test('repeated and concurrent fallback preparation reuses host font bytes', async () => {
