@@ -193,11 +193,14 @@ describe('running a plugin', () => {
     const figma = new FigmaAPI(new SceneGraph())
     const { host } = recordingHost()
     const ended: string[] = []
-    const run = host.turn
+    const base = host.turn
+    if (!base) throw new Error('the recording host runs turns')
     host.turn = async (code) => {
-      const out = await run?.(code)
-      ended.push('turn')
-      return out
+      try {
+        return await base(code)
+      } finally {
+        ended.push('turn')
+      }
     }
     const session = startPlugin({
       figma,
