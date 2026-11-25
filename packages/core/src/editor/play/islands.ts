@@ -26,9 +26,24 @@ export function playIslandRoots(graph: SceneGraph, pageId: string): string[] {
     .map((node) => node.id)
 }
 
-/** Whether a layer is, or holds, a control or an interactive component instance. */
+/**
+ * The triggers the player's drawn screens answer, on their hotspots or for the whole screen;
+ * a layer with another, such as mouse enter, drag, or focus, needs its screen run live.
+ */
+const DRAWN_SCREEN_TRIGGERS = new Set(['click', 'hover', 'press', 'key', 'after-delay'])
+
+/**
+ * Whether a layer is, or holds, a control, an interactive component instance, or a trigger only
+ * a live screen answers.
+ */
 function holdsComponent(graph: SceneGraph, node: SceneNode): boolean {
   if (hasBehaviour(graph, node) || Object.keys(readPropertyBindings(node)).length > 0) return true
+  if (
+    interactionsOf(graph, node).some(
+      (interaction) => !DRAWN_SCREEN_TRIGGERS.has(interaction.trigger.type)
+    )
+  )
+    return true
   if (node.type === 'INSTANCE') {
     const main = instanceMainComponent(graph, node)
     const owner = main?.parentId ? graph.getNode(main.parentId) : undefined
@@ -39,9 +54,10 @@ function holdsComponent(graph: SceneGraph, node: SceneNode): boolean {
 }
 
 /**
- * The screens of a page that hold live components: controls with behaviours or interactive
- * components. The prototype player runs these as islands; screens with only navigation keep
- * its drawn images and hotspots.
+ * The screens of a page that hold live components: controls with behaviours, interactive
+ * components, or layers with triggers such as drag or focus. The prototype player runs these as
+ * islands; screens with only clicks, hovers, presses, keys, and delays keep its drawn images and
+ * hotspots.
  */
 export function liveComponentScreens(graph: SceneGraph, screenIds: readonly string[]): string[] {
   return screenIds.filter((id) => {

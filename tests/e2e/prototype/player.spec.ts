@@ -166,3 +166,52 @@ test('the interaction editor shows the linked button and saves a new transition'
     )
     .toContain('"type":"push"')
 })
+
+test('a mouse enter and a drag navigate in the player, as the screen runs live', async ({
+  page
+}) => {
+  const ids = await open(page)
+  await page.evaluate(
+    ({ button, home, tab, profile }) => {
+      const store = window.lawha?.getStore?.()
+      if (!store) throw new Error('Lawha store not initialized')
+      const link = (type: string, destination: string) =>
+        JSON.stringify([
+          {
+            trigger: { type },
+            action: {
+              type: 'navigate',
+              destination,
+              transition: { type: 'instant', direction: 'left', duration: 0, easing: 'linear' }
+            }
+          }
+        ])
+      store.graph.updateNode(button, {
+        pluginData: [
+          { pluginId: 'lawha', key: 'prototype.interactions', value: link('mouse-enter', home) }
+        ]
+      })
+      store.graph.updateNode(tab, {
+        pluginData: [
+          { pluginId: 'lawha', key: 'prototype.interactions', value: link('drag', profile) }
+        ]
+      })
+    },
+    { button: ids.button, home: ids.home, tab: ids.tab, profile: ids.profile }
+  )
+  await page.getByTestId('prototype-present').click()
+  const name = page.getByTestId('prototype-screen-name')
+  await expect(name).toHaveText('Sign in')
+  const live = page.getByTestId('prototype-live-screen')
+  await live.locator('[data-layer="Button"]').hover()
+  await expect(name).toHaveText('Home')
+
+  const tab = await live.locator('[data-layer="Tab bar/Tab"]').boundingBox()
+  if (!tab) throw new Error('The tab is not on screen')
+  await page.mouse.move(tab.x + tab.width / 2, tab.y + tab.height / 2)
+  await page.mouse.down()
+  for (let step = 1; step <= 6; step++)
+    await page.mouse.move(tab.x + tab.width / 2 - step * 10, tab.y + tab.height / 2)
+  await page.mouse.up()
+  await expect(name).toHaveText('Profile')
+})
