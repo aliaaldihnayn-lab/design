@@ -6,7 +6,9 @@ import { renderJSX } from '@lawha/core/design-jsx'
 import { sceneNodeToJSX } from '@lawha/design-jsx'
 import { SceneGraph } from '@lawha/scene-graph'
 import {
+  addStory,
   createEpic,
+  createUserStory,
   readEpics,
   readNodeStories,
   updateStory,
@@ -129,5 +131,18 @@ describe('user stories in design JSX', () => {
     const [restored] = readNodeStories(getNodeOrThrow(copy, again.id))
     expect(restored).toMatchObject({ title: 'Pay', priority: 'medium', status: 'draft' })
     expect(restored.jiraKey).toBeUndefined()
+  })
+
+  test('a story in an epic not named yet exports JSX that renders again', async () => {
+    const graph = new SceneGraph()
+    const [page] = graph.getPages()
+    const screen = graph.createNode('FRAME', page.id, { name: 'الدفع', width: 10, height: 10 })
+    const untitled = upsertEpic(graph, createEpic())
+    addStory(graph, screen.id, createUserStory({ title: 'ادفع', epicId: untitled.id }))
+    const copy = new SceneGraph()
+    const [again] = await renderJSX(copy, sceneNodeToJSX(screen.id, graph))
+    expect(readNodeStories(getNodeOrThrow(copy, again.id))).toMatchObject([
+      { title: 'ادفع', epicId: null }
+    ])
   })
 })

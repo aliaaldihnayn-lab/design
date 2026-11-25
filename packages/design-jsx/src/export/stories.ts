@@ -3,14 +3,17 @@ import { readEpics, readNodeStories, type UserStory } from '@lawha/scene-graph/s
 
 import type { JSXProp, JSXValue } from './value'
 
-/** A story as `stories={[…]}` reads it back, leaving out what a new story starts with. */
-/** The story's epic by title; its description travels with it, so the epic found is the same. */
+/**
+ * The story's epic by title; its description travels with it, so the epic found is the same. An
+ * epic not named yet is left out: JSX finds epics by title, and an empty one names none.
+ */
 function epicValue(story: UserStory, graph: SceneGraph): JSXValue | undefined {
   const epic = story.epicId ? readEpics(graph).find((item) => item.id === story.epicId) : undefined
-  if (!epic) return undefined
+  if (!epic?.title.trim()) return undefined
   return epic.description ? { title: epic.title, description: epic.description } : epic.title
 }
 
+/** A story as `stories={[…]}` reads it back, leaving out what a new story starts with. */
 function storyValue(story: UserStory, graph: SceneGraph): JSXValue {
   return {
     title: story.title,
