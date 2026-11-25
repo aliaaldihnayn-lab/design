@@ -206,7 +206,14 @@ export async function connectJira(
         basicAuthJiraTransport({ site, email, apiToken, fetch: deps.fetch })
       ).myself()
     } catch (error) {
-      return error instanceof JiraError && error.status >= 400 ? 'rejected' : 'unreachable'
+      // Only Jira's refusal of the request is about the email and token; a rate limit or an
+      // outage says nothing about them.
+      const refused =
+        error instanceof JiraError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.status !== 429
+      return refused ? 'rejected' : 'unreachable'
     }
     try {
       await deps.credentials.manager.set(JIRA_API_TOKEN_CREDENTIAL, apiToken)

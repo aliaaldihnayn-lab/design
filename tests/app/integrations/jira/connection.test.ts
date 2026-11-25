@@ -99,6 +99,19 @@ describe('Jira connection on desktop', () => {
     await expect(connection.client.myself()).rejects.toThrow()
   })
 
+  test('a rate limit or an outage is not taken for a refused token', async () => {
+    for (const status of [429, 503]) {
+      const deps = desktop(async () => new Response(null, { status }))
+      expect(
+        await connectJira(
+          { site: 'lawha-test.atlassian.net', email: 'sara@example.com', apiToken: 'good-token' },
+          deps
+        )
+      ).toBe('unreachable')
+      expect(await deps.credentials.manager.status(JIRA_API_TOKEN_CREDENTIAL)).toBe('missing')
+    }
+  })
+
   test('an address that is not https is refused before Jira is asked', async () => {
     const jira = site()
     expect(

@@ -148,6 +148,30 @@ describe('Jira connection', () => {
     }
   })
 
+  test('a rate limit or an outage at Jira is not taken for a refused token', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      for (const status of [429, 503]) {
+        const routes = app(
+          createJiraConnectionService(runtime.database, {
+            secret: SECRET,
+            fetch: async () => new Response(null, { status })
+          })
+        )
+        const response = await routes.request('/integrations/jira', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ site: SITE, email: 'sara@example.com', apiToken: 'good-token' })
+        })
+        expect(response.status).toBe(502)
+      }
+      const rows = await runtime.database.selectFrom('jiraConnection').selectAll().execute()
+      expect(rows).toEqual([])
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('only Jira Cloud hosts are accepted as sites', async () => {
     expect(isJiraCloudSite('https://acme.atlassian.net')).toBe(true)
     expect(isJiraCloudSite('https://acme.jira.com')).toBe(true)

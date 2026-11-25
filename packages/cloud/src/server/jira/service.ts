@@ -272,6 +272,8 @@ export function createJiraConnectionService(
       } catch {
         return 'unreachable'
       }
+      // A rate limit or an outage says nothing about the email and token.
+      if (check.status === 429 || check.status >= 500) return 'unreachable'
       if (check.status !== 200) return { rejected: check.status }
       const apiTokenEncrypted = await encryptToken(options.secret, actor.userId, input.apiToken)
       const now = new Date()
