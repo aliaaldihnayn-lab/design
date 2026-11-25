@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { FIXTURES } from '#core-tests/helpers/paths'
-
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { FontManager, facesFromStyles } from '@lawha/core/text'
@@ -214,4 +213,17 @@ test('keeps the file it has when the same font is read or downloaded again', asy
   // Nothing replaced the file, so it draws under the family's own name with nothing else.
   expect(manager.renderFamily(family, 'Regular')).toBe(family)
   expect(manager.renderShardFamilies(family, 'Regular')).toEqual([])
+})
+
+test('Arabic falls back to the bundled Noto Naskh Arabic when nothing is installed or online', async () => {
+  const manager = offlineManager()
+  manager.setFallbackUserAgent('Linux')
+  // Nothing installed, and no web font answers.
+  manager.setHostFontLoader(async () => null)
+  manager.setOnlineFontProviders({})
+
+  const families = await manager.ensureArabicFallback()
+
+  expect(families).toContain('Noto Naskh Arabic')
+  expect(manager.loadedData('Noto Naskh Arabic', 'Regular')).not.toBeNull()
 })

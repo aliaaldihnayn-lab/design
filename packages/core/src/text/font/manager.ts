@@ -709,6 +709,12 @@ export class FontManager {
       ) {
         targetFamilies.push(family)
       }
+      // A family Lawha bundles draws its script offline, where no installed copy exists.
+      if (!buffer && this.bundled.file(family, 'Regular')) {
+        const bundled = await this.loadBundledFont(family, 'Regular')
+        signal?.throwIfAborted()
+        if (bundled && !targetFamilies.includes(family)) targetFamilies.push(family)
+      }
     }
 
     if (targetFamilies.length === 0 || characters) {
