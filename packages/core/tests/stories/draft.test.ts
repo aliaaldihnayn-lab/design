@@ -61,7 +61,7 @@ describe('interactive elements', () => {
     const frame = graph.createNode('FRAME', page.id, { name: 'الدفع' })
     const named = (name: string) => graph.createNode('FRAME', frame.id, { name }).id
     const blue = named('خلفية زرقاء')
-    const kinds = {
+    const kinds: Record<string, string> = {
       [named('الزر الرئيسي')]: 'button',
       [named('زر اختيار الشحن')]: 'radio',
       [named('مربع اختيار الشروط')]: 'checkbox',
@@ -69,9 +69,10 @@ describe('interactive elements', () => {
       [named('Dropdown button')]: 'dropdown'
     }
     const found = findInteractiveElements(graph, frame.id)
-    expect(Object.fromEntries(found.map((element) => [element.nodeId, element.kind]))).toEqual(
-      kinds
+    const foundKinds: Record<string, string> = Object.fromEntries(
+      found.map((element) => [element.nodeId, element.kind])
     )
+    expect(foundKinds).toEqual(kinds)
     expect(found.some((element) => element.nodeId === blue)).toBe(false)
   })
 })
