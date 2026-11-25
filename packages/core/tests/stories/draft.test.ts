@@ -54,6 +54,26 @@ describe('interactive elements', () => {
     // A button's label is part of the button, not a second element.
     expect(found).toHaveLength(5)
   })
+
+  test('reads Arabic names as whole words and the specific kind before button', () => {
+    const graph = new SceneGraph()
+    const [page] = graph.getPages()
+    const frame = graph.createNode('FRAME', page.id, { name: 'الدفع' })
+    const named = (name: string) => graph.createNode('FRAME', frame.id, { name }).id
+    const blue = named('خلفية زرقاء')
+    const kinds = {
+      [named('الزر الرئيسي')]: 'button',
+      [named('زر اختيار الشحن')]: 'radio',
+      [named('مربع اختيار الشروط')]: 'checkbox',
+      [named('Radio button')]: 'radio',
+      [named('Dropdown button')]: 'dropdown'
+    }
+    const found = findInteractiveElements(graph, frame.id)
+    expect(Object.fromEntries(found.map((element) => [element.nodeId, element.kind]))).toEqual(
+      kinds
+    )
+    expect(found.some((element) => element.nodeId === blue)).toBe(false)
+  })
 })
 
 describe('drafting', () => {

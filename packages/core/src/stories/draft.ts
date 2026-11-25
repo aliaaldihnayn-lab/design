@@ -61,20 +61,43 @@ const BEHAVIOUR_KIND: Record<string, InteractiveKind> = {
   accordion: 'control'
 }
 
-/** Layer names designers give controls, in English and Arabic, by the kind they suggest. */
+/**
+ * An Arabic word as a whole word, with the article or a joined preposition before it: Arabic
+ * letters around it mean another word, as زر (button) inside أزرق (blue).
+ */
+function arabicWords(...words: string[]): string {
+  return `(?<![\\u0621-\\u064A])(?:ال|وال|بال|لل|و|ب)?(?:${words.join('|')})(?![\\u0621-\\u064A])`
+}
+
+/**
+ * Layer names designers give controls, in English and Arabic, by the kind they suggest; the
+ * specific kinds come first, so a "Radio button" or a زر اختيار is a radio, not a button.
+ */
 const NAME_PATTERNS: Array<[InteractiveKind, RegExp]> = [
-  ['button', /\b(button|btn|cta|fab)\b|زر|زرّ/i],
+  [
+    'checkbox',
+    new RegExp(`\\b(checkbox|check ?box)\\b|${arabicWords('مربع اختيار', 'خانة اختيار')}`, 'i')
+  ],
+  ['radio', new RegExp(`\\b(radio)\\b|${arabicWords('زر اختيار', 'زر راديو')}`, 'i')],
+  [
+    'dropdown',
+    new RegExp(
+      `\\b(dropdown|drop-down|select|picker|combobox|menu)\\b|${arabicWords('قائمة منسدلة', 'اختيار')}`,
+      'i'
+    )
+  ],
+  ['toggle', new RegExp(`\\b(toggle|switch)\\b|${arabicWords('مفتاح', 'تبديل')}`, 'i')],
+  ['tabs', new RegExp(`\\b(tabs?|segmented|tab ?bar)\\b|${arabicWords('تبويب', 'تبويبات')}`, 'i')],
+  ['slider', new RegExp(`\\b(slider|range)\\b|${arabicWords('منزلق', 'شريط تمرير')}`, 'i')],
+  ['button', new RegExp(`\\b(button|btn|cta|fab)\\b|${arabicWords('زر', 'زرّ', 'أزرار')}`, 'i')],
   [
     'input',
-    /\b(input|text ?field|textfield|textarea|search|field|email|password)\b|حقل|بحث|إدخال/i
+    new RegExp(
+      `\\b(input|text ?field|textfield|textarea|search|field|email|password)\\b|${arabicWords('حقل', 'بحث', 'إدخال')}`,
+      'i'
+    )
   ],
-  ['dropdown', /\b(dropdown|drop-down|select|picker|combobox|menu)\b|قائمة منسدلة|اختيار/i],
-  ['tabs', /\b(tabs?|segmented|tab ?bar)\b|تبويب/i],
-  ['toggle', /\b(toggle|switch)\b|مفتاح|تبديل/i],
-  ['checkbox', /\b(checkbox|check ?box)\b|مربع اختيار/i],
-  ['radio', /\b(radio)\b|زر اختيار/i],
-  ['slider', /\b(slider|range)\b|منزلق/i],
-  ['link', /\b(link|anchor)\b|رابط/i]
+  ['link', new RegExp(`\\b(link|anchor)\\b|${arabicWords('رابط')}`, 'i')]
 ]
 
 function nameKind(name: string): InteractiveKind | null {
