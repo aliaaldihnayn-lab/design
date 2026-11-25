@@ -89,6 +89,7 @@ const open = computed(
         :collision-padding="8"
         :class="['z-40', styles.bar(), floatingSurface, motionStyles.floating]"
         role="toolbar"
+        data-floating-toolbar
         data-test-id="selection-toolbar"
         :data-kind="kind"
         @open-auto-focus.prevent

@@ -97,7 +97,13 @@ function siblingShortcut(
 const EDITOR_SHORTCUT_OVERLAY_SELECTOR =
   '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
 const PICKER_SELECTOR = '[data-picker-content]'
-const OPEN_LAYER_SELECTOR = '[data-dismissable-layer]:not([data-state="closed"])'
+/**
+ * A layer that is open. A toolbar floating over the canvas (`data-floating-toolbar`), such as
+ * FigJam's selection toolbar while the UI is hidden, stays open beside the canvas and keeps its
+ * shortcuts working, Ctrl+\ to bring the UI back among them.
+ */
+const OPEN_LAYER_SELECTOR =
+  '[data-dismissable-layer]:not([data-state="closed"]):not([data-floating-toolbar])'
 
 function originatedInOverlay(event: KeyboardEvent, allowPickers = false) {
   return event
