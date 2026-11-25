@@ -16,15 +16,18 @@ export function createSaveMenuActions(store: EditorStore) {
     save: onDocument(() => void store.saveFigFile()),
     'save-as': onDocument(() => void store.saveFigFileAs()),
     'save-to': onDocument(() => void openSaveTo(store)),
-    // A Cloud document's history is the server's; any other document keeps its own here.
+    // A Cloud document's history is the server's; any other document keeps its own here. The
+    // menu's store follows the active tab, while history is kept per tab's own store, which the
+    // tab's panel looks it up by.
     'save-version': onDocument(() => {
-      if (isCloudBinding(store.getStorageBinding())) openVersionDialog(store)
-      // The menu's store follows the active tab; history is kept per tab's own store.
-      else openLocalVersionDialog(getActiveEditorStore())
+      const document = getActiveEditorStore()
+      if (isCloudBinding(document.getStorageBinding())) openVersionDialog(document)
+      else openLocalVersionDialog(document)
     }),
     'version-history': onDocument(() => {
-      if (isCloudBinding(store.getStorageBinding())) openVersionHistory(store)
-      else void openLocalHistory(getActiveEditorStore())
+      const document = getActiveEditorStore()
+      if (isCloudBinding(document.getStorageBinding())) openVersionHistory(document)
+      else void openLocalHistory(document)
     })
   }
 }

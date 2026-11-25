@@ -93,6 +93,14 @@ test.afterAll(async () => {
   await server.close()
 })
 
+async function runVersionCommand(page: Page, name: RegExp) {
+  await page.keyboard.press('ControlOrMeta+KeyK')
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  await palette.getByRole('searchbox', { name: 'Search commands' }).fill('version')
+  await palette.getByRole('option', { name }).click()
+  await expect(palette).not.toBeVisible()
+}
+
 const roomTree = (page: Page) => page.getByRole('tree', { name: 'Rooms you can enter' })
 
 test('an owner makes a room with a restricted sub-room and a design in it', async () => {
@@ -166,4 +174,50 @@ test('people in the same room see each other there', async () => {
   const hereNow = (page: Page) => page.getByRole('list', { name: 'In this room now' })
   await expect(hereNow(alicePage).getByRole('listitem')).toHaveCount(2, { timeout: 30_000 })
   await expect(hereNow(bobPage).getByRole('listitem')).toHaveCount(2, { timeout: 30_000 })
+})
+
+test('a design in a room keeps its versions and edits on the server', async () => {
+  await alicePage.getByRole('tab', { name: /Untitled/ }).click()
+  await alicePage.waitForFunction(() => window.lawha?.getStore?.() !== undefined)
+  await alicePage.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    store.recordEdit({ label: 'Rectangle' }, () =>
+      store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+        name: 'Card',
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 120
+      })
+    )
+  })
+  await runVersionCommand(alicePage, /Save to version history/i)
+  const save = alicePage.getByRole('dialog', { name: 'Add to version history' })
+  await save.getByPlaceholder('Title').fill('First draft')
+  await save.getByRole('button', { name: 'Save' }).click()
+  await expect(save).not.toBeVisible()
+
+  // The version is the server's: it is stored there with its name.
+  await expect
+    .poll(() =>
+      server.database
+        .selectFrom('documentVersion')
+        .select('name')
+        .execute()
+        .then((rows) => rows.map((row) => row.name))
+    )
+    .toContain('First draft')
+  await runVersionCommand(alicePage, /Show version history/i)
+  const history = alicePage.getByRole('region', { name: 'Version history' })
+  await expect(
+    history.locator('[data-slot="version-list-item"]', { hasText: 'First draft' })
+  ).toBeVisible()
+  // The document is read-only while its history is open, and editable again once it closes.
+  const readOnly = () =>
+    alicePage.evaluate(() => window.lawha?.getStore?.().state.hostRestrictions.readOnly)
+  expect(await readOnly()).toBe(true)
+  await history.getByRole('button', { name: 'Close version history' }).click()
+  await expect(history).toHaveCount(0)
+  expect(await readOnly()).toBe(false)
 })
