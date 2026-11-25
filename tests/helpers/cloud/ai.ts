@@ -160,6 +160,8 @@ export async function routeCloudAI(page: Page, appOrigin: string, options: Cloud
       ]
     }),
     [`GET /api/workspaces/${WORKSPACE_ID}/documents`]: () => ({ documents: [] }),
+    // Ada has not connected Jira, which a signed-in editor asks about.
+    'GET /api/integrations/jira': () => ({ connection: null, oauth: false }),
     [`GET /api/workspaces/${WORKSPACE_ID}/entitlements`]: () => ({
       entitlements: {
         features: {
