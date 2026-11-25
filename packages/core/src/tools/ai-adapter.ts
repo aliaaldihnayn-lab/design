@@ -8,6 +8,7 @@
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
+import * as v from 'valibot'
 
 import type { FigmaAPI } from '#core/figma-api'
 
@@ -176,6 +177,25 @@ function isImageOutput(
   )
 }
 
+/**
+ * A tool's input as Standard JSON Schema for the AI SDK. Valibot's own `validate` answers a failed
+ * check with its partial `value` beside the `issues`, and the AI SDK passes any answer that has a
+ * `value`, so a misspelled or mis-nested argument would be dropped and the call run without it.
+ * This answers a failure with its issues alone, as Standard Schema describes.
+ */
+function aiInputSchema(input: ToolDef['input']) {
+  const schema = toStandardJSONSchema(input)
+  return {
+    '~standard': {
+      ...schema['~standard'],
+      validate: (value: unknown) => {
+        const result = v.safeParse(input, value)
+        return result.success ? { value: result.output } : { issues: result.issues }
+      }
+    }
+  }
+}
+
 export function toolsToAI(
   tools: ToolDef[],
   options: AIAdapterOptions,
@@ -205,7 +225,7 @@ export function toolsToAI(
     if (!isToolExposed(def, 'ai')) continue
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: toStandardJSONSchema(def.input),
+      inputSchema: aiInputSchema(def.input),
       execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()

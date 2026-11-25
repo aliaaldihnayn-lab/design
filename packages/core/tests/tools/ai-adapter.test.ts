@@ -4,12 +4,7 @@ import { toolModelMessageSchema } from 'ai'
 import * as v from 'valibot'
 
 import { FigmaAPI } from '@lawha/core/figma-api'
-import {
-  defineTool,
-  toolsToAI,
-  type AIAdapterOptions,
-  type ToolLogEntry
-} from '@lawha/core/tools'
+import { defineTool, toolsToAI, type AIAdapterOptions, type ToolLogEntry } from '@lawha/core/tools'
 import { SceneGraph } from '@lawha/scene-graph'
 
 type ToolFactory = Parameters<typeof toolsToAI>[2]['tool']
@@ -174,5 +169,27 @@ describe('AI adapter tool log', () => {
   test('logs a result without an error as a success', async () => {
     const { entries } = await runLogged(() => ({ id: '1:2', name: 'Card' }))
     expect(entries[0]?.error).toBeUndefined()
+  })
+})
+
+describe('AI adapter arguments', () => {
+  test('the AI SDK refuses an argument the tool does not take instead of dropping it', async () => {
+    const { asSchema } = await import('ai')
+    const def = defineTool({
+      name: 'move_box',
+      description: 'Moves a box',
+      execution: { kind: 'sync', mutation: 'none' },
+      input: v.strictObject({ id: v.string(), x: v.optional(v.number()) }),
+      execute: (_figma, args) => args
+    })
+    const figma = new FigmaAPI(new SceneGraph())
+    const tools = toolsToAI([def], { getFigma: () => figma }, { tool })
+    const { inputSchema } = v.parse(v.object({ inputSchema: v.unknown() }), tools.move_box)
+    const schema = asSchema(inputSchema as Parameters<typeof asSchema>[0])
+
+    const misspelled = await schema.validate?.({ id: '1:2', X: 10 })
+    expect(misspelled?.success).toBe(false)
+    const valid = await schema.validate?.({ id: '1:2', x: 10 })
+    expect(valid).toEqual({ success: true, value: { id: '1:2', x: 10 } })
   })
 })
