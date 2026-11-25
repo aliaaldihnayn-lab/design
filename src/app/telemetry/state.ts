@@ -21,11 +21,17 @@ export const sharingState = useLocalStorage<SharingState>(
   'lawha:sharing:v1',
   { installId: null, lastPingDay: null },
   {
-    mergeDefaults: (stored) =>
-      v.parse(
-        v.fallback(sharingStateSchema, () => v.parse(sharingStateSchema, {})),
-        stored
-      )
+    // A serializer rather than `mergeDefaults`, which VueUse skips for writes from another tab.
+    serializer: {
+      read: (raw) =>
+        v.parse(
+          v.fallback(v.pipe(v.string(), v.parseJson(), sharingStateSchema), () =>
+            v.parse(sharingStateSchema, {})
+          ),
+          raw
+        ),
+      write: JSON.stringify
+    }
   }
 )
 

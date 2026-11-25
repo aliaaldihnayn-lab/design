@@ -230,10 +230,22 @@ export function parseAppPreferences(value: unknown): AppPreferences {
   return v.parse(appPreferencesSchema, value)
 }
 
+const storedJSONSchema = v.pipe(v.string(), v.parseJson())
+
+/**
+ * Reads the stored text as preferences. The serializer, not `mergeDefaults`, does this because
+ * VueUse skips `mergeDefaults` for writes from another tab, which would put partial preferences
+ * from an older build or a hand-edited value in place of every section.
+ */
+export function readStoredAppPreferences(raw: string): AppPreferences {
+  const stored = v.safeParse(storedJSONSchema, raw)
+  return parseAppPreferences(stored.success ? stored.output : undefined)
+}
+
 export const appPreferences = useLocalStorage<AppPreferences>(
   STORAGE_KEY,
   structuredClone(DEFAULT_APP_PREFERENCES),
-  { mergeDefaults: (storageValue) => parseAppPreferences(storageValue) }
+  { serializer: { read: readStoredAppPreferences, write: JSON.stringify } }
 )
 
 export function updateAnimationPreference(animations: AnimationPreference): void {

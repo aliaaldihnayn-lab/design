@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_APP_PREFERENCES, parseAppPreferences } from '@/app/settings/preferences/store'
+import {
+  DEFAULT_APP_PREFERENCES,
+  parseAppPreferences,
+  readStoredAppPreferences
+} from '@/app/settings/preferences/store'
 
 describe('parseAppPreferences', () => {
   test('starts from the defaults when nothing usable is stored', () => {
@@ -98,5 +102,20 @@ describe('parseAppPreferences', () => {
       showOnCanvas: false,
       showResolved: true
     })
+  })
+})
+
+describe('readStoredAppPreferences', () => {
+  test('fills every section when the stored text holds only some of them', () => {
+    const preferences = readStoredAppPreferences(
+      JSON.stringify({ version: 1, onboarding: { aiSetup: 'done' } })
+    )
+    expect(preferences).toEqual({ ...DEFAULT_APP_PREFERENCES, onboarding: { aiSetup: 'done' } })
+  })
+
+  test('starts from the defaults when the stored text is not JSON', () => {
+    for (const raw of ['', '{', 'undefined', 'null']) {
+      expect(readStoredAppPreferences(raw)).toEqual(DEFAULT_APP_PREFERENCES)
+    }
   })
 })
