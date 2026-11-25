@@ -149,6 +149,7 @@ const rows = computed(() => {
           v-model="language"
           :options="languageOptions"
           :label="t.code"
+          :ui="{ root: 'flex flex-wrap' }"
           data-test-id="inspect-language"
         />
         <pre
