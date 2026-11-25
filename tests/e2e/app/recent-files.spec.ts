@@ -1,4 +1,5 @@
 import { expect, test } from '#tests/e2e/fixtures'
+import { openHome } from '#tests/helpers/home'
 
 test.describe('a populated recent files list', () => {
   test.use({
@@ -36,8 +37,7 @@ test.describe('a populated recent files list', () => {
   test('the recent files limit in General settings updates the list and persists', async ({
     page
   }) => {
-    await page.goto('/?recent-files')
-    await page.getByTestId('recent-files-home').waitFor()
+    await openHome(page)
     const documents = page.getByRole('button', { name: /Recent design/ })
     await expect(documents).toHaveCount(10)
 
@@ -48,7 +48,7 @@ test.describe('a populated recent files list', () => {
     await page.getByTestId('app-settings-done').click()
     await expect(documents).toHaveCount(12)
 
-    await page.reload()
+    await openHome(page, 'reload')
     await expect(documents).toHaveCount(12)
     await page.keyboard.press('ControlOrMeta+,')
     await expect(limit).toHaveText('25')
@@ -60,7 +60,7 @@ test.describe('on a phone', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
 
   test('keeps the New tab layout usable', async ({ page }) => {
-    await page.goto('/?recent-files')
+    await openHome(page)
 
     const search = page.getByLabel('Search files…')
     await expect(search).toBeVisible()
@@ -79,39 +79,43 @@ test('a narrow window with a mouse keeps mouse-sized controls and focuses the se
   page
 }) => {
   await page.setViewportSize({ width: 600, height: 800 })
-  await page.goto('/?recent-files')
+  await openHome(page)
 
   await expect(page.getByLabel('Search files…')).toBeFocused()
   // Medium buttons, 32 px tall; touch screens get the 36 px large ones.
   expect((await page.getByTestId('home-open-file').boundingBox())?.height).toBe(32)
 })
 
-test('opens to the recent-files home and starts a new document', async ({ page }) => {
-  await page.goto('/?recent-files')
+test('opens to the pinned Home tab and starts a new document beside it', async ({ page }) => {
+  await openHome(page)
 
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  const tabs = page.getByTestId('tabbar-tab')
   await expect(page.getByText('No recent files yet')).toBeVisible()
-  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
+  await expect(tabs).toHaveCount(1)
+  // Home is pinned first and never closes.
+  await expect(page.getByTestId('tabbar-close')).toHaveCount(0)
 
   await page.getByTestId('home-new-design').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeHidden()
-  const tab = page.getByTestId('tabbar-tab')
-  await expect(tab).toHaveCount(1)
-  await expect(tab).toContainText('Untitled')
+  await expect(tabs).toHaveCount(2)
+  await expect(tabs.last()).toContainText('Untitled')
+  await expect(tabs.last()).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByTestId('tabbar-close')).toHaveCount(1)
 
   await page.getByTestId('tabbar-new').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
-  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New file')
+  await expect(tabs).toHaveCount(3)
+  await expect(tabs.last()).toContainText('New file')
   await expect(page.getByLabel('Search files…')).toBeFocused()
   await expect(page.getByTestId('tabbar-close')).toHaveCount(2)
 
-  await page.getByTestId('tabbar-tab').first().click()
-  await page.getByTestId('tabbar-tab').first().hover()
-  await page.locator('[data-slot="tab-item"]').first().getByTestId('tabbar-close').click()
+  await tabs.nth(1).click()
+  await expect(page.getByTestId('recent-files-home')).toBeHidden()
+  await tabs.nth(1).hover()
+  await page.locator('[data-slot="tab-item"]').nth(1).getByTestId('tabbar-close').click()
 
+  await expect(tabs).toHaveCount(2)
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
 })
