@@ -89,6 +89,15 @@ export const CLOUD_WAITLIST_URL = 'https://github.com/aliaaldihnayn-lab/design#r
 export const OFFICIAL_CLOUD_URL =
   (typeof __LAWHA_OFFICIAL_CLOUD_URL__ === 'string' && __LAWHA_OFFICIAL_CLOUD_URL__) ||
   'https://cloud.lawha.invalid'
+/**
+ * The official Cloud server the editor may ask on its own, or null while only the placeholder
+ * stands: a `.invalid` host never resolves (RFC 2606), so asking it only logs failed requests.
+ */
+export const OFFICIAL_CLOUD_SERVER: string | null = new URL(OFFICIAL_CLOUD_URL).hostname.endsWith(
+  '.invalid'
+)
+  ? null
+  : OFFICIAL_CLOUD_URL
 /** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
 export const IS_CLOUD_SITE = typeof __LAWHA_CLOUD_SITE__ === 'boolean' && __LAWHA_CLOUD_SITE__
 /** Where the desktop app's installers are published. */

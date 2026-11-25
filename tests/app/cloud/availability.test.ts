@@ -5,12 +5,14 @@ import {
   checkCloudAvailability,
   isVersionAtLeast
 } from '@/app/cloud/availability'
-import { OFFICIAL_CLOUD_URL } from '@/constants'
+import { OFFICIAL_CLOUD_SERVER } from '@/constants'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
 import { fetchStub } from '#tests/helpers/fetch'
 
 const EDITOR = 'https://app.example.com/'
+/** The official server a deployment's build names. */
+const OFFICIAL = 'https://cloud.example.com'
 
 function officialServer(answer: () => Response) {
   spyOn(globalThis, 'fetch').mockImplementation(fetchStub(async () => answer()))
@@ -18,7 +20,7 @@ function officialServer(answer: () => Response) {
 
 afterEach(async () => {
   officialServer(() => Response.error())
-  await checkCloudAvailability(`${EDITOR}?cloud=off`)
+  await checkCloudAvailability(`${EDITOR}?cloud=off`, OFFICIAL)
 })
 
 describe('Cloud availability', () => {
@@ -33,7 +35,18 @@ describe('Cloud availability', () => {
 
   test('stays hidden while the official server is unreachable or unlisted', async () => {
     officialServer(() => Response.error())
+    await checkCloudAvailability(EDITOR, OFFICIAL)
+    expect(cloudOfficialListed.value).toBe(false)
+  })
+
+  test('asks nothing when the build names no official server', async () => {
+    const fetch = spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => Response.error())
+    )
+    fetch.mockClear()
+    expect(OFFICIAL_CLOUD_SERVER).toBeNull()
     await checkCloudAvailability(EDITOR)
+    expect(fetch).not.toHaveBeenCalled()
     expect(cloudOfficialListed.value).toBe(false)
   })
 
@@ -50,13 +63,13 @@ describe('Cloud availability', () => {
   test('shows Cloud once the official server lists itself for this editor version', async () => {
     officialServer(() =>
       Response.json({
-        ...cloudDiscoveryFixture(OFFICIAL_CLOUD_URL),
+        ...cloudDiscoveryFixture(OFFICIAL),
         deployment: 'official',
         // Tests run as editor version 0.0.0.
         listing: { minimumEditorVersion: '0.0.0' }
       })
     )
-    await checkCloudAvailability(EDITOR)
+    await checkCloudAvailability(EDITOR, OFFICIAL)
     expect(cloudOfficialListed.value).toBe(true)
   })
 })

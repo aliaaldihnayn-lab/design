@@ -2,7 +2,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { APP_VERSION } from '@/app/runtime/version'
-import { IS_BROWSER, IS_CLOUD_SITE, OFFICIAL_CLOUD_URL } from '@/constants'
+import { IS_BROWSER, IS_CLOUD_SITE, OFFICIAL_CLOUD_SERVER } from '@/constants'
 
 import { discoverCloudServer } from './sessions/connection'
 
@@ -46,12 +46,19 @@ export const cloudOfficialListed = computed(
     (listedFrom.value !== null && isVersionAtLeast(APP_VERSION, listedFrom.value))
 )
 
-/** Reads the preview switch from the address and asks the official server whether it is listed. */
-export async function checkCloudAvailability(address: string): Promise<void> {
+/**
+ * Reads the preview switch from the address and asks the official server whether it is listed.
+ * A build that names no official server asks nothing.
+ */
+export async function checkCloudAvailability(
+  address: string,
+  server: string | null = OFFICIAL_CLOUD_SERVER
+): Promise<void> {
   const choice = new URL(address).searchParams.get(PREVIEW_PARAM)
   if (choice === 'preview') preview.value = true
   else if (choice === 'off') preview.value = false
+  if (server === null) return
   // Unreachable, or not public yet: the last answer stands.
-  const discovery = await discoverCloudServer(OFFICIAL_CLOUD_URL).catch(() => null)
+  const discovery = await discoverCloudServer(server).catch(() => null)
   if (discovery) listedFrom.value = discovery.listing?.minimumEditorVersion ?? null
 }
