@@ -699,22 +699,9 @@ export class FontManager {
 
     for (const family of manifest.localFamilies) {
       signal?.throwIfAborted()
-      const buffer =
-        (await this.loadHostFont(family, 'Regular')) ?? (await this.localFonts.read(family))
+      const loaded = await this.loadLocalFallback(family)
       signal?.throwIfAborted()
-      if (
-        buffer &&
-        this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
-        !targetFamilies.includes(family)
-      ) {
-        targetFamilies.push(family)
-      }
-      // A family Lawha bundles draws its script offline, where no installed copy exists.
-      if (!buffer && this.bundled.file(family, 'Regular')) {
-        const bundled = await this.loadBundledFont(family, 'Regular')
-        signal?.throwIfAborted()
-        if (bundled && !targetFamilies.includes(family)) targetFamilies.push(family)
-      }
+      if (loaded && !targetFamilies.includes(family)) targetFamilies.push(family)
     }
 
     if (targetFamilies.length === 0 || characters) {
@@ -738,6 +725,17 @@ export class FontManager {
     }
 
     return targetFamilies
+  }
+
+  /**
+   * Registers a fallback family from this machine, or from Lawha's own bundle, which draws its
+   * script offline where no installed copy exists; true when it loaded.
+   */
+  private async loadLocalFallback(family: string): Promise<boolean> {
+    const buffer =
+      (await this.loadHostFont(family, 'Regular')) ?? (await this.localFonts.read(family))
+    if (buffer) return this.registerAndCache(family, 'Regular', buffer, 'fallback') !== null
+    return (await this.loadBundledFont(family, 'Regular')) !== null
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
