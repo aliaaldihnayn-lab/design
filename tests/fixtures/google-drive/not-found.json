@@ -1,0 +1,15 @@
+{
+  "error": {
+    "code": 404,
+    "message": "File not found: 1aBcDeFgHiJkLmNoPqRsTuVwXyZ012345.",
+    "errors": [
+      {
+        "message": "File not found: 1aBcDeFgHiJkLmNoPqRsTuVwXyZ012345.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}

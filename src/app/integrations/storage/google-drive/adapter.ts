@@ -239,6 +239,8 @@ export function createGoogleDriveStorageAdapter(
       const file = await drive.findFile(id)
       if (!file) throw new Error(storageErrorText((t) => t.googleDriveMissing({ id })))
       const response = await drive.request(`${API}/files/${file.id}?alt=media`, { signal })
+      // Gone since the search found it: Drive's 404 is an error body, not the document.
+      if (!response.ok) throw new Error(storageErrorText((t) => t.googleDriveMissing({ id })))
       const bytes = new Uint8Array(await response.arrayBuffer())
       onProgress?.({ transferredBytes: bytes.length, totalBytes: bytes.length })
       return { bytes, revision: file.version ?? null }
