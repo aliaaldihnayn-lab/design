@@ -1,4 +1,4 @@
-import { uniq } from 'es-toolkit'
+import { isEqual, uniq } from 'es-toolkit'
 
 import type { SceneGraph } from '@lawha/scene-graph'
 import {
@@ -9,14 +9,19 @@ import {
 } from '@lawha/scene-graph/plugin-data'
 import {
   addStory,
+  collectStories,
   copyMainComponentStories,
   createEpic,
   createUserStory,
   removeEpic,
   removeStory,
   updateEpic,
+  readEpics,
+  readNodeStories,
   updateStory,
   upsertEpic,
+  writeEpics,
+  writeNodeStories,
   writeStoryJiraProject,
   type Epic,
   type EpicInput,
@@ -61,23 +66,77 @@ function restore(graph: SceneGraph, nodeId: string, values: readonly string[] | 
   graph.updateNode(nodeId, { pluginData: [...others, ...kept] })
 }
 
+/** The Jira issue a story or epic is linked to, and what Jira last said about it. */
+type JiraLink = Pick<UserStory, 'jiraKey' | 'jiraUrl' | 'jira'>
+
+function linkOf(item: JiraLink | undefined): JiraLink {
+  return { jiraKey: item?.jiraKey, jiraUrl: item?.jiraUrl, jira: item?.jira }
+}
+
+/** Every story's and epic's link, by `story:<id>` and `epic:<id>`. */
+function graphLinks(graph: SceneGraph): Map<string, JiraLink> {
+  const links = new Map<string, JiraLink>()
+  for (const epic of readEpics(graph)) links.set(`epic:${epic.id}`, linkOf(epic))
+  for (const { story } of collectStories(graph)) links.set(`story:${story.id}`, linkOf(story))
+  return links
+}
+
+/** Gives the stories and epics on `nodeIds` the links `linkFor` names for them. */
+function relink(
+  graph: SceneGraph,
+  nodeIds: readonly string[],
+  linkFor: (key: string) => JiraLink | undefined
+): void {
+  const apply = <T extends JiraLink & { id: string }>(items: T[], kind: string) => {
+    let changed = false
+    const next = items.map((item) => {
+      const link = linkFor(`${kind}:${item.id}`)
+      if (!link || isEqual(linkOf(item), link)) return item
+      changed = true
+      return { ...item, ...link }
+    })
+    return changed ? next : null
+  }
+  for (const nodeId of nodeIds) {
+    const stories = apply(readNodeStories(graph.getNode(nodeId)), 'story')
+    if (stories) writeNodeStories(graph, nodeId, stories)
+    if (nodeId !== graph.rootId) continue
+    const epics = apply(readEpics(graph), 'epic')
+    if (epics) writeEpics(graph, epics)
+  }
+}
+
 /**
  * User stories and epics as undoable editor commands. Each command records only the layers whose
  * stories it changed, so undo leaves every other plugin-data entry, and other edits made since,
  * as they are.
  */
 export function createStoryActions(ctx: EditorContext) {
+  /** The last link seen on each story and epic, kept for when undo or redo brings one back. */
+  const knownLinks = new Map<string, JiraLink>()
+
   /** Runs `change` on the graph as one undo step labelled `label`, and returns its result. */
   function editStories<T>(label: string, change: (graph: SceneGraph) => T): T {
     const before = snapshot(ctx.graph)
+    const linksBefore = graphLinks(ctx.graph)
     const result = change(ctx.graph)
     const after = snapshot(ctx.graph)
+    const linksAfter = graphLinks(ctx.graph)
     const touched = uniq([...before.keys(), ...after.keys()]).filter(
       (id) => (before.get(id) ?? []).join('\u0000') !== (after.get(id) ?? []).join('\u0000')
     )
     if (touched.length === 0) return result
+    // Links a sync wrote since this step are not part of it: undo and redo keep them, so a story
+    // never forgets the issue it already has in Jira and a later push never creates it twice.
+    const ownLinks = new Set(
+      uniq([...linksBefore.keys(), ...linksAfter.keys()]).filter(
+        (key) => !isEqual(linkOf(linksBefore.get(key)), linkOf(linksAfter.get(key)))
+      )
+    )
     const apply = (state: StorySnapshot) => {
+      for (const [key, link] of graphLinks(ctx.graph)) if (link.jiraKey) knownLinks.set(key, link)
       for (const id of touched) restore(ctx.graph, id, state.get(id))
+      relink(ctx.graph, touched, (key) => (ownLinks.has(key) ? undefined : knownLinks.get(key)))
       ctx.requestRender()
     }
     ctx.requestRender()
