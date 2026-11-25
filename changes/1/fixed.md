@@ -2,3 +2,4 @@
 - Edits made by AI, MCP and the interactive kit no longer keep the canvas and the editor's panels in memory after the preview or the canvas is reopened, which made long sessions slow down and the tab run out of memory (#1).
 - A design JSX `<Instance>` keeps its component's layout direction and other values the JSX leaves unset, so the right-to-left interactive kit's combobox lays its field out from the right (#1).
 - Instances that switch variants while a design runs, such as the options of a radio group, keep their own text and other property values instead of showing the variant's defaults (#1).
+- Controls and components that size to their content keep their designed size on the canvas in preview, instead of wrapping their label word by word and squeezing their parts (#1).

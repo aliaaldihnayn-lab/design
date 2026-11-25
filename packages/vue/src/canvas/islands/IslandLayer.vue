@@ -91,7 +91,12 @@ function forwardWheel(event: WheelEvent) {
         :tokens="tokens"
         class="pointer-events-auto absolute"
         @action="islandAction"
-        :style="{ left: `${island.position.x}px`, top: `${island.position.y}px` }"
+        :style="{
+          left: `${island.position.x}px`,
+          top: `${island.position.y}px`,
+          // The layer they sit in has no width, which would wrap a hugging root to its narrowest.
+          width: 'max-content'
+        }"
       />
     </div>
   </div>

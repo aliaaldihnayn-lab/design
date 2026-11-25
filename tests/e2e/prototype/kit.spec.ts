@@ -61,6 +61,27 @@ test('a kit select opens on the canvas, moves with the keys, and shows the pick'
   await leaveLiveMode()
 })
 
+test('a kit checkbox that hugs its label keeps its size on the canvas in live mode', async () => {
+  const id = await insertFromAssets('Checkbox')
+  const designed = await editor.page.evaluate((nodeId) => {
+    const store = window.lawha?.getStore?.()
+    const node = store?.graph.getNode(nodeId)
+    return { width: (node?.width ?? 0) * (store?.state.zoom ?? 1) }
+  }, id)
+  await startLiveMode()
+
+  const box = await layer(id, 'Box').boundingBox()
+  const label = await layer(id, 'Label').boundingBox()
+  if (!box || !label) throw new Error('The checkbox is not on screen')
+  // As drawn: a square box beside a label on one line, as wide as the layer.
+  expect(Math.abs(box.width - box.height)).toBeLessThan(2)
+  expect(label.height).toBeLessThan(box.height * 1.5)
+  expect(
+    Math.abs(box.width + (label.x - box.x - box.width) + label.width - designed.width)
+  ).toBeLessThan(designed.width * 0.05)
+  await leaveLiveMode()
+})
+
 test('a kit text input takes real typing and counts it', async () => {
   const id = await insertFromAssets('Text input')
   await startLiveMode()
