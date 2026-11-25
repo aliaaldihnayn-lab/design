@@ -241,6 +241,26 @@ describe('pull', () => {
     expect(readNodeStories(graph.getNode(button.id))[0].jiraKey).toBe('SHOP-2')
   })
 
+  test('stories whose issues were all deleted are reported, and the others still read', async () => {
+    const { graph, frame, button } = screen()
+    const { jira, client } = connect()
+    const second = addStory(graph, frame.id, createUserStory({ title: 'Review the order' }))
+    applyJiraUpdates(
+      graph,
+      (await pushToJira(graph, client, { site: SITE, projectKey: 'SHOP' })).updates
+    )
+    jira.issues.delete('SHOP-1')
+    jira.issues.delete('SHOP-2')
+    const story = readNodeStories(graph.getNode(button.id))[0]
+    const gone = await pullFromJira(graph, client, { storyIds: [story.id] })
+    expect(gone.items.map((item) => item.action)).toEqual(['failed', 'failed'])
+
+    const result = await pullFromJira(graph, client)
+    const actions = Object.fromEntries(result.items.map((item) => [item.id, item.action]))
+    expect(actions[second.id]).toBe('pulled')
+    expect(actions[story.id]).toBe('failed')
+  })
+
   test('nothing linked asks Jira nothing', async () => {
     const { graph } = screen()
     const { jira, client } = connect()

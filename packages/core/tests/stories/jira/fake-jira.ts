@@ -81,7 +81,21 @@ export function fakeJira(options: {
   function search(body: unknown): Response {
     const { jql } = v.parse(searchSchema, body)
     const keys = /key in \(([^)]*)\)/.exec(jql)?.[1].split(',') ?? []
+    const missing = keys.filter((key) => !issues.has(key))
+    // Jira Cloud answers 400 when no key of the list is found, and leaves the missing ones out
+    // with a warning otherwise.
+    if (keys.length > 0 && missing.length === keys.length) {
+      return json(400, {
+        errorMessages: missing.map(
+          (key) => `An issue with key '${key}' does not exist for field 'key'.`
+        ),
+        errors: {}
+      })
+    }
     return json(200, {
+      ...(missing.length > 0
+        ? { warningMessages: [`The issue key '${missing.join("', '")}' does not exist.`] }
+        : {}),
       issues: keys.flatMap((key) => {
         const issue = issues.get(key)
         if (!issue) return []

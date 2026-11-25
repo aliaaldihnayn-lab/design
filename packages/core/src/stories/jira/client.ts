@@ -283,19 +283,30 @@ export class JiraClient {
     )
   }
 
-  /** The issues with these keys, with their status and assignee, a page at a time. */
+  /**
+   * The issues with these keys, with their status and assignee, a page at a time. Issues that
+   * were deleted or that the person cannot see are left out: Jira answers 400 to a search when
+   * none of its keys is found, so a refused set is split and its halves asked on their own.
+   */
   async issues(keys: readonly string[]): Promise<JiraIssue[]> {
     const found: JiraIssue[] = []
     for (let start = 0; start < keys.length; start += 100) {
-      const chunk = keys.slice(start, start + 100)
-      let nextPageToken: string | undefined
+      found.push(...(await this.searchKeys(keys.slice(start, start + 100))))
+    }
+    return found
+  }
+
+  private async searchKeys(keys: readonly string[]): Promise<JiraIssue[]> {
+    const found: JiraIssue[] = []
+    let nextPageToken: string | undefined
+    try {
       do {
         const page = await this.call(
           {
             method: 'POST',
             path: '/rest/api/3/search/jql',
             body: {
-              jql: `key in (${chunk.join(',')})`,
+              jql: `key in (${keys.join(',')})`,
               fields: ['summary', 'status', 'assignee', 'updated'],
               maxResults: 100,
               ...(nextPageToken ? { nextPageToken } : {})
@@ -306,6 +317,14 @@ export class JiraClient {
         found.push(...page.issues)
         nextPageToken = page.nextPageToken
       } while (nextPageToken)
+    } catch (error) {
+      if (!(error instanceof JiraError) || error.status !== 400) throw error
+      if (keys.length === 1) return []
+      const half = Math.ceil(keys.length / 2)
+      return [
+        ...(await this.searchKeys(keys.slice(0, half))),
+        ...(await this.searchKeys(keys.slice(half)))
+      ]
     }
     return found
   }
