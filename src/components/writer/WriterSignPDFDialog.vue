@@ -11,7 +11,7 @@ import {
 import { localeDirection, useI18n, useWriterMessages } from '@lawha/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
-import { PDF, pickFile, saveFileAs, type PickedFile } from '@/app/writer/files'
+import { PDF, PKCS12, pickFile, saveFileAs, type PickedFile } from '@/app/writer/files'
 import { boxToRect, defaultBox, rectToBox } from '@/app/writer/placement'
 import { writerAuthor } from '@/app/writer/session'
 import {
@@ -105,11 +105,7 @@ async function create() {
 }
 
 async function chooseCertificate() {
-  importFile.value = await pickFile({
-    description: 'PKCS #12',
-    mime: 'application/x-pkcs12',
-    extension: 'p12'
-  })
+  importFile.value = await pickFile(PKCS12)
 }
 
 async function importCertificate() {

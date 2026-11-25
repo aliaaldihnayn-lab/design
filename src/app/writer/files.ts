@@ -21,8 +21,13 @@ export interface PickedFile {
 export interface FileKind {
   description: string
   mime: string
+  /** The extension a saved file gets. */
   extension: string
+  /** Other extensions the same kind of file goes by, which opening accepts too. */
+  aliases?: readonly string[]
 }
+
+const extensionsOf = (kind: FileKind) => [kind.extension, ...(kind.aliases ?? [])]
 
 export const DOCX: FileKind = {
   description: 'Word document',
@@ -32,12 +37,20 @@ export const DOCX: FileKind = {
 
 export const PDF: FileKind = { description: 'PDF', mime: 'application/pdf', extension: 'pdf' }
 
+/** A certificate with its private key, as `.p12` or `.pfx`. */
+export const PKCS12: FileKind = {
+  description: 'PKCS #12',
+  mime: 'application/x-pkcs12',
+  extension: 'p12',
+  aliases: ['pfx']
+}
+
 /** Picks a file through an `<input type=file>`, for browsers without the open picker. */
 function pickWithInput(kind: FileKind): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = `.${kind.extension},${kind.mime}`
+    input.accept = [...extensionsOf(kind).map((extension) => `.${extension}`), kind.mime].join(',')
     input.addEventListener('change', () => resolve(input.files?.[0] ?? null), { once: true })
     input.addEventListener('cancel', () => resolve(null), { once: true })
     input.click()
@@ -52,7 +65,7 @@ function isAbort(error: unknown): boolean {
 export async function pickFile(kind: FileKind): Promise<PickedFile | null> {
   if (IS_TAURI) {
     const path = await open({
-      filters: [{ name: kind.description, extensions: [kind.extension] }],
+      filters: [{ name: kind.description, extensions: extensionsOf(kind) }],
       multiple: false
     })
     if (typeof path !== 'string') return null
@@ -60,8 +73,9 @@ export async function pickFile(kind: FileKind): Promise<PickedFile | null> {
   }
   if (IS_BROWSER && typeof window.showOpenFilePicker === 'function') {
     try {
+      const accept = extensionsOf(kind).map((extension) => `.${extension}`)
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: kind.description, accept: { [kind.mime]: [`.${kind.extension}`] } }]
+        types: [{ description: kind.description, accept: { [kind.mime]: accept } }]
       })
       const file = await handle.getFile()
       return {
