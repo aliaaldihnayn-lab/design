@@ -3,6 +3,7 @@ import * as v from 'valibot'
 
 import { parseColor } from '@lawha/scene-graph/color'
 import { gradientTransformRows, linearGradientTransform } from '@lawha/scene-graph/gradient'
+import { imageHeader } from '@lawha/scene-graph/images'
 import type { Vector } from '@lawha/scene-graph/primitives'
 
 import { storeImage } from '#core/figma-api/images'
@@ -103,6 +104,16 @@ export const setStroke = defineTool({
   }
 })
 
+/** The bytes of Base64 `data`, or null; `isValid` passes strings such as "x" that cannot decode. */
+function decodeImageData(data: string): Uint8Array | null {
+  if (!isValid(data)) return null
+  try {
+    return toUint8Array(data)
+  } catch {
+    return null
+  }
+}
+
 export const setImageFill = defineTool({
   name: 'set_image_fill',
 
@@ -122,8 +133,9 @@ export const setImageFill = defineTool({
   execute: (figma, { id, image_data, scale_mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    if (!isValid(image_data)) return { error: 'image_data is not valid Base64' }
-    const bytes = toUint8Array(image_data)
+    const bytes = decodeImageData(image_data)
+    if (!bytes) return { error: 'image_data is not valid Base64' }
+    if (!imageHeader(bytes)) return { error: 'image_data is not a PNG, JPEG, GIF, or WebP image' }
     const imageHash = storeImage(figma.graph, bytes)
     const mode = scale_mode
     node.fills = [{ type: 'IMAGE', imageHash, scaleMode: mode }]

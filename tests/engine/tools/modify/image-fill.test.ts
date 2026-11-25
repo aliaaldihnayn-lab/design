@@ -1,12 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
+import { toUint8Array } from 'js-base64'
+
 import { FigmaAPI } from '@lawha/core/figma-api'
 import { ALL_TOOLS } from '@lawha/core/tools'
 import { SceneGraph } from '@lawha/scene-graph'
 
 import { expectDefined, expectFills } from '#tests/helpers/assert'
 
-const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+// A 1×1 PNG: the tool takes only bytes it can read as an image.
+const PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+const PNG = toUint8Array(PNG_BASE64)
 
 function setup() {
   const graph = new SceneGraph()
@@ -34,7 +39,7 @@ describe('set_image_fill tool', () => {
       height: 100
     }) as { id: string }
 
-    const b64 = PNG_MAGIC.toBase64()
+    const b64 = PNG_BASE64
     const result = tool.execute(figma, { id: node.id, image_data: b64 }) as {
       id: string
       imageHash: string
@@ -55,7 +60,7 @@ describe('set_image_fill tool', () => {
 
   test('returns error for non-existent node', () => {
     const { figma } = setup()
-    const result = tool.execute(figma, { id: 'nonexistent', image_data: PNG_MAGIC.toBase64() }) as {
+    const result = tool.execute(figma, { id: 'nonexistent', image_data: PNG_BASE64 }) as {
       error: string
     }
     expect(result.error).toContain('not found')
@@ -71,7 +76,7 @@ describe('set_image_fill tool', () => {
       id: string
     }
 
-    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_BASE64 }) as {
       scaleMode: string
     }
     expect(result.scaleMode).toBe('FILL')
@@ -95,7 +100,7 @@ describe('set_image_fill tool', () => {
 
       const result = tool.execute(figma, {
         id: node.id,
-        image_data: PNG_MAGIC.toBase64(),
+        image_data: PNG_BASE64,
         scale_mode: mode
       }) as { scaleMode: string }
       expect(result.scaleMode).toBe(mode)
@@ -117,9 +122,20 @@ describe('set_image_fill tool', () => {
       id: string
     }
 
-    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_BASE64 }) as {
       imageHash: string
     }
-    expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
+    expect(graph.images.get(result.imageHash)).toEqual(PNG)
+  })
+
+  test('refuses data that is not Base64 or not an image, and leaves the fills', () => {
+    const { figma } = setup()
+    const rect = figma.createRectangle()
+    const before = structuredClone(rect.fills)
+    for (const image_data of ['x', 'not base64!', 'aGVsbG8gd29ybGQ=']) {
+      const result = tool.execute(figma, { id: rect.id, image_data }) as { error?: string }
+      expect(result.error).toBeString()
+    }
+    expect(rect.fills).toEqual(before)
   })
 })
