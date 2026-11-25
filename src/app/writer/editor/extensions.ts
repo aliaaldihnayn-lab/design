@@ -1,12 +1,12 @@
 import { extensions as coreExtensions, type Extensions } from '@tiptap/core'
 import Highlight from '@tiptap/extension-highlight'
-import Image from '@tiptap/extension-image'
 import { TableKit } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyleKit } from '@tiptap/extension-text-style'
 import { CharacterCount, Placeholder } from '@tiptap/extensions'
 import StarterKit from '@tiptap/starter-kit'
 
+import { WriterImage } from './image'
 import {
   Comment,
   Deletion,
@@ -51,7 +51,7 @@ export function writerExtensions(options: WriterExtensionOptions = {}): Extensio
       types: ['heading', 'paragraph'],
       alignments: ['left', 'center', 'right', 'justify']
     }),
-    Image.configure({
+    WriterImage.configure({
       inline: true,
       allowBase64: true,
       resize: { enabled: true, alwaysPreserveAspectRatio: true, minWidth: 16, minHeight: 16 }
