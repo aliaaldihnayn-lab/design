@@ -1,0 +1,28 @@
+{
+  "url": "https://api.github.com/repos/aliaaldihnayn-lab/design/releases/1",
+  "tag_name": "desktop-preview",
+  "name": "Lawha 0.17.42 (preview)",
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "Lawha_0.17.42_aarch64.dmg",
+      "browser_download_url": "https://github.com/aliaaldihnayn-lab/design/releases/download/desktop-preview/Lawha_0.17.42_aarch64.dmg",
+      "size": 1
+    },
+    {
+      "name": "Lawha-android.apk",
+      "browser_download_url": "https://github.com/aliaaldihnayn-lab/design/releases/download/desktop-preview/Lawha-android.apk",
+      "size": 1
+    },
+    {
+      "name": "android.json",
+      "browser_download_url": "https://github.com/aliaaldihnayn-lab/design/releases/download/desktop-preview/android.json",
+      "size": 1
+    },
+    {
+      "name": "latest.json",
+      "browser_download_url": "https://github.com/aliaaldihnayn-lab/design/releases/download/desktop-preview/latest.json",
+      "size": 1
+    }
+  ]
+}

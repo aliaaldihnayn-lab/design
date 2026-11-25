@@ -35,6 +35,22 @@ export function isNewerVersion(candidate: string, current: string): boolean {
   return false
 }
 
+/**
+ * The APK to offer from the release GitHub's API describes, when its version is newer than
+ * `current`: the release name carries the version and the assets hold `Lawha-android.apk`.
+ */
+export function newerAPK(
+  releaseText: string,
+  current: string
+): { version: string; url: string } | null {
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), releaseSchema), releaseText)
+  if (!parsed.success) return null
+  const latest = /(\d+\.\d+\.\d+)/.exec(parsed.output.name ?? '')?.[1]
+  const apk = parsed.output.assets.find((asset) => asset.name === APK_NAME)
+  if (!latest || !apk || !isNewerVersion(latest, current)) return null
+  return { version: latest, url: apk.browser_download_url }
+}
+
 export async function checkForMobileUpdate(messages: Ref<UpdaterMessages>): Promise<void> {
   if (!IS_MOBILE_APP) return
   try {
@@ -42,17 +58,11 @@ export async function checkForMobileUpdate(messages: Ref<UpdaterMessages>): Prom
       headers: { Accept: 'application/vnd.github+json' }
     })
     if (!response.ok) return
-    const parsed = v.safeParse(
-      v.pipe(v.string(), v.parseJson(), releaseSchema),
-      await response.text()
-    )
-    if (!parsed.success) return
-    const latest = /(\d+\.\d+\.\d+)/.exec(parsed.output.name ?? '')?.[1]
-    const apk = parsed.output.assets.find((asset) => asset.name === APK_NAME)
-    if (!latest || !apk || !isNewerVersion(latest, await getVersion())) return
-    toast.info(messages.value.available({ version: latest }), {
+    const update = newerAPK(await response.text(), await getVersion())
+    if (!update) return
+    toast.info(messages.value.available({ version: update.version }), {
       label: messages.value.download,
-      run: () => void openExternalLink(apk.browser_download_url)
+      run: () => void openExternalLink(update.url)
     })
   } catch (error) {
     // Offline or rate-limited: try again next launch.
