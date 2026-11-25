@@ -34,8 +34,9 @@ the canonical spinbutton ARIA contract, keyboard/focus handlers, and `data-editi
 
 ## Expressions and keyboard
 
-Committed input accepts absolute arithmetic such as `12*8+4`, relative operations such as
-`+10`, `-4`, `*2`, and `/3`, and percentages such as `50%` when `max` is finite. The parser only
+Committed input accepts absolute arithmetic such as `12*8+4`, negative numbers such as `-60`,
+relative operations such as `+10`, `*2`, and `/3`, and percentages such as `50%` when `max` is
+finite. The parser only
 accepts numbers, parentheses, and `+ - * /`; it never evaluates JavaScript.
 
 Arrow keys step by `step`. Shift multiplies the step by 10 and Alt multiplies it by 0.1. Enter
@@ -46,7 +47,13 @@ commits and Escape restores the interaction-start value.
 ```vue twoslash
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NumberFieldInput, NumberFieldLeading, NumberFieldRoot, NumberFieldUnit, NumberFieldValue } from '@lawha/vue/primitives/NumberField'
+import {
+  NumberFieldInput,
+  NumberFieldLeading,
+  NumberFieldRoot,
+  NumberFieldUnit,
+  NumberFieldValue
+} from '@lawha/vue/primitives/NumberField'
 
 const width = ref(120)
 //    ^?

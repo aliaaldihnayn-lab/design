@@ -46,6 +46,18 @@ test('NumberField commits arithmetic and relative expressions', async () => {
   editor.canvas.assertNoErrors()
 })
 
+test('NumberField reads a typed leading minus as a negative number', async () => {
+  const field = xField()
+  const input = await editField(field)
+  await input.press('ControlOrMeta+a')
+  await input.pressSequentially('-60')
+  await input.press('Enter')
+  await editor.canvas.waitForRender()
+  expect((await getSelectedNode(editor.page))?.x).toBe(-60)
+  await expect(field).toHaveAttribute('aria-valuenow', '-60')
+  editor.canvas.assertNoErrors()
+})
+
 test('NumberField invalid input and Escape restore the previous value', async () => {
   const field = xField()
   // Cancellation restores the exact graph coordinate, not its rounded display value.
