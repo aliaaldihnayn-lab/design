@@ -3,6 +3,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 
 import {
   applyJiraUpdates,
+  JiraError,
   getJiraConnection,
   pullFromJira,
   pushToJira,
@@ -18,24 +19,66 @@ import { jiraConnected, jiraPreferences } from '@/app/integrations/jira/connecti
 /** How often linked stories read their status back from Jira while the document is open. */
 export const JIRA_PULL_INTERVAL_MS = 5 * 60 * 1000
 
+/** Why Jira refused a sync or an item, by what the person can do about it. */
+export type JiraFailureKind =
+  | 'unreachable'
+  | 'auth'
+  | 'forbidden'
+  | 'not-found'
+  | 'rate-limited'
+  | 'refused'
+
+export interface JiraFailure {
+  kind: JiraFailureKind
+  /** What Jira or the network said, when anything. */
+  detail?: string
+}
+
+const FAILURE_BY_STATUS: Partial<Record<number, JiraFailureKind>> = {
+  401: 'auth',
+  403: 'forbidden',
+  404: 'not-found',
+  429: 'rate-limited'
+}
+
+/** The kind of failure Jira's HTTP status names; no status means Jira was never reached. */
+export function jiraFailureKind(status: number | undefined): JiraFailureKind {
+  if (status === undefined || status === 0 || status >= 500) return 'unreachable'
+  return FAILURE_BY_STATUS[status] ?? 'refused'
+}
+
+/** A failed sync as the panel shows it. */
+export function jiraFailure(error: unknown): JiraFailure {
+  const detail = error instanceof Error ? error.message : String(error)
+  return {
+    kind: jiraFailureKind(error instanceof JiraError ? error.status : undefined),
+    detail: detail || undefined
+  }
+}
+
 /** Counts of what one sync did, for the panel. */
 export interface JiraSyncSummary {
   created: number
   updated: number
   pulled: number
   failed: number
-  /** The first failure's message, from Jira when it gave one. */
-  firstError?: string
+  /** Why the first failed item failed. */
+  firstError?: JiraFailure
 }
 
 export function summarizeJiraSync(result: JiraSyncResult): JiraSyncSummary {
   const count = (action: string) => result.items.filter((item) => item.action === action).length
+  const failed = result.items.find((item) => item.action === 'failed')
   return {
     created: count('created'),
     updated: count('updated'),
     pulled: count('pulled'),
     failed: count('failed'),
-    firstError: result.items.find((item) => item.action === 'failed')?.error
+    // An item Jira refused without a status, such as one it no longer returns, was reached.
+    firstError: failed && {
+      kind: failed.status === undefined ? 'refused' : jiraFailureKind(failed.status),
+      detail: failed.error
+    }
   }
 }
 
@@ -49,7 +92,7 @@ export const useJiraSync = createGlobalState(() => {
   const storeRef = useActiveEditorStoreRef()
   const busy = ref(false)
   const lastSummary = shallowRef<JiraSyncSummary | null>(null)
-  const lastError = ref<string | null>(null)
+  const lastError = shallowRef<JiraFailure | null>(null)
 
   /** The document's own project, or the one chosen in Settings. */
   const projectKey = computed(() => {
@@ -102,7 +145,9 @@ export const useJiraSync = createGlobalState(() => {
       lastSummary.value = summary
       return summary
     } catch (error) {
-      lastError.value = error instanceof Error ? error.message : String(error)
+      // The counts of an earlier sync would read as this one's.
+      lastSummary.value = null
+      lastError.value = jiraFailure(error)
       return null
     } finally {
       busy.value = false

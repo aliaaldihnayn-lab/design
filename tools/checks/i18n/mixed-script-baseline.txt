@@ -717,6 +717,11 @@ ja:stories.pushToJira
 ja:stories.pushStory
 ja:stories.syncing
 ja:stories.syncFailed
+ja:stories.jiraFailureAuth
+ja:stories.jiraFailureForbidden
+ja:stories.jiraFailureNotFound
+ja:stories.jiraFailureRateLimited
+ja:stories.jiraFailureRefused
 ja:stories.openInJira
 ja:stories.jiraSettingsDescription
 ja:stories.jiraEmail
@@ -822,6 +827,11 @@ zh-cn:stories.pushToJira
 zh-cn:stories.pushStory
 zh-cn:stories.syncing
 zh-cn:stories.syncFailed
+zh-cn:stories.jiraFailureAuth
+zh-cn:stories.jiraFailureForbidden
+zh-cn:stories.jiraFailureNotFound
+zh-cn:stories.jiraFailureRateLimited
+zh-cn:stories.jiraFailureRefused
 zh-cn:stories.openInJira
 zh-cn:stories.jiraSettingsDescription
 zh-cn:stories.jiraEmail

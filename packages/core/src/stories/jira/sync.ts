@@ -16,6 +16,7 @@ import { storyReport, type ReportedStory } from '#core/stories/report'
 
 import { epicDescription, storyDescription } from './adf'
 import {
+  JiraError,
   jiraIssueURL,
   pickStoryIssueTypes,
   type JiraClient,
@@ -37,6 +38,8 @@ export interface JiraSyncItem {
   key?: string
   action: 'created' | 'updated' | 'pulled' | 'failed'
   error?: string
+  /** Jira's HTTP status when it refused the item, such as 403 or 429. */
+  status?: number
 }
 
 export interface JiraSyncResult {
@@ -215,7 +218,12 @@ async function pushIssue(
     result.updates.push(push.link(linkPatch(options.site, created.key)))
     result.items.push({ ...item, key: created.key, action: 'created' })
   } catch (error) {
-    result.items.push({ ...item, action: 'failed', error: errorText(error) })
+    result.items.push({
+      ...item,
+      action: 'failed',
+      error: errorText(error),
+      ...(error instanceof JiraError && error.status > 0 ? { status: error.status } : {})
+    })
   }
 }
 

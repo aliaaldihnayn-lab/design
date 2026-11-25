@@ -7,7 +7,7 @@ import { useStoriesMessages } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { jiraConnected, jiraPreferences } from '@/app/integrations/jira/connection'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { useJiraSync } from '@/app/stories/jira'
+import { useJiraSync, type JiraFailureKind } from '@/app/stories/jira'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -63,6 +63,18 @@ function commitProject() {
   if (current?.projectKey === key && current.site === site) return
   store.setStoryJiraProject({ site, projectKey: key })
 }
+
+const FAILURE_HEADINGS = {
+  unreachable: 'syncFailed',
+  auth: 'jiraFailureAuth',
+  forbidden: 'jiraFailureForbidden',
+  'not-found': 'jiraFailureNotFound',
+  'rate-limited': 'jiraFailureRateLimited',
+  refused: 'jiraFailureRefused'
+} as const satisfies Record<JiraFailureKind, string>
+
+/** The failure the panel shows: the sync's own, or its first item's. */
+const failure = computed(() => sync.lastError.value ?? sync.lastSummary.value?.firstError ?? null)
 
 const scope = computed(() => ({
   rootIds: nodeIds.length > 0 ? nodeIds : [store.state.currentPageId]
@@ -143,10 +155,10 @@ const scope = computed(() => ({
         }}
       </p>
       <AppAlert
-        v-if="sync.lastError.value || sync.lastSummary.value?.firstError"
+        v-if="failure"
         tone="error"
-        :heading="t.syncFailed"
-        :description="sync.lastError.value ?? sync.lastSummary.value?.firstError"
+        :heading="t[FAILURE_HEADINGS[failure.kind]]"
+        :description="failure.detail"
       />
     </template>
   </section>
