@@ -367,11 +367,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('open') ?? '$mod+KeyO',
       run: ({ openFileDialog }) => openFileDialog()
     },
-    ...commandShortcuts('selection.group'),
+    ...commandShortcuts('selection.group', 'selection.wrapInAutoLayout'),
     {
-      id: 'toggle-auto-layout',
-      keys: 'Shift+KeyA',
-      run: ({ actions }) => actions.toggleAutoLayout()
+      id: 'remove-auto-layout',
+      keys: 'Alt+Shift+KeyA',
+      run: ({ actions }) => actions.removeAutoLayout()
     },
     ...commandShortcuts(
       'selection.bringForward',

@@ -100,13 +100,13 @@ export function createKeyboardActions({
     store.setTool('SELECT')
   }
 
-  function toggleAutoLayout() {
-    const node = store.selectedNode.value
-    if (node?.type === 'FRAME' && store.selectedNodes.value.length === 1) {
-      store.setLayoutMode(node.id, node.layoutMode === 'NONE' ? 'VERTICAL' : 'NONE')
-    } else if (store.selectedNodes.value.length > 0) {
-      runCommand('selection.wrapInAutoLayout')
-    }
+  /** Figma's Alt+Shift+A: the selected frames lose their auto layout; Shift+A adds it. */
+  function removeAutoLayout() {
+    const frames = store.selectedNodes.value.filter((node) => node.layoutMode !== 'NONE')
+    if (frames.length === 0) return
+    store.undo.runBatch('Remove auto layout', () => {
+      for (const frame of frames) store.setLayoutMode(frame.id, 'NONE')
+    })
   }
 
   function toggleUI() {
@@ -164,7 +164,7 @@ export function createKeyboardActions({
     smartDelete,
     confirmOrEditSelection,
     escapeOrDeselect,
-    toggleAutoLayout,
+    removeAutoLayout,
     toggleUI,
     togglePlay,
     toggleAI,

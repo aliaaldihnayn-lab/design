@@ -206,7 +206,16 @@ export function createSelectionCommands({
         return t.value.addAutoLayout
       },
       enabled: capabilities.canWrapInAutoLayout,
-      run: () => editor.wrapInAutoLayout()
+      // Figma's Shift+A gives one frame without auto layout its own, and wraps anything else.
+      run: () => {
+        const nodes = editor.getSelectedNodes()
+        const [frame] = nodes
+        if (nodes.length === 1 && frame.type === 'FRAME' && frame.layoutMode === 'NONE') {
+          editor.setLayoutMode(frame.id, 'VERTICAL')
+          return
+        }
+        editor.wrapInAutoLayout()
+      }
     },
     'selection.toggleMask': {
       id: 'selection.toggleMask',
