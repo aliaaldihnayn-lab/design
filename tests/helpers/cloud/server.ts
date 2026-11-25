@@ -17,6 +17,7 @@ import {
   createTransactionalEmailService,
   migrateCloudDatabase,
   parseCloudServerConfig,
+  parseStaticEntitlementsTOML,
   relayDocumentLookups,
   type ObjectStore,
   type StoredObject
@@ -167,7 +168,13 @@ export async function startCloudTestServer(options: { editorOrigin: string; data
     emailTransport: 'smtp',
     emailFrom: 'Lawha <noreply@lawha.test>',
     smtpHost: '127.0.0.1',
-    smtpPort: 2525
+    smtpPort: 2525,
+    // What the example deployment grants every workspace.
+    staticEntitlements: parseStaticEntitlementsTOML({
+      documents: { revision_history: true },
+      sharing: { links: true, guest_view: true, guest_edit: true, guest_presence: true },
+      collaboration: { enabled: true, maximum_participants: 100 }
+    })
   })
   const database = createPostgresCloudDatabase({ connectionString: options.databaseURL })
   // Every migration runs in order on an empty schema, as on a new deployment.

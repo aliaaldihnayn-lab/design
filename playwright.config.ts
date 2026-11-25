@@ -118,6 +118,8 @@ export default defineConfig({
             cwd: import.meta.dirname,
             url: origin,
             env: {
+              // Builds of this fork leave Cloud out unless asked; its browser tests need it.
+              VITE_LAWHA_CLOUD: 'on',
               LAWHA_DEV_ORIGIN: origin,
               LAWHA_DEV_MCP_PORT: mcpPort,
               PORTLESS_URL: ''
