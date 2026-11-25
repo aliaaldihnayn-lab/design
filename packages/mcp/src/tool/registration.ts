@@ -14,7 +14,7 @@ import * as v from 'valibot'
 import { CODEGEN_PROMPT } from '@lawha/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
-import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import { MAX_RESULT_BYTES, type MCPResult, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
@@ -91,6 +91,20 @@ function toolAnnotations(effect: ToolEffect): ToolAnnotations {
     readOnlyHint: effect === 'read',
     destructiveHint: effect === 'write'
   }
+}
+
+/**
+ * A tool's answer as an MCP result. Most tools report a failure by returning `{ error }` rather
+ * than throwing; MCP marks that as an error result, as it marks a thrown one.
+ */
+function toolResult(result: unknown, toolName: string): MCPResult {
+  const formatted = ok(result, toolName)
+  const failed =
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result &&
+    typeof result.error === 'string'
+  return failed ? { ...formatted, isError: true } : formatted
 }
 
 function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, ToolDescriptor> {
@@ -211,7 +225,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
               ]
             }
           }
-          return ok(r, def.name)
+          return toolResult(r, def.name)
         } catch (e) {
           return fail(e)
         }

@@ -315,6 +315,8 @@ describe('MCP server', () => {
     const get = await client.callTool({ name: 'get_node', arguments: { id } })
     const data = parseResult(get) as { error?: string }
     expect(data.error).toContain('not found')
+    // A tool that reports its failure as `{ error }` is an error result, as a thrown one is.
+    expect(get.isError).toBe(true)
   })
 
   test('find_nodes filters by type', async () => {
