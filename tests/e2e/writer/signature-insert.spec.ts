@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '#tests/e2e/fixtures'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '#tests/e2e/fixtures'
 
 test.describe.configure({ timeout: 120_000 })
 

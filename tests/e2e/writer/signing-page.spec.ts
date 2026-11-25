@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 
+import type { Page } from '@playwright/test'
 import { fromUint8Array } from 'js-base64'
 
-import { expect, test, type Page } from '#tests/e2e/fixtures'
+import { expect, test } from '#tests/e2e/fixtures'
 import { testPath } from '#tests/helpers/paths'
 
 /**
