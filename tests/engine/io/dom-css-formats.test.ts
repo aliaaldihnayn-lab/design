@@ -97,3 +97,19 @@ describe('Tailwind JSX export format', () => {
     expect(io.listExportFormats('page').map((format) => format.id)).toContain('tailwind-jsx')
   })
 })
+
+describe('Lawha JSX export format', () => {
+  test('exports a page as its top-level layers, as the CLI asks for by default', async () => {
+    const { graph, card } = cardGraph()
+    const pageId = graph.getPages()[0].id
+    expect(card.parentId).toBe(pageId)
+    graph.createNode('RECTANGLE', pageId, { name: 'Badge', x: 400, width: 20, height: 20 })
+
+    const result = await io.exportContent('jsx', { graph, target: { scope: 'page', pageId } })
+
+    expect(result).toMatchObject({ format: 'jsx', extension: 'jsx' })
+    expect(String(result.data)).toContain('name="Card"')
+    expect(String(result.data)).toContain('name="Badge"')
+    expect(io.listExportFormats('page').map((format) => format.id)).toContain('jsx')
+  })
+})

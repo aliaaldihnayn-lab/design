@@ -1,7 +1,7 @@
 import { groupBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
-import { sceneNodeToJSX, selectionToJSX } from '@lawha/design-jsx'
+import { selectionToJSX } from '@lawha/design-jsx'
 import { isDrawIOExportFileName } from '@lawha/drawio'
 import {
   buildPenGraph,
@@ -551,19 +551,13 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
   category: 'code',
   extensions: ['jsx'],
   mimeTypes: ['text/plain', 'text/jsx'],
-  support: {
-    exportSelection: true,
-    exportNode: true
-  },
+  support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request): Promise<ExportResult> {
     const nodeId = ensureSingleNode(request.target)
-    let data = ''
-    if (nodeId) {
-      data = sceneNodeToJSX(nodeId, request.graph)
-    } else if (request.target.scope === 'selection') {
-      data = selectionToJSX(request.target.nodeIds, request.graph)
-    }
+    // A page or document exports its top-level layers, as Tailwind JSX does.
+    const nodeIds = nodeId ? [nodeId] : (resolveExportNodes(request)?.nodeIds ?? [])
+    const data = selectionToJSX(nodeIds, request.graph)
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'jsx',
