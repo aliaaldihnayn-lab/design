@@ -124,16 +124,17 @@ async function build() {
 <template>
   <PanelSection :label="t.section" data-test-id="design-system-section">
     <Tip :label="t.buildHint">
+      <!-- Wraps the scope under the action where a language's words do not fit on one line. -->
       <AppButton
         variant="outline"
-        class="w-full justify-start"
+        class="h-auto min-h-7 w-full flex-wrap justify-start gap-y-0 py-1"
         data-test-id="design-system-build"
         :disabled="busy"
         @click="build"
       >
-        <icon-lucide-swatch-book class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ t.build }}</span>
-        <span class="ms-auto truncate text-muted">
+        <icon-lucide-swatch-book class="size-3.5 shrink-0" aria-hidden="true" />
+        <span class="text-start whitespace-normal">{{ t.build }}</span>
+        <span class="ms-auto text-muted">
           {{ scope === 'page' ? t.buildPage : t.buildSelection }}
         </span>
       </AppButton>
@@ -141,12 +142,12 @@ async function build() {
     <Tip :label="t.componentsHint">
       <AppButton
         variant="outline"
-        class="mt-1 w-full justify-start"
+        class="mt-1 h-auto min-h-7 w-full justify-start py-1"
         :disabled="busy"
         @click="addComponents"
       >
-        <icon-lucide-component class="size-3.5" aria-hidden="true" />
-        <span class="truncate">{{ t.components }}</span>
+        <icon-lucide-component class="size-3.5 shrink-0" aria-hidden="true" />
+        <span class="text-start whitespace-normal">{{ t.components }}</span>
       </AppButton>
     </Tip>
   </PanelSection>
