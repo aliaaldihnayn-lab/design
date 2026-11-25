@@ -18,6 +18,20 @@ describe('component rendering', () => {
     )
   })
 
+  test('an instance keeps what its component sets and the author leaves unset', async () => {
+    const graph = new SceneGraph()
+    await renderJSX(
+      graph,
+      '<Component name="Field" flex="row" flow="rtl" gap={8} w={200}><Frame name="Icon" w={16} h={16} /><Frame name="Value" w={40} h={16} /></Component>'
+    )
+    const [instance] = await renderJSX(graph, '<Instance of="Field" w={200} />')
+    const placed = getNodeOrThrow(graph, instance.id)
+    expect(placed.layoutDirection).toBe('RTL')
+    // Laid out from the right, as its component is.
+    const [icon] = graph.getChildren(placed.id)
+    expect(icon?.x).toBe(184)
+  })
+
   test('takes a variant prop set to undefined as no choice', async () => {
     const graph = new SceneGraph()
     const [set] = await renderJSX(

@@ -126,10 +126,12 @@ export async function renderInstanceNode(
   const { props, bindings } = preparePropsForRender(graph, bound.props, false, { parentId, modes })
   const component = resolveComponent(graph, props, context?.refs)
   if (!component) throw componentNotFound(props)
-  const overrides: Partial<SceneNode> = {
-    ...propsToOverrides(props, false, parentLayout),
-    ...layerMetadata(modes, bound.references)
-  }
+  // A field the author left unset follows the component, such as its layout direction; set to
+  // undefined it would replace the component's value in the instance.
+  const overrides: Partial<SceneNode> = omitBy(
+    { ...propsToOverrides(props, false, parentLayout), ...layerMetadata(modes, bound.references) },
+    isUndefined
+  )
   // Instances inherit their container layout, but explicitly authored dimensions
   // must also replace the inherited sizing mode on that axis.
   const layout = overrides.layoutMode ?? component.layoutMode
