@@ -13,7 +13,7 @@ import { ensureDemoDocument } from '@lawha/demo-tools'
 
 import packageJson from './package.json'
 import { viteBuildTarget } from './src/app/shell/support/baseline'
-import { createLawhaAliases } from './vite/aliases'
+import { createLawhaAliases, includesCloud } from './vite/aliases'
 import {
   localAutomationRoute,
   localAutomationToken,
@@ -39,9 +39,7 @@ export default defineConfig(async ({ command, mode }) => {
   // which serves it under /admin behind Cloudflare Access.
   const metrics = mode === 'metrics'
   const env = loadEnv(mode, __dirname, 'VITE_')
-  // `VITE_LAWHA_CLOUD=off` builds the editor without Lawha Cloud.
-  // Off unless asked for: the hosted Cloud belongs to the upstream project.
-  const cloud = env.VITE_LAWHA_CLOUD === 'on'
+  const cloud = includesCloud({ cloudSite, flag: env.VITE_LAWHA_CLOUD })
   // Agents automate the editor's own development server; a Cloud site, built or served, has none.
   const automation = !metrics && !cloudSite
   await Promise.all([ensureBrandAssets(['web']), metrics ? undefined : ensureDemoDocument()])

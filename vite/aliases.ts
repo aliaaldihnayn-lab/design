@@ -22,6 +22,15 @@ function cloudOffAliases(rootDir: string) {
   ]
 }
 
+/**
+ * Whether a build includes Lawha Cloud. The editor leaves it out unless `VITE_LAWHA_CLOUD=on`,
+ * since the hosted Cloud belongs to the upstream project; a Cloud site (`--mode cloud`) is what a
+ * Cloud server serves on its own address, so its editor always talks to that server.
+ */
+export function includesCloud(options: { cloudSite: boolean; flag: string | undefined }): boolean {
+  return options.cloudSite || options.flag === 'on'
+}
+
 export function createLawhaAliases(rootDir: string, options: { cloud?: boolean } = {}) {
   const emptyNodeModule = resolve(rootDir, 'vite/empty-node-module.ts')
 
