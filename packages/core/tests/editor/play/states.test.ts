@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor, playIslandRoots, resolvePlayState } from '@lawha/core'
 import { SceneGraph } from '@lawha/scene-graph'
 import { emptyBehaviour, findLayerByPath, layerPath } from '@lawha/scene-graph/behaviours'
-import { instanceMainComponent } from '@lawha/scene-graph/instances'
+import { applyComponentPropertyValue } from '@lawha/scene-graph/components'
+import { instanceMainComponent, syncInstance } from '@lawha/scene-graph/instances'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {
@@ -64,6 +65,30 @@ describe('preview islands', () => {
     const copy = shown.getChildren(card.id)[0]
     expect(copy && instanceMainComponent(shown, copy)?.id).toBe(on.id)
     expect(instanceMainComponent(graph, instance)?.id).toBe(off.id)
+  })
+
+  test('an instance keeps its own text through a state switch', () => {
+    const { graph, card, instance, off, on } = switchCard()
+    const set = graph.getNode(off.parentId ?? '')
+    if (!set) throw new Error('No set')
+    const label = { id: 'label', name: 'Label', type: 'TEXT' as const, defaultValue: 'Wi-Fi' }
+    graph.updateNode(set.id, {
+      componentPropertyDefinitions: [...set.componentPropertyDefinitions, label]
+    })
+    for (const variant of [off, on])
+      graph.createNode('TEXT', variant.id, {
+        name: 'Label',
+        text: 'Wi-Fi',
+        componentPropertyReferences: [{ propertyId: 'label', field: 'TEXT' }]
+      })
+    syncInstance(graph, instance.id)
+    applyComponentPropertyValue(graph, instance.id, label, 'Bluetooth')
+    const path = layerPath(graph, card.id, instance.id)
+
+    const shown = resolvePlayState(graph, card.id, new Map([[path, { variants: { State: 'On' } }]]))
+    const copy = findLayerByPath(shown, card.id, path)
+    expect(copy && instanceMainComponent(shown, copy)?.id).toBe(on.id)
+    expect(findLayerByPath(shown, card.id, `${path}/Label`)?.text).toBe('Bluetooth')
   })
 
   test('an instance named after its variant keeps its path through a state switch', () => {

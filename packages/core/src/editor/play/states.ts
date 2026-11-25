@@ -6,6 +6,7 @@ import {
 } from '@lawha/scene-graph/components'
 import { resolvedPaintBindings } from '@lawha/scene-graph/variables'
 
+import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 import { extractPageContext, findPageId } from '#core/io/subgraph'
 import { computeAllLayouts } from '#core/layout'
 import { showCalendars } from '#core/prototype/calendar'
@@ -80,6 +81,9 @@ function applyState(
     if (variant && variant.id !== instance.componentId) {
       // Its layer path names the control, so the instance keeps its name in every variant.
       graph.swapInstanceComponent(instance.id, variant.id, { keepName: true })
+      // The variant's layers come fresh from the component; the instance's own text, boolean,
+      // and swap values go back on them, as the editor's variant switch does.
+      reapplyInstanceComponentProperties({ graph }, instance.id)
       reflow(graph, instance.id)
     }
   }
