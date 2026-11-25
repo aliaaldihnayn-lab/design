@@ -118,7 +118,7 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
   await expect(variantSection.getByRole('alert')).toHaveCount(0)
   await expect(variantSection.getByRole('textbox', { name: 'Size' })).toHaveValue('Medium')
 
-  await canvas.pressKey('Meta+z')
+  await canvas.pressKey('ControlOrMeta+z')
   await canvas.waitForRender()
   await expect(variantSection.getByRole('alert')).toHaveCount(0)
   await expect(variantSection.getByRole('textbox', { name: 'Size' })).toHaveValue('Large')
