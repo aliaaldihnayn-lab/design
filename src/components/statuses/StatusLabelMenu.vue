@@ -8,6 +8,7 @@ import { useStatusMessages } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
 import { useSelectedStatuses } from '@/app/editor/statuses/selection'
+import { statusStateName } from '@/app/editor/statuses/workflow'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import { menu } from '@/components/ui/menu/menu'
 
@@ -79,7 +80,7 @@ function clear() {
           @click="choose(state.id)"
         >
           <StatusDot :color="state.color" />
-          <span class="flex-1 text-start">{{ state.name }}</span>
+          <span class="flex-1 text-start">{{ statusStateName(state, messages) }}</span>
           <icon-lucide-check v-if="stateId === state.id" :class="styles.icon()" />
         </button>
         <div :class="styles.separator()" />

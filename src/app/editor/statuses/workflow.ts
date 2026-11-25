@@ -5,6 +5,7 @@ import { parseColor } from '@lawha/scene-graph/color'
 import type { Color } from '@lawha/scene-graph/primitives'
 import { randomHex } from '@lawha/scene-graph/random'
 import {
+  figmaDevStatusOf,
   STATUS_WORKFLOW_PRESETS,
   statusWorkflowImpact,
   type StatusState,
@@ -26,6 +27,21 @@ export const STATUS_COLORS: readonly Color[] = [
   '#f24822',
   '#ff24bd'
 ].map(parseColor)
+
+/**
+ * A state's name as the interface shows it: Figma's Ready for dev and Completed, still under the
+ * names they start with, read in the interface's language; a name the team chose stays theirs.
+ */
+export function statusStateName(
+  state: StatusState,
+  messages: { readyForDev: string; completed: string }
+): string {
+  const status = figmaDevStatusOf(state.id)
+  if (!status) return state.name
+  const preset = STATUS_WORKFLOW_PRESETS.handoff.states.find(({ id }) => id === state.id)
+  if (state.name !== preset?.name) return state.name
+  return status === 'READY_FOR_DEV' ? messages.readyForDev : messages.completed
+}
 
 const PRESETS = Object.keys(STATUS_WORKFLOW_PRESETS) as StatusWorkflowPreset[]
 

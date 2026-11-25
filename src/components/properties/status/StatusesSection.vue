@@ -4,6 +4,7 @@ import { useSceneComputed } from '@lawha/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
+import { statusStateName } from '@/app/editor/statuses/workflow'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -24,7 +25,7 @@ const states = useSceneComputed(() => store.statusWorkflow().states)
     <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
       <li v-for="state in states" :key="state.id" class="flex items-center gap-1.5">
         <StatusDot :color="state.color" />
-        {{ state.name }}
+        {{ statusStateName(state, messages) }}
       </li>
     </ul>
   </PanelSection>

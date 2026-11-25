@@ -6,6 +6,7 @@ import { useStatusMessages } from '@lawha/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'
 import { useSelectedStatuses } from '@/app/editor/statuses/selection'
+import { statusStateName } from '@/app/editor/statuses/workflow'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -18,7 +19,10 @@ const { targets, eligible, workflow, state, stateId, mixed, hidden, setState, re
   useSelectedStatuses()
 
 const options = computed(() =>
-  workflow.value.states.map((entry) => ({ value: entry.id, label: entry.name }))
+  workflow.value.states.map((entry) => ({
+    value: entry.id,
+    label: statusStateName(entry, messages.value)
+  }))
 )
 const colorOf = (id: string) => workflow.value.states.find((entry) => entry.id === id)?.color
 const hasStatus = computed(() => stateId.value !== '' || mixed.value)
@@ -102,7 +106,7 @@ const setFor = computed(() =>
     <p v-else-if="hidden" class="mt-1 text-[11px] text-muted" data-test-id="status-hidden">
       {{
         messages.hiddenInside({
-          state: hidden.state?.name ?? '',
+          state: hidden.state ? statusStateName(hidden.state, messages) : '',
           layer: hidden.inside?.name ?? ''
         })
       }}
