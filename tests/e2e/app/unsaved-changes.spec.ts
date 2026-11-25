@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -84,6 +86,68 @@ test('Save downloads the document before closing when the file API is unavailabl
     await page.getByRole('alertdialog').getByRole('button', { name: 'Save', exact: true }).click()
     expect((await download).suggestedFilename()).toBe('Saved-before-close.fig')
     await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  } finally {
+    await picker.evaluate((handle) => handle.restore())
+    await picker.dispose()
+  }
+})
+
+test('Ctrl/Cmd+S downloads a .fig that opens again when the file API is unavailable', async ({
+  page
+}) => {
+  const picker = await page.evaluateHandle(() => {
+    const original = window.showSaveFilePicker
+    window.showSaveFilePicker = undefined
+    return {
+      restore: () => {
+        window.showSaveFilePicker = original
+      }
+    }
+  })
+  try {
+    page.once('dialog', (dialog) => dialog.accept('Shortcut save.fig'))
+    const download = page.waitForEvent('download')
+    await page.keyboard.press('ControlOrMeta+s')
+    const file = await download
+    expect(file.suggestedFilename()).toBe('Shortcut save.fig')
+    await expect(page.getByRole('img', { name: 'Unsaved changes' })).toHaveCount(0)
+
+    const path = await file.path()
+    await page.getByTestId('tabbar-new').click()
+    // Saved, so it closes without asking; the same file opened again would only show this tab.
+    await page.locator('[data-slot="tab-item"]').first().getByTestId('tabbar-close').click()
+    await expect(page.getByRole('tab', { name: /Shortcut save/ })).toHaveCount(0)
+    const chooser = page.waitForEvent('filechooser')
+    const picking = await page.evaluateHandle(() => {
+      const original = window.showOpenFilePicker
+      window.showOpenFilePicker = undefined
+      return { restore: () => (window.showOpenFilePicker = original) }
+    })
+    try {
+      await page.getByTestId('home-open-file').click()
+      // The download keeps a temporary name; pick it as the file the person saved.
+      await (
+        await chooser
+      ).setFiles({
+        name: file.suggestedFilename(),
+        mimeType: 'application/octet-stream',
+        buffer: await readFile(path)
+      })
+    } finally {
+      await picking.evaluate((handle) => handle.restore())
+      await picking.dispose()
+    }
+    await expect(page.getByRole('tab', { name: /Shortcut save/ })).toHaveCount(1)
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const store = window.lawha?.getStore?.()
+          return store?.graph
+            .getChildren(store.state.currentPageId)
+            .map((node) => [node.type, node.width, node.height])
+        })
+      )
+      .toEqual([['RECTANGLE', 100, 100]])
   } finally {
     await picker.evaluate((handle) => handle.restore())
     await picker.dispose()
