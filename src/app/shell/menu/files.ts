@@ -1,11 +1,8 @@
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
-import { uniq } from 'es-toolkit/array'
 import { basename } from 'pathe'
 import { decode } from 'ufo'
-
-import { BUILTIN_IO_FORMATS, IORegistry } from '@lawha/core/io'
 
 import { setLawhaOpenFileHandler } from '@/app/browser-bridge'
 import {
@@ -15,18 +12,17 @@ import {
 } from '@/app/document/io/browser'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { rememberRecentFile } from '@/app/recent-files'
+import {
+  designFilePickerTypes,
+  isSupportedDesignFile,
+  READABLE_DOCUMENT_EXTENSIONS
+} from '@/app/shell/menu/file-types'
 import { toast } from '@/app/shell/ui'
 import { getTabsSnapshot, openFileInNewTab, switchTab } from '@/app/tabs'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 import { isTauri } from '@/app/tauri/env'
 import { IS_BROWSER } from '@/constants'
 
-const io = new IORegistry(BUILTIN_IO_FORMATS)
-const DOM_DOCUMENT_EXTENSIONS = ['html', 'htm', 'xhtml'] as const
-const READABLE_DOCUMENT_EXTENSIONS = uniq([
-  ...io.listReadableFormats().flatMap((format) => format.extensions),
-  ...DOM_DOCUMENT_EXTENSIONS
-])
 const DESIGN_FILE_ACCEPT = READABLE_DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(
   ','
 )
@@ -90,14 +86,6 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   assertSupportedDesignFile(name)
   const file = new File([bytes], name, { type: 'application/octet-stream' })
   await openFileInNewTab(file, undefined, url.href)
-}
-
-function isSupportedDesignFile(fileName: string): boolean {
-  const lowerName = fileName.toLowerCase()
-  return (
-    io.findReader(fileName) !== null ||
-    DOM_DOCUMENT_EXTENSIONS.some((extension) => lowerName.endsWith(`.${extension}`))
-  )
 }
 
 function assertSupportedDesignFile(fileName: string): void {
@@ -170,18 +158,7 @@ export async function openFileDialog() {
     try {
       const handles = await window.showOpenFilePicker({
         multiple: true,
-        types: [
-          {
-            description: 'Design file',
-            accept: {
-              'application/octet-stream': ['.fig', '.jam'],
-              'application/json': ['.pen'],
-              'text/html': ['.html', '.htm'],
-              'application/xhtml+xml': ['.xhtml'],
-              'text/plain': ['.pen']
-            }
-          }
-        ]
+        types: designFilePickerTypes()
       })
       await openDesignFileBatch(
         handles,
