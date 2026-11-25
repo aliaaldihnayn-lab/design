@@ -41,9 +41,14 @@ export const selectNodes = defineTool({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Node IDs to select'))
   }),
   execute: (figma, { ids }) => {
-    figma.currentPage.selection = ids
+    const nodes = ids
       .map((id) => figma.getNodeById(id))
       .filter((node): node is FigmaNodeProxy => node !== null)
-    return { selected: ids }
+    const selected = nodes.map((node) => node.id)
+    const missing = ids.filter((id) => !selected.includes(id))
+    // Nothing found: the selection stays as it was rather than being cleared.
+    if (nodes.length === 0) return { error: `No layer found for ${missing.join(', ')}` }
+    figma.currentPage.selection = nodes
+    return missing.length > 0 ? { selected, missing } : { selected }
   }
 })

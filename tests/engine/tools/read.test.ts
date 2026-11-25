@@ -325,3 +325,25 @@ describe('get_selection', () => {
     expect(deep.selection[0].children[0].children[0].name).toBe('Chip')
   })
 })
+
+describe('select_nodes', () => {
+  test('selects the layers it finds and names the ids it did not', () => {
+    const { figma } = setupToolTest()
+    const rect = figma.createRectangle()
+    const tool = getTool('select_nodes')
+
+    const result = tool.execute(figma, { ids: [rect.id, '999:404'] }) as ToolResult
+    expect(result).toEqual({ selected: [rect.id], missing: ['999:404'] })
+    expect(figma.currentPage.selection.map((node) => node.id)).toEqual([rect.id])
+  })
+
+  test('reports an error and keeps the selection when it finds nothing', () => {
+    const { figma } = setupToolTest()
+    const rect = figma.createRectangle()
+    figma.currentPage.selection = [rect]
+
+    const result = getTool('select_nodes').execute(figma, { ids: ['999:404'] }) as ToolResult
+    expect(result.error).toContain('999:404')
+    expect(figma.currentPage.selection.map((node) => node.id)).toEqual([rect.id])
+  })
+})
