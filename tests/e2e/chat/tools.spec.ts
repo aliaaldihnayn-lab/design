@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test'
+import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
@@ -39,7 +40,10 @@ test('a reply calls tools: edits land as undoable steps and failed calls reach t
 
   // Each failure goes back to the model as an error it can act on.
   const results = await page.evaluate(() => document.documentElement.dataset.modelToolResults)
-  const [, setFill, updateNode] = JSON.parse(results ?? '[]') as unknown[]
+  const [, setFill, updateNode] = v.parse(
+    v.pipe(v.string(), v.parseJson(), v.array(v.unknown())),
+    results ?? '[]'
+  )
   expect(JSON.stringify(setFill)).toContain('999999:404')
   // The argument the tool does not take is named, rather than dropped and the call run.
   expect(JSON.stringify(updateNode)).toContain('colour')
