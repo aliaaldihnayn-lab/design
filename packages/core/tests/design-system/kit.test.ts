@@ -157,6 +157,20 @@ describe('interactive kit', () => {
     expect(textOf(graph, instance, 'Value')).toBe('اختر مدينة')
   })
 
+  test('right to left, a combobox starts its field and caption from the right', async () => {
+    const { graph, instance } = await screenWith('combobox', { rtl: true })
+    const layer = (path: string) => expectDefined(findLayerByPath(graph, instance.id, path))
+    const field = layer('Trigger/Field')
+    expect(field.layoutDirection).toBe('RTL')
+    // The search glyph sits at the field's right end, its words to its left.
+    const icon = layer('Trigger/Field/Icon')
+    expect(icon.x + icon.width).toBeGreaterThan(field.width - 20)
+    expect(layer('Trigger/Field/Value').x).toBeLessThan(icon.x)
+    const caption = layer('Trigger/Caption')
+    const value = layer('Trigger/Caption/Value')
+    expect(value.x + value.width).toBeCloseTo(caption.width)
+  })
+
   test('the Hijri date picker draws Umm al-Qura months', async () => {
     const graph = new SceneGraph()
     const built = await buildKitComponent(graph, 'date-picker', {

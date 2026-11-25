@@ -67,7 +67,7 @@ function listJSX(list: ListOptions): (theme: KitTheme) => string {
     const trigger = (open: boolean) =>
       list.trigger?.(theme, open) ?? defaultTrigger(theme, list.placeholder(theme), open)
     const empty = list.filterField
-      ? `<Frame name="Empty" visible={false} flex="row" px={12} py={8} w="fill">${label(theme, 'Label', theme.labels.noResults, { color: theme.muted })}</Frame>`
+      ? `<Frame name="Empty" visible={false} flex="row" ${theme.rtl ? 'flow="rtl"' : ''} px={12} py={8} w="fill">${label(theme, 'Label', theme.labels.noResults, { color: theme.muted })}</Frame>`
       : ''
     const menu = (active: number) =>
       `<Frame name="Menu" flex="col" gap={2} p={4} w="fill" rounded={8} bg=${theme.surface} stroke=${theme.border} shadow="0 8 24 #0000001F">${options.map((option, index) => optionRow(theme, option, index, index === active, list.picks)).join('')}${empty}</Frame>`
@@ -218,7 +218,7 @@ const COMBOBOX: ListOptions = {
   openOnFocus: true,
   filterField: 'Trigger/Field',
   trigger: (theme) =>
-    `<Frame name="Trigger" flex="col" gap={4} w="fill"><Instance of={field} name="Field" w="fill" /><Frame name="Caption" flex="row" w="fill">${label(theme, 'Value', theme.labels.choose, { size: 12, color: theme.muted })}</Frame></Frame>`
+    `<Frame name="Trigger" flex="col" gap={4} w="fill"><Instance of={field} name="Field" w="fill" /><Frame name="Caption" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} w="fill">${label(theme, 'Value', theme.labels.choose, { size: 12, color: theme.muted })}</Frame></Frame>`
 }
 
 /** The combobox's field as one variant of its Filled property. */
