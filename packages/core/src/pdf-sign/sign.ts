@@ -19,7 +19,7 @@ import {
   type CertificateSummary,
   type SigningCredentials
 } from './credentials'
-import { findField, markAcroForm, snapshotOf, uniqueFieldName } from './fields'
+import { addPageAnnotation, findField, markAcroForm, snapshotOf, uniqueFieldName } from './fields'
 
 /**
  * Signs a PDF the way Adobe Acrobat validates: a signature field whose dictionary is
@@ -146,8 +146,7 @@ async function addSignatureField(target: PDFDocument, options: SignPDFOptions): 
     widget.set(PDFName.of('AP'), context.obj({ N: ap }))
   }
   const widgetRef = context.register(widget)
-  page.node.addAnnot(widgetRef)
-  snapshotOf(target).markRefForSave(page.ref)
+  addPageAnnotation(target, page, widgetRef)
   const acroForm = markAcroForm(target)
   acroForm.addField(widgetRef)
 }

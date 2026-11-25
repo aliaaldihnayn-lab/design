@@ -5,9 +5,10 @@ import {
   PDFHexString,
   PDFName,
   PDFNumber,
+  PDFRef,
   PDFString,
   type PDFAcroForm,
-  type PDFRef
+  type PDFPage
 } from '@cantoo/pdf-lib'
 
 /**
@@ -102,6 +103,27 @@ export function uniqueFieldName(target: PDFDocument, base = 'Signature'): string
   return `${base}${number}`
 }
 
+/**
+ * Adds a widget to a page's annotations as an incremental update records it. pdf-lib's
+ * `addAnnot` normalizes the page first, wrapping its content streams in a new `q`/`Q` pair;
+ * that rewrites the page's `/Contents`, which validators report as a change to the content an
+ * earlier signature covers. Only the annotations array changes here, saved where it lives.
+ */
+export function addPageAnnotation(target: PDFDocument, page: PDFPage, annotation: PDFRef): void {
+  const key = PDFName.of('Annots')
+  const entry = page.node.get(key)
+  const existing = target.context.lookupMaybe(entry, PDFArray)
+  if (entry instanceof PDFRef && existing) {
+    existing.push(annotation)
+    snapshotOf(target).markRefForSave(entry)
+    return
+  }
+  const annotations = existing ?? target.context.obj([])
+  annotations.push(annotation)
+  page.node.set(key, annotations)
+  snapshotOf(target).markRefForSave(page.ref)
+}
+
 /** The PDF's signature fields, in page order. */
 export async function signatureFields(pdf: Uint8Array): Promise<SignatureField[]> {
   const loaded = await PDFDocument.load(pdf, { updateMetadata: false })
@@ -136,8 +158,7 @@ export async function addSignatureFields(
       P: page.ref
     })
     const ref: PDFRef = loaded.context.register(widget)
-    page.node.addAnnot(ref)
-    snapshotOf(loaded).markRefForSave(page.ref)
+    addPageAnnotation(loaded, page, ref)
     acroForm.addField(ref)
   }
   return loaded.commit({ useObjectStreams: false })
