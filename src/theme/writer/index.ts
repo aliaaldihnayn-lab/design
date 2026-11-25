@@ -16,6 +16,9 @@ const content = [
   '[&_td]:border [&_td]:border-black [&_td]:px-[5.4pt] [&_td]:align-top [&_th]:border [&_th]:border-black [&_th]:bg-black/5 [&_th]:px-[5.4pt] [&_th]:align-top [&_th]:font-bold',
   '[&_td_p]:my-0 [&_th_p]:my-0 [&_.selectedCell]:bg-accent/15 [&_.column-resize-handle]:absolute [&_.column-resize-handle]:-end-px [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-accent [&_td]:relative [&_th]:relative',
   '[&_img]:inline [&_img]:max-w-full [&_.ProseMirror-selectednode]:outline-2 [&_.ProseMirror-selectednode]:outline-accent',
+  // The corner handles a selected image, such as a signature, is resized by; Tiptap only positions them.
+  '[&_[data-resize-handle]]:invisible [&_[data-resize-handle]]:z-10 [&_[data-resize-handle]]:-m-[5px] [&_[data-resize-handle]]:size-2.5 [&_[data-resize-handle]]:rounded-full [&_[data-resize-handle]]:border [&_[data-resize-handle]]:border-white [&_[data-resize-handle]]:bg-accent [&_.ProseMirror-selectednode_[data-resize-handle]]:visible [&_[data-resize-state=true]_[data-resize-handle]]:visible',
+  '[&_[data-resize-handle=top-left]]:cursor-nwse-resize [&_[data-resize-handle=bottom-right]]:cursor-nwse-resize [&_[data-resize-handle=top-right]]:cursor-nesw-resize [&_[data-resize-handle=bottom-left]]:cursor-nesw-resize',
   '[&_.writer-page-break]:my-[12pt] [&_.writer-page-break]:h-0 [&_.writer-page-break]:border-t-2 [&_.writer-page-break]:border-dashed [&_.writer-page-break]:border-black/30',
   '[&_.writer-section-break]:my-[12pt] [&_.writer-section-break]:h-1 [&_.writer-section-break]:border-y [&_.writer-section-break]:border-dashed [&_.writer-section-break]:border-black/30',
   '[&_.writer-page-gap]:relative [&_.writer-page-gap]:flex [&_.writer-page-gap]:flex-col [&_.writer-page-gap]:select-none [&_.writer-page-gap_p]:mb-0',
