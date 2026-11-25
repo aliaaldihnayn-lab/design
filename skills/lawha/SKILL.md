@@ -62,7 +62,11 @@ Common commands:
 - `variables` — list variables and collections
 - `tokens` — variables as a CSS custom-property stylesheet, a Tailwind v4 theme, or W3C design token files (`--format dtcg --out <folder>`)
 - `export` — export PNG/JPG/WEBP/SVG/PDF/JSX/.fig
+- `diff` — compare nodes and documents, and apply attribute patches
 - `convert` — convert between supported document formats
+- `import` — turn an HTML page (with CSS or Tailwind) into a `.fig` document
+- `fonts` — report the fonts a document uses
+- `libraries` — list component library catalogs and publish a document as a library
 - `analyze` — colors, typography, spacing, repeated clusters
 - `lint` — consistency, structure, and accessibility checks
 - `formats` — supported document/export formats
