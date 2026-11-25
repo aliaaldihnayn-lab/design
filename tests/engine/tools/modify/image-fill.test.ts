@@ -131,11 +131,11 @@ describe('set_image_fill tool', () => {
   test('refuses data that is not Base64 or not an image, and leaves the fills', () => {
     const { figma } = setup()
     const rect = figma.createRectangle()
-    const before = structuredClone(rect.fills)
+    const before = JSON.stringify(rect.fills)
     for (const image_data of ['x', 'not base64!', 'aGVsbG8gd29ybGQ=']) {
       const result = tool.execute(figma, { id: rect.id, image_data }) as { error?: string }
       expect(result.error).toBeString()
     }
-    expect(rect.fills).toEqual(before)
+    expect(JSON.stringify(rect.fills)).toBe(before)
   })
 })
