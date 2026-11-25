@@ -5,6 +5,19 @@ import type { ComponentProperty } from './components/properties'
 import type { LayerRef } from './refs'
 import type { DesignMode, DesignVariable } from './variables'
 
+/** A weight by the name fonts give it, as `weight="semibold"` writes it. */
+export type FontWeightName =
+  | 'thin'
+  | 'extralight'
+  | 'light'
+  | 'normal'
+  | 'regular'
+  | 'medium'
+  | 'semibold'
+  | 'bold'
+  | 'extrabold'
+  | 'black'
+
 export interface TreeNode {
   type: string
   props: Record<string, unknown>
@@ -181,8 +194,8 @@ export type StyleProps = {
   fontOpticalSizing?: 'auto' | 'none'
   font?: string
   fontFamily?: string
-  weight?: number | 'bold' | 'medium' | 'normal'
-  fontWeight?: number | 'bold' | 'medium' | 'normal'
+  weight?: number | FontWeightName
+  fontWeight?: number | FontWeightName
   color?: PaintProp
   text?: string | ComponentProperty<string>
   characters?: string

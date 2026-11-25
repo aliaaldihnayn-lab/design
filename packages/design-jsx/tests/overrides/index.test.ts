@@ -97,3 +97,23 @@ describe('paints written as objects', () => {
     )
   })
 })
+
+describe('font weight', () => {
+  test('takes every weight by the name fonts give it', () => {
+    const cases: Array<[string, number]> = [
+      ['thin', 100],
+      ['light', 300],
+      ['normal', 400],
+      ['regular', 400],
+      ['medium', 500],
+      ['semibold', 600],
+      ['bold', 700],
+      ['extrabold', 800],
+      ['black', 900]
+    ]
+    for (const [weight, fontWeight] of cases) {
+      expect(propsToOverrides({ weight }, true, 'NONE')).toMatchObject({ fontWeight })
+    }
+    expect(propsToOverrides({ weight: 650 }, true, 'NONE')).toMatchObject({ fontWeight: 650 })
+  })
+})

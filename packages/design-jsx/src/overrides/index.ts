@@ -1,6 +1,7 @@
 import type { Fill, SceneNode, ArcData, NodeType } from '@lawha/scene-graph'
 import { colorToFill } from '@lawha/scene-graph/color'
 import { parseCSSGridTracks, parseCSSNumber } from '@lawha/scene-graph/css'
+import { styleToWeight } from '@lawha/scene-graph/font-style'
 import {
   autoLayoutSizingFields,
   fillSizingFields,
@@ -27,12 +28,6 @@ import { fillFromValue, isColor, isFillValue } from './fills'
 import { applyStateOverrides } from './state'
 import { applyStrokeOverrides } from './strokes'
 import { applyTextDetailOverrides, AUTO, textLengthProp } from './text'
-
-const WEIGHT_MAP: Record<string, number> = {
-  normal: 400,
-  medium: 500,
-  bold: 700
-}
 
 function parseDirection(value: unknown): SceneNode['textDirection'] | undefined {
   if (typeof value !== 'string') return undefined
@@ -343,7 +338,8 @@ function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<Scen
   if (typeof weight === 'number') {
     o.fontWeight = weight
   } else if (typeof weight === 'string') {
-    o.fontWeight = WEIGHT_MAP[weight] ?? 400
+    // By the names fonts give their weights: "semibold", "light", "extra-bold", "900".
+    o.fontWeight = styleToWeight(weight)
   }
 
   if (typeof props.color === 'string' || isColor(props.color)) {
