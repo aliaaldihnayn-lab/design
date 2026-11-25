@@ -47,6 +47,7 @@ test('keeps recovery independent from cancelling an unsaved-document close', asy
 
   page.once('dialog', (dialog) => dialog.accept())
   await page.reload()
+  await canvas.waitForInit()
   await expect(page.getByRole('alertdialog', { name: 'Recover unsaved work' })).toBeVisible()
   await page.getByRole('button', { name: 'Restore' }).click()
   await expect(page.getByText('Retained recovery rectangle')).toBeVisible()
