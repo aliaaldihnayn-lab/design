@@ -699,8 +699,7 @@ export class FontManager {
 
     for (const family of manifest.localFamilies) {
       signal?.throwIfAborted()
-      const loaded = await this.loadLocalFallback(family)
-      signal?.throwIfAborted()
+      const loaded = await this.loadLocalFallback(family, signal)
       if (loaded && !targetFamilies.includes(family)) targetFamilies.push(family)
     }
 
@@ -731,11 +730,17 @@ export class FontManager {
    * Registers a fallback family from this machine, or from Lawha's own bundle, which draws its
    * script offline where no installed copy exists; true when it loaded.
    */
-  private async loadLocalFallback(family: string): Promise<boolean> {
+  private async loadLocalFallback(family: string, signal?: AbortSignal): Promise<boolean> {
     const buffer =
       (await this.loadHostFont(family, 'Regular')) ?? (await this.localFonts.read(family))
+    // A cancelled preparation registers nothing it read late.
+    signal?.throwIfAborted()
     if (buffer) return this.registerAndCache(family, 'Regular', buffer, 'fallback') !== null
-    return (await this.loadBundledFont(family, 'Regular')) !== null
+    const file = this.bundled.file(family, 'Regular')
+    if (!file) return false
+    const bundled = await this.fetchBundledFont(file)
+    signal?.throwIfAborted()
+    return bundled !== null && this.registerAndCache(family, 'Regular', bundled, 'bundled') !== null
   }
 
   private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
