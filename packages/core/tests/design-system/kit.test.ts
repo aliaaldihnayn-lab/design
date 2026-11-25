@@ -166,6 +166,8 @@ describe('interactive kit', () => {
     const icon = layer('Trigger/Field/Icon')
     expect(icon.x + icon.width).toBeGreaterThan(field.width - 20)
     expect(layer('Trigger/Field/Value').x).toBeLessThan(icon.x)
+    // What is typed starts from the right, as in the kit's other fields.
+    expect(layer('Trigger/Field/Value').textAlignHorizontal).toBe('RIGHT')
     const caption = layer('Trigger/Caption')
     const value = layer('Trigger/Caption/Value')
     expect(value.x + value.width).toBeCloseTo(caption.width)

@@ -225,7 +225,7 @@ const COMBOBOX: ListOptions = {
 function comboboxField(theme: KitTheme, filled: boolean): string {
   return `<Component name="Filled=${filled}" flex="row" ${theme.rtl ? 'flow="rtl"' : ''} gap={8} px={12} py={10} w={260} items="center" rounded={8} bg=${theme.surface} stroke=${theme.border}>
       ${glyph('search', theme.muted, { layer: 'Icon' })}
-      <TextField.Input name="Value" grow={1} size={14} font="${theme.font}" color=${theme.text} ${theme.rtl ? 'dir="rtl"' : ''}>{${JSON.stringify(theme.labels.search)}}</TextField.Input>
+      <TextField.Input name="Value" grow={1} size={14} font="${theme.font}" color=${theme.text} ${theme.rtl ? 'dir="rtl" textAlign="right"' : ''}>{${JSON.stringify(theme.labels.search)}}</TextField.Input>
     </Component>`
 }
 
