@@ -114,6 +114,15 @@ function printResult(result: unknown): void {
   console.log(JSON.stringify(result, null, 2))
 }
 
+function reportedError(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result &&
+    typeof result.error === 'string'
+  )
+}
+
 const call = defineCommand({
   meta: {
     description: 'Run one tool against the running app, or headlessly against a document file'
@@ -146,6 +155,8 @@ const call = defineCommand({
       const { result, graph } = await runToolData(args.file, def.name, toolArgs, args)
       if (args.json) console.log(JSON.stringify(result, null, 2))
       else printResult(result)
+      // Most tools report a failure by returning `{ error }`: the call failed and changed nothing.
+      if (reportedError(result)) process.exit(1)
 
       const outPath = args.output || (args.write ? args.file : undefined)
       if (!graph || !toolChangesDocument(def)) return

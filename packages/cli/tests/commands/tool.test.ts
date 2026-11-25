@@ -3,9 +3,8 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import * as v from 'valibot'
-
 import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
+import * as v from 'valibot'
 
 setDefaultTimeout(60_000)
 
@@ -80,5 +79,23 @@ describe('tool CLI', () => {
     const badArgs = await cli(['tool', 'call', 'list_pages', FIXTURE, '--args', '[1]'])
     expect(badArgs.exitCode).toBe(1)
     expect(badArgs.stderr + badArgs.stdout).toContain('Tool arguments must be a JSON object')
+  })
+
+  test('exits with an error when the tool reports one, and writes nothing', async () => {
+    const outPath = join(await mkdtemp(join(tmpdir(), 'lawha-tool-')), 'out.fig')
+    const failed = await cli([
+      'tool',
+      'call',
+      'set_fill',
+      FIXTURE,
+      '--args',
+      '{"id":"999999:404","color":"#2563eb"}',
+      '--output',
+      outPath,
+      '--json'
+    ])
+    expect(failed.exitCode).toBe(1)
+    expect(parseJSON(failed.stdout, v.object({ error: v.string() })).error).toContain('999999:404')
+    expect(await Bun.file(outPath).exists()).toBe(false)
   })
 })
