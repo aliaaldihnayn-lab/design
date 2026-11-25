@@ -48,7 +48,7 @@ test('panel width persists after page reload', async () => {
 })
 
 test('Cmd+Backslash hides panels', async () => {
-  await editor.page.keyboard.press('Meta+\\')
+  await editor.page.keyboard.press('ControlOrMeta+\\')
   await editor.canvas.waitForRender()
 
   await expect(editor.page.getByTestId('layers-panel')).not.toBeVisible()
@@ -56,7 +56,7 @@ test('Cmd+Backslash hides panels', async () => {
 })
 
 test('Cmd+Backslash shows panels again', async () => {
-  await editor.page.keyboard.press('Meta+\\')
+  await editor.page.keyboard.press('ControlOrMeta+\\')
   await editor.canvas.waitForRender()
 
   await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
@@ -87,8 +87,8 @@ test('the properties panel reopens at one width on a narrow and a wide window', 
       'right splitter handle bounds'
     )
     await page.mouse.click(handle.x + handle.width / 2, handle.y + handle.height / 2)
-    await page.keyboard.press('Meta+\\')
-    await page.keyboard.press('Meta+\\')
+    await page.keyboard.press('ControlOrMeta+\\')
+    await page.keyboard.press('ControlOrMeta+\\')
     await expect(panel).toBeVisible()
 
     // A fixed width is a repeating share of 1920 px; saved, it would reopen narrower at 1280 px.
@@ -118,8 +118,8 @@ test('a keyboard resize survives a reload and hiding the panels', async () => {
   await editor.canvas.waitForInit()
   expect(Math.abs((await panelWidth()) - resized)).toBeLessThanOrEqual(1)
 
-  await editor.page.keyboard.press('Meta+\\')
-  await editor.page.keyboard.press('Meta+\\')
+  await editor.page.keyboard.press('ControlOrMeta+\\')
+  await editor.page.keyboard.press('ControlOrMeta+\\')
   await expect(panel).toBeVisible()
   expect(Math.abs((await panelWidth()) - resized)).toBeLessThanOrEqual(1)
   editor.canvas.assertNoErrors()

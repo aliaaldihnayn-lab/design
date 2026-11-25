@@ -45,11 +45,11 @@ test('undo after option-drag duplicate removes the copy', async () => {
   await expect.poll(layerItems).toEqual(['Rectangle 1'])
   await expect.poll(historyState).toMatchObject({ canRedo: true, redoLabel: 'Duplicate' })
 
-  await editor.page.keyboard.down('Meta')
+  await editor.page.keyboard.down('ControlOrMeta')
   await editor.page.keyboard.down('Shift')
   await editor.page.keyboard.press('KeyZ')
   await editor.page.keyboard.up('Shift')
-  await editor.page.keyboard.up('Meta')
+  await editor.page.keyboard.up('ControlOrMeta')
   await editor.canvas.waitForRender()
   await expect.poll(rectangleCount).toBe(2)
   await expect.poll(layerItems).toEqual(['Rectangle 1', 'Rectangle 1'])

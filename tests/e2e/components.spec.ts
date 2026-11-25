@@ -40,7 +40,7 @@ test('create component from selection (⌘⌥K)', async () => {
   await editor.canvas.drawRect(100, 100, 120, 80)
   await editor.canvas.waitForRender()
 
-  await editor.page.keyboard.press('Meta+Alt+k')
+  await editor.page.keyboard.press('ControlOrMeta+Alt+k')
   await editor.canvas.waitForRender()
 
   const ids = await getSelectedIds()

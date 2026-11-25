@@ -70,7 +70,7 @@ test('duplicate shortcut Cmd+D increases child count', async () => {
 
   const before = (await getPageChildren(page)).length
 
-  await canvas.pressKey('Meta+d')
+  await canvas.pressKey('ControlOrMeta+d')
   await canvas.waitForRender()
 
   const after = (await getPageChildren(page)).length

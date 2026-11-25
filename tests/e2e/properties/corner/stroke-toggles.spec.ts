@@ -72,7 +72,7 @@ test('multi-selection independent corners toggle is one undo step', async () => 
   await canvas.clearCanvas()
   await drawFrame(80, 80, 100, 70)
   await drawFrame(240, 80, 100, 70)
-  await canvas.pressKey('Meta+a')
+  await canvas.pressKey('ControlOrMeta+a')
   await canvas.waitForRender()
 
   const independentStates = () =>
@@ -91,7 +91,7 @@ test('multi-selection independent corners toggle is one undo step', async () => 
   await canvas.waitForRender()
   expect(await independentStates()).toEqual([true, true])
 
-  await canvas.pressKey('Meta+z')
+  await canvas.pressKey('ControlOrMeta+z')
   await canvas.waitForRender()
   expect(await independentStates()).toEqual([false, false])
 })

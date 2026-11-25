@@ -68,7 +68,7 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
     await expect(
       page.getByRole('button', { name: 'Browser agent page', exact: true })
     ).toBeVisible()
-    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
+    const modifier = 'ControlOrMeta'
     await page.keyboard.press(`${modifier}+z`)
     expect(v.parse(pageResultSchema, (await invoke('get_current_page')).output).result.name).toBe(
       original.name

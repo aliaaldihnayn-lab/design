@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function openChatSettings(page: Page) {
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await page.getByTestId('settings-section-ai').click()
 }
 

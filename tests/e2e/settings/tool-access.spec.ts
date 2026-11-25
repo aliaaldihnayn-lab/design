@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function openSection(page: Page, name: string, phone: boolean) {
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   if (phone) {
     await page.getByRole('combobox', { name: 'Settings', exact: true }).click()
     await page.getByRole('option', { name, exact: true }).click()

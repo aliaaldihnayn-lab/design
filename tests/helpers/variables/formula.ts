@@ -65,7 +65,7 @@ export async function updateFormulaNumber(
 
 /** Paste through the editor's clipboard handler, preserving a distinct undoable edit. */
 export async function pasteFormulaText(field: Locator, text: string) {
-  await field.press('Meta+a')
+  await field.press('ControlOrMeta+a')
   await field.evaluate((element, text) => {
     const clipboardData = new DataTransfer()
     clipboardData.setData('text/plain', text)

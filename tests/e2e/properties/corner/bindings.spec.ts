@@ -87,10 +87,10 @@ test('collapsed equivalent corners preserve their shared token through expansion
     bindings: [null, null, null, null],
     independent: false
   })
-  await canvas.pressKey('Meta+z')
+  await canvas.pressKey('ControlOrMeta+z')
   await expect(field.getByText('Radius/shared', { exact: true })).toBeVisible()
   expect(await readCorners()).toEqual(original)
-  await canvas.pressKey('Meta+Shift+z')
+  await canvas.pressKey('ControlOrMeta+Shift+z')
   expect(await readCorners()).toEqual({
     values: [24, 24, 24, 24],
     bindings: [null, null, null, null],

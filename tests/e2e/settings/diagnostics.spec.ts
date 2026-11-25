@@ -75,7 +75,7 @@ test('Settings saves the diagnostics report as a file', async ({ configuredChat:
 })
 
 async function openDiagnostics(page: Page) {
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await page.getByTestId('settings-section-diagnostics').click()
 }
 

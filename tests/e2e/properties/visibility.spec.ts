@@ -88,7 +88,7 @@ test('multi-selection list add is one undo step', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(100, 100, 80, 80)
   await editor.canvas.drawRect(240, 100, 80, 80)
-  await editor.canvas.pressKey('Meta+a')
+  await editor.canvas.pressKey('ControlOrMeta+a')
 
   const strokeCounts = () =>
     editor.page.evaluate(() => {

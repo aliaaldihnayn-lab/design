@@ -41,7 +41,7 @@ for (const theme of ['light', 'dark']) {
       )
       .toBe(20)
     await section.getByRole('heading', { name: 'Effects' }).click()
-    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+    await page.keyboard.press('ControlOrMeta+z')
     await expect
       .poll(() =>
         page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.effects[0].radius, id)

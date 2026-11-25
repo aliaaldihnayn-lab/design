@@ -35,7 +35,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await page.getByRole('option', { name: 'Auto', exact: true }).click()
   await expect(field).toContainText('Auto')
   await page.getByRole('heading', { name: 'Typography', exact: true }).click()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await page.keyboard.press('ControlOrMeta+z')
   await expect
     .poll(() => page.evaluate((id) => window.lawha?.getStore?.().graph.getNode(id)?.lineHeight, id))
     .toEqual({ value: 32, unit: 'PIXELS' })
@@ -50,7 +50,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await expect(field).not.toHaveAttribute('data-bound')
   await expect(field).toContainText('Auto')
   await page.getByRole('heading', { name: 'Typography', exact: true }).click()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await page.keyboard.press('ControlOrMeta+z')
   await expect(field).toHaveAttribute('data-bound')
 })
 
@@ -103,9 +103,9 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
   await expect.poll(() => read('letterSpacing')).toEqual({ value: 2, unit: 'PERCENT' })
 
   await page.getByRole('heading', { name: 'Typography', exact: true }).click()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(() => read('letterSpacing')).toEqual({ value: 0, unit: 'PIXELS' })
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PERCENT' })
 
   // A value stepped below zero stays that value, not an expression subtracting from the start.
@@ -142,6 +142,6 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
   await type('Line height', '151px')
   await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PIXELS' })
   await page.getByRole('heading', { name: 'Typography', exact: true }).click()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PERCENT' })
 })

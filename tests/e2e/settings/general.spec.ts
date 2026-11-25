@@ -97,6 +97,6 @@ test('settings shortcut preserves the last visited section', async ({ page }) =>
   await page.getByTestId('settings-section-services').click()
   await page.getByTestId('app-settings-done').click()
 
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await expect(page.getByTestId('settings-media-panel')).toBeVisible()
 })

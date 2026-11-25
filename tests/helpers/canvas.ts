@@ -185,11 +185,11 @@ export class CanvasHelper {
   }
 
   async selectAll() {
-    await this.pressKey('Meta+a')
+    await this.pressKey('ControlOrMeta+a')
   }
 
   async duplicate() {
-    await this.pressKey('Meta+d')
+    await this.pressKey('ControlOrMeta+d')
     await this.waitForRender()
   }
 

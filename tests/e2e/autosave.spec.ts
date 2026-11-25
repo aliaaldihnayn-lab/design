@@ -41,7 +41,7 @@ test('autosave triggers after scene changes with a file handle', async () => {
   })
 
   // Trigger Save As to establish the file handle
-  await editor.page.keyboard.press('Meta+Shift+s')
+  await editor.page.keyboard.press('ControlOrMeta+Shift+s')
   await editor.page.waitForTimeout(500)
 
   // Now draw a shape — this should trigger autosave after 3s

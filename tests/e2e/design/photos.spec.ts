@@ -159,7 +159,7 @@ test('the picker opens on a service with a key when the last one searched has no
   await expect(picker).toBeHidden()
 
   // Pexels was searched last; its key goes, Unsplash's stays.
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await page.getByTestId('settings-section-services').click()
   await page
     .getByTestId('settings-media-panel')

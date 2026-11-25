@@ -56,6 +56,59 @@ function getZoom() {
   })
 }
 
+function getContentOnScreen(ids: 'page' | 'selection') {
+  return editor.page.evaluate((ids) => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    const nodeIds =
+      ids === 'page'
+        ? store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
+        : [...store.state.selectedIds]
+    const bounds = nodeIds.map((id) => store.graph.getAbsoluteBounds(id))
+    const { zoom, panX, panY } = store.state
+    const canvas = document.querySelector('[data-test-id="canvas-element"]')
+    if (!canvas) throw new Error('Missing canvas')
+    const left = Math.min(...bounds.map((b) => b.x)) * zoom + panX
+    const top = Math.min(...bounds.map((b) => b.y)) * zoom + panY
+    const right = Math.max(...bounds.map((b) => b.x + b.width)) * zoom + panX
+    const bottom = Math.max(...bounds.map((b) => b.y + b.height)) * zoom + panY
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      viewWidth: canvas.clientWidth,
+      viewHeight: canvas.clientHeight
+    }
+  }, ids)
+}
+
+/** Zooms far out first, so a fit has to change the view to pass. */
+async function zoomFarOut() {
+  await editor.page.evaluate(() => {
+    const store = window.lawha?.getStore?.()
+    if (!store) throw new Error('Lawha store not initialized')
+    store.state.zoom = 0.1
+    store.state.panX = 0
+    store.state.panY = 0
+  })
+  await editor.canvas.waitForRender()
+}
+
+/** The content fills the canvas, as Figma's zoom to fit and zoom to selection leave it. */
+async function expectFitted(ids: 'page' | 'selection') {
+  const screen = await getContentOnScreen(ids)
+  expect(screen.left).toBeGreaterThanOrEqual(0)
+  expect(screen.top).toBeGreaterThanOrEqual(0)
+  expect(screen.right).toBeLessThanOrEqual(screen.viewWidth)
+  expect(screen.bottom).toBeLessThanOrEqual(screen.viewHeight)
+  const fill = Math.max(
+    (screen.right - screen.left) / screen.viewWidth,
+    (screen.bottom - screen.top) / screen.viewHeight
+  )
+  expect(fill).toBeGreaterThan(0.5)
+}
+
 function getSelectedOpacity() {
   return editor.page.evaluate(() => {
     const store = window.lawha?.getStore?.()
@@ -117,10 +170,10 @@ test.describe('tool switching', () => {
     expect(await getActiveTool()).toBe('SECTION')
   })
 
-  test('S alone leaves the tool unchanged', async () => {
+  test('S alone picks the clone stamp, as in Photoshop', async () => {
     await editor.page.keyboard.press('v')
     await editor.page.keyboard.press('s')
-    expect(await getActiveTool()).toBe('SELECT')
+    expect(await getActiveTool()).toBe('CLONE_STAMP')
   })
 })
 
@@ -130,7 +183,7 @@ test.describe('selection shortcuts', () => {
     await editor.canvas.drawRect(100, 100, 60, 60)
     await editor.canvas.drawRect(200, 100, 60, 60)
 
-    await editor.page.keyboard.press('Meta+a')
+    await editor.page.keyboard.press('ControlOrMeta+a')
     expect(await getSelectedCount()).toBe(2)
   })
 
@@ -143,7 +196,7 @@ test.describe('selection shortcuts', () => {
       return node.id
     })
 
-    await editor.page.keyboard.press('Meta+r')
+    await editor.page.keyboard.press('ControlOrMeta+r')
 
     const input = editor.page.getByTestId('layers-item-input')
     await expect(input).toBeFocused()
@@ -163,7 +216,7 @@ test.describe('selection shortcuts', () => {
       return [first.id, second.id]
     })
 
-    await editor.page.keyboard.press('Meta+r')
+    await editor.page.keyboard.press('ControlOrMeta+r')
 
     const dialog = editor.page.getByRole('dialog', { name: 'Rename 2 layers' })
     await expect(dialog).toBeVisible()
@@ -242,7 +295,7 @@ test.describe('group/ungroup shortcuts', () => {
     await editor.canvas.selectAll()
     expect(await getSelectedCount()).toBeGreaterThanOrEqual(2)
 
-    await editor.page.keyboard.press('Meta+g')
+    await editor.page.keyboard.press('ControlOrMeta+g')
     await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
@@ -252,7 +305,7 @@ test.describe('group/ungroup shortcuts', () => {
   })
 
   test('⌘⇧G ungroups', async () => {
-    await editor.page.keyboard.press('Meta+Shift+g')
+    await editor.page.keyboard.press('ControlOrMeta+Shift+g')
     await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
@@ -264,14 +317,14 @@ test.describe('UI toggles', () => {
   test('⌘\\ toggles UI visibility', async () => {
     const before = await getUIVisible()
 
-    await editor.page.keyboard.press('Meta+\\')
+    await editor.page.keyboard.press('ControlOrMeta+\\')
     await editor.canvas.waitForRender()
 
     const after = await getUIVisible()
     expect(after).toBe(!before)
 
     // Restore
-    await editor.page.keyboard.press('Meta+\\')
+    await editor.page.keyboard.press('ControlOrMeta+\\')
     await editor.canvas.waitForRender()
     expect(await getUIVisible()).toBe(before)
   })
@@ -284,7 +337,7 @@ test.describe('duplicate', () => {
     await editor.canvas.selectAll()
     expect(await getSelectedCount()).toBe(1)
 
-    await editor.page.keyboard.press('Meta+d')
+    await editor.page.keyboard.press('ControlOrMeta+d')
     await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
@@ -303,10 +356,10 @@ test.describe('opacity shortcuts', () => {
     await editor.page.keyboard.press('8')
     expect(await getSelectedOpacity()).toBe(0.28)
 
-    await editor.page.keyboard.press('Meta+z')
+    await editor.page.keyboard.press('ControlOrMeta+z')
     expect(await getSelectedOpacity()).toBe(1)
 
-    await editor.page.keyboard.press('Meta+Shift+z')
+    await editor.page.keyboard.press('ControlOrMeta+Shift+z')
     expect(await getSelectedOpacity()).toBe(0.28)
   })
 
@@ -466,7 +519,7 @@ test.describe('zoom shortcuts', () => {
     })
     await editor.canvas.waitForRender()
 
-    await editor.page.keyboard.press('Meta+0')
+    await editor.page.keyboard.press('ControlOrMeta+0')
     await editor.canvas.waitForRender()
 
     const zoomAfter = await getZoom()
@@ -474,43 +527,39 @@ test.describe('zoom shortcuts', () => {
   })
 
   test('⌘1 zooms to fit', async () => {
-    await editor.page.keyboard.press('Meta+1')
+    await zoomFarOut()
+    await editor.page.keyboard.press('ControlOrMeta+1')
     await editor.canvas.waitForRender()
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    await expectFitted('page')
   })
 
   test('⌘2 zooms to selection', async () => {
     await editor.canvas.selectAll()
 
-    await editor.page.keyboard.press('Meta+2')
+    await zoomFarOut()
+    await editor.page.keyboard.press('ControlOrMeta+2')
     await editor.canvas.waitForRender()
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    await expectFitted('selection')
   })
 
   test('⇧1 zooms to fit (same as ⌘1)', async () => {
+    await zoomFarOut()
     await editor.page.keyboard.press('Shift+1')
     await editor.canvas.waitForRender()
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    await expectFitted('page')
   })
 
   test('⇧2 zooms to selection (same as ⌘2)', async () => {
     await editor.canvas.selectAll()
 
+    await zoomFarOut()
     await editor.page.keyboard.press('Shift+2')
     await editor.canvas.waitForRender()
 
-    const zoom = await getZoom()
-    expect(zoom).toBeGreaterThan(0)
-    expect(zoom).toBeLessThanOrEqual(1)
+    await expectFitted('selection')
   })
 })
 

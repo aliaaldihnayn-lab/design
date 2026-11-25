@@ -2,9 +2,9 @@ import { expect, test } from '#tests/helpers/chat/fixture'
 
 test('⌘J switches between Design and AI', async ({ chat }) => {
   await chat.designTab.waitFor()
-  await chat.page.keyboard.press('Meta+j')
+  await chat.page.keyboard.press('ControlOrMeta+j')
   await expect(chat.chatTab).toHaveAttribute('data-state', 'active')
-  await chat.page.keyboard.press('Meta+j')
+  await chat.page.keyboard.press('ControlOrMeta+j')
   await expect(chat.designTab).toHaveAttribute('data-state', 'active')
 })
 

@@ -12,7 +12,7 @@ for (const theme of ['light', 'dark']) {
       const themeModule = await import(path)
       themeModule.useAppTheme().setTheme(value)
     }, theme)
-    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+    await page.keyboard.press('ControlOrMeta+,')
     const dialog = page.getByTestId('app-settings-dialog')
     await expect(dialog).toBeVisible()
     const section = dialog.getByRole('combobox', { name: 'Settings', exact: true })

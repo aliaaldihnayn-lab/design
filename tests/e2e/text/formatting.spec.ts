@@ -89,7 +89,7 @@ test('advanced typography controls update case, alignment, truncation, and featu
   await page.getByRole('option', { name: 'Ending ellipsis' }).click()
   const maxLines = typography.getByRole('spinbutton', { name: 'Maximum lines' })
   await maxLines.click()
-  await page.keyboard.press('Meta+a')
+  await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type('2')
   await page.keyboard.press('Enter')
 
@@ -166,7 +166,7 @@ test('Cmd+I toggles italic', async () => {
   await expect.poll(() => getEditingTextId(page), { timeout: 5000 }).toBeTruthy()
 
   await page.keyboard.press('End')
-  await page.keyboard.press('Meta+i')
+  await page.keyboard.press('ControlOrMeta+i')
   await canvas.pressKey('Escape')
   await canvas.waitForRender()
 

@@ -104,9 +104,9 @@ test('holding Cmd hovers the deepest layer, the one a Cmd-click selects', async 
 
   await editor.canvas.hover(point.x, point.y)
   await expect.poll(async () => (await scene.state()).hovered).toBe(ids.grid)
-  await editor.page.keyboard.down('Meta')
+  await editor.page.keyboard.down('ControlOrMeta')
   await expect.poll(async () => (await scene.state()).hovered).toBe(ids.label)
-  await editor.page.keyboard.up('Meta')
+  await editor.page.keyboard.up('ControlOrMeta')
   await expect.poll(async () => (await scene.state()).hovered).toBe(ids.grid)
   editor.canvas.assertNoErrors()
 })

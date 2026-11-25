@@ -140,9 +140,9 @@ test('layer tree supports range and additive selection', async ({ page }) => {
   await expect(rows.filter({ hasText: 'Layer 2' })).toHaveAttribute('data-selected')
   await expect(rows.filter({ hasText: 'Layer 5' })).toHaveAttribute('data-selected')
 
-  await page.keyboard.down('Meta')
+  await page.keyboard.down('ControlOrMeta')
   await rows.filter({ hasText: 'Layer 7' }).click()
-  await page.keyboard.up('Meta')
+  await page.keyboard.up('ControlOrMeta')
 
   await expect(selectedRows).toHaveCount(5)
   await expect(rows.filter({ hasText: 'Layer 7' })).toHaveAttribute('data-selected')

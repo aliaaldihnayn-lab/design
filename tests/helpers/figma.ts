@@ -70,7 +70,7 @@ export class FigmaHelper {
   }
 
   async selectAll() {
-    await this.pressKey('Meta+a')
+    await this.pressKey('ControlOrMeta+a')
     await this.waitForRender()
   }
 

@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test('a changed setting offers Reset to default, which puts the default back', async ({ page }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await page.getByTestId('settings-section-editor').click()
   const editor = page.getByTestId('settings-editor-panel')
   // Nothing has been changed, so no row offers a reset; the toolbar's own stays its section's.

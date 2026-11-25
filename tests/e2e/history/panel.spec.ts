@@ -7,7 +7,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test.describe.configure({ timeout: 60_000 })
 
 function paletteShortcut() {
-  return process.platform === 'darwin' ? 'Meta+KeyK' : 'Control+KeyK'
+  return 'ControlOrMeta+KeyK'
 }
 
 async function runCommand(page: Page, name: RegExp) {

@@ -6,7 +6,7 @@ import { addPages, currentPageName, visitPage } from '#tests/helpers/pages'
 const editor = useEditorSetup()
 
 function commandPaletteShortcut() {
-  return process.platform === 'darwin' ? 'Meta+KeyK' : 'Control+KeyK'
+  return 'ControlOrMeta+KeyK'
 }
 
 test('command palette opens, searches, and closes', async () => {

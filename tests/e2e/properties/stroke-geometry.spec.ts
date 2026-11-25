@@ -83,7 +83,7 @@ test('updates cap, join, and miter state from compact controls', async () => {
   await page.keyboard.press('Escape')
   // Undo goes to the canvas only once the settings popover is gone.
   await expect(page.getByRole('dialog', { name: 'Stroke settings' })).toHaveCount(0)
-  await canvas.pressKey('Meta+z')
+  await canvas.pressKey('ControlOrMeta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry())[0]?.miterLimit).toBe(4)
 })
@@ -92,7 +92,7 @@ test('applies mixed multi-selection joins in one undo step', async () => {
   await canvas.clearCanvas()
   await drawStrokedRectangle(80, 80)
   await drawStrokedRectangle(260, 80)
-  await canvas.pressKey('Meta+a')
+  await canvas.pressKey('ControlOrMeta+a')
   await canvas.waitForRender()
 
   const roundJoin = page
@@ -107,7 +107,7 @@ test('applies mixed multi-selection joins in one undo step', async () => {
   await page.keyboard.press('Escape')
   // Undo goes to the canvas only once the settings popover is gone.
   await expect(page.getByRole('dialog', { name: 'Stroke settings' })).toHaveCount(0)
-  await canvas.pressKey('Meta+z')
+  await canvas.pressKey('ControlOrMeta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry()).map((value) => value?.join)).toEqual(['MITER', 'MITER'])
 })

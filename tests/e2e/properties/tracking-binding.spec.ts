@@ -44,7 +44,7 @@ for (const theme of ['light', 'dark']) {
       .toEqual({ value: 3, unit: 'PIXELS' })
     await expect(field).not.toHaveAttribute('data-bound')
     await section.getByRole('heading', { name: 'Typography', exact: true }).click()
-    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+    await page.keyboard.press('ControlOrMeta+z')
     await expect(field).toHaveAttribute('data-bound')
     await field.getByRole('button', { name: 'Apply variable' }).click()
     await page.getByRole('button', { name: 'Detach variable', exact: true }).click()

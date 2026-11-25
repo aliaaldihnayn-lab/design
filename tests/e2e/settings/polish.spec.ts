@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 async function openSettings(page: Page) {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
 }
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {

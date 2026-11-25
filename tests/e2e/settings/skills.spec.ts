@@ -7,7 +7,7 @@ const SKILL =
   '---\nname: grid\ndescription: Lay out pages on an eight-point grid.\n---\n# Grid\n\nSnap every frame to multiples of 8.'
 
 async function openSkills(page: Page) {
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.keyboard.press('ControlOrMeta+,')
   await page.getByRole('tab', { name: 'Skills', exact: true }).click()
 }
 
