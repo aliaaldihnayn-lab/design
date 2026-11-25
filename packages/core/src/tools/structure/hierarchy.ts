@@ -16,6 +16,15 @@ export const reparentNode = defineTool({
     const parent = figma.getNodeById(parent_id)
     if (!node) return { error: `Node "${id}" not found` }
     if (!parent) return { error: `Parent "${parent_id}" not found` }
+    if (!figma.graph.isContainer(parent_id)) {
+      return {
+        error: `${parent.name} is a ${parent.type} and cannot hold layers; move it into a frame, group, section, component, or page`
+      }
+    }
+    // Figma refuses this too; the graph would otherwise leave the layer where it was.
+    if (figma.graph.isDescendant(parent_id, id)) {
+      return { error: `Cannot move ${node.name} into itself or a layer inside it` }
+    }
     parent.appendChild(node)
     return { id, parent_id }
   }

@@ -59,6 +59,27 @@ describe('reparent_node', () => {
       )
     ).toBe(true)
   })
+
+  test('refuses a parent that cannot hold layers, itself, or a layer inside it', () => {
+    const { figma } = setupToolTest()
+    const outer = figma.createFrame()
+    const inner = figma.createFrame()
+    outer.appendChild(inner)
+    const rect = figma.createRectangle()
+    const tool = getTool('reparent_node')
+
+    for (const [id, parentId] of [
+      [inner.id, rect.id],
+      [outer.id, outer.id],
+      [outer.id, inner.id]
+    ]) {
+      const result = tool.execute(figma, { id, parent_id: parentId }) as ToolResult
+      expect(result.error).toBeString()
+    }
+    expect(figma.getNodeById(inner.id)?.parent?.id).toBe(outer.id)
+    expect(figma.getNodeById(outer.id)?.parent?.id).toBe(figma.currentPage.id)
+    expect(figma.getNodeById(rect.id)?.children ?? []).toHaveLength(0)
+  })
 })
 
 describe('group_nodes', () => {
